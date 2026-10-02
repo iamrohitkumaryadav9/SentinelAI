@@ -1,0 +1,30 @@
+test_docker_info (test_phase1a.TestDocker) ... ok
+test_hello_world (test_phase1a.TestDocker) ... ok
+test_user_in_docker_group (test_phase1a.TestDocker) ... ok
+test_bpftool_runs (test_phase1a.TestEBPF) ... ok
+test_bpftrace_installed (test_phase1a.TestEBPF) ... ok
+test_bpftrace_sched_switch_live (test_phase1a.TestEBPF) ... skipped 'bpf() is root-only (unprivileged_bpf_disabled=2); run suite with sudo for the live attach'
+test_btf_exists (test_phase1a.TestEBPF) ... ok
+test_privileged_smoke_evidence (test_phase1a.TestEBPF)
+Validates the real output of scripts/privileged_smoke.sh (run under sudo). ... ok
+test_clean_commit_can_be_created (test_phase1a.TestGit) ... ok
+test_initial_commit_present (test_phase1a.TestGit) ... ok
+test_repo_exists (test_phase1a.TestGit) ... ok
+test_imports_resolve_from_venv (test_phase1a.TestPython) ... ok
+test_interpreter_is_project_venv (test_phase1a.TestPython) ... ok
+test_lock_matches_environment (test_phase1a.TestPython) ... ok
+test_pip_check (test_phase1a.TestPython) ... ok
+test_sys_path_isolated (test_phase1a.TestPython) ... ok
+test_user_site_disabled (test_phase1a.TestPython) ... ok
+test_iperf3_loopback (test_phase1a.TestSystemTools) ... ok
+test_perf_restriction_documented (test_phase1a.TestSystemTools) ... ok
+test_physical_nic_untouched (test_phase1a.TestSystemTools) ... ok
+test_safety_check_fails_closed (test_phase1a.TestSystemTools) ... ok
+test_safety_check_passes (test_phase1a.TestSystemTools) ... ok
+test_stress_ng_functional (test_phase1a.TestSystemTools) ... ok
+test_tool_versions (test_phase1a.TestSystemTools) ... ok
+
+----------------------------------------------------------------------
+Ran 24 tests in 3.467s
+
+OK (skipped=1)
