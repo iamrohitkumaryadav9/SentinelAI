@@ -51,6 +51,7 @@
 - **C1.** The runner's conversation-length estimate summed `prompt_eval_count` across turns. Ollama reports the *full* prompt each turn, so the sum over-counts. The analysis now uses the maximum per-turn prompt plus output. Real conversations peaked well under 4,096 tokens: 0 scenarios at risk, and llama-server logged `truncated = 0`.
 - **C2.** The numpy-to-float/bool cast for JSON output.
 - **Post-hoc analyses**, all labelled as such: the `kfree_skb` noise analysis (`posthoc_noise.py`) and the upper-bound sensitivity in §11.
+- **Integrity check:** `sha256sum -c PREREG_SHA256.txt` shows `scenarios.json`, `protocol.json`, `simulator.py` and `confirm.py` unchanged since pre-registration. `analyze.py` differs **only** by C1 and C2 (`git diff d60132e -- confirm/analyze.py`); neither touches scoring, outcomes or the decision rules.
 
 ## 3. New scenario taxonomy
 
