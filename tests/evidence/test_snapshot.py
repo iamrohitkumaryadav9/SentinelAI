@@ -97,8 +97,10 @@ class TestSnapshot(unittest.TestCase):
 
     def test_versions(self):
         s = b.snapshot([QD])
+        with self.assertRaises(ValidationError):  # a v0.1.0 snapshot is not silently accepted (no migration)
+            b.rebuild(s, schema_version="0.1.0")
         with self.assertRaises(ValidationError):
-            b.rebuild(s, schema_version="0.2.0")
+            b.rebuild(s, schema_version="0.3.0")
         with self.assertRaises(ValidationError):
             b.rebuild(s, contract_version="1.0.0")
         self.assertEqual(b.rebuild(s, contract_version="0.3.1").contract_version, "0.3.1")  # same major

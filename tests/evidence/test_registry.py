@@ -16,7 +16,7 @@ CONTRACT_FEATURES = """
 cpu.util.host cpu.util.cpuset cpu.util.percpu cpu.steal.cpuset cpu.usage.target sched.run_delay.target
 sched.run_delay.cpuset sched.run_delay_excess.target sched.nr_migrations.target sched.involuntary_cs.target
 sched.ctxt.host sched.procs_running.host psi.cpu.some.target psi.cpu.some.host sched.latency_hist.target
-throttle.quota_cores throttle.ratio throttle.time_rate throttle.quota_saturation
+throttle.quota_limited throttle.quota_cores throttle.ratio throttle.time_rate throttle.quota_saturation
 net.drop.qdisc net.drop.iface_rx net.drop.iface_tx net.err.iface net.drop.softnet net.drop.socket
 net.drop.netfilter net.drop.kfree_skb net.pkts.iface net.bytes.iface
 tcp.retrans_rate tcp.retrans_frac tcp.out_segs_rate tcp.timeouts_rate tcp.fast_retrans_rate tcp.syn_retrans_rate
@@ -32,7 +32,7 @@ app.lock_wait_ms app.dependency_latency_ms app.events
 
 REQUIRED_CLAUSES = {  # contract §8 Required clauses
     Label.cpu_contention: {"CC.R1", "CC.R2"}, Label.cpu_throttling: {"CT.R1", "CT.R2"},
-    Label.softirq_overload: {"SI.R1", "SI.R2"}, Label.network_packet_loss: {"PL.R1"},
+    Label.softirq_overload: {"SI.R1", "SI.R2"}, Label.network_packet_loss: {"PL.R1"},  # unchanged by v0.2.0
     Label.tcp_retransmissions: {"RT.R0", "RT.R1", "RT.R2"}, Label.memory_pressure: {"MP.R1"},
     Label.application_bottleneck: {"AB.R1", "AB.R2", "AB.R3"},
 }
@@ -45,7 +45,7 @@ class TestRegistry(unittest.TestCase):
     def test_ids_unique_and_versioned(self):
         ids = [f.id for f in C.registry.features]
         self.assertEqual(len(ids), len(set(ids)))
-        self.assertEqual(C.registry.contract_version, "0.1.0-draft")
+        self.assertEqual(C.registry.contract_version, "0.2.0-draft")
 
     def test_unknown_feature_rejected(self):
         with self.assertRaises(ContractViolation):
@@ -116,7 +116,9 @@ class TestCatalogs(unittest.TestCase):
         """Contract §6: all thresholds are uncalibrated parameters; M1 defines none."""
         params = json.loads((DATA / "parameters.json").read_text())
         self.assertEqual(params["status"], "UNCALIBRATED")
-        self.assertTrue(all(isinstance(p, str) for p in params["parameters"]))
+        for p in params["parameters"] + params["per_feature_parameters"]:   # v0.2.0 R-4: name + type only
+            self.assertEqual(set(p), {"name", "type"})
+            self.assertIn(p["type"], ("number", "reason_set"))
         for name in ("labels.json", "predicates.json", "parameters.json"):
             def walk(o, path=name):
                 if isinstance(o, bool):

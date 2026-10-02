@@ -145,7 +145,9 @@ class TestEnums(unittest.TestCase):
                          "FAULTLAB_GROUND_TRUTH", "DERIVED", "PROMETHEUS"},
             Aggregation: {"RATE", "MEAN", "GAUGE", "DELTA", "RATIO", "P50", "P90", "P99", "MAX"},
             Unit: {"fraction", "cores", "waiting_cores", "per_second", "packets_per_second", "segments_per_second",
-                   "events_per_second", "pages_per_second", "bytes", "bytes_per_second", "ms", "count", "ratio"},
+                   "events_per_second", "pages_per_second", "bytes", "bytes_per_second", "ms", "count", "ratio",
+                   "boolean"},
+            E.DiagnosticFlag: {"IMPACT_NOT_MEASURED", "ML_DISAGREEMENT"},
             CandidateStatus: {"ASSERTED", "CONTRIBUTING", "SUPPORTED_NOT_SUFFICIENT", "CONTRADICTED",
                               "NOT_EVALUABLE", "NOT_SUPPORTED"},
             ConfidenceLevel: {"HIGH", "MEDIUM", "LOW"},
@@ -160,8 +162,8 @@ class TestEnums(unittest.TestCase):
 
 class TestVersioning(unittest.TestCase):
     def test_versions(self):
-        self.assertEqual(SCHEMA_VERSION, "0.1.0")
-        self.assertEqual(CONTRACT_VERSION, "0.1.0-draft")
+        self.assertEqual(SCHEMA_VERSION, "0.2.0")
+        self.assertEqual(CONTRACT_VERSION, "0.2.0-draft")
 
     def test_major_mismatch_rejected_minor_accepted(self):
         with self.assertRaises(ValueError):

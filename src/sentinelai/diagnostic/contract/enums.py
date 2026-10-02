@@ -84,6 +84,7 @@ class Unit(_StrEnum):
     ms = "ms"
     count = "count"
     ratio = "ratio"
+    boolean = "boolean"  # v0.2.0: numeric 0.0 / 1.0 only (R-1)
 
 
 class CandidateStatus(_StrEnum):
@@ -110,6 +111,12 @@ class AbstentionReason(_StrEnum):
     LOSS_VS_RETRANS_UNDECIDABLE = "LOSS_VS_RETRANS_UNDECIDABLE"
     CONFOUNDER_NOT_EVALUATED = "CONFOUNDER_NOT_EVALUATED"
     DATA_QUALITY = "DATA_QUALITY"
+
+
+class DiagnosticFlag(_StrEnum):
+    """Per-result diagnostic metadata (v0.2.0, R-5). Never abstention reasons, never engine info."""
+    IMPACT_NOT_MEASURED = "IMPACT_NOT_MEASURED"
+    ML_DISAGREEMENT = "ML_DISAGREEMENT"
 
 
 class BaselineMethod(_StrEnum):

@@ -144,7 +144,7 @@ class TestI6ApplicationBottleneck(unittest.TestCase):
         cpu, ev = self._infra_evaluated_item()
         qw = b.meas("app.queue_wait_ms", "app:A", 450.0)
         lat = b.meas("app.latency_ms", "app:A", 900.0)
-        quota = b.meas("throttle.quota_cores", "cgroup:/lab", 0.3, base=None)
+        quota = b.meas("throttle.quota_limited", "cgroup:/lab", 1.0, base=None)   # v0.2.0 R-1: CT.R1
         ratio = b.meas("throttle.ratio", "cgroup:/lab", 0.8)
         trate = b.meas("throttle.time_rate", "cgroup:/lab", 0.6)
         items = [b.item("AB.R1", POS, [qw], supports=[Label.application_bottleneck]),

@@ -1,6 +1,6 @@
 {
  "registry_id": "sentinelai.feature-registry",
- "contract_version": "0.1.0-draft",
+ "contract_version": "0.2.0-draft",
  "features": [
   {
    "id": "cpu.util.host",
@@ -22,7 +22,8 @@
    "non_negative": true,
    "locator": "/proc/stat:cpu (user+nice+system+irq+softirq+steal)/total",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "cpu.util.cpuset",
@@ -44,7 +45,8 @@
    "non_negative": true,
    "locator": "/proc/stat:cpuN, N in target cpuset",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "cpu.util.percpu",
@@ -66,7 +68,8 @@
    "non_negative": true,
    "locator": "/proc/stat:cpuN",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "cpu.steal.cpuset",
@@ -88,7 +91,8 @@
    "non_negative": true,
    "locator": "/proc/stat:cpuN steal/total, N in cpuset",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "cpu.usage.target",
@@ -110,7 +114,8 @@
    "non_negative": true,
    "locator": "cgroup cpu.stat:usage_usec",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "sched.run_delay.target",
@@ -132,7 +137,8 @@
    "non_negative": true,
    "locator": "/proc/<pid>/task/<tid>/schedstat field 2, summed over target threads",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "sched.run_delay.cpuset",
@@ -154,7 +160,8 @@
    "non_negative": true,
    "locator": "/proc/schedstat cpuN field 8, N in cpuset",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "sched.run_delay_excess.target",
@@ -179,7 +186,8 @@
     "sched.run_delay.target",
     "throttle.time_rate"
    ],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "sched.nr_migrations.target",
@@ -201,7 +209,8 @@
    "non_negative": true,
    "locator": "/proc/<pid>/task/<tid>/sched:se.nr_migrations, summed",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "sched.involuntary_cs.target",
@@ -223,7 +232,8 @@
    "non_negative": true,
    "locator": "/proc/<pid>/task/<tid>/status:nonvoluntary_ctxt_switches, summed",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "sched.ctxt.host",
@@ -245,7 +255,8 @@
    "non_negative": true,
    "locator": "/proc/stat:ctxt",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "sched.procs_running.host",
@@ -267,7 +278,8 @@
    "non_negative": true,
    "locator": "/proc/stat:procs_running",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "psi.cpu.some.target",
@@ -289,7 +301,8 @@
    "non_negative": true,
    "locator": "cgroup cpu.pressure: some total (us)",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "psi.cpu.some.host",
@@ -311,7 +324,8 @@
    "non_negative": true,
    "locator": "/proc/pressure/cpu: some total",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "sched.latency_hist.target",
@@ -334,7 +348,31 @@
    "non_negative": true,
    "locator": "eBPF sched_wakeup -> sched_switch histogram",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
+  },
+  {
+   "id": "throttle.quota_limited",
+   "family": "cpu_throttling",
+   "scope_kinds": [
+    "cgroup"
+   ],
+   "unit": "boolean",
+   "contract_unit_text": "boolean (0.0 = unlimited, 1.0 = finite quota)",
+   "aggregations": [
+    "GAUGE"
+   ],
+   "sources": [
+    "CGROUPFS"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "gauge",
+   "non_negative": true,
+   "locator": "cgroup cpu.max: 'max' -> 0.0 (unlimited); '<quota> <period>' -> 1.0 (finite quota)",
+   "derived_from": [],
+   "description": "Whether the cgroup has a finite CFS quota.",
+   "dimension": null
   },
   {
    "id": "throttle.quota_cores",
@@ -354,9 +392,10 @@
    "privileged": false,
    "kind": "gauge",
    "non_negative": true,
-   "locator": "cgroup cpu.max -> quota/period; literal 'max' means unlimited (not representable in v0.1.0: M1 report deviation D-1)",
+   "locator": "cgroup cpu.max -> quota/period; emitted only when a finite quota exists (throttle.quota_limited = 1)",
    "derived_from": [],
-   "description": "Finite CFS quota in cores."
+   "description": "Finite CFS quota in cores. Never emitted for an unlimited quota (cpu.max = max).",
+   "dimension": null
   },
   {
    "id": "throttle.ratio",
@@ -378,7 +417,8 @@
    "non_negative": true,
    "locator": "cgroup cpu.stat: d(nr_throttled)/d(nr_periods)",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "throttle.time_rate",
@@ -400,7 +440,8 @@
    "non_negative": true,
    "locator": "cgroup cpu.stat: d(throttled_usec)/dt",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "throttle.quota_saturation",
@@ -425,7 +466,8 @@
     "cpu.usage.target",
     "throttle.quota_cores"
    ],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "net.drop.qdisc",
@@ -447,7 +489,8 @@
    "non_negative": true,
    "locator": "tc -s -j qdisc show dev <if> -> drops (target netns)",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "net.drop.iface_rx",
@@ -469,7 +512,8 @@
    "non_negative": true,
    "locator": "/sys/class/net/<if>/statistics/rx_dropped + rx_missed_errors + rx_fifo_errors",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "net.drop.iface_tx",
@@ -491,7 +535,8 @@
    "non_negative": true,
    "locator": "/sys/class/net/<if>/statistics/tx_dropped + tx_fifo_errors",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "net.err.iface",
@@ -513,7 +558,8 @@
    "non_negative": true,
    "locator": "/sys/class/net/<if>/statistics/rx_errors + tx_errors",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "net.drop.softnet",
@@ -535,7 +581,8 @@
    "non_negative": true,
    "locator": "/proc/net/softnet_stat column 2 (dropped), per CPU",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "net.drop.socket",
@@ -557,7 +604,8 @@
    "non_negative": true,
    "locator": "/proc/net/netstat TcpExt TCPBacklogDrop + TCPRcvQDrop (target netns)",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "net.drop.netfilter",
@@ -580,7 +628,8 @@
    "non_negative": true,
    "locator": "packet counters of declared lab netfilter/tc-police rules (FaultLab only)",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "net.drop.kfree_skb",
@@ -602,7 +651,12 @@
    "non_negative": true,
    "locator": "eBPF skb:kfree_skb by drop reason, filtered to target netns",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": {
+    "name": "reason",
+    "pattern": "^[A-Z0-9_]+$",
+    "values": null
+   }
   },
   {
    "id": "net.pkts.iface",
@@ -624,7 +678,8 @@
    "non_negative": true,
    "locator": "/sys/class/net/<if>/statistics/rx_packets + tx_packets",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "net.bytes.iface",
@@ -646,7 +701,8 @@
    "non_negative": true,
    "locator": "/sys/class/net/<if>/statistics/rx_bytes, tx_bytes",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "tcp.retrans_rate",
@@ -668,7 +724,8 @@
    "non_negative": true,
    "locator": "/proc/net/snmp Tcp: RetransSegs (parsed by header name)",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "tcp.retrans_frac",
@@ -690,7 +747,8 @@
    "non_negative": true,
    "locator": "d(RetransSegs)/d(OutSegs)",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "tcp.out_segs_rate",
@@ -712,7 +770,8 @@
    "non_negative": true,
    "locator": "/proc/net/snmp Tcp: OutSegs",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "tcp.timeouts_rate",
@@ -734,7 +793,8 @@
    "non_negative": true,
    "locator": "/proc/net/netstat TcpExt: TCPTimeouts",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "tcp.fast_retrans_rate",
@@ -756,7 +816,8 @@
    "non_negative": true,
    "locator": "/proc/net/netstat TcpExt: TCPFastRetrans",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "tcp.syn_retrans_rate",
@@ -778,7 +839,8 @@
    "non_negative": true,
    "locator": "/proc/net/netstat TcpExt: TCPSynRetrans",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "tcp.srtt_ms",
@@ -802,7 +864,8 @@
    "non_negative": true,
    "locator": "ss -tin rtt: srtt over target established sockets",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "tcp.cwnd",
@@ -825,7 +888,8 @@
    "non_negative": true,
    "locator": "ss -tin cwnd: median over sockets",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "softirq.frac.percpu",
@@ -847,7 +911,8 @@
    "non_negative": true,
    "locator": "/proc/stat cpuN softirq jiffies / total jiffies",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "softirq.net_rx_rate.percpu",
@@ -869,7 +934,8 @@
    "non_negative": true,
    "locator": "/proc/softirqs NET_RX column N",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "softirq.net_tx_rate.percpu",
@@ -891,7 +957,8 @@
    "non_negative": true,
    "locator": "/proc/softirqs NET_TX column N",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "softnet.time_squeeze.percpu",
@@ -913,7 +980,8 @@
    "non_negative": true,
    "locator": "/proc/net/softnet_stat column 3 (hex)",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "softnet.processed.percpu",
@@ -935,7 +1003,8 @@
    "non_negative": true,
    "locator": "/proc/net/softnet_stat column 1 (hex)",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "softirq.imbalance",
@@ -960,7 +1029,8 @@
    "derived_from": [
     "softirq.frac.percpu"
    ],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "softirq.relevant_cpu_max",
@@ -984,7 +1054,8 @@
    "derived_from": [
     "softirq.frac.percpu"
    ],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "mem.util.target",
@@ -1006,7 +1077,8 @@
    "non_negative": true,
    "locator": "cgroup memory.current / memory.max ('max' -> host MemTotal)",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "mem.available.host",
@@ -1028,7 +1100,8 @@
    "non_negative": true,
    "locator": "/proc/meminfo MemAvailable/MemTotal",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "psi.mem.some.target",
@@ -1050,7 +1123,8 @@
    "non_negative": true,
    "locator": "cgroup memory.pressure: some total",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "psi.mem.full.target",
@@ -1072,7 +1146,8 @@
    "non_negative": true,
    "locator": "cgroup memory.pressure: full total",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "psi.mem.some.host",
@@ -1094,7 +1169,8 @@
    "non_negative": true,
    "locator": "/proc/pressure/memory: some total",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "mem.reclaim.target",
@@ -1114,9 +1190,10 @@
    "privileged": false,
    "kind": "counter_rate",
    "non_negative": true,
-   "locator": "cgroup memory.stat d(pgscan) [pgsteal: see M1 report deviation D-2]",
+   "locator": "cgroup memory.stat Δ(pgscan)",
    "derived_from": [],
-   "description": ""
+   "description": "Reclaim effort: rate of pages scanned by reclaim (pgscan). pgsteal is not part of this feature.",
+   "dimension": null
   },
   {
    "id": "mem.reclaim_direct.host",
@@ -1138,7 +1215,8 @@
    "non_negative": true,
    "locator": "/proc/vmstat pgscan_direct",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "mem.refault.target",
@@ -1160,7 +1238,8 @@
    "non_negative": true,
    "locator": "memory.stat workingset_refault_anon + workingset_refault_file",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "mem.majfault.target",
@@ -1182,7 +1261,8 @@
    "non_negative": true,
    "locator": "memory.stat pgmajfault",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "mem.events.high",
@@ -1204,7 +1284,8 @@
    "non_negative": true,
    "locator": "cgroup memory.events: high",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "mem.events.oom_kill",
@@ -1226,7 +1307,8 @@
    "non_negative": true,
    "locator": "cgroup memory.events: oom_kill",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "mem.swap.target",
@@ -1248,7 +1330,8 @@
    "non_negative": true,
    "locator": "cgroup memory.swap.current",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "mem.swap_io.host",
@@ -1270,7 +1353,8 @@
    "non_negative": true,
    "locator": "/proc/vmstat pswpin, pswpout",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "app.latency_ms",
@@ -1293,7 +1377,8 @@
    "non_negative": true,
    "locator": "workload /metrics.json latency histogram",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "app.throughput",
@@ -1315,7 +1400,8 @@
    "non_negative": true,
    "locator": "workload completed requests",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "app.error_rate",
@@ -1337,7 +1423,8 @@
    "non_negative": true,
    "locator": "failed/total requests",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "app.queue_wait_ms",
@@ -1359,7 +1446,8 @@
    "non_negative": true,
    "locator": "admission -> worker start",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "app.pool_utilization",
@@ -1381,7 +1469,8 @@
    "non_negative": true,
    "locator": "busy workers / pool size",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "app.pool_rejections",
@@ -1403,7 +1492,8 @@
    "non_negative": true,
    "locator": "requests rejected because queue full",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "app.lock_wait_ms",
@@ -1425,7 +1515,8 @@
    "non_negative": true,
    "locator": "wait on instrumented lock",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "app.dependency_latency_ms",
@@ -1447,7 +1538,8 @@
    "non_negative": true,
    "locator": "instrumented downstream call latency",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": null
   },
   {
    "id": "app.events",
@@ -1469,7 +1561,17 @@
    "non_negative": true,
    "locator": "structured events, closed code set {POOL_EXHAUSTED, QUEUE_FULL, LOCK_WAIT_EXCEEDED, DEPENDENCY_TIMEOUT}",
    "derived_from": [],
-   "description": ""
+   "description": "",
+   "dimension": {
+    "name": "code",
+    "pattern": null,
+    "values": [
+     "POOL_EXHAUSTED",
+     "QUEUE_FULL",
+     "LOCK_WAIT_EXCEEDED",
+     "DEPENDENCY_TIMEOUT"
+    ]
+   }
   }
  ],
  "families": [

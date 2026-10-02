@@ -17,9 +17,15 @@ def _h(kind: str, **inputs) -> str:
     return hashlib.sha1(canonical_json({"kind": kind, **inputs}).encode("utf-8")).hexdigest()[:ID_LEN]
 
 
-def measurement_id(feature_id: str, scope: str, window) -> str:
-    """sha1(feature_id, scope, window) truncated to 16 hex (contract §10.3)."""
-    return _h("measurement", feature_id=feature_id, scope=scope, window=window)
+def measurement_id(feature_id: str, scope: str, window, qualifier=None) -> str:
+    """sha1(feature_id, scope, window[, qualifier]) truncated to 16 hex (contract §10.3).
+
+    v0.2.0 (R-3): the qualifier is part of identity when present. When absent the key is
+    omitted, so every unqualified id is byte-identical to v0.1.0.
+    """
+    if qualifier is None:
+        return _h("measurement", feature_id=feature_id, scope=scope, window=window)
+    return _h("measurement", feature_id=feature_id, scope=scope, window=window, qualifier=qualifier)
 
 
 def evidence_item_id(predicate_id: str, measurement_ids) -> str:

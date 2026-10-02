@@ -39,6 +39,29 @@ class ContractViolation(ValueError):
 
 
 # --------------------------------------------------------------------------- registry
+class DimensionSpec(BaseModel):
+    """A value dimension of a feature (v0.2.0, R-3): exactly one of a closed value set or a pattern."""
+    model_config = STRICT
+    name: str = Field(min_length=1)
+    pattern: Optional[str] = None
+    values: Optional[Tuple[str, ...]] = None
+
+    @model_validator(mode="after")
+    def _check(self):
+        if (self.pattern is None) == (self.values is None):
+            raise ValueError(f"dimension {self.name}: exactly one of pattern / values is required")
+        if self.values is not None and (not self.values or len(set(self.values)) != len(self.values)):
+            raise ValueError(f"dimension {self.name}: values must be a non-empty set")
+        if self.pattern is not None:
+            re.compile(self.pattern)
+        return self
+
+    def accepts(self, value: str) -> bool:
+        if self.values is not None:
+            return value in self.values
+        return re.fullmatch(self.pattern, value) is not None
+
+
 class FeatureSpec(BaseModel):
     model_config = STRICT
     id: str
@@ -55,6 +78,7 @@ class FeatureSpec(BaseModel):
     locator: str = Field(min_length=1)
     derived_from: Tuple[str, ...] = ()
     description: str
+    dimension: Optional[DimensionSpec] = None
 
     @model_validator(mode="after")
     def _check(self):
@@ -214,13 +238,27 @@ class PredicateCatalog(BaseModel):
     rationale_format: str
 
 
+class ParameterSpec(BaseModel):
+    """A symbolic contract parameter (v0.2.0, R-4): name and type only, never a value."""
+    model_config = STRICT
+    name: str = Field(min_length=1)
+    type: Literal["number", "reason_set"]
+
+
 class ParameterCatalog(BaseModel):
     model_config = STRICT
     contract_version: str
     status: Literal["UNCALIBRATED"]
-    parameters: Tuple[str, ...]
-    per_feature_parameters: Tuple[str, ...]
+    parameters: Tuple[ParameterSpec, ...]
+    per_feature_parameters: Tuple[ParameterSpec, ...]
     note: str
+
+    @model_validator(mode="after")
+    def _check(self):
+        names = [p.name for p in self.parameters + self.per_feature_parameters]
+        if len(names) != len(set(names)):
+            raise ValueError("duplicate parameter names")
+        return self
 
 
 class ParsedPredicate(BaseModel):
@@ -306,11 +344,17 @@ class Contract(BaseModel):
             strength="null" if strength is None else strength.value,
             observed="null" if observed is None else format_float(observed), threshold=thr)
 
-    def is_parameter(self, name: str) -> bool:
-        if name in self.parameters.parameters:
-            return True
+    def parameter_type(self, name: str) -> Optional[str]:
+        """Type of a contract parameter ('number' / 'reason_set'), or None if unknown."""
+        for p in self.parameters.parameters:
+            if p.name == name:
+                return p.type
         m = re.match(r"^(\w+)\[([a-z0-9_.]+)\]$", name)
-        return bool(m and m.group(1) in self.parameters.per_feature_parameters and self.registry.has(m.group(2)))
+        if m and self.registry.has(m.group(2)):
+            for p in self.parameters.per_feature_parameters:
+                if p.name == m.group(1):
+                    return p.type
+        return None
 
 
 def _load(name):

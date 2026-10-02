@@ -3,13 +3,21 @@
 | Field | Value |
 |---|---|
 | Contract ID | `sentinelai.evidence-contract` |
-| Version | **0.1.0-draft** (Phase 1C design; not yet implemented) |
+| Version | **0.2.0-draft** (pre-M2 correction of 0.1.0-draft; see the revision history below) |
 | Date | 2026-10-02 |
-| Status | DESIGN. Every numeric threshold is an **uncalibrated parameter** (§6). |
+| Status | DESIGN; schema implemented in M1 (schema version `0.2.0`). Every numeric threshold is an **uncalibrated parameter** (§6). |
 | Consumers | Deterministic rule engine, ML classifier, tests, and (later) the LLM orchestrator |
 | Normative keywords | **MUST**, **MUST NOT**, **SHOULD** and **MAY** carry their RFC 2119 meaning |
 
 This contract defines what SentinelAI may claim about a performance incident, and what evidence each claim requires. It is written so that two independent implementations given the same telemetry produce the same evidence items and the same diagnostic decision.
+
+
+### Revision history
+
+| Version | Change |
+|---|---|
+| 0.1.0-draft | Initial contract (implemented by M1, commit `33aed1b`) |
+| **0.2.0-draft** | Pre-M2 correction approved from `PHASE_1C_PRE_M2_AUDIT.md`:<br>**R-1** unlimited CPU quota represented by the new feature `throttle.quota_limited` (Unit `boolean`); CT.R1 now reads it (§4.2, §8.2).<br>**R-2** `mem.reclaim.target` defined as Δ`pgscan` only (§4.6).<br>**R-3** `Measurement.qualifier` for registry-declared dimensions (`kfree_skb` reason, `app.events` code) (§4.3, §4.7, §10.3, §10.5).<br>**R-4** every parameter is typed (`number` / `reason_set`), numeric thresholds reference `number` only; `τ_DISAGREE` added (§6).<br>**R-5** `DiagnosticResult.flags` (`IMPACT_NOT_MEASURED`, `ML_DISAGREEMENT`) (§10.6, §10.7).<br>Version number decided by the reviewer (see §12). |
 
 ---
 
@@ -109,7 +117,8 @@ All counters are converted to **rates per second** over the window, from deltas 
 
 | Feature ID | Source / locator | Scope | Unit | Aggregation | Avail. |
 |---|---|---|---|---|---|
-| `throttle.quota_cores` | cgroup `cpu.max` → quota/period. The literal `max` means **unlimited** (`null`). | cgroup | cores | gauge | A |
+| `throttle.quota_limited` | cgroup `cpu.max`: `max` → `0.0` (unlimited), `<quota> <period>` → `1.0` (finite quota) | cgroup | boolean | gauge | A |
+| `throttle.quota_cores` | cgroup `cpu.max` → quota/period. **Emitted only when a finite quota exists** (`throttle.quota_limited = 1`); never emitted, and never null, for an unlimited quota. | cgroup | cores | gauge | A |
 | `throttle.ratio` | cgroup `cpu.stat`: Δ`nr_throttled` / Δ`nr_periods` | cgroup | fraction 0–1 | over W | A |
 | `throttle.time_rate` | cgroup `cpu.stat`: Δ`throttled_usec` / Δt | cgroup | throttled-cores (s/s) | rate | A |
 | `throttle.quota_saturation` | **Derived:** `cpu.usage.target / throttle.quota_cores` | cgroup | fraction | over W | A (derived) |
@@ -125,7 +134,7 @@ All counters are converted to **rates per second** over the window, from deltas 
 | `net.drop.softnet` | `/proc/net/softnet_stat` column 2 (dropped), per CPU | cpu:N | packets/s | rate | A |
 | `net.drop.socket` | `/proc/net/netstat` TcpExt `TCPBacklogDrop` + `TCPRcvQDrop` (target netns) | netns | packets/s | rate | A |
 | `net.drop.netfilter` | Packet counters of declared lab netfilter/tc-police rules (FaultLab only) | netns | packets/s | rate | L |
-| `net.drop.kfree_skb` | eBPF `skb:kfree_skb`, **by drop reason**, filtered to the target netns | netns | packets/s per reason | rate | P |
+| `net.drop.kfree_skb` | eBPF `skb:kfree_skb`, **by drop reason**, filtered to the target netns. Each measurement carries a **qualifier** `reason` (pattern `^[A-Z0-9_]+$`); a total over reasons is not representable (§10.3). | netns | packets/s per reason | rate | P |
 | `net.pkts.iface` | `…/rx_packets` + `tx_packets` (denominator) | iface | packets/s | rate | A |
 | `net.bytes.iface` | `…/rx_bytes`, `tx_bytes` (throughput) | iface | bytes/s | rate | A |
 
@@ -163,7 +172,7 @@ All counters are converted to **rates per second** over the window, from deltas 
 | `psi.mem.some.target` | cgroup `memory.pressure` `some total` | cgroup | stall fraction | Δtotal / Δt | A |
 | `psi.mem.full.target` | cgroup `memory.pressure` `full total` | cgroup | stall fraction | Δtotal / Δt | A |
 | `psi.mem.some.host` | `/proc/pressure/memory` `some total` | host | stall fraction | Δtotal / Δt | A |
-| `mem.reclaim.target` | cgroup `memory.stat` Δ(`pgscan`), Δ(`pgsteal`) | cgroup | pages/s | rate | A |
+| `mem.reclaim.target` | cgroup `memory.stat` Δ(`pgscan`): reclaim effort. `pgsteal` is **not** part of this feature. | cgroup | pages/s | rate | A |
 | `mem.reclaim_direct.host` | `/proc/vmstat` `pgscan_direct` | host | pages/s | rate | A |
 | `mem.refault.target` | `memory.stat` `workingset_refault_anon` + `workingset_refault_file` | cgroup | pages/s | rate | A |
 | `mem.majfault.target` | `memory.stat` `pgmajfault` | cgroup | faults/s | rate | A |
@@ -186,7 +195,7 @@ These are the only application features SentinelAI may use. All are `L`: they ex
 | `app.pool_rejections` | Requests rejected because the queue was full | req/s | rate | L |
 | `app.lock_wait_ms` | Time waiting on the workload's instrumented lock | ms | p99 over W | L |
 | `app.dependency_latency_ms` | Latency of the instrumented downstream call | ms | p99 over W | L |
-| `app.events` | **Structured** log events with a closed set of codes (`POOL_EXHAUSTED`, `QUEUE_FULL`, `LOCK_WAIT_EXCEEDED`, `DEPENDENCY_TIMEOUT`), counted | events/s per code | rate | L |
+| `app.events` | **Structured** log events with a closed set of codes (`POOL_EXHAUSTED`, `QUEUE_FULL`, `LOCK_WAIT_EXCEEDED`, `DEPENDENCY_TIMEOUT`), counted. Each measurement carries a **qualifier** `code` from that closed set (§10.3). | events/s per code | rate | L |
 | (future) real-service metrics | Prometheus/OpenTelemetry from production services | — | — | F |
 
 `app.latency_ms` (p99) is the **impact signal**: it establishes that an incident exists. It is never by itself evidence for any root-cause label.
@@ -242,6 +251,9 @@ Every threshold is a named parameter. Values are set **only** by the calibration
 | `APP_WAIT_MIN`, `APP_SHARE_MIN` | Application queue/lock/dependency wait floor; minimum share of the latency increase explained by app-level wait | Calibration split |
 | `IMPACT_MIN` | Minimum `app.latency_ms` p99 deviation for an incident to exist | Calibration split |
 | `DOM_RATIO` | Dominance ratio used by precedence rules (§9) | Calibration split; `> 1` |
+| `τ_DISAGREE` | Calibrated ML probability at or above which an ML disagreement is flagged (design §5.4) | Calibration split (train only) |
+
+**Parameter types (v0.2.0).** Every parameter has a type: `KFREE_REASONS_LOSS` is `reason_set` (a set of kfree_skb reason names); all others, including the per-feature `floor_f`, are `number`. A numeric `Threshold` (§10.4) may reference only `number` parameters.
 
 ---
 
@@ -289,11 +301,11 @@ For each label: **Required** is necessary for assertion (all clauses). **Support
 *The target's cgroup is limited by its CFS quota and its waiting is explained by throttling, not by competing work.*
 
 - **Required:**
-  - **CT.R1** `throttle.quota_cores` is not null (a finite quota exists).
+  - **CT.R1** `throttle.quota_limited == 1` (a finite quota exists).
   - **CT.R2** `ABS(throttle.ratio, THR_RATIO_MIN)` is TRUE **and** `DEV(throttle.time_rate)` is TRUE.
 - **Supporting:** `ABS(throttle.quota_saturation, SAT_MIN)`; `sched.run_delay.target ≈ throttle.time_rate` (excess delay FALSE); impact (latency tail) above baseline while `cpu.util.host` is below `SAT_MIN`.
 - **Contradictory:** `DEV(sched.run_delay_excess.target)` TRUE means contention is also present (PR-3).
-- **Insufficient:** cgroup `cpu.stat` unavailable → MISSING. Quota `max` (unlimited) → CT.R1 FALSE, which is NEGATIVE.
+- **Insufficient:** cgroup `cpu.stat` unavailable → MISSING. Quota `max` (unlimited) → `throttle.quota_limited = 0` (quality OK) → CT.R1 FALSE, which is NEGATIVE. Only an unreadable `cpu.max` makes CT.R1 MISSING.
 - **Neutral:** `cpu.util.host` is **neither** supporting nor contradictory. A busy host does not make throttling more or less likely.
 
 ### 8.3 `softirq_overload`
@@ -425,9 +437,10 @@ All models are strict (`ConfigDict(extra="forbid", frozen=True)`). Times are UTC
   - `PROC`, `SYSFS`, `CGROUPFS`, `TC`, `SS`, `EBPF`, `APP_METRICS`, `APP_EVENTS`, `FAULTLAB_GROUND_TRUTH`, `DERIVED`, `PROMETHEUS` (future)
 - `Aggregation`: `RATE`, `MEAN`, `GAUGE`, `DELTA`, `RATIO`, `P50`, `P90`, `P99`, `MAX`
 - `Unit`:
-  - `fraction`, `cores`, `waiting_cores`, `per_second`, `packets_per_second`, `segments_per_second`, `events_per_second`, `pages_per_second`, `bytes`, `bytes_per_second`, `ms`, `count`, `ratio`
+  - `fraction`, `cores`, `waiting_cores`, `per_second`, `packets_per_second`, `segments_per_second`, `events_per_second`, `pages_per_second`, `bytes`, `bytes_per_second`, `ms`, `count`, `ratio`, `boolean` (values exactly `0.0` or `1.0`)
 - `CandidateStatus`: `ASSERTED`, `CONTRIBUTING`, `SUPPORTED_NOT_SUFFICIENT`, `CONTRADICTED`, `NOT_EVALUABLE`, `NOT_SUPPORTED`
 - `ConfidenceLevel`: `HIGH`, `MEDIUM`, `LOW`
+- `DiagnosticFlag` (v0.2.0): `IMPACT_NOT_MEASURED`, `ML_DISAGREEMENT`
 - `AbstentionReason`: listed in §8.8
 
 ### 10.2 `Provenance`
@@ -445,7 +458,7 @@ All models are strict (`ConfigDict(extra="forbid", frozen=True)`). Times are UTC
 ### 10.3 `Measurement`
 | Field | Type | Req. | Notes |
 |---|---|---|---|
-| `measurement_id` | str | ✓ | Deterministic: `sha1(feature_id, scope, window)` truncated to 16 hex |
+| `measurement_id` | str | ✓ | Deterministic: `sha1(feature_id, scope, window[, qualifier])` truncated to 16 hex. The qualifier is included only when present, so unqualified ids are unchanged from 0.1.0. |
 | `feature_id` | str (registry key) | ✓ | Must exist in the registry for `contract_version` |
 | `scope` | str | ✓ | §2 scope syntax |
 | `window` | `Window` | ✓ | |
@@ -457,6 +470,9 @@ All models are strict (`ConfigDict(extra="forbid", frozen=True)`). Times are UTC
 | `baseline` | `BaselineStat` \| null | ✓ | `null` only if no baseline is applicable |
 | `deviation` | `Deviation` \| null | ✓ | `null` iff value or baseline is null |
 | `provenance` | `Provenance` | ✓ | |
+| `qualifier` | `Qualifier` \| null | — | v0.2.0. `Qualifier` = {`dimension`, `value`}. **Required** iff the registry feature declares a dimension (`net.drop.kfree_skb` → `reason`, `app.events` → `code`); the dimension must match and the value must satisfy the declared pattern or closed set; **forbidden** otherwise. Omitted from serialisation when null. |
+
+A `boolean` measurement's value is exactly `0.0` or `1.0` (or null with MISSING/INVALID).
 
 `Window` = {`start`, `end`, `duration_s`, `sample_period_s`}. `BaselineStat` = {`method` ∈ {`within_run`, `reference`}, `window`, `median`, `mad`, `p99`, `n`, `adequate`: bool, `baseline_id`?}. `Deviation` = {`ratio`, `delta`, `robust_z`, `floor_used`}.
 
@@ -478,7 +494,7 @@ All models are strict (`ConfigDict(extra="forbid", frozen=True)`). Times are UTC
 ### 10.5 `EvidenceSnapshot`
 | Field | Type | Req. | Notes |
 |---|---|---|---|
-| `schema_version` | `"0.1.0"` | ✓ | |
+| `schema_version` | `"0.2.0"` | ✓ | |
 | `contract_version` | str | ✓ | |
 | `parameter_set_id` | str | ✓ | Hash of the calibrated parameter file |
 | `snapshot_id` | str | ✓ | Deterministic from target + window + inputs hash |
@@ -488,7 +504,7 @@ All models are strict (`ConfigDict(extra="forbid", frozen=True)`). Times are UTC
 | `baseline_window` | `Window` | ✓ | |
 | `measurements` | list[`Measurement`] | ✓ | |
 | `evidence_items` | list[`EvidenceItem`] | ✓ | |
-| `missing_measurements` | list[{`feature_id`, `scope`, `reason`}] | ✓ | Explicit; empty list if none |
+| `missing_measurements` | list[{`feature_id`, `scope`, `reason`, `qualifier`?}] | ✓ | Explicit; empty list if none. Identity is (`feature_id`, `scope`, `qualifier`). |
 | `conflicts` | list[{`labels`, `rule`, `item_ids`}] | ✓ | |
 | `data_quality` | `DataQuality` | ✓ | {`overall_coverage`, `sources_unavailable`, `privileged_sources_unavailable`, `baseline_adequate`, `counter_resets`, `gate_passed`: bool} |
 
@@ -505,6 +521,7 @@ All models are strict (`ConfigDict(extra="forbid", frozen=True)`). Times are UTC
 | `rules_fired` | list[str] | ✓ | |
 | `ml` | {`model_id`, `probabilities`: dict[Label, float], `calibrated`: bool, `agrees_with_rules`: bool} \| null | — | Advisory only (design §5) |
 | `engine` | {`contract_version`, `rules_version`, `parameter_set_id`, `code_commit`} | ✓ | |
+| `flags` | list[`DiagnosticFlag`] | — | v0.2.0, default empty, no duplicates. Diagnostic metadata about the decision of record; never abstention reasons, never engine info, never evaluation data. |
 
 ### 10.7 Invariants (validated by the schema and by tests)
 - **I1.** `abstained ⇔ decision = INSUFFICIENT_EVIDENCE ⇔ abstention_reasons ≠ ∅`.
@@ -514,6 +531,12 @@ All models are strict (`ConfigDict(extra="forbid", frozen=True)`). Times are UTC
 - **I5.** Every `measurement_ids` reference resolves, and every measurement's `feature_id` and `unit` match the registry.
 - **I6.** `application_bottleneck` ASSERTED implies at least one POSITIVE item from an `app.*` feature other than `app.latency_ms` or `app.error_rate`.
 - **I7.** Same inputs and parameter set give a byte-identical serialised result (sorted keys, fixed float formatting).
+
+Additional schema rules (v0.2.0; consistency checks, not diagnostic logic):
+- **Q1.** In a snapshot, `throttle.quota_limited = 0` must not coexist with a non-null `throttle.quota_cores` for the same scope.
+- **F1.** `IMPACT_NOT_MEASURED` ∈ `flags` ⇒ `confidence_level ≠ HIGH`.
+- **F2.** `ML_DISAGREEMENT` ∈ `flags` ⇒ `ml` is present ∧ `ml.agrees_with_rules = false`.
+- **U1.** Measurement identity within a snapshot is (`feature_id`, `scope`, `window`, `qualifier`).
 
 ### 10.8 Data quality
 - A sample with a negative counter delta is `INVALID`.
@@ -541,6 +564,7 @@ FaultLab ground truth (`FAULTLAB_GROUND_TRUTH`) **MUST NOT** appear in a snapsho
 ## 12. Versioning
 
 - The contract uses semantic versioning.
+- **0.2.0-draft governance note.** R-1 changes the Required clause CT.R1, which this section classifies as a major change. Because the contract is a pre-release draft whose only consumer is M1, the reviewer decided to release the pre-M2 correction as `0.2.0-draft` (schema `0.2.0`). Snapshots with `schema_version` other than `0.2.0` are rejected; there is no migration.
 - Adding a feature or parameter is a **minor** bump.
 - Changing a Required clause, the precedence table or a label is a **major** bump.
 - A snapshot records `contract_version`. An engine **MUST** reject snapshots of a different major version.

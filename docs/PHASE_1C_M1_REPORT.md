@@ -8,6 +8,8 @@
 | Commit | The single M1 commit (`feat(contract): implement phase1c evidence contract`). A commit cannot contain its own hash; the hash is reported in the handover message and by `git log`. |
 | Gate | **PASS WITH CONDITIONS** (§12) |
 
+> **Revision note (v0.2.0-draft).** Contract deviations D-1 … D-4 (§6) and gate condition 1 were resolved by the pre-M2 audit (`docs/PHASE_1C_PRE_M2_AUDIT.md`) and the contract revision `0.2.0-draft` (`docs/PHASE_1C_CONTRACT_REVISION_REPORT.md`). This report is otherwise kept as the M1 record (contract 0.1.0-draft, schema 0.1.0).
+
 ## 1. Objective
 
 Implement a versioned, strict, deterministic Python representation of the Phase 1C evidence contract: the feature registry, enumerations, strict Pydantic v2 models, invariants I1–I7, deterministic IDs, canonical serialisation and missing-data semantics, with a comprehensive unit test suite.

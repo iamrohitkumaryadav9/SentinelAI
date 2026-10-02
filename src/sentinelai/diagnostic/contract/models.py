@@ -9,13 +9,14 @@ import re
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Dict, Optional, Tuple
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field, PlainSerializer, field_validator, model_validator
+from pydantic import (AfterValidator, BaseModel, ConfigDict, Field, PlainSerializer, field_validator, model_serializer,
+                      model_validator)
 
 
 from . import ids
 from .catalog import load_contract
 from .enums import (FAULT_LABELS, AbstentionReason, Aggregation, BaselineMethod, CandidateStatus, ConfidenceLevel,
-                    EvidenceKind, Label, Quality, ScopeKind, SourceType, Strength, Unit)
+                    DiagnosticFlag, EvidenceKind, Label, Quality, ScopeKind, SourceType, Strength, Unit)
 from .serialize import format_timestamp
 from .version import SCHEMA_VERSION, require_compatible
 
@@ -138,6 +139,29 @@ class Provenance(BaseModel):
         return self
 
 
+# ============================================================================ qualifier
+class Qualifier(BaseModel):
+    """Value dimension of a measurement (v0.2.0, R-3), e.g. kfree_skb reason or app.events code."""
+    model_config = STRICT
+    dimension: NonEmptyStr
+    value: NonEmptyStr
+
+
+def _check_qualifier(feature_id, qualifier):
+    """Registry-governed: required iff the feature declares a dimension; must match it."""
+    spec = load_contract().registry.get(feature_id)
+    if spec.dimension is None:
+        if qualifier is not None:
+            raise ValueError(f"{feature_id} declares no dimension; a qualifier is not allowed")
+        return
+    if qualifier is None:
+        raise ValueError(f"{feature_id} requires a '{spec.dimension.name}' qualifier")
+    if qualifier.dimension != spec.dimension.name:
+        raise ValueError(f"{feature_id}: qualifier dimension must be '{spec.dimension.name}', got '{qualifier.dimension}'")
+    if not spec.dimension.accepts(qualifier.value):
+        raise ValueError(f"{feature_id}: '{qualifier.value}' is not a valid {spec.dimension.name}")
+
+
 # ============================================================================ measurement
 class Measurement(BaseModel):
     model_config = STRICT
@@ -153,11 +177,21 @@ class Measurement(BaseModel):
     baseline: Optional[BaselineStat]
     deviation: Optional[Deviation]
     provenance: Provenance
+    qualifier: Optional[Qualifier] = None
+
+    @model_serializer(mode="wrap")
+    def _ser(self, handler):
+        # An absent qualifier is omitted so unqualified measurements serialise exactly as in v0.1.0.
+        data = handler(self)
+        if data.get("qualifier") is None:
+            data.pop("qualifier", None)
+        return data
 
     @model_validator(mode="after")
     def _check(self):
         c = load_contract()
         spec = c.registry.get(self.feature_id)                      # I5: unknown feature -> error
+        _check_qualifier(self.feature_id, self.qualifier)
         if self.unit is not spec.unit:
             raise ValueError(f"I5: unit {self.unit} != registry unit {spec.unit} for {self.feature_id}")
         if self.aggregation not in spec.aggregations:
@@ -171,8 +205,8 @@ class Measurement(BaseModel):
             raise ValueError(f"source {pv.source} not a registered source of {self.feature_id}")
         if pv.privileged != spec.privileged:
             raise ValueError(f"provenance.privileged must be {spec.privileged} for {self.feature_id}")
-        if self.measurement_id != ids.measurement_id(self.feature_id, self.scope, self.window):
-            raise ValueError("measurement_id is not the deterministic id of (feature_id, scope, window)")
+        if self.measurement_id != ids.measurement_id(self.feature_id, self.scope, self.window, self.qualifier):
+            raise ValueError("measurement_id is not the deterministic id of (feature_id, scope, window, qualifier)")
         # missing / invalid semantics (contract §10.3, §10.8): never encode absence as a number
         if (self.value is None) != (self.quality in (Quality.MISSING, Quality.INVALID)):
             raise ValueError("value must be null exactly when quality is MISSING or INVALID")
@@ -187,6 +221,8 @@ class Measurement(BaseModel):
                              "must be recorded as quality INVALID with value null")
         if self.value is not None and self.unit is Unit.fraction and self.value > 1.0:
             raise ValueError("a fraction must lie in [0, 1]")
+        if self.value is not None and self.unit is Unit.boolean and self.value not in (0.0, 1.0):
+            raise ValueError("a boolean measurement must be exactly 0.0 or 1.0 (R-1)")
         # staleness (contract §10.8): last sample older than the window length
         if pv.last_sample_at > self.window.end:
             raise ValueError("provenance.last_sample_at is after the window end")
@@ -223,8 +259,11 @@ class Threshold(BaseModel):
     @field_validator("parameter")
     @classmethod
     def _known(cls, v):
-        if not load_contract().is_parameter(v):
+        t = load_contract().parameter_type(v)
+        if t is None:
             raise ValueError(f"unknown contract parameter {v!r}")
+        if t != "number":
+            raise ValueError(f"parameter {v!r} is of type {t}; a numeric Threshold may reference number parameters only (R-4)")
         return v
 
 
@@ -297,9 +336,18 @@ class MissingMeasurement(BaseModel):
     feature_id: str
     scope: str
     reason: NonEmptyStr
+    qualifier: Optional[Qualifier] = None
+
+    @model_serializer(mode="wrap")
+    def _ser(self, handler):
+        data = handler(self)
+        if data.get("qualifier") is None:
+            data.pop("qualifier", None)
+        return data
 
     @model_validator(mode="after")
     def _check(self):
+        _check_qualifier(self.feature_id, self.qualifier)
         spec = load_contract().registry.get(self.feature_id)
         if scope_kind(self.scope) not in spec.scope_kinds:
             raise ValueError(f"scope {self.scope!r} not allowed for {self.feature_id}")
@@ -367,10 +415,17 @@ class EvidenceSnapshot(BaseModel):
             for d in m.provenance.derived_from:
                 if d not in ms:
                     raise ValueError(f"I5: derived measurement {m.measurement_id} references unknown {d}")
-        listed = {(x.feature_id, x.scope) for x in self.missing_measurements}
+        listed = {(x.feature_id, x.scope, x.qualifier) for x in self.missing_measurements}
+        if len(listed) != len(self.missing_measurements):
+            raise ValueError("duplicate missing_measurements entries")
         for m in self.measurements:
-            if m.quality is Quality.MISSING and (m.feature_id, m.scope) not in listed:
+            if m.quality is Quality.MISSING and (m.feature_id, m.scope, m.qualifier) not in listed:
                 raise ValueError(f"MISSING measurement {m.feature_id}@{m.scope} must be listed in missing_measurements")
+        # R-1 consistency: an unlimited quota (quota_limited = 0) cannot coexist with a finite quota value.
+        unlimited = {m.scope for m in self.measurements if m.feature_id == "throttle.quota_limited" and m.value == 0.0}
+        for m in self.measurements:
+            if m.feature_id == "throttle.quota_cores" and m.value is not None and m.scope in unlimited:
+                raise ValueError(f"{m.scope}: throttle.quota_cores has a value but throttle.quota_limited = 0 (unlimited)")
         for it in self.evidence_items:
             p = c.parse_predicate(it.predicate_id)
             allowed = set(c.predicate_features(p))
@@ -475,9 +530,15 @@ class DiagnosticResult(BaseModel):
     rules_fired: Tuple[str, ...]
     ml: Optional[MLAdvisory] = None
     engine: EngineInfo
+    flags: Tuple[DiagnosticFlag, ...] = ()
 
     @model_validator(mode="after")
     def _check(self):
+        _no_dupes("flags", self.flags)
+        if DiagnosticFlag.IMPACT_NOT_MEASURED in self.flags and self.confidence_level is ConfidenceLevel.HIGH:
+            raise ValueError("IMPACT_NOT_MEASURED requires confidence_level != HIGH (contract §7)")
+        if DiagnosticFlag.ML_DISAGREEMENT in self.flags and (self.ml is None or self.ml.agrees_with_rules):
+            raise ValueError("ML_DISAGREEMENT requires an ml advisory with agrees_with_rules = false")
         if not HEX16.match(self.snapshot_id):
             raise ValueError("snapshot_id must be a deterministic 16-hex id")
         ins = self.decision is Label.INSUFFICIENT_EVIDENCE

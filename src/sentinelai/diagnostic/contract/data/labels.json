@@ -1,5 +1,5 @@
 {
- "contract_version": "0.1.0-draft",
+ "contract_version": "0.2.0-draft",
  "labels": {
   "cpu_contention": {
    "confusable": [
@@ -133,9 +133,9 @@
    "role": "required",
    "uses_baseline": false,
    "features": [
-    "throttle.quota_cores"
+    "throttle.quota_limited"
    ],
-   "definition": "throttle.quota_cores is finite (a quota exists)",
+   "definition": "a finite quota exists (throttle.quota_limited == 1)",
    "components": [
     {
      "type": "item",

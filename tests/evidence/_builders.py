@@ -48,17 +48,17 @@ def prov(feature_id, samples=10, last=None, derived_from=(), source=None):
 
 
 def meas(feature_id, scope, value=2.0, quality=Quality.OK, coverage=1.0, base="auto", dev="auto",
-         win=INC, aggregation=None, unit=None, provenance=None):
+         win=INC, aggregation=None, unit=None, provenance=None, qualifier=None):
     spec = C.registry.get(feature_id)
     b = baseline() if base == "auto" else base
     if dev == "auto":
         d = deviation_for(value, b) if (value is not None and b is not None) else None
     else:
         d = dev
-    return Measurement(measurement_id=measurement_id(feature_id, scope, win), feature_id=feature_id, scope=scope,
+    return Measurement(measurement_id=measurement_id(feature_id, scope, win, qualifier), feature_id=feature_id, scope=scope,
                        window=win, aggregation=aggregation or spec.aggregations[0], unit=unit or spec.unit,
                        value=value, quality=quality, coverage=coverage, baseline=b, deviation=d,
-                       provenance=provenance or prov(feature_id, samples=0 if value is None else 10))
+                       provenance=provenance or prov(feature_id, samples=0 if value is None else 10), qualifier=qualifier)
 
 
 def item(predicate_id, kind, measurements, supports=(), contradicts=(), strength="auto", observed=None,
@@ -87,10 +87,12 @@ def dq(**kw):
 
 def snapshot(measurements=(), items=(), missing=(), conflicts=(), target=TARGET, win=INC, base_win=BASE, **kw):
     measurements = tuple(measurements)
-    missing = tuple(missing) + tuple(MissingMeasurement(feature_id=m.feature_id, scope=m.scope, reason="unavailable")
+    missing = tuple(missing) + tuple(MissingMeasurement(feature_id=m.feature_id, scope=m.scope, reason="unavailable",
+                                                        qualifier=m.qualifier)
                                      for m in measurements if m.quality is Quality.MISSING
-                                     and (m.feature_id, m.scope) not in {(x.feature_id, x.scope) for x in missing})
-    fields = dict(schema_version="0.1.0", contract_version="0.1.0-draft", parameter_set_id=PARAM_SET,
+                                     and (m.feature_id, m.scope, m.qualifier) not in
+                                     {(x.feature_id, x.scope, x.qualifier) for x in missing})
+    fields = dict(schema_version="0.2.0", contract_version="0.2.0-draft", parameter_set_id=PARAM_SET,
                   snapshot_id=snapshot_id(target, win, measurements), incident_id=None, target=target, window=win,
                   baseline_window=base_win, measurements=measurements, evidence_items=tuple(items),
                   missing_measurements=missing, conflicts=tuple(conflicts), data_quality=dq())
@@ -109,7 +111,7 @@ def all_met(label):
     return tuple(c.clause_id for c in C.labels.required_clauses(label))
 
 
-ENGINE = EngineInfo(contract_version="0.1.0-draft", rules_version="test", parameter_set_id=PARAM_SET, code_commit="1a0f87b")
+ENGINE = EngineInfo(contract_version="0.2.0-draft", rules_version="test", parameter_set_id=PARAM_SET, code_commit="1a0f87b")
 
 
 def result(snap, decision=Label.INSUFFICIENT_EVIDENCE, cands=None, reasons=None, confidence=None, contributing=(),
