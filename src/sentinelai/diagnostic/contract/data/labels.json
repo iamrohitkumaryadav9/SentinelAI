@@ -1,0 +1,497 @@
+{
+ "contract_version": "0.1.0-draft",
+ "labels": {
+  "cpu_contention": {
+   "confusable": [
+    "cpu_throttling",
+    "softirq_overload"
+   ]
+  },
+  "cpu_throttling": {
+   "confusable": [
+    "cpu_contention"
+   ]
+  },
+  "softirq_overload": {
+   "confusable": [
+    "cpu_contention",
+    "network_packet_loss"
+   ]
+  },
+  "network_packet_loss": {
+   "confusable": [
+    "tcp_retransmissions",
+    "softirq_overload"
+   ]
+  },
+  "tcp_retransmissions": {
+   "confusable": [
+    "network_packet_loss"
+   ]
+  },
+  "memory_pressure": {
+   "confusable": [
+    "application_bottleneck"
+   ]
+  },
+  "application_bottleneck": {
+   "confusable": [
+    "memory_pressure",
+    "cpu_contention",
+    "cpu_throttling"
+   ],
+   "positive_evidence_features": [
+    "app.queue_wait_ms",
+    "app.lock_wait_ms",
+    "app.dependency_latency_ms",
+    "app.pool_rejections",
+    "app.events"
+   ],
+   "never_sufficient_features": [
+    "app.latency_ms",
+    "app.error_rate"
+   ]
+  }
+ },
+ "clauses": [
+  {
+   "clause_id": "CC.R1",
+   "label": "cpu_contention",
+   "role": "required",
+   "uses_baseline": true,
+   "features": [
+    "sched.run_delay_excess.target",
+    "sched.run_delay.target",
+    "throttle.time_rate"
+   ],
+   "definition": "DEV(sched.run_delay_excess.target): waiting beyond what quota throttling explains",
+   "components": [
+    {
+     "type": "item",
+     "sub": null,
+     "kind": "POSITIVE"
+    }
+   ]
+  },
+  {
+   "clause_id": "CC.R2",
+   "label": "cpu_contention",
+   "role": "required",
+   "uses_baseline": true,
+   "features": [
+    "cpu.util.cpuset",
+    "cpu.steal.cpuset"
+   ],
+   "definition": "ABS(cpu.util.cpuset, SAT_MIN) or DEV(cpu.steal.cpuset)",
+   "components": [
+    {
+     "type": "item",
+     "sub": null,
+     "kind": "POSITIVE"
+    }
+   ]
+  },
+  {
+   "clause_id": "CC.X1",
+   "label": "cpu_contention",
+   "role": "contradictory",
+   "uses_baseline": false,
+   "features": [
+    "throttle.ratio"
+   ],
+   "definition": "throttle.ratio >= THR_RATIO_MIN (resolved by PR-3)",
+   "components": [
+    {
+     "type": "item",
+     "sub": null,
+     "kind": "POSITIVE"
+    }
+   ]
+  },
+  {
+   "clause_id": "CC.X2",
+   "label": "cpu_contention",
+   "role": "contradictory",
+   "uses_baseline": false,
+   "features": [
+    "softirq.relevant_cpu_max",
+    "softirq.frac.percpu",
+    "cpu.util.cpuset"
+   ],
+   "definition": "softirq dominance on relevant CPUs, SI_SHARE_MIN met (resolved by PR-5)",
+   "components": [
+    {
+     "type": "item",
+     "sub": null,
+     "kind": "POSITIVE"
+    }
+   ]
+  },
+  {
+   "clause_id": "CT.R1",
+   "label": "cpu_throttling",
+   "role": "required",
+   "uses_baseline": false,
+   "features": [
+    "throttle.quota_cores"
+   ],
+   "definition": "throttle.quota_cores is finite (a quota exists)",
+   "components": [
+    {
+     "type": "item",
+     "sub": null,
+     "kind": "POSITIVE"
+    }
+   ]
+  },
+  {
+   "clause_id": "CT.R2",
+   "label": "cpu_throttling",
+   "role": "required",
+   "uses_baseline": true,
+   "features": [
+    "throttle.ratio",
+    "throttle.time_rate"
+   ],
+   "definition": "ABS(throttle.ratio, THR_RATIO_MIN) and DEV(throttle.time_rate)",
+   "components": [
+    {
+     "type": "item",
+     "sub": null,
+     "kind": "POSITIVE"
+    }
+   ]
+  },
+  {
+   "clause_id": "SI.R1",
+   "label": "softirq_overload",
+   "role": "required",
+   "uses_baseline": true,
+   "features": [
+    "softirq.relevant_cpu_max",
+    "softirq.frac.percpu"
+   ],
+   "definition": "ABS(softirq.relevant_cpu_max, SI_ABS_MIN) and DEV(softirq.frac.percpu) on the same CPU with ratio >= SI_RATIO_MIN",
+   "components": [
+    {
+     "type": "item",
+     "sub": null,
+     "kind": "POSITIVE"
+    }
+   ]
+  },
+  {
+   "clause_id": "SI.R2",
+   "label": "softirq_overload",
+   "role": "required",
+   "uses_baseline": true,
+   "features": [
+    "sched.run_delay_excess.target",
+    "psi.cpu.some.target"
+   ],
+   "definition": "impact on target: DEV(sched.run_delay_excess.target) or DEV(psi.cpu.some.target)",
+   "components": [
+    {
+     "type": "item",
+     "sub": null,
+     "kind": "POSITIVE"
+    }
+   ]
+  },
+  {
+   "clause_id": "PL.R1",
+   "label": "network_packet_loss",
+   "role": "required",
+   "uses_baseline": true,
+   "features": [
+    "net.drop.qdisc",
+    "net.drop.iface_rx",
+    "net.drop.iface_tx",
+    "net.err.iface",
+    "net.drop.softnet",
+    "net.drop.socket",
+    "net.drop.netfilter",
+    "net.drop.kfree_skb",
+    "net.pkts.iface"
+   ],
+   "definition": "LOSS.LOCAL: a local drop source exceeds DROP_ABS_MIN, deviates from baseline and DROP_FRAC_MIN",
+   "components": [
+    {
+     "type": "item",
+     "sub": null,
+     "kind": "POSITIVE"
+    }
+   ]
+  },
+  {
+   "clause_id": "RT.R0",
+   "label": "tcp_retransmissions",
+   "role": "required",
+   "uses_baseline": false,
+   "features": [
+    "tcp.out_segs_rate"
+   ],
+   "definition": "tcp.out_segs_rate >= SEG_MIN",
+   "components": [
+    {
+     "type": "item",
+     "sub": null,
+     "kind": "POSITIVE"
+    }
+   ]
+  },
+  {
+   "clause_id": "RT.R1",
+   "label": "tcp_retransmissions",
+   "role": "required",
+   "uses_baseline": true,
+   "features": [
+    "tcp.retrans_frac",
+    "tcp.retrans_rate",
+    "tcp.out_segs_rate",
+    "tcp.timeouts_rate"
+   ],
+   "definition": "ABS(tcp.retrans_frac, RT_FRAC_MIN) and DEV(tcp.retrans_frac); DEV(tcp.timeouts_rate) may substitute",
+   "components": [
+    {
+     "type": "item",
+     "sub": null,
+     "kind": "POSITIVE"
+    }
+   ]
+  },
+  {
+   "clause_id": "RT.R2",
+   "label": "tcp_retransmissions",
+   "role": "required",
+   "uses_baseline": true,
+   "features": [
+    "net.drop.qdisc",
+    "net.drop.iface_rx",
+    "net.drop.iface_tx",
+    "net.err.iface",
+    "net.drop.softnet",
+    "net.drop.socket",
+    "net.drop.netfilter",
+    "net.drop.kfree_skb",
+    "net.pkts.iface"
+   ],
+   "definition": "EVALUATED(min_local_drop_set) and LOSS.LOCAL is FALSE",
+   "components": [
+    {
+     "type": "item",
+     "sub": "EVALUATED",
+     "kind": "POSITIVE"
+    },
+    {
+     "type": "item",
+     "sub": "LOSS.LOCAL",
+     "kind": "NEGATIVE"
+    }
+   ]
+  },
+  {
+   "clause_id": "MP.R1",
+   "label": "memory_pressure",
+   "role": "required",
+   "uses_baseline": true,
+   "features": [
+    "psi.mem.some.target",
+    "mem.events.oom_kill",
+    "mem.reclaim.target",
+    "mem.refault.target",
+    "mem.majfault.target"
+   ],
+   "definition": "memory PSI above PSI_MEM_MIN and baseline, or oom_kill > 0, or reclaim with refault/majfault",
+   "components": [
+    {
+     "type": "item",
+     "sub": null,
+     "kind": "POSITIVE"
+    }
+   ]
+  },
+  {
+   "clause_id": "AB.R1",
+   "label": "application_bottleneck",
+   "role": "required",
+   "uses_baseline": true,
+   "features": [
+    "app.queue_wait_ms",
+    "app.lock_wait_ms",
+    "app.dependency_latency_ms",
+    "app.pool_rejections",
+    "app.events"
+   ],
+   "definition": "positive application-saturation predicate (queue/lock/dependency wait, pool rejections, closed-set events)",
+   "components": [
+    {
+     "type": "item",
+     "sub": null,
+     "kind": "POSITIVE"
+    }
+   ]
+  },
+  {
+   "clause_id": "AB.R2",
+   "label": "application_bottleneck",
+   "role": "required",
+   "uses_baseline": true,
+   "features": [
+    "app.latency_ms",
+    "app.queue_wait_ms",
+    "app.lock_wait_ms",
+    "app.dependency_latency_ms",
+    "app.pool_rejections",
+    "app.events"
+   ],
+   "definition": "application-level wait explains >= APP_SHARE_MIN of the p99 latency increase",
+   "components": [
+    {
+     "type": "item",
+     "sub": null,
+     "kind": "POSITIVE"
+    }
+   ]
+  },
+  {
+   "clause_id": "AB.R3",
+   "label": "application_bottleneck",
+   "role": "required",
+   "uses_baseline": false,
+   "features": [
+    "cpu.util.host",
+    "cpu.util.cpuset",
+    "cpu.util.percpu",
+    "cpu.steal.cpuset",
+    "cpu.usage.target",
+    "sched.run_delay.target",
+    "sched.run_delay.cpuset",
+    "sched.run_delay_excess.target",
+    "sched.nr_migrations.target",
+    "sched.involuntary_cs.target",
+    "sched.ctxt.host",
+    "sched.procs_running.host",
+    "psi.cpu.some.target",
+    "psi.cpu.some.host",
+    "sched.latency_hist.target",
+    "throttle.quota_cores",
+    "throttle.ratio",
+    "throttle.time_rate",
+    "throttle.quota_saturation",
+    "net.drop.qdisc",
+    "net.drop.iface_rx",
+    "net.drop.iface_tx",
+    "net.err.iface",
+    "net.drop.softnet",
+    "net.drop.socket",
+    "net.drop.netfilter",
+    "net.drop.kfree_skb",
+    "net.pkts.iface",
+    "net.bytes.iface",
+    "tcp.retrans_rate",
+    "tcp.retrans_frac",
+    "tcp.out_segs_rate",
+    "tcp.timeouts_rate",
+    "tcp.fast_retrans_rate",
+    "tcp.syn_retrans_rate",
+    "tcp.srtt_ms",
+    "tcp.cwnd",
+    "softirq.frac.percpu",
+    "softirq.net_rx_rate.percpu",
+    "softirq.net_tx_rate.percpu",
+    "softnet.time_squeeze.percpu",
+    "softnet.processed.percpu",
+    "softirq.imbalance",
+    "softirq.relevant_cpu_max",
+    "mem.util.target",
+    "mem.available.host",
+    "psi.mem.some.target",
+    "psi.mem.full.target",
+    "psi.mem.some.host",
+    "mem.reclaim.target",
+    "mem.reclaim_direct.host",
+    "mem.refault.target",
+    "mem.majfault.target",
+    "mem.events.high",
+    "mem.events.oom_kill",
+    "mem.swap.target",
+    "mem.swap_io.host"
+   ],
+   "definition": "infrastructure families EVALUATED and none of the six infrastructure labels assertable",
+   "components": [
+    {
+     "type": "item",
+     "sub": "EVALUATED",
+     "kind": "POSITIVE"
+    },
+    {
+     "type": "labels_not_asserted",
+     "labels": [
+      "cpu_contention",
+      "cpu_throttling",
+      "softirq_overload",
+      "network_packet_loss",
+      "tcp_retransmissions",
+      "memory_pressure"
+     ]
+    }
+   ]
+  }
+ ],
+ "precedence": [
+  {
+   "rule_id": "PR-1",
+   "labels": [
+    "network_packet_loss",
+    "tcp_retransmissions"
+   ],
+   "resolution": "primary network_packet_loss; contributing tcp_retransmissions"
+  },
+  {
+   "rule_id": "PR-2",
+   "labels": [
+    "softirq_overload",
+    "network_packet_loss"
+   ],
+   "resolution": "if all qualifying drops are softnet drops on softirq-saturated CPUs (or kfree_skb CPU_BACKLOG): primary softirq_overload; contributing network_packet_loss"
+  },
+  {
+   "rule_id": "PR-2b",
+   "labels": [
+    "softirq_overload",
+    "network_packet_loss"
+   ],
+   "resolution": "drops from any non-softnet source: CONFLICT_UNRESOLVED"
+  },
+  {
+   "rule_id": "PR-3",
+   "labels": [
+    "cpu_throttling",
+    "cpu_contention"
+   ],
+   "resolution": "primary = larger of throttle.time_rate and sched.run_delay_excess.target if larger >= DOM_RATIO x smaller; else conflict"
+  },
+  {
+   "rule_id": "PR-4",
+   "labels": [
+    "cpu_contention",
+    "cpu_throttling",
+    "softirq_overload",
+    "network_packet_loss",
+    "tcp_retransmissions",
+    "memory_pressure",
+    "application_bottleneck"
+   ],
+   "resolution": "application_bottleneck not assertable when any infrastructure label is assertable (AB.R3)"
+  },
+  {
+   "rule_id": "PR-5",
+   "labels": [
+    "softirq_overload",
+    "cpu_contention"
+   ],
+   "resolution": "primary softirq_overload if softirq share of busy time on relevant CPUs >= SI_SHARE_MIN; else cpu_contention if CC.R1 holds without the softirq CPUs; else conflict"
+  }
+ ]
+}

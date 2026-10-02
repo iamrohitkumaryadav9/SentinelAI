@@ -1,0 +1,26 @@
+{
+ "contract_version": "0.1.0-draft",
+ "primitives": {
+  "DEV": {
+   "uses_baseline": true,
+   "definition": "deviation predicate DEV(f, scope) (contract section 7)"
+  },
+  "ABS": {
+   "uses_baseline": false,
+   "definition": "absolute predicate ABS(f, theta) (contract section 7)"
+  },
+  "EVALUATED": {
+   "uses_baseline": false,
+   "definition": "completeness predicate EVALUATED(S): every feature in S is non-MISSING"
+  },
+  "LOSS.LOCAL": {
+   "uses_baseline": true,
+   "definition": "local-drop predicate LOSS.LOCAL (contract section 8.4)"
+  },
+  "IMPACT": {
+   "uses_baseline": true,
+   "definition": "impact gate: DEV(app.latency_ms p99) with ratio >= IMPACT_MIN"
+  }
+ },
+ "rationale_format": "{definition} [predicate={predicate_id}; kind={kind}; strength={strength}; observed={observed}; threshold={threshold}]"
+}

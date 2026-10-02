@@ -1,0 +1,1491 @@
+{
+ "registry_id": "sentinelai.feature-registry",
+ "contract_version": "0.1.0-draft",
+ "features": [
+  {
+   "id": "cpu.util.host",
+   "family": "cpu_sched",
+   "scope_kinds": [
+    "host"
+   ],
+   "unit": "fraction",
+   "contract_unit_text": "fraction 0–1",
+   "aggregations": [
+    "MEAN"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "gauge",
+   "non_negative": true,
+   "locator": "/proc/stat:cpu (user+nice+system+irq+softirq+steal)/total",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "cpu.util.cpuset",
+   "family": "cpu_sched",
+   "scope_kinds": [
+    "cpuset"
+   ],
+   "unit": "fraction",
+   "contract_unit_text": "fraction 0–1",
+   "aggregations": [
+    "MEAN"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "gauge",
+   "non_negative": true,
+   "locator": "/proc/stat:cpuN, N in target cpuset",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "cpu.util.percpu",
+   "family": "cpu_sched",
+   "scope_kinds": [
+    "cpu"
+   ],
+   "unit": "fraction",
+   "contract_unit_text": "fraction 0–1",
+   "aggregations": [
+    "MEAN"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "gauge",
+   "non_negative": true,
+   "locator": "/proc/stat:cpuN",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "cpu.steal.cpuset",
+   "family": "cpu_sched",
+   "scope_kinds": [
+    "cpuset"
+   ],
+   "unit": "fraction",
+   "contract_unit_text": "fraction 0–1",
+   "aggregations": [
+    "MEAN"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "gauge",
+   "non_negative": true,
+   "locator": "/proc/stat:cpuN steal/total, N in cpuset",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "cpu.usage.target",
+   "family": "cpu_sched",
+   "scope_kinds": [
+    "cgroup"
+   ],
+   "unit": "cores",
+   "contract_unit_text": "cores (CPU-s/s)",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "CGROUPFS"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "cgroup cpu.stat:usage_usec",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "sched.run_delay.target",
+   "family": "cpu_sched",
+   "scope_kinds": [
+    "cgroup"
+   ],
+   "unit": "waiting_cores",
+   "contract_unit_text": "waiting-cores (s/s)",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "/proc/<pid>/task/<tid>/schedstat field 2, summed over target threads",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "sched.run_delay.cpuset",
+   "family": "cpu_sched",
+   "scope_kinds": [
+    "cpuset"
+   ],
+   "unit": "waiting_cores",
+   "contract_unit_text": "waiting-cores",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "/proc/schedstat cpuN field 8, N in cpuset",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "sched.run_delay_excess.target",
+   "family": "cpu_sched",
+   "scope_kinds": [
+    "cgroup"
+   ],
+   "unit": "waiting_cores",
+   "contract_unit_text": "waiting-cores",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "DERIVED"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "derived",
+   "non_negative": true,
+   "locator": "max(0, sched.run_delay.target - throttle.time_rate)",
+   "derived_from": [
+    "sched.run_delay.target",
+    "throttle.time_rate"
+   ],
+   "description": ""
+  },
+  {
+   "id": "sched.nr_migrations.target",
+   "family": "cpu_sched",
+   "scope_kinds": [
+    "cgroup"
+   ],
+   "unit": "per_second",
+   "contract_unit_text": "migrations/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "/proc/<pid>/task/<tid>/sched:se.nr_migrations, summed",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "sched.involuntary_cs.target",
+   "family": "cpu_sched",
+   "scope_kinds": [
+    "cgroup"
+   ],
+   "unit": "per_second",
+   "contract_unit_text": "switches/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "/proc/<pid>/task/<tid>/status:nonvoluntary_ctxt_switches, summed",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "sched.ctxt.host",
+   "family": "cpu_sched",
+   "scope_kinds": [
+    "host"
+   ],
+   "unit": "per_second",
+   "contract_unit_text": "switches/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "/proc/stat:ctxt",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "sched.procs_running.host",
+   "family": "cpu_sched",
+   "scope_kinds": [
+    "host"
+   ],
+   "unit": "count",
+   "contract_unit_text": "tasks",
+   "aggregations": [
+    "MEAN"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "gauge",
+   "non_negative": true,
+   "locator": "/proc/stat:procs_running",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "psi.cpu.some.target",
+   "family": "cpu_sched",
+   "scope_kinds": [
+    "cgroup"
+   ],
+   "unit": "fraction",
+   "contract_unit_text": "stall fraction 0–1",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "CGROUPFS"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "cgroup cpu.pressure: some total (us)",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "psi.cpu.some.host",
+   "family": "cpu_sched",
+   "scope_kinds": [
+    "host"
+   ],
+   "unit": "fraction",
+   "contract_unit_text": "stall fraction 0–1",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "/proc/pressure/cpu: some total",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "sched.latency_hist.target",
+   "family": "cpu_sched",
+   "scope_kinds": [
+    "cgroup"
+   ],
+   "unit": "ms",
+   "contract_unit_text": "ms (p50/p99)",
+   "aggregations": [
+    "P50",
+    "P99"
+   ],
+   "sources": [
+    "EBPF"
+   ],
+   "availability": "P",
+   "privileged": true,
+   "kind": "percentile",
+   "non_negative": true,
+   "locator": "eBPF sched_wakeup -> sched_switch histogram",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "throttle.quota_cores",
+   "family": "cpu_throttling",
+   "scope_kinds": [
+    "cgroup"
+   ],
+   "unit": "cores",
+   "contract_unit_text": "cores",
+   "aggregations": [
+    "GAUGE"
+   ],
+   "sources": [
+    "CGROUPFS"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "gauge",
+   "non_negative": true,
+   "locator": "cgroup cpu.max -> quota/period; literal 'max' means unlimited (not representable in v0.1.0: M1 report deviation D-1)",
+   "derived_from": [],
+   "description": "Finite CFS quota in cores."
+  },
+  {
+   "id": "throttle.ratio",
+   "family": "cpu_throttling",
+   "scope_kinds": [
+    "cgroup"
+   ],
+   "unit": "fraction",
+   "contract_unit_text": "fraction 0–1",
+   "aggregations": [
+    "RATIO"
+   ],
+   "sources": [
+    "CGROUPFS"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "ratio",
+   "non_negative": true,
+   "locator": "cgroup cpu.stat: d(nr_throttled)/d(nr_periods)",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "throttle.time_rate",
+   "family": "cpu_throttling",
+   "scope_kinds": [
+    "cgroup"
+   ],
+   "unit": "cores",
+   "contract_unit_text": "throttled-cores (s/s)",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "CGROUPFS"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "cgroup cpu.stat: d(throttled_usec)/dt",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "throttle.quota_saturation",
+   "family": "cpu_throttling",
+   "scope_kinds": [
+    "cgroup"
+   ],
+   "unit": "fraction",
+   "contract_unit_text": "fraction",
+   "aggregations": [
+    "RATIO"
+   ],
+   "sources": [
+    "DERIVED"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "derived",
+   "non_negative": true,
+   "locator": "cpu.usage.target / throttle.quota_cores",
+   "derived_from": [
+    "cpu.usage.target",
+    "throttle.quota_cores"
+   ],
+   "description": ""
+  },
+  {
+   "id": "net.drop.qdisc",
+   "family": "network_drops",
+   "scope_kinds": [
+    "iface"
+   ],
+   "unit": "packets_per_second",
+   "contract_unit_text": "packets/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "TC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "tc -s -j qdisc show dev <if> -> drops (target netns)",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "net.drop.iface_rx",
+   "family": "network_drops",
+   "scope_kinds": [
+    "iface"
+   ],
+   "unit": "packets_per_second",
+   "contract_unit_text": "packets/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "SYSFS"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "/sys/class/net/<if>/statistics/rx_dropped + rx_missed_errors + rx_fifo_errors",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "net.drop.iface_tx",
+   "family": "network_drops",
+   "scope_kinds": [
+    "iface"
+   ],
+   "unit": "packets_per_second",
+   "contract_unit_text": "packets/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "SYSFS"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "/sys/class/net/<if>/statistics/tx_dropped + tx_fifo_errors",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "net.err.iface",
+   "family": "network_drops",
+   "scope_kinds": [
+    "iface"
+   ],
+   "unit": "packets_per_second",
+   "contract_unit_text": "packets/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "SYSFS"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "/sys/class/net/<if>/statistics/rx_errors + tx_errors",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "net.drop.softnet",
+   "family": "network_drops",
+   "scope_kinds": [
+    "cpu"
+   ],
+   "unit": "packets_per_second",
+   "contract_unit_text": "packets/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "/proc/net/softnet_stat column 2 (dropped), per CPU",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "net.drop.socket",
+   "family": "network_drops",
+   "scope_kinds": [
+    "netns"
+   ],
+   "unit": "packets_per_second",
+   "contract_unit_text": "packets/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "/proc/net/netstat TcpExt TCPBacklogDrop + TCPRcvQDrop (target netns)",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "net.drop.netfilter",
+   "family": "network_drops",
+   "scope_kinds": [
+    "netns"
+   ],
+   "unit": "packets_per_second",
+   "contract_unit_text": "packets/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "TC",
+    "PROC"
+   ],
+   "availability": "L",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "packet counters of declared lab netfilter/tc-police rules (FaultLab only)",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "net.drop.kfree_skb",
+   "family": "network_drops",
+   "scope_kinds": [
+    "netns"
+   ],
+   "unit": "packets_per_second",
+   "contract_unit_text": "packets/s per reason",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "EBPF"
+   ],
+   "availability": "P",
+   "privileged": true,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "eBPF skb:kfree_skb by drop reason, filtered to target netns",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "net.pkts.iface",
+   "family": "network_drops",
+   "scope_kinds": [
+    "iface"
+   ],
+   "unit": "packets_per_second",
+   "contract_unit_text": "packets/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "SYSFS"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "/sys/class/net/<if>/statistics/rx_packets + tx_packets",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "net.bytes.iface",
+   "family": "network_drops",
+   "scope_kinds": [
+    "iface"
+   ],
+   "unit": "bytes_per_second",
+   "contract_unit_text": "bytes/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "SYSFS"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "/sys/class/net/<if>/statistics/rx_bytes, tx_bytes",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "tcp.retrans_rate",
+   "family": "network_tcp",
+   "scope_kinds": [
+    "netns"
+   ],
+   "unit": "segments_per_second",
+   "contract_unit_text": "segments/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "/proc/net/snmp Tcp: RetransSegs (parsed by header name)",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "tcp.retrans_frac",
+   "family": "network_tcp",
+   "scope_kinds": [
+    "netns"
+   ],
+   "unit": "fraction",
+   "contract_unit_text": "fraction",
+   "aggregations": [
+    "RATIO"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "ratio",
+   "non_negative": true,
+   "locator": "d(RetransSegs)/d(OutSegs)",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "tcp.out_segs_rate",
+   "family": "network_tcp",
+   "scope_kinds": [
+    "netns"
+   ],
+   "unit": "segments_per_second",
+   "contract_unit_text": "segments/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "/proc/net/snmp Tcp: OutSegs",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "tcp.timeouts_rate",
+   "family": "network_tcp",
+   "scope_kinds": [
+    "netns"
+   ],
+   "unit": "events_per_second",
+   "contract_unit_text": "events/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "/proc/net/netstat TcpExt: TCPTimeouts",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "tcp.fast_retrans_rate",
+   "family": "network_tcp",
+   "scope_kinds": [
+    "netns"
+   ],
+   "unit": "events_per_second",
+   "contract_unit_text": "events/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "/proc/net/netstat TcpExt: TCPFastRetrans",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "tcp.syn_retrans_rate",
+   "family": "network_tcp",
+   "scope_kinds": [
+    "netns"
+   ],
+   "unit": "events_per_second",
+   "contract_unit_text": "events/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "/proc/net/netstat TcpExt: TCPSynRetrans",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "tcp.srtt_ms",
+   "family": "network_tcp",
+   "scope_kinds": [
+    "socket",
+    "netns"
+   ],
+   "unit": "ms",
+   "contract_unit_text": "ms",
+   "aggregations": [
+    "P50",
+    "P90"
+   ],
+   "sources": [
+    "SS"
+   ],
+   "availability": "A*",
+   "privileged": false,
+   "kind": "percentile",
+   "non_negative": true,
+   "locator": "ss -tin rtt: srtt over target established sockets",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "tcp.cwnd",
+   "family": "network_tcp",
+   "scope_kinds": [
+    "socket",
+    "netns"
+   ],
+   "unit": "count",
+   "contract_unit_text": "segments",
+   "aggregations": [
+    "P50"
+   ],
+   "sources": [
+    "SS"
+   ],
+   "availability": "A*",
+   "privileged": false,
+   "kind": "percentile",
+   "non_negative": true,
+   "locator": "ss -tin cwnd: median over sockets",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "softirq.frac.percpu",
+   "family": "softirq",
+   "scope_kinds": [
+    "cpu"
+   ],
+   "unit": "fraction",
+   "contract_unit_text": "fraction 0–1",
+   "aggregations": [
+    "RATIO"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "ratio",
+   "non_negative": true,
+   "locator": "/proc/stat cpuN softirq jiffies / total jiffies",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "softirq.net_rx_rate.percpu",
+   "family": "softirq",
+   "scope_kinds": [
+    "cpu"
+   ],
+   "unit": "events_per_second",
+   "contract_unit_text": "events/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "/proc/softirqs NET_RX column N",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "softirq.net_tx_rate.percpu",
+   "family": "softirq",
+   "scope_kinds": [
+    "cpu"
+   ],
+   "unit": "events_per_second",
+   "contract_unit_text": "events/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "/proc/softirqs NET_TX column N",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "softnet.time_squeeze.percpu",
+   "family": "softirq",
+   "scope_kinds": [
+    "cpu"
+   ],
+   "unit": "events_per_second",
+   "contract_unit_text": "events/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "/proc/net/softnet_stat column 3 (hex)",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "softnet.processed.percpu",
+   "family": "softirq",
+   "scope_kinds": [
+    "cpu"
+   ],
+   "unit": "packets_per_second",
+   "contract_unit_text": "packets/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "/proc/net/softnet_stat column 1 (hex)",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "softirq.imbalance",
+   "family": "softirq",
+   "scope_kinds": [
+    "cpuset",
+    "host"
+   ],
+   "unit": "ratio",
+   "contract_unit_text": "ratio",
+   "aggregations": [
+    "RATIO"
+   ],
+   "sources": [
+    "DERIVED"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "derived",
+   "non_negative": true,
+   "locator": "max_N / median_N of softirq.frac.percpu over relevant CPUs",
+   "derived_from": [
+    "softirq.frac.percpu"
+   ],
+   "description": ""
+  },
+  {
+   "id": "softirq.relevant_cpu_max",
+   "family": "softirq",
+   "scope_kinds": [
+    "cpuset"
+   ],
+   "unit": "fraction",
+   "contract_unit_text": "fraction",
+   "aggregations": [
+    "MAX"
+   ],
+   "sources": [
+    "DERIVED"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "derived",
+   "non_negative": true,
+   "locator": "max softirq.frac.percpu over CPUs the target ran on",
+   "derived_from": [
+    "softirq.frac.percpu"
+   ],
+   "description": ""
+  },
+  {
+   "id": "mem.util.target",
+   "family": "memory",
+   "scope_kinds": [
+    "cgroup"
+   ],
+   "unit": "fraction",
+   "contract_unit_text": "fraction",
+   "aggregations": [
+    "MEAN"
+   ],
+   "sources": [
+    "CGROUPFS"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "gauge",
+   "non_negative": true,
+   "locator": "cgroup memory.current / memory.max ('max' -> host MemTotal)",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "mem.available.host",
+   "family": "memory",
+   "scope_kinds": [
+    "host"
+   ],
+   "unit": "fraction",
+   "contract_unit_text": "fraction",
+   "aggregations": [
+    "MEAN"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "gauge",
+   "non_negative": true,
+   "locator": "/proc/meminfo MemAvailable/MemTotal",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "psi.mem.some.target",
+   "family": "memory",
+   "scope_kinds": [
+    "cgroup"
+   ],
+   "unit": "fraction",
+   "contract_unit_text": "stall fraction",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "CGROUPFS"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "cgroup memory.pressure: some total",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "psi.mem.full.target",
+   "family": "memory",
+   "scope_kinds": [
+    "cgroup"
+   ],
+   "unit": "fraction",
+   "contract_unit_text": "stall fraction",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "CGROUPFS"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "cgroup memory.pressure: full total",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "psi.mem.some.host",
+   "family": "memory",
+   "scope_kinds": [
+    "host"
+   ],
+   "unit": "fraction",
+   "contract_unit_text": "stall fraction",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "/proc/pressure/memory: some total",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "mem.reclaim.target",
+   "family": "memory",
+   "scope_kinds": [
+    "cgroup"
+   ],
+   "unit": "pages_per_second",
+   "contract_unit_text": "pages/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "CGROUPFS"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "cgroup memory.stat d(pgscan) [pgsteal: see M1 report deviation D-2]",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "mem.reclaim_direct.host",
+   "family": "memory",
+   "scope_kinds": [
+    "host"
+   ],
+   "unit": "pages_per_second",
+   "contract_unit_text": "pages/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "/proc/vmstat pgscan_direct",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "mem.refault.target",
+   "family": "memory",
+   "scope_kinds": [
+    "cgroup"
+   ],
+   "unit": "pages_per_second",
+   "contract_unit_text": "pages/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "CGROUPFS"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "memory.stat workingset_refault_anon + workingset_refault_file",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "mem.majfault.target",
+   "family": "memory",
+   "scope_kinds": [
+    "cgroup"
+   ],
+   "unit": "per_second",
+   "contract_unit_text": "faults/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "CGROUPFS"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "memory.stat pgmajfault",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "mem.events.high",
+   "family": "memory",
+   "scope_kinds": [
+    "cgroup"
+   ],
+   "unit": "events_per_second",
+   "contract_unit_text": "events/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "CGROUPFS"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "cgroup memory.events: high",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "mem.events.oom_kill",
+   "family": "memory",
+   "scope_kinds": [
+    "cgroup"
+   ],
+   "unit": "count",
+   "contract_unit_text": "events (count in W)",
+   "aggregations": [
+    "DELTA"
+   ],
+   "sources": [
+    "CGROUPFS"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "event_count",
+   "non_negative": true,
+   "locator": "cgroup memory.events: oom_kill",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "mem.swap.target",
+   "family": "memory",
+   "scope_kinds": [
+    "cgroup"
+   ],
+   "unit": "bytes",
+   "contract_unit_text": "bytes",
+   "aggregations": [
+    "GAUGE"
+   ],
+   "sources": [
+    "CGROUPFS"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "gauge",
+   "non_negative": true,
+   "locator": "cgroup memory.swap.current",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "mem.swap_io.host",
+   "family": "memory",
+   "scope_kinds": [
+    "host"
+   ],
+   "unit": "pages_per_second",
+   "contract_unit_text": "pages/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "PROC"
+   ],
+   "availability": "A",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "/proc/vmstat pswpin, pswpout",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "app.latency_ms",
+   "family": "application",
+   "scope_kinds": [
+    "app"
+   ],
+   "unit": "ms",
+   "contract_unit_text": "ms",
+   "aggregations": [
+    "P50",
+    "P99"
+   ],
+   "sources": [
+    "APP_METRICS"
+   ],
+   "availability": "L",
+   "privileged": false,
+   "kind": "percentile",
+   "non_negative": true,
+   "locator": "workload /metrics.json latency histogram",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "app.throughput",
+   "family": "application",
+   "scope_kinds": [
+    "app"
+   ],
+   "unit": "per_second",
+   "contract_unit_text": "req/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "APP_METRICS"
+   ],
+   "availability": "L",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "workload completed requests",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "app.error_rate",
+   "family": "application",
+   "scope_kinds": [
+    "app"
+   ],
+   "unit": "fraction",
+   "contract_unit_text": "fraction",
+   "aggregations": [
+    "RATIO"
+   ],
+   "sources": [
+    "APP_METRICS"
+   ],
+   "availability": "L",
+   "privileged": false,
+   "kind": "ratio",
+   "non_negative": true,
+   "locator": "failed/total requests",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "app.queue_wait_ms",
+   "family": "application",
+   "scope_kinds": [
+    "app"
+   ],
+   "unit": "ms",
+   "contract_unit_text": "ms",
+   "aggregations": [
+    "P99"
+   ],
+   "sources": [
+    "APP_METRICS"
+   ],
+   "availability": "L",
+   "privileged": false,
+   "kind": "percentile",
+   "non_negative": true,
+   "locator": "admission -> worker start",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "app.pool_utilization",
+   "family": "application",
+   "scope_kinds": [
+    "app"
+   ],
+   "unit": "fraction",
+   "contract_unit_text": "fraction",
+   "aggregations": [
+    "MEAN"
+   ],
+   "sources": [
+    "APP_METRICS"
+   ],
+   "availability": "L",
+   "privileged": false,
+   "kind": "gauge",
+   "non_negative": true,
+   "locator": "busy workers / pool size",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "app.pool_rejections",
+   "family": "application",
+   "scope_kinds": [
+    "app"
+   ],
+   "unit": "per_second",
+   "contract_unit_text": "req/s",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "APP_METRICS"
+   ],
+   "availability": "L",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "requests rejected because queue full",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "app.lock_wait_ms",
+   "family": "application",
+   "scope_kinds": [
+    "app"
+   ],
+   "unit": "ms",
+   "contract_unit_text": "ms",
+   "aggregations": [
+    "P99"
+   ],
+   "sources": [
+    "APP_METRICS"
+   ],
+   "availability": "L",
+   "privileged": false,
+   "kind": "percentile",
+   "non_negative": true,
+   "locator": "wait on instrumented lock",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "app.dependency_latency_ms",
+   "family": "application",
+   "scope_kinds": [
+    "app"
+   ],
+   "unit": "ms",
+   "contract_unit_text": "ms",
+   "aggregations": [
+    "P99"
+   ],
+   "sources": [
+    "APP_METRICS"
+   ],
+   "availability": "L",
+   "privileged": false,
+   "kind": "percentile",
+   "non_negative": true,
+   "locator": "instrumented downstream call latency",
+   "derived_from": [],
+   "description": ""
+  },
+  {
+   "id": "app.events",
+   "family": "application",
+   "scope_kinds": [
+    "app"
+   ],
+   "unit": "events_per_second",
+   "contract_unit_text": "events/s per code",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "APP_EVENTS"
+   ],
+   "availability": "L",
+   "privileged": false,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "structured events, closed code set {POOL_EXHAUSTED, QUEUE_FULL, LOCK_WAIT_EXCEEDED, DEPENDENCY_TIMEOUT}",
+   "derived_from": [],
+   "description": ""
+  }
+ ],
+ "families": [
+  "cpu_sched",
+  "cpu_throttling",
+  "network_drops",
+  "network_tcp",
+  "softirq",
+  "memory",
+  "application"
+ ],
+ "named_sets": {
+  "min_local_drop_set": [
+   "net.drop.qdisc",
+   "net.drop.iface_rx",
+   "net.drop.iface_tx"
+  ]
+ }
+}

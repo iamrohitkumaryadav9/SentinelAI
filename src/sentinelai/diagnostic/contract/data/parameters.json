@@ -1,0 +1,38 @@
+{
+ "contract_version": "0.1.0-draft",
+ "status": "UNCALIBRATED",
+ "parameters": [
+  "W",
+  "B",
+  "N_BASE_MIN",
+  "COV_MIN",
+  "Z_STRONG",
+  "Z_MODERATE",
+  "R_STRONG",
+  "R_MODERATE",
+  "DROP_ABS_MIN",
+  "DROP_FRAC_MIN",
+  "KFREE_REASONS_LOSS",
+  "RT_FRAC_MIN",
+  "RT_RATE_MIN",
+  "SEG_MIN",
+  "THR_RATIO_MIN",
+  "THR_TIME_MIN",
+  "RDX_MIN",
+  "SAT_MIN",
+  "SI_ABS_MIN",
+  "SI_RATIO_MIN",
+  "SI_SHARE_MIN",
+  "PSI_MEM_MIN",
+  "RECLAIM_MIN",
+  "REFAULT_MIN",
+  "APP_WAIT_MIN",
+  "APP_SHARE_MIN",
+  "IMPACT_MIN",
+  "DOM_RATIO"
+ ],
+ "per_feature_parameters": [
+  "floor"
+ ],
+ "note": "Symbolic names only. No values are defined in M1 (contract section 6)."
+}
