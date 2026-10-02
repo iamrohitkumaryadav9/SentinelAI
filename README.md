@@ -8,12 +8,13 @@ SentinelAI will detect, diagnose, mitigate and verify performance incidents (CPU
 
 ## Current phase
 
-**Phase 1A: reproducible development foundation.** This phase covers Docker access, an isolated Python environment, the compiler and eBPF toolchain, safety checks and baseline validation. No SentinelAI application code exists yet.
+**Phase 1B (local LLM selection) is complete and awaiting review.** Phase 1A built the foundation; Phase 1B benchmarked local models (`experiments/llm_benchmark/`). No SentinelAI application code exists yet.
 
 | Phase | Status | Report |
 |---|---|---|
 | 0: Infrastructure audit | Done (GO) | [docs/PHASE_0_EVALUATION.md](docs/PHASE_0_EVALUATION.md) |
-| 1A: Foundation | See report | [docs/PHASE_1A_EVALUATION.md](docs/PHASE_1A_EVALUATION.md) |
+| 1A: Foundation | GO WITH CONDITIONS | [docs/PHASE_1A_EVALUATION.md](docs/PHASE_1A_EVALUATION.md) |
+| 1B: Local LLM selection | GO WITH CONDITIONS: primary qwen3.5:9b, secondary qwen3:8b (near-tie; reviewer confirmation pending) | [docs/PHASE_1B_EVALUATION.md](docs/PHASE_1B_EVALUATION.md) |
 
 ## Hardware constraints (verified)
 
