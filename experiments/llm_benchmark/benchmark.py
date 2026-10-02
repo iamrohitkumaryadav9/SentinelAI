@@ -43,6 +43,7 @@ MIN_MEM_GIB = 2.0          # abort benchmark below this
 REQUEST_TIMEOUT_S = 300    # per inference request
 CONTEXT_TIMEOUT_S = 900    # per long-context request
 DEFAULT_CTX = 4096
+THINK_BUDGET = 1024       # extra num_predict for thinking-only models (protocol deviation D1)
 BASE_OPTIONS = {"temperature": 0, "seed": 42}
 GIB = 1024 ** 3
 
@@ -272,6 +273,7 @@ class Run:
         others = [m for m in loaded_models() if m != self.model]
         row = {"timestamp": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
                "suite": suite, "item": item_id, "model": self.model, "model_digest": self.digest,
+               "think_mode": self.think,
                **self.env, "other_models_resident": others, **rec, **(extra or {})}
         with open(self.dir / f"{suite}.jsonl", "a") as f:
             f.write(json.dumps(row) + "\n")
@@ -283,15 +285,37 @@ class Run:
             raise RamFloorBreached(f"MemAvailable fell below {MIN_MEM_GIB} GiB during {suite}/{item_id}")
 
     def chat(self, messages, **kw):
+        if self.think:
+            opts = dict(kw.pop("options", {}) or {})
+            opts["num_predict"] = opts.get("num_predict", 256) + THINK_BUDGET
+            kw["options"] = opts
         return chat(self.model, messages, think=self.think, **kw)
 
     # -- suites ---------------------------------------------------------------
+    def probe_thinking(self):
+        """Evidence-based thinking mode (D1): if think=false yields a direct answer, benchmark
+        non-thinking; if the model reasons anyway (thinking-only), use its native thinking mode."""
+        if "thinking" not in self.caps:
+            self.think, self.think_probe = None, {"result": "no thinking capability"}
+            return
+        r = chat(self.model, [{"role": "user", "content": "What is 17*3? Answer with just the number."}],
+                 think=False, options={"num_predict": 64})
+        direct = r["status"] == "ok" and r["content"].strip().rstrip(".") == "51"
+        self.think = False if direct else True
+        self.think_probe = {"think_false_content": r["content"][:200], "output_tokens": r["output_tokens"],
+                            "direct_answer": direct, "chosen_think": self.think,
+                            "finetune": self.info.get("model_info", {}).get("general.finetune"),
+                            "version": self.info.get("model_info", {}).get("general.version")}
+
     def warmup(self):
         unload_all_except(self.model)
+        self.probe_thinking()
+        print(f"   thinking probe: {self.think_probe}", flush=True)
         rec = self.chat([{"role": "user", "content": "Reply with the single word: ready"}],
                         options={"num_predict": 8})
         runner_cmd = [" ".join(p.cmdline()) for p in runner_processes()]
         self.record("warmup", "load", rec, {"desktop": desktop_state(), "capabilities": self.caps,
+                                            "think": self.think, "think_probe": self.think_probe,
                                             "runner_cmdline": runner_cmd, "show_details": self.info.get("details"),
                                             "model_info_ctx": {k: v for k, v in self.info.get("model_info", {}).items()
                                                                if k.endswith((".context_length", ".block_count"))}})
@@ -418,8 +442,9 @@ class Run:
     SUITES = ("generation", "knowledge", "evidence", "structured", "tools", "agent", "context")
 
     def run(self, suites):
-        print(f"== {self.model} digest={self.digest} caps={self.caps} think={self.think}", flush=True)
+        print(f"== {self.model} digest={self.digest} caps={self.caps}", flush=True)
         self.warmup()
+        print(f"   think mode = {self.think}", flush=True)
         try:
             for s in suites:
                 getattr(self, s)()

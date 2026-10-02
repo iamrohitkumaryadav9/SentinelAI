@@ -1,0 +1,149 @@
+{
+  "weights": {
+    "agent": 0.3,
+    "tools": 0.25,
+    "evidence": 0.15,
+    "structured": 0.15,
+    "knowledge": 0.1,
+    "generation": 0.05
+  },
+  "gates": {
+    "stability_fail_rate_max": 0.05,
+    "peak_rss_gib_max": 8.0,
+    "gen_tok_s_min": 5.0,
+    "tool_success_min": 0.75,
+    "hallucinated_tool_max": 0.05,
+    "constrained_schema_valid_min": 0.95,
+    "evidence_norm_min": 0.6
+  },
+  "decision": {
+    "primary": null,
+    "secondary": null,
+    "baseline": "gemma3:1b",
+    "verdict": "FAIL",
+    "reason": "no model passed all hard gates"
+  },
+  "models": [
+    {
+      "model": "gemma3:1b",
+      "digest": "8648f39daa8fbf5b18c7b4e6a8fb4990c692751d49917417b8842ca5758e7ffc",
+      "capabilities": [
+        "completion"
+      ],
+      "desktop_at_start": {
+        "chrome_rss_mib": 3406,
+        "vscode_server_rss_mib": 1152,
+        "claude_rss_mib": 510,
+        "gnome_shell_rss_mib": 311,
+        "ollama_runner_rss_mib": 896,
+        "mem_available_mib": 9057,
+        "swap_used_mib": 1
+      },
+      "runner_cmdline": [
+        "/usr/local/lib/ollama/llama-server --model /usr/share/ollama/.ollama/models/blobs/sha256-7cd4618c1faf8b7233c6c906dac1694b6a47684b37b8895d470ac688520b9c01 --port 39139 --host 127.0.0.1 --no-webui --offline -c 4096 -np 1 --log-verbosity 4 --no-log-prefix --no-log-timestamps --no-jinja --chat-template chatml --load-mode none --flash-attn auto -b 512 -ub 512 --context-shift --keep 4"
+      ],
+      "load_duration_s": 1.054,
+      "generation": {
+        "n": 15,
+        "mean": 0.8,
+        "norm": 0.4
+      },
+      "knowledge": {
+        "n": 10,
+        "mean": 1.1,
+        "norm": 0.55
+      },
+      "evidence": {
+        "insufficient_n": 6,
+        "insufficient_abstained": 1,
+        "confident_unsupported": 5,
+        "control_n": 2,
+        "control_correct": 2,
+        "control_overcautious": 0,
+        "format_ok": 8,
+        "fabricated_number_responses": 1,
+        "abstention_rate": 0.167,
+        "unsupported_claim_rate": 0.833,
+        "mean": 0.75,
+        "norm": 0.375
+      },
+      "structured_prompt": {
+        "n": 25,
+        "valid_json_rate": 0.0,
+        "schema_valid_rate": 0.0,
+        "missing_field_rate": 0.0,
+        "extra_field_rate": 0.0,
+        "parse_failure_rate": 1.0,
+        "markdown_fenced_rate": 1.0,
+        "lenient_schema_valid_rate": 0.8,
+        "semantic_correct_rate": 0.0,
+        "failed_requests": 0,
+        "mean": 0,
+        "norm": 0.0
+      },
+      "structured_constrained": {
+        "n": 0,
+        "valid_json_rate": 0.0,
+        "schema_valid_rate": 0.0,
+        "missing_field_rate": 0.0,
+        "extra_field_rate": 0.0,
+        "parse_failure_rate": 0.0,
+        "markdown_fenced_rate": 0.0,
+        "lenient_schema_valid_rate": 0.0,
+        "semantic_correct_rate": 0.0,
+        "failed_requests": 0,
+        "mean": 0.0,
+        "norm": 0.0
+      },
+      "tools": {
+        "supported": false,
+        "norm": 0.0
+      },
+      "agent": {
+        "supported": false,
+        "norm": 0.0
+      },
+      "context": {},
+      "perf": {
+        "gen_tok_s_median": 58.84,
+        "gen_tok_s_min": 55.87,
+        "gen_tok_s_max": 61.63,
+        "prompt_tok_s_median": 373.7,
+        "ttft_s_median": 0.29,
+        "wall_s_median_generation": 4.21,
+        "output_tokens_median_generation": 220,
+        "agent_turn_wall_s_median": null,
+        "peak_runner_rss_mib_4k": 1380,
+        "min_mem_available_mib": 8640,
+        "system_cpu_pct_mean_generation": 34.4,
+        "system_cpu_pct_max_generation": 45.5,
+        "runner_cpu_pct_mean_generation": 800.4
+      },
+      "stability": {
+        "requests": 58,
+        "failed": 0,
+        "fail_rate": 0.0,
+        "by_status": {},
+        "unsupported_requests": 0
+      },
+      "quality_components": {
+        "agent": 0.0,
+        "tools": 0.0,
+        "evidence": 0.375,
+        "structured": 0.0,
+        "knowledge": 0.55,
+        "generation": 0.4
+      },
+      "Q": 0.1313,
+      "gates": {
+        "G1_stability": true,
+        "G2_memory": true,
+        "G3_speed": true,
+        "G4_tools": false,
+        "G5_structured": false,
+        "G6_evidence": false
+      },
+      "eligible": false
+    }
+  ]
+}

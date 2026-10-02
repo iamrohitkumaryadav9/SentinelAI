@@ -1,0 +1,2 @@
+model,size_gb,peak_rss_gib_4k,gen_tok_s,prompt_tok_s,ttft_s,tool_success,arg_validity,json_valid_prompt,schema_valid_prompt,schema_valid_constrained,structured_semantic_constrained,knowledge_norm,generation_norm,evidence_norm,agent_norm,agent_success,agent_median_wall_s,fail_rate,Q,eligible,failed_gates
+gemma3:1b,0.82,1.35,58.84,373.7,0.29,,,0.0,0.0,0.0,0.0,0.55,0.4,0.375,0.0,,,0.0,0.1313,False,"G4_tools,G5_structured,G6_evidence"

@@ -1,0 +1,67 @@
+{
+  "models": {
+    "gemma3:1b": {
+      "model": "gemma3:1b",
+      "ollama_tag": "gemma3:1b",
+      "downloaded_in_phase": "pre-existing",
+      "digest": "8648f39daa8fbf5b18c7b4e6a8fb4990c692751d49917417b8842ca5758e7ffc",
+      "size_bytes": 815319791,
+      "modified_at": "2026-02-26T12:07:36.64524371+05:30",
+      "details": {
+        "parent_model": "",
+        "format": "gguf",
+        "family": "gemma3",
+        "families": [
+          "gemma3"
+        ],
+        "parameter_size": "999.89M",
+        "quantization_level": "Q4_K_M",
+        "context_length": 32768,
+        "embedding_length": 1152
+      },
+      "capabilities": [
+        "completion"
+      ],
+      "license_first_line": "Gemma Terms of Use ",
+      "ollama_version": "0.35.0"
+    },
+    "qwen3:4b": {
+      "model": "qwen3:4b",
+      "ollama_tag": "qwen3:4b",
+      "expected_size_bytes": 2497293444,
+      "before": {
+        "disk_free_gib": 139.31,
+        "mem_available_mib": 10132
+      },
+      "after": {
+        "disk_free_gib": 136.99,
+        "mem_available_mib": 10100
+      },
+      "download_seconds": 32,
+      "downloaded_in_phase": "1B",
+      "download_date": "2026-10-02",
+      "digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+      "size_bytes": 2497293931,
+      "modified_at": "2026-10-02T14:28:20.337604276+05:30",
+      "details": {
+        "parent_model": "",
+        "format": "gguf",
+        "family": "qwen3",
+        "families": [
+          "qwen3"
+        ],
+        "parameter_size": "4.0B",
+        "quantization_level": "Q4_K_M",
+        "context_length": 262144,
+        "embedding_length": 2560
+      },
+      "capabilities": [
+        "completion",
+        "tools",
+        "thinking"
+      ],
+      "license_first_line": "Apache License",
+      "ollama_version": "0.35.0"
+    }
+  }
+}

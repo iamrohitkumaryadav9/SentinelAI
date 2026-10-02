@@ -1,0 +1,59 @@
+model,suite,item,score,note
+gemma3:1b,generation,G1_simple_reasoning#r0,1,ok
+gemma3:1b,generation,G1_simple_reasoning#r1,2,ok
+gemma3:1b,generation,G1_simple_reasoning#r2,2,ok
+gemma3:1b,generation,G2_systems_reasoning#r0,0,ok
+gemma3:1b,generation,G2_systems_reasoning#r1,0,ok
+gemma3:1b,generation,G2_systems_reasoning#r2,0,ok
+gemma3:1b,generation,G3_debugging#r0,0,ok
+gemma3:1b,generation,G3_debugging#r1,1,ok
+gemma3:1b,generation,G3_debugging#r2,0,ok
+gemma3:1b,generation,G4_code_reasoning#r0,0,ok
+gemma3:1b,generation,G4_code_reasoning#r1,0,ok
+gemma3:1b,generation,G4_code_reasoning#r2,0,ok
+gemma3:1b,generation,G5_structured_analysis#r0,2,ok
+gemma3:1b,generation,G5_structured_analysis#r1,2,ok
+gemma3:1b,generation,G5_structured_analysis#r2,2,ok
+gemma3:1b,knowledge,K1_sched_switch,1,ok
+gemma3:1b,knowledge,K2_softirq,0,ok
+gemma3:1b,knowledge,K3_net_sched,1,ok
+gemma3:1b,knowledge,K4_cpu_throttling,1,ok
+gemma3:1b,knowledge,K5_cgroup,2,ok
+gemma3:1b,knowledge,K6_tcp_retx,2,ok
+gemma3:1b,knowledge,K7_p99,0,ok
+gemma3:1b,knowledge,K8_psi,1,ok
+gemma3:1b,knowledge,K9_tp_vs_kprobe,1,ok
+gemma3:1b,knowledge,K10_k8s_req_limit,2,ok
+gemma3:1b,evidence,E01,0,asserted: high cpu utilization is likely the primary driver.
+gemma3:1b,evidence,E02,2,"abstained, 3 evidence groups"
+gemma3:1b,evidence,E03,0,asserted: database query performance
+gemma3:1b,evidence,E04,0,asserted: potential memory leak or resource contention is likely causi
+gemma3:1b,evidence,E05,0,asserted: potential hardware failure or a software glitch causing a re
+gemma3:1b,evidence,E06,0,asserted: network congestion or a temporary bottleneck in the tcp conn
+gemma3:1b,evidence,C01,2,correct
+gemma3:1b,evidence,C02,2,correct | unprompted numbers ['2GB']
+gemma3:1b,structured_prompt,D01,0,parse failure
+gemma3:1b,structured_prompt,D02,0,parse failure
+gemma3:1b,structured_prompt,D03,0,parse failure
+gemma3:1b,structured_prompt,D04,0,parse failure
+gemma3:1b,structured_prompt,D05,0,parse failure
+gemma3:1b,structured_prompt,D06,0,parse failure
+gemma3:1b,structured_prompt,D07,0,parse failure
+gemma3:1b,structured_prompt,D08,0,parse failure
+gemma3:1b,structured_prompt,D09,0,parse failure
+gemma3:1b,structured_prompt,D10,0,parse failure
+gemma3:1b,structured_prompt,D11,0,parse failure
+gemma3:1b,structured_prompt,D12,0,parse failure
+gemma3:1b,structured_prompt,D13,0,parse failure
+gemma3:1b,structured_prompt,D14,0,parse failure
+gemma3:1b,structured_prompt,D15,0,parse failure
+gemma3:1b,structured_prompt,D16,0,parse failure
+gemma3:1b,structured_prompt,D17,0,parse failure
+gemma3:1b,structured_prompt,D18,0,parse failure
+gemma3:1b,structured_prompt,D19,0,parse failure
+gemma3:1b,structured_prompt,D20,0,parse failure
+gemma3:1b,structured_prompt,D21,0,parse failure
+gemma3:1b,structured_prompt,D22,0,parse failure
+gemma3:1b,structured_prompt,D23,0,parse failure
+gemma3:1b,structured_prompt,D24,0,parse failure
+gemma3:1b,structured_prompt,D25,0,parse failure
