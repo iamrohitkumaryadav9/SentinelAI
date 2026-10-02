@@ -1,0 +1,4 @@
+{
+ "description": "Interfaces the qdisc collector must never run tc against, in addition to every physical interface (detected generically from sysfs). Read-only collection; this list is defence in depth.",
+ "protected": ["enp0s31f6"]
+}

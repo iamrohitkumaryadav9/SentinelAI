@@ -8,10 +8,12 @@ Bad(MALFORMED). Parsing is delegated to the pure functions in ``parsers``.
 from typing import Dict, Optional, Union
 
 from ..diagnostic.contract import Target
+from .commands.tc import physical_or_unknown
 from .errors import Bad, ParseError, Status
 from .parsers import cgroup as pc
 from .parsers import proc as pp
 from .parsers import sysfs as ps
+from .parsers import tc as ptc
 
 IFACE_FIELDS = ("rx_dropped", "rx_missed_errors", "rx_fifo_errors", "tx_dropped", "tx_fifo_errors",
                 "rx_errors", "tx_errors", "rx_packets", "tx_packets", "rx_bytes", "tx_bytes")
@@ -110,6 +112,29 @@ def _iface(reader, ifname):
     return out
 
 
+def _qdisc(reader, ifname):
+    """net.drop.qdisc source: cumulative drops of the interface's single root qdisc (contract §4.3).
+    A qdisc tree (several qdiscs) has no aggregation defined by the contract and is not resolved."""
+    refused = physical_or_unknown(reader, ifname)
+    if refused is not None:
+        return refused
+    text = reader.tc_qdisc(ifname)
+    if isinstance(text, Bad):
+        return text
+    try:
+        qs = ptc.qdiscs(text)
+    except ParseError as exc:
+        return Bad(Status.MALFORMED, str(exc))
+    if not qs:
+        return Bad(Status.ABSENT, "tc reported no qdisc")
+    if len(qs) > 1:
+        return Bad(Status.UNVERIFIED, f"{len(qs)} qdiscs on {ifname}: the contract defines no aggregation "
+                                      "for a qdisc tree")
+    if not qs[0].root:
+        return Bad(Status.MALFORMED, "single qdisc is not the root qdisc")
+    return {"drops": float(qs[0].drops)}
+
+
 def _tasks(reader, pids):
     """Per-thread counters of the target: {'run_delay'|'nr_migrations'|'nonvol'|'processor': {tid: v}}."""
     files = (("run_delay", "schedstat", pp.task_schedstat), ("nr_migrations", "sched", pp.task_sched_migrations),
@@ -178,6 +203,7 @@ def sample(reader, target: Target) -> Obs:
                         "swap": swap if isinstance(swap, Bad) else float(swap)}
     for ifname in target.ifaces:
         obs[f"sys.net.{ifname}"] = _iface(reader, ifname)
+        obs[f"tc.{ifname}"] = _qdisc(reader, ifname)
     return obs
 
 

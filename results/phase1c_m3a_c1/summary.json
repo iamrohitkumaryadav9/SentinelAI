@@ -1,0 +1,123 @@
+{
+ "abstention_reasons": [
+  "REQUIRED_EVIDENCE_MISSING"
+ ],
+ "candidates": {
+  "application_bottleneck": "SUPPORTED_NOT_SUFFICIENT",
+  "cpu_contention": "NOT_SUPPORTED",
+  "cpu_throttling": "NOT_EVALUABLE",
+  "memory_pressure": "NOT_SUPPORTED",
+  "network_packet_loss": "NOT_SUPPORTED",
+  "softirq_overload": "NOT_SUPPORTED",
+  "tcp_retransmissions": "NOT_SUPPORTED"
+ },
+ "command": [
+  "/usr/sbin/tc -s -j qdisc show dev lo",
+  "/usr/sbin/tc -s -j qdisc show dev docker0"
+ ],
+ "data_quality": {
+  "baseline_adequate": true,
+  "counter_resets": 0,
+  "gate_passed": true,
+  "overall_coverage": 0.9727272727272728,
+  "privileged_sources_unavailable": [
+   "EBPF"
+  ],
+  "sources_unavailable": [
+   "APP_EVENTS",
+   "APP_METRICS",
+   "SS"
+  ]
+ },
+ "decision": "INSUFFICIENT_EVIDENCE",
+ "flags": [
+  "IMPACT_NOT_MEASURED"
+ ],
+ "interfaces": [
+  "lo",
+  "docker0"
+ ],
+ "loss_and_rt_r2_items": [
+  [
+   "PL.R1/LOSS.LOCAL[net.drop.iface_rx]",
+   "NEGATIVE"
+  ],
+  [
+   "PL.R1/LOSS.LOCAL[net.drop.iface_tx]",
+   "NEGATIVE"
+  ],
+  [
+   "PL.R1/LOSS.LOCAL[net.drop.qdisc]",
+   "NEGATIVE"
+  ],
+  [
+   "PL.R1/LOSS.LOCAL[net.drop.socket]",
+   "NEGATIVE"
+  ],
+  [
+   "PL.R1/LOSS.LOCAL[net.drop.softnet]",
+   "NEGATIVE"
+  ],
+  [
+   "PL.R1/LOSS.LOCAL[net.err.iface]",
+   "NEGATIVE"
+  ],
+  [
+   "RT.R2/EVALUATED[min_local_drop_set]",
+   "POSITIVE"
+  ],
+  [
+   "RT.R2/LOSS.LOCAL",
+   "NEGATIVE"
+  ]
+ ],
+ "measurements": 220,
+ "net.drop.qdisc": [
+  {
+   "baseline": {
+    "adequate": true,
+    "median": 0.0,
+    "n": 45
+   },
+   "coverage": 1.0,
+   "locator": "tc -s -j qdisc show dev lo -> drops (single root qdisc)",
+   "measurement_id": "690ae32486bc38cf",
+   "quality": "OK",
+   "scope": "iface:self/lo",
+   "source": "TC",
+   "value": 0.0
+  },
+  {
+   "baseline": {
+    "adequate": true,
+    "median": 0.0,
+    "n": 45
+   },
+   "coverage": 1.0,
+   "locator": "tc -s -j qdisc show dev docker0 -> drops (single root qdisc)",
+   "measurement_id": "726b61df80c9eed2",
+   "quality": "OK",
+   "scope": "iface:self/docker0",
+   "source": "TC",
+   "value": 0.0
+  }
+ ],
+ "note": "uncalibrated test values; no diagnostic meaning",
+ "parameters": "UNCALIBRATED-m3a-smoke-test-values",
+ "perf": {
+  "cpu_s": 1.0304,
+  "max_rss_kb": 37632,
+  "max_tick_read_ms": 39.01,
+  "wall_s": 55.021
+ },
+ "physical_nic_request": {
+  "commands_executed": 0,
+  "detail": "interface 'enp0s31f6' is protected",
+  "status": "refused"
+ },
+ "qdisc_configuration_unchanged": true,
+ "quality": {
+  "MISSING": 7,
+  "OK": 213
+ }
+}

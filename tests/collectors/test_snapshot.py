@@ -39,7 +39,7 @@ class TestContract(unittest.TestCase):
         avail = {f.id for f in REG.features if f.availability in ("A", "A*")}
         self.assertLessEqual(avail, set(collected_features()) | set(NOT_COLLECTED))   # every A/A* feature accounted
         self.assertLessEqual(set(collected_features()), avail)                     # only A features collected
-        self.assertEqual(avail - set(collected_features()), {"net.drop.qdisc", "tcp.srtt_ms", "tcp.cwnd"})
+        self.assertEqual(avail - set(collected_features()), {"tcp.srtt_ms", "tcp.cwnd"})   # M3A-C1: qdisc collected
         self.assertFalse(set(collected_features()) & set(NOT_COLLECTED))
         listed = {(x.feature_id, x.scope) for x in self.s.missing_measurements}
         for f in NOT_COLLECTED:
@@ -67,7 +67,8 @@ class TestContract(unittest.TestCase):
         self.assertEqual(self.s.window.duration_s, float(NW))
         self.assertEqual(self.s.baseline_window.end, self.s.window.start)
         self.assertEqual(self.s.data_quality.privileged_sources_unavailable, ("EBPF",))
-        self.assertIn("TC", self.s.data_quality.sources_unavailable)
+        self.assertNotIn("TC", self.s.data_quality.sources_unavailable)       # M3A-C1: qdisc collected
+        self.assertIn("SS", self.s.data_quality.sources_unavailable)
 
 
 class TestDeterminism(unittest.TestCase):
@@ -95,6 +96,7 @@ class TestDeterminism(unittest.TestCase):
             def read(self, p): return w.reader(clock._i).read(p)
             def listdir(self, p): return w.reader(clock._i).listdir(p)
             def readlink(self, p): return w.reader(clock._i).readlink(p)
+            def tc_qdisc(self, i): return w.reader(clock._i).tc_qdisc(i)
 
         snap, stats = collect_snapshot(TARGET, params(), StepReader(), clock)
         self.assertEqual(stats.ticks, NB + NW + 1)

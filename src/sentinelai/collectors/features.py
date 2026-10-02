@@ -20,7 +20,7 @@ from ..diagnostic.contract import SourceType, Target
 from .errors import Bad, Status
 from .probes import IFACE_FIELDS, cgroup_dir, get, netns_pid
 
-COLLECTOR_VERSION = "m3a-1.0.0"
+COLLECTOR_VERSION = "m3a-1.1.0"
 
 
 @dataclass(frozen=True)
@@ -133,7 +133,7 @@ def _saturation(d, dt):
 def build(target: Target, cpus: Tuple[int, ...], cpuset: Tuple[int, ...], relevant: Tuple[int, ...],
           emit_quota: bool) -> Tuple[Calc, ...]:
     """All attempted measurements for this target. cpus: every CPU observed on the host."""
-    P, D, CG_, SY = SourceType.PROC, SourceType.DERIVED, SourceType.CGROUPFS, SourceType.SYSFS
+    P, D, CG_, SY, TC = SourceType.PROC, SourceType.DERIVED, SourceType.CGROUPFS, SourceType.SYSFS, SourceType.TC
     cg = cgroup_dir(target)
     CG, NS = f"cgroup:{target.cgroup_path}", f"netns:{target.name}"
     pid = netns_pid(target)
@@ -277,12 +277,14 @@ def build(target: Target, cpus: Tuple[int, ...], cpuset: Tuple[int, ...], releva
             assert set(fields) <= set(IFACE_FIELDS)
             out.append(Calc(feat, sc, (("x", C(tuple((s, f) for f in fields))), guard), rate(), SY,
                             f"{base}/{'+'.join(fields)}", "m3a.sysfs.net"))
+        # tc runs in the collector's netns, so the same netns guard applies (M3A-C1)
+        out.append(Calc("net.drop.qdisc", sc, (("x", C(((f"tc.{ifname}", "drops"),))), guard), rate(), TC,
+                        f"tc -s -j qdisc show dev {ifname} -> drops (single root qdisc)", "m3a.tc.qdisc"))
     return tuple(out)
 
 
 # Registered features M3A does not collect, with the reason (reported, never silently dropped).
 NOT_COLLECTED = {
-    "net.drop.qdisc": "source TC (tc -s qdisc) is not permitted in M3A",
     "sched.latency_hist.target": "privileged eBPF source (P) not available in M3A",
     "net.drop.netfilter": "FaultLab-only source (L) not available",
     "tcp.srtt_ms": "ss collector not implemented in M3A (A*: unverified read path; target-socket attribution "

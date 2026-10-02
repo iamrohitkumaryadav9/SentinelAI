@@ -9,6 +9,7 @@ import errno
 import os
 from typing import Dict, List, Optional, Tuple, Union
 
+from .commands import tc as tc_command
 from .errors import Bad, CollectorError, Status
 
 ALLOWED_PREFIXES = ("/proc/", "/sys/")
@@ -56,12 +57,18 @@ class LiveReader:
         except OSError as exc:
             return _bad(exc)
 
+    def tc_qdisc(self, ifname: str) -> Union[str, Bad]:
+        """The single command-backed read: tc -s -j qdisc show dev <ifname> (commands/tc.py)."""
+        return tc_command.run_qdisc_show(ifname)
+
 
 class FixtureReader:
     """Serves fixture content. files: path -> text | Bad; dirs: path -> [names] | Bad; links likewise."""
 
-    def __init__(self, files: Dict[str, Union[str, Bad]], dirs: Optional[Dict] = None, links: Optional[Dict] = None):
+    def __init__(self, files: Dict[str, Union[str, Bad]], dirs: Optional[Dict] = None, links: Optional[Dict] = None,
+                 qdisc: Optional[Dict] = None):
         self.files, self.dirs, self.links = dict(files), dict(dirs or {}), dict(links or {})
+        self.qdisc = dict(qdisc or {})
 
     def read(self, path):
         check_path(path)
@@ -75,3 +82,10 @@ class FixtureReader:
     def readlink(self, path):
         check_path(path)
         return self.links.get(path, Bad(Status.ABSENT, "not present"))
+
+    def tc_qdisc(self, ifname):
+        try:   # the same command allowlist as the live path
+            tc_command.argv_for(ifname)
+        except tc_command.CommandRefused as exc:
+            return Bad(Status.REFUSED, str(exc))
+        return self.qdisc.get(ifname, Bad(Status.ABSENT, "tc is not installed"))

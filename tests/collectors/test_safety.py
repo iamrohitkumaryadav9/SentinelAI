@@ -9,18 +9,33 @@ from sentinelai.collectors.reader import check_path
 
 SRC = Path(__file__).resolve().parents[2] / "src" / "sentinelai" / "collectors"
 CODE = {p.relative_to(SRC).as_posix(): p.read_text() for p in sorted(SRC.rglob("*.py"))}
+COMMAND_MODULE = "commands/tc.py"      # M3A-C1: the one module allowed to execute a (read-only) command
+
+
+def _without_allowlist_literal(code):
+    """The forbidden-token set itself names the words it forbids; nothing else may."""
+    return re.sub(r"FORBIDDEN_TOKENS = frozenset\(\{.*?\}\)", "", code, flags=re.S)
 
 
 class TestStatic(unittest.TestCase):
     def test_no_process_network_or_write_primitives(self):
-        banned = (r"\bsubprocess\b", r"\bos\.system\b", r"\bos\.popen\b", r"\bos\.exec", r"\bos\.spawn",
+        banned = (r"\bos\.system\b", r"\bos\.popen\b", r"\bos\.exec", r"\bos\.spawn",
                   r"\bimport\s+socket\b", r"\bsocket\.socket\b", r"\bctypes\b", r"\bos\.write\b", r"\bos\.remove\b", r"\bos\.unlink\b",
                   r"\bos\.rename\b", r"\bos\.chmod\b", r"\bos\.chown\b", r"\bshutil\b", r"\bsched_setaffinity\b",
                   r"\bos\.kill\b", r"\bsudo\b", r"\bnsenter\b", r"\bsetns\b", r"\.write_text\(", r"\.write_bytes\(")
         for name, code in CODE.items():
-            for pat in banned:
+            for pat in banned + (() if name == COMMAND_MODULE else (r"\bsubprocess\b",)):
                 with self.subTest(file=name, pattern=pat):
                     self.assertIsNone(re.search(pat, code))
+
+    def test_subprocess_confined_to_the_command_module(self):
+        users = sorted(n for n, c in CODE.items() if re.search(r"\bsubprocess\b", c))
+        self.assertEqual(users, [COMMAND_MODULE])
+        code = CODE[COMMAND_MODULE]
+        self.assertEqual(len(re.findall(r"\brunner\(", code)), 1)              # one execution site
+        self.assertNotRegex(code, r"shell\s*=\s*True")
+        self.assertRegex(code, r"runner\(list\(argv\), shell=False,")
+        self.assertNotRegex(code, r"subprocess\.(Popen|call|check_output|check_call|getoutput|getstatusoutput)")
 
     def test_files_only_opened_read_only(self):
         opens = [(n, m.group(0)) for n, c in CODE.items() for m in re.finditer(r"\bopen\([^)]*\)", c)]
@@ -28,6 +43,7 @@ class TestStatic(unittest.TestCase):
 
     def test_no_mutating_commands_referenced(self):
         for name, code in CODE.items():
+            code = _without_allowlist_literal(code)
             for pat in (r"\btc\s+(qdisc|class|filter)\s+(add|del|change|replace)", r"\bip\s+(link|route|addr)\b",
                         r"\bnetem\b", r"\bethtool\b", r"\biptables\b", r"\bnft\b", r"\bdocker\b", r"\bsystemctl\b",
                         r"\bbpftrace\b", r"\bbcc\b", r"\bollama\b", r"enp0s31f6"):
@@ -35,12 +51,13 @@ class TestStatic(unittest.TestCase):
                     self.assertIsNone(re.search(pat, code))
 
     def test_imports_are_stdlib_or_project(self):
-        allowed = {"collections", "dataclasses", "datetime", "enum", "errno", "math", "os", "re", "resource",
-                   "statistics", "time", "typing"}
+        allowed = {"collections", "dataclasses", "datetime", "enum", "errno", "json", "math", "os", "pathlib", "re",
+                   "resource", "statistics", "time", "typing"}
         for name, code in CODE.items():
             for mod in re.findall(r"^\s*(?:from|import)\s+([\w.]+)", code, re.M):
                 with self.subTest(file=name, module=mod):
-                    self.assertTrue(mod.startswith(".") or mod in allowed, mod)
+                    ok = mod.startswith(".") or mod in allowed or (mod == "subprocess" and name == COMMAND_MODULE)
+                    self.assertTrue(ok, mod)
 
 
 class TestReaderAllowlist(unittest.TestCase):

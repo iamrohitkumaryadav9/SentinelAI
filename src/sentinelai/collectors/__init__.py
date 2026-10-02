@@ -1,7 +1,8 @@
 """Phase 1C M3A: read-only Linux evidence collection.
 
 Linux host -> probes (acquisition + parsing) -> normalisation -> Measurement -> EvidenceSnapshot.
-Collectors observe; the M2 rule engine diagnoses. No eBPF, tc, ss, network changes or privileges.
+Collectors observe; the M2 rule engine diagnoses. No eBPF, ss, network changes or privileges; the only
+command is the read-only qdisc statistics query in commands/tc.py (M3A-C1).
 """
 
 from .clock import ManualClock, SystemClock

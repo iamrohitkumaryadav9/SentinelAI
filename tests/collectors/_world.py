@@ -60,6 +60,7 @@ RATES = {
     "if.rx_dropped": 0, "if.rx_missed_errors": 0, "if.rx_fifo_errors": 0, "if.tx_dropped": 0,
     "if.tx_fifo_errors": 0, "if.rx_errors": 0, "if.tx_errors": 0,
     "task.run_delay": 50_000_000, "task.nr_migrations": 1, "task.nonvol": 3,
+    "tc.drops": 0,
 }
 GAUGES = {"procs_running": 3, "MemTotal": 16_000_000, "MemAvailable": 8_000_000, "cg.memory.current": 1_000_000_000,
           "cg.memory.max": "4000000000", "cg.swap": 0, "cg.cpu.max": "50000 100000", "task.processor": 0}
@@ -75,6 +76,7 @@ class World:
         self.gauges = dict(GAUGES)
         self.window_gauges = {}
         self.overrides = {}             # (path, tick) -> text | Bad
+        self.qdisc_overrides = {}       # (ifname, tick) -> text | Bad
         self.cpu_ticks = {}             # cpu -> set of ticks where the CPU is absent
 
     # counter value of key at tick k
@@ -162,9 +164,18 @@ class World:
                     f[path] = v
         return f
 
+    def qdisc(self, k):
+        """tc -s -j qdisc show dev eth0, as iproute2 renders a single root qdisc."""
+        text = ('[{"kind":"fq_codel","handle":"0:","root":true,"refcnt":2,"options":{"limit":10240},'
+                f'"bytes":{self.c("if.tx_bytes", k)},"packets":{self.c("if.tx_packets", k)},'
+                f'"drops":{self.c("tc.drops", k)},"overlimits":0,"requeues":0,"backlog":0,"qlen":0}}]')
+        return self.qdisc_overrides.get(("eth0", k), text)
+
     def reader(self, k):
         return FixtureReader(self.files(k), dirs={"/proc/100/task": [str(t) for t in self.tids]},
-                             links={"/proc/100/ns/net": "net:[4026531840]", "/proc/self/ns/net": "net:[4026531840]"})
+                             links={"/proc/100/ns/net": "net:[4026531840]", "/proc/self/ns/net": "net:[4026531840]",
+                                    "/sys/class/net/eth0": "../../devices/virtual/net/eth0"},
+                             qdisc={"eth0": self.qdisc(k)})
 
     def ticks(self, target=TARGET, n=NB + NW + 1):
         return [Tick(k, float(k), T0 + timedelta(seconds=k), sample(self.reader(k), target)) for k in range(n)]

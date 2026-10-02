@@ -23,7 +23,7 @@ from .normalize import Tick, baseline_stats, evaluate
 from .probes import get, sample
 from .reader import LiveReader
 
-NOT_COLLECTED_SOURCES = ("APP_EVENTS", "APP_METRICS", "SS", "TC")
+NOT_COLLECTED_SOURCES = ("APP_EVENTS", "APP_METRICS", "SS")
 PRIVILEGED_UNAVAILABLE = ("EBPF",)
 
 
@@ -195,8 +195,7 @@ def build_snapshot(ticks: List[Tick], target: Target, params: ParameterSet, peri
             missing[(m.feature_id, m.scope, None)] = reason
     # registered features M3A does not collect: listed explicitly, never silently absent
     CG, NS, APP = f"cgroup:{target.cgroup_path}", f"netns:{target.name}", f"app:{target.name}"
-    scopes = {"net.drop.qdisc": [f"iface:{target.name}/{i}" for i in target.ifaces],
-              "sched.latency_hist.target": [CG], "net.drop.netfilter": [NS], "tcp.srtt_ms": [NS], "tcp.cwnd": [NS]}
+    scopes = {"sched.latency_hist.target": [CG], "net.drop.netfilter": [NS], "tcp.srtt_ms": [NS], "tcp.cwnd": [NS]}
     for f, reason in NOT_COLLECTED.items():
         for sc in scopes[f]:
             missing[(f, sc, None)] = reason

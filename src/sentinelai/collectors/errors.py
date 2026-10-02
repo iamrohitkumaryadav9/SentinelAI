@@ -18,6 +18,8 @@ class Status(str, Enum):
     DENIED = "denied"            # permission denied
     MALFORMED = "malformed"      # present but not parseable -> INVALID sample
     UNVERIFIED = "unverified"    # readable, but not attributable to the target (e.g. netns unknown)
+    REFUSED = "refused"          # outside the read-only allowlist (e.g. a protected/physical interface)
+    TIMEOUT = "timeout"          # the source did not answer in time
 
 
 @dataclass(frozen=True)
