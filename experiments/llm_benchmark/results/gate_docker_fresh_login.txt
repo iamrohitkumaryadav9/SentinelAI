@@ -1,0 +1,10 @@
+# Phase 1A condition P1 — fresh SSH login Docker verification
+# Recorded 2026-10-02 ~14:05 IST. Executed by the user in a plain SSH login from
+# Windows (not a VS Code terminal); output pasted verbatim into the session.
+iiitd@iiitd-Precision-3660:~$ id; groups; docker run --rm hello-world
+uid=1000(iiitd) gid=1000(iiitd) groups=1000(iiitd),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),122(lpadmin),134(lxd),135(sambashare),138(wireshark),998(docker),999(ollama)
+iiitd adm cdrom sudo dip plugdev lpadmin lxd sambashare wireshark docker ollama
+
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+RESULT: PASS (no sg, no sudo)

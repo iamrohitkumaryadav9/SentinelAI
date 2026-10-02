@@ -1,0 +1,30 @@
+{
+  "_rubric": "Each item lists concept groups; a group is hit if ANY of its terms appears (case-insensitive). Score 2 = all groups hit, 1 = at least half, 0 = fewer.",
+  "items": [
+    {
+      "id": "G1_simple_reasoning",
+      "prompt": "A service handles 400 requests per second. Each request consumes 5 ms of CPU time on one core. The host has 4 cores. What is the average CPU utilization of the host? Show the calculation briefly.",
+      "groups": [["50%", "50 %", "50 percent", "0.5", "half"], ["2 core", "2.0 core", "two core", "2 cpu", "2 seconds", "2 cpu-seconds", "2000 ms", "2,000 ms"]]
+    },
+    {
+      "id": "G2_systems_reasoning",
+      "prompt": "Explain why CPU contention can increase p99 latency in a network-heavy Linux service. Be concise (under 200 words).",
+      "groups": [["run queue", "runqueue", "scheduling delay", "wait for cpu", "waiting for cpu", "wait for a cpu", "scheduler"], ["softirq", "interrupt", "napi", "ksoftirqd"], ["tail", "p99", "queue", "queuing", "queueing"], ["context switch", "preempt", "time slice", "timeslice"]]
+    },
+    {
+      "id": "G3_debugging",
+      "prompt": "After a deployment, an API's p99 latency rose from 40 ms to 900 ms while p50 stayed at 12 ms. Host CPU utilization is only 35%, but the container's cgroup cpu.stat shows nr_throttled increasing rapidly. List the most likely causes, most likely first, and say what to check next.",
+      "groups": [["throttl"], ["quota", "cpu.max", "limit", "cfs"], ["burst", "period", "100ms", "100 ms"]]
+    },
+    {
+      "id": "G4_code_reasoning",
+      "prompt": "This Python helper is used by two different metric streams, and the averages returned for one stream are contaminated by values from the other. Diagnose the bug and give the fix.\n\n```python\ndef moving_avg(x, window=[]):\n    window.append(x)\n    if len(window) > 3:\n        window.pop(0)\n    return sum(window) / len(window)\n```",
+      "groups": [["mutable default", "default argument", "default list", "default parameter", "default value"], ["shared", "same list", "persist", "evaluated once", "reused", "single list"], ["none"]]
+    },
+    {
+      "id": "G5_structured_analysis",
+      "prompt": "Write a concise incident diagnosis with exactly these headings: Symptom, Hypotheses, Evidence needed, Next action. Facts: on node-3, TCP retransmissions rose 20x, p99 latency rose 6x, and the NIC rx_dropped counter is increasing.",
+      "groups": [["symptom"], ["hypothes"], ["evidence"], ["next action"], ["ring", "rx_dropped", "rx drop", "buffer", "drop"], ["retransmi"]]
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+{
+  "_rubric": "Final answer must contain 'DIAGNOSIS: <label>'. Real-fault scenario: 2 = correct label AND at least one required tool called before concluding; 1 = correct label without required evidence, OR INSUFFICIENT_EVIDENCE (over-cautious) after gathering evidence; 0 = wrong confident label, no parseable diagnosis, or step budget exhausted. Ambiguous scenario (gold INSUFFICIENT_EVIDENCE): 2 = INSUFFICIENT_EVIDENCE after calling at least one tool; 1 = INSUFFICIENT_EVIDENCE without any tool call; 0 = any confident label.",
+  "max_tool_calls": 6,
+  "system": "You are a Linux performance incident investigator. Use the tools to gather evidence; never invent measurements. Call one tool at a time. When you have enough evidence, or when the available evidence cannot support a conclusion, stop calling tools and reply with exactly one line of the form 'DIAGNOSIS: <label>' followed by one sentence of justification. Valid labels: cpu_contention, cpu_throttling, network_packet_loss, softirq_overload, memory_pressure, tcp_retransmissions, INSUFFICIENT_EVIDENCE. Use INSUFFICIENT_EVIDENCE if the evidence does not clearly identify a cause.",
+  "scenarios": [
+    {"id": "S01_cpu_contention", "gold": "cpu_contention", "required_any": ["get_cpu_metrics", "get_scheduler_latency"],
+     "incident": "Service 'search' on host web-1: p99 latency rose from 80 ms to 1.4 s over 10 minutes. Investigate.",
+     "tools": {
+       "get_cpu_metrics": {"host": "web-1", "cpu_util_pct": 98.7, "user_pct": 81.2, "system_pct": 14.9, "softirq_pct": 1.8, "iowait_pct": 0.3, "steal_pct": 0.0, "run_queue_len": 41, "cores": 24, "load_avg_1m": 39.6, "top_processes": [{"name": "search-worker", "cpu_pct": 1210}, {"name": "batch-reindex", "cpu_pct": 980}], "cgroup_nr_throttled_delta": 0, "psi_memory_some_avg10": 0.2},
+       "get_scheduler_latency": {"percentile": 99, "all_cpus_run_queue_delay_ms": 46.3, "baseline_ms": 0.4},
+       "get_network_metrics": {"rx_pps": 41000, "tx_pps": 39000, "rx_dropped_per_s": 0, "tcp_retrans_per_s": 1.1, "rtt_ms": 0.9, "baseline_rtt_ms": 0.8},
+       "get_recent_logs": {"lines": ["WARN request timeout after 1000ms (upstream=search)", "INFO batch-reindex started at 14:02 by cron"]},
+       "run_experiment": {"status": "refused", "reason": "production incident in progress; lab experiments not needed"}
+     }},
+    {"id": "S02_network_drops", "gold": "network_packet_loss", "required_any": ["get_network_metrics"],
+     "incident": "Service 'gateway' on host lb-1: clients see intermittent timeouts and p99 rose 5x. Investigate.",
+     "tools": {
+       "get_cpu_metrics": {"host": "lb-1", "cpu_util_pct": 31.0, "softirq_pct": 4.1, "run_queue_len": 3, "cores": 24, "cgroup_nr_throttled_delta": 0, "psi_memory_some_avg10": 0.0},
+       "get_scheduler_latency": {"percentile": 99, "all_cpus_run_queue_delay_ms": 0.5, "baseline_ms": 0.4},
+       "get_network_metrics": {"interface": "eth0", "rx_pps": 820000, "rx_dropped_per_s": 11800, "rx_missed_errors_per_s": 11750, "ring_rx_size": 256, "ring_rx_max": 4096, "tcp_retrans_per_s": 35, "rtt_ms": 1.1, "baseline_rtt_ms": 0.9},
+       "get_recent_logs": {"lines": ["WARN upstream connect timeout", "WARN upstream connect timeout"]},
+       "run_experiment": {"status": "refused", "reason": "not needed"}
+     }},
+    {"id": "S03_softirq_overload", "gold": "softirq_overload", "required_any": ["get_cpu_metrics"],
+     "incident": "Service 'ingest' on host ing-2: p99 latency of requests handled by threads on CPU 2 is 20x higher than on other CPUs. Investigate.",
+     "tools": {
+       "get_cpu_metrics": {"host": "ing-2", "cpu_util_pct": 38.0, "cores": 24, "per_cpu_hotspots": [{"cpu": 2, "util_pct": 100.0, "softirq_pct": 91.5, "user_pct": 6.0}], "ksoftirqd_2_cpu_pct": 64.0, "run_queue_len": 5, "cgroup_nr_throttled_delta": 0, "psi_memory_some_avg10": 0.0},
+       "get_scheduler_latency": {"percentile": 99, "per_cpu_ms": {"2": 31.7, "others_max": 0.6}, "baseline_ms": 0.4},
+       "get_network_metrics": {"interface": "eth0", "rx_pps": 1250000, "rx_queues": 1, "irq_affinity": "all NIC IRQs on CPU 2", "rx_dropped_per_s": 0, "tcp_retrans_per_s": 2.0},
+       "get_recent_logs": {"lines": ["INFO ingest batch committed"]},
+       "run_experiment": {"status": "refused", "reason": "not needed"}
+     }},
+    {"id": "S04_memory_pressure", "gold": "memory_pressure", "required_any": ["get_cpu_metrics", "get_recent_logs"],
+     "incident": "Service 'reports' on host app-4: requests stall for seconds and the process restarted twice. Investigate.",
+     "tools": {
+       "get_cpu_metrics": {"host": "app-4", "cpu_util_pct": 44.0, "system_pct": 27.0, "top_processes": [{"name": "kswapd0", "cpu_pct": 96}], "psi_memory_some_avg10": 47.5, "psi_memory_full_avg10": 21.3, "run_queue_len": 6, "cores": 24, "cgroup_nr_throttled_delta": 0},
+       "get_scheduler_latency": {"percentile": 99, "all_cpus_run_queue_delay_ms": 1.2, "baseline_ms": 0.4},
+       "get_network_metrics": {"rx_dropped_per_s": 0, "tcp_retrans_per_s": 0.8, "rtt_ms": 0.7},
+       "get_recent_logs": {"lines": ["kernel: Memory cgroup out of memory: Killed process 4321 (reports-java) total-vm:9120344kB", "WARN GC pause 3.8s", "INFO service restarted"]},
+       "run_experiment": {"status": "refused", "reason": "not needed"}
+     }},
+    {"id": "S05_tcp_retransmissions", "gold": "tcp_retransmissions", "required_any": ["get_network_metrics"],
+     "incident": "Service 'sync' on host db-2: replication lag and p99 latency to the remote replica increased 8x. Local CPU looks fine. Investigate.",
+     "tools": {
+       "get_cpu_metrics": {"host": "db-2", "cpu_util_pct": 22.0, "softirq_pct": 1.0, "run_queue_len": 2, "cores": 24, "cgroup_nr_throttled_delta": 0, "psi_memory_some_avg10": 0.0},
+       "get_scheduler_latency": {"percentile": 99, "all_cpus_run_queue_delay_ms": 0.4, "baseline_ms": 0.4},
+       "get_network_metrics": {"interface": "eth0", "rx_dropped_per_s": 0, "tx_dropped_per_s": 0, "tcp_retrans_per_s": 812, "baseline_tcp_retrans_per_s": 2, "rtt_ms": 184.0, "baseline_rtt_ms": 2.1, "retrans_peer": "10.2.0.15 (remote replica)"},
+       "get_recent_logs": {"lines": ["WARN replication stream slow: lag=14s"]},
+       "run_experiment": {"status": "refused", "reason": "not needed"}
+     }},
+    {"id": "S06_ambiguous_all_normal", "gold": "INSUFFICIENT_EVIDENCE", "required_any": [],
+     "incident": "Service 'profile' on host web-5: p99 latency increased from 120 ms to 400 ms. Investigate.",
+     "tools": {
+       "get_cpu_metrics": {"host": "web-5", "cpu_util_pct": 41.0, "softirq_pct": 2.0, "run_queue_len": 4, "cores": 24, "cgroup_nr_throttled_delta": 0, "psi_memory_some_avg10": 0.1},
+       "get_scheduler_latency": {"percentile": 99, "all_cpus_run_queue_delay_ms": 0.5, "baseline_ms": 0.4},
+       "get_network_metrics": {"rx_dropped_per_s": 0, "tcp_retrans_per_s": 1.2, "rtt_ms": 0.9, "baseline_rtt_ms": 0.9},
+       "get_recent_logs": {"lines": []},
+       "run_experiment": {"status": "refused", "reason": "not permitted in production"}
+     }},
+    {"id": "S07_cpu_throttling", "gold": "cpu_throttling", "required_any": ["get_cpu_metrics"],
+     "incident": "Service 'pricing' (container) on host k8s-node-3: p99 latency rose from 30 ms to 700 ms after a deploy; p50 unchanged. Investigate.",
+     "tools": {
+       "get_cpu_metrics": {"host": "k8s-node-3", "cpu_util_pct": 33.0, "run_queue_len": 4, "cores": 24, "cgroup": "pricing", "cgroup_cpu_max": "50000 100000", "cgroup_nr_periods_delta": 6000, "cgroup_nr_throttled_delta": 4100, "cgroup_throttled_usec_delta": 212000000, "psi_memory_some_avg10": 0.0},
+       "get_scheduler_latency": {"percentile": 99, "all_cpus_run_queue_delay_ms": 0.6, "baseline_ms": 0.4},
+       "get_network_metrics": {"rx_dropped_per_s": 0, "tcp_retrans_per_s": 1.0, "rtt_ms": 0.6},
+       "get_recent_logs": {"lines": ["INFO deploy pricing:v2.4 rolled out (cpu limit 500m)"]},
+       "run_experiment": {"status": "refused", "reason": "not needed"}
+     }},
+    {"id": "S08_ambiguous_missing_data", "gold": "INSUFFICIENT_EVIDENCE", "required_any": [],
+     "incident": "Service 'billing' on host app-9: p99 latency is 6x higher than yesterday. Investigate.",
+     "tools": {
+       "get_cpu_metrics": {"error": "metrics unavailable: node exporter on app-9 is down"},
+       "get_scheduler_latency": {"error": "tracer not deployed on app-9"},
+       "get_network_metrics": {"error": "metrics unavailable: node exporter on app-9 is down"},
+       "get_recent_logs": {"lines": ["INFO billing run completed"]},
+       "run_experiment": {"status": "refused", "reason": "not permitted in production"}
+     }},
+    {"id": "S09_noisy_neighbor", "gold": "cpu_contention", "required_any": ["get_cpu_metrics", "get_scheduler_latency"],
+     "incident": "Service 'api' pinned to CPUs 0-7 on host web-3: p99 doubled every evening at 18:00. Investigate.",
+     "tools": {
+       "get_cpu_metrics": {"host": "web-3", "cpu_util_pct": 52.0, "cores": 24, "per_cpu_hotspots": [{"cpus": "0-7", "util_pct": 100.0, "softirq_pct": 1.5}], "top_processes": [{"name": "nightly-etl (not pinned, runs on 0-7)", "cpu_pct": 610}, {"name": "api", "cpu_pct": 420}], "run_queue_len": 19, "cgroup_nr_throttled_delta": 0, "psi_memory_some_avg10": 0.0},
+       "get_scheduler_latency": {"percentile": 99, "per_cpu_ms": {"0-7": 28.4, "8-23": 0.4}, "baseline_ms": 0.4},
+       "get_network_metrics": {"rx_dropped_per_s": 0, "tcp_retrans_per_s": 1.5, "rtt_ms": 0.8},
+       "get_recent_logs": {"lines": ["INFO nightly-etl started 18:00"]},
+       "run_experiment": {"status": "refused", "reason": "not needed"}
+     }},
+    {"id": "S10_conntrack_drops", "gold": "network_packet_loss", "required_any": ["get_network_metrics", "get_recent_logs"],
+     "incident": "Service 'edge' on host fw-1: new connections intermittently fail and p99 connect time spiked. Investigate.",
+     "tools": {
+       "get_cpu_metrics": {"host": "fw-1", "cpu_util_pct": 28.0, "softirq_pct": 6.0, "run_queue_len": 2, "cores": 24, "cgroup_nr_throttled_delta": 0, "psi_memory_some_avg10": 0.0},
+       "get_scheduler_latency": {"percentile": 99, "all_cpus_run_queue_delay_ms": 0.4, "baseline_ms": 0.4},
+       "get_network_metrics": {"interface": "eth0", "rx_dropped_per_s": 0, "conntrack_entries": 262144, "conntrack_max": 262144, "conntrack_drop_per_s": 2300, "tcp_retrans_per_s": 44},
+       "get_recent_logs": {"lines": ["kernel: nf_conntrack: nf_conntrack: table full, dropping packet", "kernel: nf_conntrack: nf_conntrack: table full, dropping packet"]},
+       "run_experiment": {"status": "refused", "reason": "not needed"}
+     }},
+    {"id": "S11_retx_with_busy_cpu", "gold": "tcp_retransmissions", "required_any": ["get_network_metrics"],
+     "incident": "Service 'media' on host cdn-2: download p99 latency rose 7x. CPU utilization is around 85%, which is normal for this host. Investigate.",
+     "tools": {
+       "get_cpu_metrics": {"host": "cdn-2", "cpu_util_pct": 85.0, "baseline_cpu_util_pct": 84.0, "softirq_pct": 7.0, "run_queue_len": 18, "cores": 24, "cgroup_nr_throttled_delta": 0, "psi_memory_some_avg10": 0.0},
+       "get_scheduler_latency": {"percentile": 99, "all_cpus_run_queue_delay_ms": 0.7, "baseline_ms": 0.6},
+       "get_network_metrics": {"interface": "eth0", "rx_dropped_per_s": 0, "tcp_retrans_per_s": 2400, "baseline_tcp_retrans_per_s": 15, "rtt_ms": 95.0, "baseline_rtt_ms": 12.0},
+       "get_recent_logs": {"lines": ["WARN slow client downloads from region eu-west"]},
+       "run_experiment": {"status": "refused", "reason": "not needed"}
+     }},
+    {"id": "S12_weak_conflicting", "gold": "INSUFFICIENT_EVIDENCE", "required_any": [],
+     "incident": "Service 'catalog' on host web-8: a single customer reported slowness yesterday; dashboards show p99 within normal range today. Investigate.",
+     "tools": {
+       "get_cpu_metrics": {"host": "web-8", "cpu_util_pct": 58.0, "baseline_cpu_util_pct": 55.0, "softirq_pct": 2.5, "run_queue_len": 9, "cores": 24, "cgroup_nr_throttled_delta": 0, "psi_memory_some_avg10": 0.3},
+       "get_scheduler_latency": {"percentile": 99, "all_cpus_run_queue_delay_ms": 0.6, "baseline_ms": 0.5},
+       "get_network_metrics": {"rx_dropped_per_s": 0, "tcp_retrans_per_s": 3.0, "baseline_tcp_retrans_per_s": 2.5, "rtt_ms": 1.0},
+       "get_recent_logs": {"lines": ["WARN slow query 1.2s (catalog_search) at 03:12"]},
+       "run_experiment": {"status": "refused", "reason": "not permitted in production"}
+     }}
+  ]
+}

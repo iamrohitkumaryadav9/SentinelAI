@@ -1,0 +1,79 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "get_cpu_metrics",
+      "description": "Return CPU utilization breakdown (user/system/softirq/iowait/steal), run-queue length, load average, per-CPU hotspots, memory pressure (PSI) and cgroup CPU throttling counters for a host.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "host": {"type": "string", "description": "Host name, e.g. web-2. Omit for the affected service host."},
+          "window_seconds": {"type": "integer", "minimum": 10, "maximum": 3600, "description": "Aggregation window in seconds."}
+        },
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "get_network_metrics",
+      "description": "Return NIC and TCP statistics: packets/s, rx/tx drops, ring-buffer overruns, TCP retransmissions, RTT, conntrack usage.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "host": {"type": "string", "description": "Host name."},
+          "interface": {"type": "string", "description": "Network interface, e.g. eth0."},
+          "window_seconds": {"type": "integer", "minimum": 10, "maximum": 3600}
+        },
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "get_scheduler_latency",
+      "description": "Return run-queue (scheduling) delay: how long runnable tasks wait for a CPU, measured from sched_wakeup to sched_switch.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "cpu": {"type": "integer", "minimum": 0, "maximum": 23, "description": "Logical CPU id. Omit for all CPUs."},
+          "percentile": {"type": "integer", "enum": [50, 90, 99], "description": "Latency percentile."}
+        },
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "get_recent_logs",
+      "description": "Return recent log lines (including kernel messages) for a service.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "service": {"type": "string", "description": "Service name, e.g. payments."},
+          "level": {"type": "string", "enum": ["error", "warn", "info"]},
+          "limit": {"type": "integer", "minimum": 1, "maximum": 200}
+        },
+        "required": ["service"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "run_experiment",
+      "description": "Run a controlled experiment in the isolated lab: baseline measurement or a fault injection.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "experiment": {"type": "string", "enum": ["baseline", "cpu_stress", "net_delay", "mem_pressure"]},
+          "duration_seconds": {"type": "integer", "minimum": 1, "maximum": 300}
+        },
+        "required": ["experiment", "duration_seconds"]
+      }
+    }
+  }
+]

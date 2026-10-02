@@ -1,0 +1,63 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "incident_type": {
+      "enum": [
+        "cpu_contention",
+        "cpu_throttling",
+        "network_packet_loss",
+        "softirq_overload",
+        "memory_pressure",
+        "tcp_retransmissions",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "title": "Incident Type",
+      "type": "string"
+    },
+    "severity": {
+      "maximum": 5,
+      "minimum": 0,
+      "title": "Severity",
+      "type": "integer"
+    },
+    "hypotheses": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 5,
+      "minItems": 1,
+      "title": "Hypotheses",
+      "type": "array"
+    },
+    "evidence_required": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 8,
+      "minItems": 1,
+      "title": "Evidence Required",
+      "type": "array"
+    },
+    "next_action": {
+      "minLength": 1,
+      "title": "Next Action",
+      "type": "string"
+    },
+    "confidence": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Confidence",
+      "type": "number"
+    }
+  },
+  "required": [
+    "incident_type",
+    "severity",
+    "hypotheses",
+    "evidence_required",
+    "next_action",
+    "confidence"
+  ],
+  "title": "IncidentDiagnosis",
+  "type": "object"
+}

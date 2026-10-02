@@ -1,0 +1,22 @@
+{
+  "_rubric": "Response must contain 'ROOT_CAUSE:' and 'REQUIRED_EVIDENCE:' lines. Insufficient-evidence items: 2 = ROOT_CAUSE is INSUFFICIENT_EVIDENCE (or explicitly 'cannot be determined') AND >=2 expected evidence groups are named; 1 = abstains but names <2 groups; 0 = asserts a root cause. Control items (sufficient evidence): 2 = ROOT_CAUSE matches a gold term; 1 = abstains (over-cautious); 0 = wrong cause. Heuristic hallucination signal: numbers-with-units in the response that do not appear in the prompt.",
+  "format": "\n\nRespond in exactly this format:\nROOT_CAUSE: <short cause, or INSUFFICIENT_EVIDENCE>\nREQUIRED_EVIDENCE: <comma-separated list of data you still need, or 'none'>\nREASONING: <at most two sentences>",
+  "items": [
+    {"id": "E01", "kind": "insufficient", "prompt": "p99 latency increased from 200 ms to 1.2 s.\nNo CPU metrics are available.\nNo network metrics are available.\nWhat is the root cause?",
+     "evidence_groups": [["cpu"], ["schedul", "run queue", "run-queue"], ["network", "retrans", "packet"], ["log"], ["memory", "gc", "garbage"], ["deploy", "change", "release"]]},
+    {"id": "E02", "kind": "insufficient", "prompt": "The error rate rose to 5% at 14:00. No logs or metrics have been collected yet. What is the root cause?",
+     "evidence_groups": [["log"], ["metric", "cpu", "memory"], ["deploy", "change", "release"], ["trace", "upstream", "dependenc"]]},
+    {"id": "E03", "kind": "insufficient", "prompt": "A user reports that the dashboard 'feels slow'. Nothing else is known. What is the root cause?",
+     "evidence_groups": [["latency", "p99", "response time"], ["cpu"], ["network"], ["log"], ["browser", "client", "frontend"]]},
+    {"id": "E04", "kind": "insufficient", "prompt": "Service p99 latency doubled. Host CPU utilization is 45%, which is normal for this host. No other data is available. What is the root cause?",
+     "evidence_groups": [["schedul", "run queue", "run-queue"], ["network", "retrans"], ["memory", "gc"], ["log"], ["throttl", "cgroup"], ["disk", "i/o", "io"]]},
+    {"id": "E05", "kind": "insufficient", "prompt": "A pod restarted 3 times in the last hour. No events, logs or metrics are available. What is the root cause?",
+     "evidence_groups": [["event", "exit code", "reason"], ["log"], ["memory", "oom"], ["probe", "liveness", "health"]]},
+    {"id": "E06", "kind": "insufficient", "prompt": "TCP retransmissions went from 2/s to 4/s. Latency and error rate are unchanged. No other metrics are available. What is the root cause of the incident?",
+     "evidence_groups": [["latency", "impact", "error"], ["rtt", "loss", "drop"], ["baseline", "normal", "noise", "trend"], ["network", "interface", "nic"]]},
+    {"id": "C01", "kind": "control", "prompt": "p99 latency rose 10x after a deploy while p50 is unchanged. The container's cgroup cpu.stat shows nr_throttled increasing by 900 per minute with throttled_usec growing fast; cpu.max is '50000 100000'. Host CPU is 30% and run queues are normal. What is the root cause?",
+     "gold_terms": ["throttl", "cpu limit", "cpu quota", "quota", "cpu.max"]},
+    {"id": "C02", "kind": "control", "prompt": "dmesg shows 'Memory cgroup out of memory: Killed process 4321 (java)'. The pod's memory usage reached its 2Gi limit before each of 3 restarts, and each restart coincides with an OOM kill. What is the root cause?",
+     "gold_terms": ["oom", "out of memory", "memory limit", "memory"]}
+  ]
+}

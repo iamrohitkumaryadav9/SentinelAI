@@ -1,0 +1,26 @@
+{
+  "_rubric": "Concept groups as in generation.json. Score 2 = all groups, 1 = at least half, 0 = fewer. Answers are requested in <=120 words.",
+  "suffix": " Answer in at most 120 words.",
+  "items": [
+    {"id": "K1_sched_switch", "prompt": "In Linux tracing, what does the sched:sched_switch tracepoint represent?",
+     "groups": [["context switch", "switches", "switch from", "switched"], ["prev", "next", "outgoing", "incoming"], ["cpu", "scheduler"]]},
+    {"id": "K2_softirq", "prompt": "What is a softirq in the Linux kernel?",
+     "groups": [["deferred", "bottom half", "bottom-half", "later"], ["interrupt"], ["ksoftirqd", "net_rx", "network", "timer", "tasklet"]]},
+    {"id": "K3_net_sched", "prompt": "Why can heavy network load increase scheduling latency for application threads on Linux?",
+     "groups": [["softirq", "interrupt", "napi", "ksoftirqd"], ["preempt", "steal", "cpu time", "compete", "consume"], ["run queue", "runqueue", "scheduling delay", "wait", "delay"]]},
+    {"id": "K4_cpu_throttling", "prompt": "What is CPU throttling in the context of Linux cgroups / containers?",
+     "groups": [["quota", "cpu.max", "cfs_quota", "limit"], ["period"], ["throttl", "paused", "not allowed to run", "prevent"]]},
+    {"id": "K5_cgroup", "prompt": "What is a cgroup?",
+     "groups": [["control group"], ["limit", "resource", "account"], ["process", "task"], ["cpu", "memory", "i/o", "io"]]},
+    {"id": "K6_tcp_retx", "prompt": "What is a TCP retransmission and what typically triggers it?",
+     "groups": [["lost", "loss", "drop"], ["ack", "acknowledg"], ["timeout", "rto", "duplicate", "fast retransmit", "timer"]]},
+    {"id": "K7_p99", "prompt": "What does p99 latency mean?",
+     "groups": [["99"], ["percentile"], ["1%", "one percent", "slowest", "tail", "exceed"]]},
+    {"id": "K8_psi", "prompt": "What does Linux PSI (Pressure Stall Information) measure?",
+     "groups": [["stall", "waiting", "delayed", "wait"], ["cpu"], ["memory"], ["some", "full", "percentage", "fraction", "share of time"]]},
+    {"id": "K9_tp_vs_kprobe", "prompt": "In eBPF, what is the difference between attaching to a tracepoint and attaching to a kprobe?",
+     "groups": [["stable", "static", "predefined", "defined"], ["dynamic", "any function", "unstable", "internal", "arbitrary"]]},
+    {"id": "K10_k8s_req_limit", "prompt": "In Kubernetes, what is the difference between CPU requests and CPU limits?",
+     "groups": [["request"], ["schedul", "guarantee", "reserve"], ["limit"], ["throttl", "cap", "maximum", "quota"]]}
+  ]
+}
