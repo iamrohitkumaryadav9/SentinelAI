@@ -104,8 +104,23 @@ def loaded_models():
     return [m["name"] for m in httpx.get(f"{OLLAMA}/api/ps", timeout=10).json().get("models", [])]
 
 
+def wait_for_ollama(max_wait_s=120):
+    """Block until the Ollama API answers (survives a service restart)."""
+    deadline = time.time() + max_wait_s
+    while True:
+        try:
+            return httpx.get(f"{OLLAMA}/api/version", timeout=5).json()["version"]
+        except httpx.HTTPError:
+            if time.time() > deadline:
+                raise
+            time.sleep(2)
+
+
 def unload(model):
-    httpx.post(f"{OLLAMA}/api/generate", json={"model": model, "keep_alive": 0}, timeout=60)
+    try:
+        httpx.post(f"{OLLAMA}/api/generate", json={"model": model, "keep_alive": 0}, timeout=60)
+    except httpx.HTTPError as e:
+        print(f"   unload {model} failed: {e}", flush=True)
 
 
 def unload_all_except(keep=None):
@@ -552,6 +567,7 @@ def main():
     suites = Run.SUITES if a.suites == "all" else tuple(a.suites.split(","))
     models = [a.model] if a.cmd == "run" else a.models.split(",")
     for m in models:
+        wait_for_ollama()
         if a.cmd == "campaign":
             pull(m)
         try:
