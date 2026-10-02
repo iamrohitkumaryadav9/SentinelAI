@@ -294,7 +294,7 @@ Only one generative model is resident at a time. The secondary is a swap-in alte
 
 **The pick is not robust.** Stated plainly:
 
-1. **The Q gap is 0.0034.** Flipping a single agent scenario changes Q by 0.025, 7× more than the gap. **On this dataset the two models are statistically indistinguishable on quality.**
+1. **The Q gap is 0.0034.** Flipping a single agent scenario changes Q by 0.025, 7× more than the gap. **The observed quality difference is smaller than the resolution of this small evaluation set, so the primary-model ranking is not robust to individual scenario outcomes.** No confidence intervals or hypothesis tests were computed in the main benchmark.
 2. **The winner depends on the weights.** Under five reasonable weightings, qwen3.5:9b wins three: pre-registered, equal, and reliability-heavy. qwen3:8b wins two: agent-heavy, and tools/agent/evidence/structured only.
 3. **On the hardware dimensions you emphasised** (latency × RAM × agent usability), **qwen3:8b is better on every measured axis:**
    - 1.40× faster agent loop;
@@ -340,7 +340,7 @@ I have **not** overridden the pre-registered decision on these grounds, because 
 **The constraints:**
 1. **Latency.** An agent investigation takes about 28–40 s per scenario. Fresh prefill is about 45–50 tok/s, so new context per turn should stay around 2K tokens or less, with 4K as the ceiling.
 2. **RAM.** The primary needs about 7.2 GiB, which leaves little headroom for RAG, Prometheus and the workloads (Phase 0 budget). Swap was exhausted.
-3. **Model choice.** The primary and secondary are statistically tied on quality. The pre-registered choice (qwen3.5:9b) is the slower and larger of the two.
+3. **Model choice.** The observed quality difference is smaller than the resolution of this small evaluation set, so the primary-model ranking is not robust to individual scenario outcomes. The pre-registered choice (qwen3.5:9b) is the slower and larger of the two.
 4. **Label boundaries.** Both models confuse closely related fault classes (TCP retransmissions against packet loss), which points to explicit label definitions or deterministic pre-classification.
 5. **Loop control.** Loop termination is not guaranteed, as qwen3.5:4b shows. The SentinelAI orchestrator must enforce step budgets and a final-answer turn.
 

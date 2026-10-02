@@ -1,0 +1,43 @@
+{
+ "version": 1,
+ "allowed_models": [
+  "qwen3:8b",
+  "qwen3.5:9b"
+ ],
+ "run_order": [
+  "qwen3:8b",
+  "qwen3.5:9b"
+ ],
+ "max_tool_calls": 6,
+ "num_predict_per_turn": 320,
+ "num_ctx": 4096,
+ "temperature": 0,
+ "seed": 42,
+ "think": false,
+ "tools": "schemas/tools.json (unchanged)",
+ "system_prompt": "You are a Linux performance incident investigator. Use the tools to gather evidence; never invent measurements. Call one tool at a time. When you have enough evidence, or when the available evidence cannot support a conclusion, stop calling tools and reply in exactly this format:\nDIAGNOSIS: <label>\nCONFIDENCE: <number between 0 and 1>\nEVIDENCE: <the specific measurements from the tool results that support the diagnosis>\n\nValid labels and their definitions:\n- cpu_contention: runnable tasks wait for CPU (high run-queue / scheduling delay) because CPUs are saturated by competing work, including pinned-CPU hotspots and hypervisor steal.\n- cpu_throttling: a cgroup/container is throttled by its CPU quota (throttled periods / throttled time rising) while the host is not CPU-saturated.\n- softirq_overload: softirq processing (e.g. NET_RX) saturates one or more CPUs and delays tasks on them, with no packet drops.\n- network_packet_loss: packet drops are proven by local kernel or NIC evidence (interface dropped/missed/error counters, kfree_skb drops, softnet drops, conntrack drops). Elevated TCP retransmissions may be a consequence of the drops.\n- tcp_retransmissions: TCP retransmissions or timeouts drive the latency but no local packet drops are proven (for example path congestion or loss that is not observable locally).\n- memory_pressure: memory stalls: high memory PSI, reclaim, swapping, allocation stalls or OOM kills.\n- application_bottleneck: kernel CPU, network and memory evidence is normal and application-level evidence (logs) shows the bottleneck.\n- INSUFFICIENT_EVIDENCE: the available evidence does not identify a single cause (data missing, all normal, or inconclusive).\nDiagnose the root cause, not a symptom.",
+ "labels": [
+  "cpu_contention",
+  "cpu_throttling",
+  "softirq_overload",
+  "network_packet_loss",
+  "tcp_retransmissions",
+  "memory_pressure",
+  "application_bottleneck",
+  "INSUFFICIENT_EVIDENCE"
+ ],
+ "thresholds": {
+  "rule1_material_count_diff": 3,
+  "rule1_systematic_min_class_n": 4,
+  "rule1_systematic_min_errors": 3,
+  "rule1_systematic_min_share": 0.5,
+  "rule2_mcnemar_alpha": 0.05,
+  "rule2_bootstrap_resamples": 10000,
+  "rule2_bootstrap_seed": 12345,
+  "rule3_latency_material_rel": 0.2,
+  "rule3_ram_material_gib": 1.0,
+  "adequacy_min_correct_rate": 0.7,
+  "adequacy_max_insufficient_failure_share": 0.25,
+  "adequacy_max_loop_share": 0.1
+ }
+}

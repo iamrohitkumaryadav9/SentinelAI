@@ -179,6 +179,7 @@ class Sampler:
         self.runner_cpu_samples = []
         self.ram_breach = False
         self._procs = {}
+        self.max_swap_used = 0
 
     def _tick(self):
         rss = 0
@@ -193,6 +194,7 @@ class Sampler:
             except psutil.Error:
                 pass
         self.peak_runner_rss = max(self.peak_runner_rss, rss)
+        self.max_swap_used = max(self.max_swap_used, psutil.swap_memory().used)
         avail = psutil.virtual_memory().available
         self.min_mem_available = avail if self.min_mem_available is None else min(self.min_mem_available, avail)
         if avail < MIN_MEM_GIB * GIB:
@@ -224,6 +226,7 @@ class Sampler:
             "system_cpu_pct_max": max(self.cpu_samples[1:], default=None),
             "runner_cpu_pct_mean": mean(self.runner_cpu_samples[1:]),
             "ram_floor_breached": self.ram_breach,
+            "max_swap_used_mib": round(self.max_swap_used / 2**20),
         }
 
 

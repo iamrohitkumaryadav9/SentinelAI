@@ -1,0 +1,1965 @@
+{
+ "version": 1,
+ "n": 48,
+ "label_counts": {
+  "tcp_retransmissions": 6,
+  "network_packet_loss": 7,
+  "application_bottleneck": 6,
+  "INSUFFICIENT_EVIDENCE": 13,
+  "cpu_contention": 5,
+  "cpu_throttling": 3,
+  "softirq_overload": 4,
+  "memory_pressure": 4
+ },
+ "category_counts": {
+  "A_tcp_vs_loss": 18,
+  "B_cpu": 7,
+  "C_softirq": 6,
+  "D_memory": 5,
+  "E_application": 5,
+  "F_insufficient": 7
+ },
+ "scenarios": [
+  {
+   "id": "A01",
+   "category": "A_tcp_vs_loss",
+   "subcase": "1_retx_high_no_drops",
+   "gold": "tcp_retransmissions",
+   "required_any": [
+    "get_network_metrics"
+   ],
+   "host": "db-2",
+   "service": "sync",
+   "incident": "Service 'sync' on host db-2: replication to the remote replica slowed; p99 write latency rose from 12 ms to 310 ms. Investigate.",
+   "state": {
+    "net": {
+     "tcp": {
+      "retrans_segs_per_s": 640,
+      "baseline_retrans_segs_per_s": 2,
+      "rto_timeouts_per_s": 18,
+      "rtt_ms_p50": 140,
+      "baseline_rtt_ms_p50": 2.1,
+      "cwnd_reductions_per_s": 120,
+      "goodput_mbps": 90,
+      "baseline_goodput_mbps": 410
+     }
+    }
+   },
+   "diagnostic_terms": [
+    "retrans",
+    "rtt",
+    "640",
+    "140"
+   ],
+   "distractors": [],
+   "rationale": "Retransmissions 320x baseline and RTT up; every local drop counter is zero."
+  },
+  {
+   "id": "A02",
+   "category": "A_tcp_vs_loss",
+   "subcase": "1_retx_high_no_drops",
+   "gold": "tcp_retransmissions",
+   "required_any": [
+    "get_network_metrics"
+   ],
+   "host": "api-3",
+   "service": "orders",
+   "incident": "Service 'orders' on host api-3: calls to the payments cluster (10.4.0.0/24) show p99 latency of 2.4 s (baseline 180 ms). CPU on api-3 is 78%, which is normal for this host. Investigate.",
+   "state": {
+    "cpu": {
+     "util_pct": 78.0,
+     "user_pct": 66.0,
+     "run_queue_len": 14
+    },
+    "net": {
+     "tcp": {
+      "retrans_segs_per_s": 310,
+      "baseline_retrans_segs_per_s": 3,
+      "rto_timeouts_per_s": 41,
+      "rtt_ms_p50": 95,
+      "baseline_rtt_ms_p50": 1.0,
+      "cwnd_reductions_per_s": 60
+     }
+    }
+   },
+   "diagnostic_terms": [
+    "retrans",
+    "rto",
+    "rtt",
+    "310"
+   ],
+   "distractors": [
+    "cpu_util 78% (normal)"
+   ],
+   "rationale": "Retransmissions/RTOs to one peer group; no local drops; CPU is a distractor."
+  },
+  {
+   "id": "A03",
+   "category": "A_tcp_vs_loss",
+   "subcase": "1_retx_high_no_drops",
+   "gold": "tcp_retransmissions",
+   "required_any": [
+    "get_network_metrics"
+   ],
+   "host": "cdn-4",
+   "service": "media",
+   "incident": "Service 'media' on host cdn-4: download p99 rose 6x for clients in one region. Investigate.",
+   "state": {
+    "cpu": {
+     "util_pct": 85.0,
+     "user_pct": 70.0
+    },
+    "net": {
+     "tcp": {
+      "retrans_segs_per_s": 2100,
+      "baseline_retrans_segs_per_s": 25,
+      "rtt_ms_p50": 88,
+      "baseline_rtt_ms_p50": 14,
+      "cwnd_reductions_per_s": 400
+     }
+    }
+   },
+   "diagnostic_terms": [
+    "retrans",
+    "2100",
+    "rtt"
+   ],
+   "distractors": [
+    "cpu 85% (normal for host)"
+   ],
+   "rationale": "Remote-path retransmissions, no local drops."
+  },
+  {
+   "id": "A04",
+   "category": "A_tcp_vs_loss",
+   "subcase": "6_congestion",
+   "gold": "tcp_retransmissions",
+   "required_any": [
+    "get_network_metrics"
+   ],
+   "host": "lb-2",
+   "service": "gateway",
+   "incident": "Service 'gateway' on host lb-2: p99 latency rises every afternoon peak, from 40 ms to 600 ms. Investigate.",
+   "state": {
+    "net": {
+     "interfaces": {
+      "eth0": {
+       "rx_pps": 45000,
+       "tx_pps": 820000,
+       "rx_mbps": 2100,
+       "tx_mbps": 9450,
+       "link_mbps": 10000,
+       "rx_dropped_per_s": 0,
+       "tx_dropped_per_s": 0,
+       "rx_missed_per_s": 0,
+       "rx_errors_per_s": 0,
+       "ring_rx": "1024/4096",
+       "rx_queues": 8
+      }
+     },
+     "tcp": {
+      "retrans_segs_per_s": 420,
+      "baseline_retrans_segs_per_s": 4,
+      "rtt_ms_p50": 65,
+      "baseline_rtt_ms_p50": 1.0,
+      "cwnd_reductions_per_s": 900,
+      "goodput_mbps": 9300,
+      "baseline_goodput_mbps": 9300
+     }
+    }
+   },
+   "diagnostic_terms": [
+    "retrans",
+    "cwnd",
+    "rtt",
+    "9450",
+    "link"
+   ],
+   "distractors": [],
+   "rationale": "Egress near 10G link capacity, RTT growth and cwnd reductions: congestion; no local drops."
+  },
+  {
+   "id": "A05",
+   "category": "A_tcp_vs_loss",
+   "subcase": "6_congestion",
+   "gold": "tcp_retransmissions",
+   "required_any": [
+    "get_network_metrics"
+   ],
+   "host": "agg-1",
+   "service": "search-aggregator",
+   "incident": "Service 'search-aggregator' on host agg-1: fan-in queries to 200 shards have p99 of 1.9 s (baseline 90 ms) during bursts. Investigate.",
+   "state": {
+    "net": {
+     "tcp": {
+      "retrans_segs_per_s": 880,
+      "baseline_retrans_segs_per_s": 5,
+      "rto_timeouts_per_s": 95,
+      "rtt_ms_p50": 1.1,
+      "baseline_rtt_ms_p50": 0.9,
+      "cwnd_reductions_per_s": 300,
+      "syn_retrans_per_s": 0
+     }
+    }
+   },
+   "diagnostic_terms": [
+    "rto",
+    "retrans",
+    "880",
+    "95"
+   ],
+   "distractors": [],
+   "rationale": "Incast-style RTO bursts at fan-in; local drop counters zero."
+  },
+  {
+   "id": "A06",
+   "category": "A_tcp_vs_loss",
+   "subcase": "6_congestion",
+   "gold": "tcp_retransmissions",
+   "required_any": [
+    "get_network_metrics"
+   ],
+   "host": "vpn-1",
+   "service": "replicator",
+   "incident": "Service 'replicator' on host vpn-1: cross-site replication over the WAN lags by 40 s; p99 RPC latency 3.1 s. Investigate.",
+   "state": {
+    "net": {
+     "interfaces": {
+      "eth0": {
+       "rx_pps": 45000,
+       "tx_pps": 43000,
+       "rx_mbps": 380,
+       "tx_mbps": 940,
+       "link_mbps": 1000,
+       "rx_dropped_per_s": 0,
+       "tx_dropped_per_s": 0,
+       "rx_missed_per_s": 0,
+       "rx_errors_per_s": 0,
+       "ring_rx": "1024/4096",
+       "rx_queues": 8
+      }
+     },
+     "tcp": {
+      "retrans_segs_per_s": 260,
+      "baseline_retrans_segs_per_s": 2,
+      "rtt_ms_p50": 410,
+      "baseline_rtt_ms_p50": 32,
+      "cwnd_reductions_per_s": 70,
+      "goodput_mbps": 610,
+      "baseline_goodput_mbps": 900
+     }
+    }
+   },
+   "diagnostic_terms": [
+    "rtt",
+    "retrans",
+    "410",
+    "260"
+   ],
+   "distractors": [],
+   "rationale": "Bufferbloat/WAN congestion: RTT 13x, retransmissions, no local drops."
+  },
+  {
+   "id": "A07",
+   "category": "A_tcp_vs_loss",
+   "subcase": "2_drops_high_retx_low",
+   "gold": "network_packet_loss",
+   "required_any": [
+    "get_network_metrics"
+   ],
+   "host": "dns-1",
+   "service": "resolver",
+   "incident": "Service 'resolver' (UDP DNS) on host dns-1: clients see query timeouts; p99 resolution 1.1 s. Investigate.",
+   "state": {
+    "net": {
+     "interfaces": {
+      "eth0": {
+       "rx_pps": 1400000,
+       "tx_pps": 43000,
+       "rx_mbps": 380,
+       "tx_mbps": 350,
+       "link_mbps": 10000,
+       "rx_dropped_per_s": 9100,
+       "tx_dropped_per_s": 0,
+       "rx_missed_per_s": 9050,
+       "rx_errors_per_s": 0,
+       "ring_rx": "256/4096",
+       "rx_queues": 8
+      }
+     },
+     "tcp": {
+      "retrans_segs_per_s": 3.0,
+      "baseline_retrans_segs_per_s": 2.5
+     }
+    }
+   },
+   "diagnostic_terms": [
+    "rx_missed",
+    "rx_dropped",
+    "ring",
+    "9050",
+    "9100"
+   ],
+   "distractors": [],
+   "rationale": "NIC ring overruns drop UDP packets; TCP retransmissions irrelevant/low."
+  },
+  {
+   "id": "A08",
+   "category": "A_tcp_vs_loss",
+   "subcase": "2_drops_high_retx_low",
+   "gold": "network_packet_loss",
+   "required_any": [
+    "get_network_metrics"
+   ],
+   "host": "edge-3",
+   "service": "ingest",
+   "incident": "Service 'ingest' on host edge-3: telemetry ingestion loses events; p99 ack latency 700 ms. Investigate.",
+   "state": {
+    "net": {
+     "interfaces": {
+      "eth0": {
+       "rx_pps": 45000,
+       "tx_pps": 43000,
+       "rx_mbps": 380,
+       "tx_mbps": 350,
+       "link_mbps": 10000,
+       "rx_dropped_per_s": 0,
+       "tx_dropped_per_s": 5200,
+       "rx_missed_per_s": 0,
+       "rx_errors_per_s": 0,
+       "ring_rx": "1024/4096",
+       "rx_queues": 8
+      }
+     },
+     "kfree_skb": {
+      "drops_per_s": 5300,
+      "top_reasons": {
+       "QDISC_DROP": 5200,
+       "NOT_SPECIFIED": 100
+      }
+     },
+     "tcp": {
+      "retrans_segs_per_s": 4.0,
+      "baseline_retrans_segs_per_s": 2.0
+     }
+    }
+   },
+   "diagnostic_terms": [
+    "qdisc_drop",
+    "tx_dropped",
+    "kfree_skb",
+    "5200"
+   ],
+   "distractors": [],
+   "rationale": "Egress qdisc drops proven by kfree_skb; retransmissions low."
+  },
+  {
+   "id": "A09",
+   "category": "A_tcp_vs_loss",
+   "subcase": "3_both_high",
+   "gold": "network_packet_loss",
+   "required_any": [
+    "get_network_metrics"
+   ],
+   "host": "lb-1",
+   "service": "gateway",
+   "incident": "Service 'gateway' on host lb-1: intermittent client timeouts; p99 rose 5x. Investigate.",
+   "state": {
+    "net": {
+     "interfaces": {
+      "eth0": {
+       "rx_pps": 900000,
+       "tx_pps": 43000,
+       "rx_mbps": 380,
+       "tx_mbps": 350,
+       "link_mbps": 10000,
+       "rx_dropped_per_s": 7200,
+       "tx_dropped_per_s": 0,
+       "rx_missed_per_s": 7150,
+       "rx_errors_per_s": 0,
+       "ring_rx": "256/4096",
+       "rx_queues": 8
+      }
+     },
+     "tcp": {
+      "retrans_segs_per_s": 900,
+      "baseline_retrans_segs_per_s": 6,
+      "rtt_ms_p50": 1.3,
+      "baseline_rtt_ms_p50": 0.9
+     }
+    }
+   },
+   "diagnostic_terms": [
+    "rx_dropped",
+    "rx_missed",
+    "ring",
+    "7200",
+    "7150"
+   ],
+   "distractors": [],
+   "rationale": "Local RX drops proven; retransmissions are the consequence."
+  },
+  {
+   "id": "A10",
+   "category": "A_tcp_vs_loss",
+   "subcase": "3_both_high",
+   "gold": "network_packet_loss",
+   "required_any": [
+    "get_network_metrics"
+   ],
+   "host": "app-12",
+   "service": "checkout",
+   "incident": "Service 'checkout' on host app-12: p99 latency rose from 90 ms to 1.3 s; error rate 3%. Investigate.",
+   "state": {
+    "cpu": {
+     "softirq_pct": 12.0,
+     "softirq_by_type_pct": {
+      "NET_RX": 11.0
+     }
+    },
+    "net": {
+     "softnet": {
+      "dropped_per_s": 4100,
+      "time_squeeze_per_s": 1900
+     },
+     "kfree_skb": {
+      "drops_per_s": 4150,
+      "top_reasons": {
+       "CPU_BACKLOG": 4100,
+       "NOT_SPECIFIED": 50
+      }
+     },
+     "tcp": {
+      "retrans_segs_per_s": 520,
+      "baseline_retrans_segs_per_s": 3
+     }
+    }
+   },
+   "diagnostic_terms": [
+    "softnet",
+    "cpu_backlog",
+    "4100",
+    "dropped"
+   ],
+   "distractors": [
+    "softirq 12% (moderate)"
+   ],
+   "rationale": "Backlog (softnet) drops proven by kfree_skb CPU_BACKLOG; retransmissions follow."
+  },
+  {
+   "id": "A11",
+   "category": "A_tcp_vs_loss",
+   "subcase": "7_kernel_proven_loss",
+   "gold": "network_packet_loss",
+   "required_any": [
+    "get_network_metrics"
+   ],
+   "host": "fw-2",
+   "service": "edge",
+   "incident": "Service 'edge' on host fw-2: new connections intermittently fail; p99 connect time 3 s. Investigate.",
+   "state": {
+    "net": {
+     "conntrack": {
+      "count": 262144,
+      "max": 262144,
+      "drops_per_s": 2500
+     },
+     "kfree_skb": {
+      "drops_per_s": 2520,
+      "top_reasons": {
+       "NETFILTER_DROP": 2500,
+       "NOT_SPECIFIED": 20
+      }
+     },
+     "tcp": {
+      "retrans_segs_per_s": 60,
+      "baseline_retrans_segs_per_s": 3,
+      "syn_retrans_per_s": 55
+     }
+    }
+   },
+   "diagnostic_terms": [
+    "conntrack",
+    "netfilter_drop",
+    "2500",
+    "262144"
+   ],
+   "distractors": [],
+   "rationale": "Conntrack table full; kernel drops proven."
+  },
+  {
+   "id": "A12",
+   "category": "A_tcp_vs_loss",
+   "subcase": "7_kernel_proven_loss",
+   "gold": "network_packet_loss",
+   "required_any": [
+    "get_network_metrics"
+   ],
+   "host": "store-5",
+   "service": "blob",
+   "incident": "Service 'blob' on host store-5: reads from the storage network (interface eth1) have p99 of 2.2 s (baseline 40 ms). Investigate.",
+   "state": {
+    "net": {
+     "interfaces": {
+      "eth0": {
+       "rx_pps": 45000,
+       "tx_pps": 43000,
+       "rx_mbps": 380,
+       "tx_mbps": 350,
+       "link_mbps": 10000,
+       "rx_dropped_per_s": 0,
+       "tx_dropped_per_s": 0,
+       "rx_missed_per_s": 0,
+       "rx_errors_per_s": 0,
+       "ring_rx": "1024/4096",
+       "rx_queues": 8
+      },
+      "eth1": {
+       "rx_pps": 45000,
+       "tx_pps": 43000,
+       "rx_mbps": 4200,
+       "tx_mbps": 350,
+       "link_mbps": 10000,
+       "rx_dropped_per_s": 3100,
+       "tx_dropped_per_s": 0,
+       "rx_missed_per_s": 0,
+       "rx_errors_per_s": 3100,
+       "ring_rx": "1024/4096",
+       "rx_queues": 8
+      }
+     },
+     "tcp": {
+      "retrans_segs_per_s": 250,
+      "baseline_retrans_segs_per_s": 2
+     }
+    }
+   },
+   "diagnostic_terms": [
+    "eth1",
+    "rx_errors",
+    "3100"
+   ],
+   "distractors": [],
+   "rationale": "CRC/rx errors on eth1 (storage NIC); drops proven on that interface only."
+  },
+  {
+   "id": "A13",
+   "category": "A_tcp_vs_loss",
+   "subcase": "4_neither_high",
+   "gold": "application_bottleneck",
+   "required_any": [
+    "get_recent_logs"
+   ],
+   "host": "web-7",
+   "service": "catalog",
+   "incident": "Service 'catalog' on host web-7: p99 latency rose from 150 ms to 1.6 s. Network is suspected. Investigate.",
+   "state": {
+    "logs": {
+     "catalog": [
+      [
+       "warn",
+       "slow query 1480ms: SELECT * FROM products WHERE ... (missing index idx_products_category)"
+      ],
+      [
+       "warn",
+       "slow query 1510ms: SELECT * FROM products WHERE ..."
+      ],
+      [
+       "info",
+       "request completed status=200"
+      ]
+     ]
+    }
+   },
+   "diagnostic_terms": [
+    "slow query",
+    "index",
+    "1480"
+   ],
+   "distractors": [
+    "network suspected by reporter"
+   ],
+   "rationale": "All kernel/network counters normal; logs show slow queries."
+  },
+  {
+   "id": "A14",
+   "category": "A_tcp_vs_loss",
+   "subcase": "4_neither_high",
+   "gold": "INSUFFICIENT_EVIDENCE",
+   "required_any": [],
+   "host": "web-9",
+   "service": "profile",
+   "incident": "Service 'profile' on host web-9: p99 latency rose from 120 ms to 380 ms. Network is suspected. Investigate.",
+   "state": {},
+   "diagnostic_terms": [],
+   "distractors": [
+    "network suspected by reporter"
+   ],
+   "rationale": "Everything normal including logs: no identifiable cause."
+  },
+  {
+   "id": "A15",
+   "category": "A_tcp_vs_loss",
+   "subcase": "5_insufficient",
+   "gold": "INSUFFICIENT_EVIDENCE",
+   "required_any": [],
+   "host": "app-20",
+   "service": "billing",
+   "incident": "Service 'billing' on host app-20: clients report timeouts; p99 6x yesterday. Investigate.",
+   "state": {
+    "unavailable": {
+     "get_network_metrics": "metrics unavailable: node exporter on app-20 is down"
+    },
+    "logs": {
+     "billing": [
+      [
+       "warn",
+       "upstream connection reset by peer"
+      ],
+      [
+       "info",
+       "request completed status=200"
+      ]
+     ]
+    }
+   },
+   "diagnostic_terms": [],
+   "distractors": [
+    "connection reset warnings"
+   ],
+   "rationale": "Network data missing; CPU normal; resets alone do not identify a cause."
+  },
+  {
+   "id": "A16",
+   "category": "A_tcp_vs_loss",
+   "subcase": "5_insufficient",
+   "gold": "INSUFFICIENT_EVIDENCE",
+   "required_any": [],
+   "host": "vm-14",
+   "service": "notifications",
+   "incident": "Service 'notifications' on host vm-14: delivery latency doubled. Investigate.",
+   "state": {
+    "net": {
+     "interfaces": {
+      "=eth0": {
+       "error": "interface statistics not supported by virtio driver build"
+      }
+     },
+     "tcp": {
+      "retrans_segs_per_s": 8.0,
+      "baseline_retrans_segs_per_s": 2.0
+     },
+     "softnet": {
+      "error": "softnet_stat unavailable in this container"
+     },
+     "kfree_skb": {
+      "error": "kfree_skb tracer not deployed"
+     }
+    }
+   },
+   "diagnostic_terms": [
+    "retrans",
+    "unavailable"
+   ],
+   "distractors": [],
+   "rationale": "Retransmissions mildly elevated; drop counters unavailable; latency impact unexplained."
+  },
+  {
+   "id": "A17",
+   "category": "A_tcp_vs_loss",
+   "subcase": "8_cannot_distinguish",
+   "gold": "INSUFFICIENT_EVIDENCE",
+   "required_any": [],
+   "host": "vm-22",
+   "service": "ledger",
+   "incident": "Service 'ledger' on host vm-22: p99 commit latency rose from 30 ms to 900 ms. Investigate.",
+   "state": {
+    "net": {
+     "interfaces": {
+      "=eth0": {
+       "error": "interface statistics not supported in this VM"
+      }
+     },
+     "tcp": {
+      "retrans_segs_per_s": 700,
+      "baseline_retrans_segs_per_s": 3,
+      "rtt_ms_p50": 22,
+      "baseline_rtt_ms_p50": 1.0
+     },
+     "softnet": {
+      "error": "softnet_stat unavailable"
+     },
+     "kfree_skb": {
+      "error": "kfree_skb tracer not deployed"
+     }
+    }
+   },
+   "diagnostic_terms": [
+    "retrans",
+    "unavailable",
+    "cannot"
+   ],
+   "distractors": [],
+   "rationale": "Retransmissions high but every drop counter unavailable: loss vs congestion undecidable."
+  },
+  {
+   "id": "A18",
+   "category": "A_tcp_vs_loss",
+   "subcase": "8_cannot_distinguish",
+   "gold": "INSUFFICIENT_EVIDENCE",
+   "required_any": [],
+   "host": "db-9",
+   "service": "orders-db",
+   "incident": "Service 'orders-db' on host db-9 (traffic on bonded interface bond0): p99 query latency rose 8x. Investigate.",
+   "state": {
+    "net": {
+     "interfaces": {
+      "eth0": {
+       "rx_pps": 1200,
+       "tx_pps": 1100,
+       "rx_mbps": 380,
+       "tx_mbps": 350,
+       "link_mbps": 10000,
+       "rx_dropped_per_s": 0,
+       "tx_dropped_per_s": 0,
+       "rx_missed_per_s": 0,
+       "rx_errors_per_s": 0,
+       "ring_rx": "1024/4096",
+       "rx_queues": 8
+      },
+      "=bond0": {
+       "error": "statistics for bond0 unavailable (bonding driver)"
+      }
+     },
+     "tcp": {
+      "retrans_segs_per_s": 480,
+      "baseline_retrans_segs_per_s": 2
+     },
+     "softnet": {
+      "error": "softnet_stat unavailable"
+     },
+     "kfree_skb": {
+      "error": "kfree_skb tracer not deployed"
+     }
+    }
+   },
+   "diagnostic_terms": [
+    "bond0",
+    "unavailable",
+    "retrans"
+   ],
+   "distractors": [
+    "eth0 counters clean (idle interface)"
+   ],
+   "rationale": "Retransmissions high; the data interface's drop counters are unavailable; eth0 is idle."
+  },
+  {
+   "id": "B01",
+   "category": "B_cpu",
+   "subcase": "runqueue_contention",
+   "gold": "cpu_contention",
+   "required_any": [
+    "get_cpu_metrics",
+    "get_scheduler_latency"
+   ],
+   "host": "web-1",
+   "service": "search",
+   "incident": "Service 'search' on host web-1: p99 latency rose from 80 ms to 1.4 s over 10 minutes. Investigate.",
+   "state": {
+    "cpu": {
+     "util_pct": 99.0,
+     "user_pct": 88.0,
+     "run_queue_len": 44,
+     "load_avg_1m": 43.0,
+     "top_processes": [
+      {
+       "name": "search-worker",
+       "cpu_pct": 1190
+      },
+      {
+       "name": "batch-reindex",
+       "cpu_pct": 1050
+      }
+     ]
+    },
+    "sched": {
+     "p99_ms_default": 38.0
+    }
+   },
+   "diagnostic_terms": [
+    "run_queue",
+    "99",
+    "44",
+    "38",
+    "batch-reindex"
+   ],
+   "distractors": [],
+   "rationale": "Saturated CPUs, run queue 44 on 24 cores, run-queue delay 38 ms."
+  },
+  {
+   "id": "B02",
+   "category": "B_cpu",
+   "subcase": "affinity_hotspot",
+   "gold": "cpu_contention",
+   "required_any": [
+    "get_cpu_metrics",
+    "get_scheduler_latency"
+   ],
+   "host": "web-3",
+   "service": "api",
+   "incident": "Service 'api' (cpuset 0-3) on host web-3: p99 doubled. Host CPU utilization is only 30%. Investigate.",
+   "state": {
+    "cpu": {
+     "util_pct": 30.0,
+     "per_cpu_hotspots": [
+      {
+       "cpus": "0-3",
+       "util_pct": 100.0
+      }
+     ],
+     "top_processes": [
+      {
+       "name": "api (cpuset 0-3)",
+       "cpu_pct": 395
+      },
+      {
+       "name": "log-shipper (cpuset 0-3)",
+       "cpu_pct": 180
+      }
+     ]
+    },
+    "sched": {
+     "p99_ms_by_cpu": {
+      "0": 25.0,
+      "1": 26.0,
+      "2": 24.5,
+      "3": 25.5
+     }
+    }
+   },
+   "diagnostic_terms": [
+    "0-3",
+    "100",
+    "25",
+    "cpuset"
+   ],
+   "distractors": [
+    "host util 30%"
+   ],
+   "rationale": "Pinned CPUs saturated by a co-pinned process; only those CPUs show run-queue delay."
+  },
+  {
+   "id": "B03",
+   "category": "B_cpu",
+   "subcase": "context_switch_storm",
+   "gold": "cpu_contention",
+   "required_any": [
+    "get_cpu_metrics",
+    "get_scheduler_latency"
+   ],
+   "host": "mq-2",
+   "service": "broker",
+   "incident": "Service 'broker' on host mq-2: p99 publish latency rose from 5 ms to 140 ms. Investigate.",
+   "state": {
+    "cpu": {
+     "util_pct": 97.0,
+     "system_pct": 31.0,
+     "run_queue_len": 31,
+     "context_switches_per_s": 480000,
+     "migrations_per_s": 61000
+    },
+    "sched": {
+     "p99_ms_default": 12.0
+    }
+   },
+   "diagnostic_terms": [
+    "context_switches",
+    "480000",
+    "run_queue",
+    "12"
+   ],
+   "distractors": [],
+   "rationale": "Saturated CPUs with switch/migration storm and 12 ms run-queue delay."
+  },
+  {
+   "id": "B04",
+   "category": "B_cpu",
+   "subcase": "hypervisor_steal",
+   "gold": "cpu_contention",
+   "required_any": [
+    "get_cpu_metrics",
+    "get_scheduler_latency"
+   ],
+   "host": "vm-31",
+   "service": "render",
+   "incident": "Service 'render' on host vm-31: job latency p99 tripled. Investigate.",
+   "state": {
+    "cpu": {
+     "util_pct": 64.0,
+     "steal_pct": 36.0,
+     "run_queue_len": 30,
+     "cores": 24
+    },
+    "sched": {
+     "p99_ms_default": 15.0
+    }
+   },
+   "diagnostic_terms": [
+    "steal",
+    "36",
+    "run_queue",
+    "15"
+   ],
+   "distractors": [],
+   "rationale": "Hypervisor steal 36%: runnable tasks wait for CPU."
+  },
+  {
+   "id": "B05",
+   "category": "B_cpu",
+   "subcase": "cgroup_throttling",
+   "gold": "cpu_throttling",
+   "required_any": [
+    "get_cpu_metrics"
+   ],
+   "host": "k8s-3",
+   "service": "pricing",
+   "incident": "Service 'pricing' (container) on host k8s-3: p99 rose from 30 ms to 700 ms after a deploy; p50 unchanged. Investigate.",
+   "state": {
+    "cpu": {
+     "util_pct": 28.0,
+     "cgroups": [
+      {
+       "name": "pricing",
+       "cpu_max": "50000 100000",
+       "nr_periods_delta": 6000,
+       "nr_throttled_delta": 4100,
+       "throttled_usec_delta": 212000000
+      }
+     ]
+    }
+   },
+   "diagnostic_terms": [
+    "throttl",
+    "nr_throttled",
+    "4100",
+    "cpu_max",
+    "50000"
+   ],
+   "distractors": [],
+   "rationale": "Quota throttling 68% of periods; host not saturated."
+  },
+  {
+   "id": "B06",
+   "category": "B_cpu",
+   "subcase": "cgroup_throttling",
+   "gold": "cpu_throttling",
+   "required_any": [
+    "get_cpu_metrics"
+   ],
+   "host": "k8s-7",
+   "service": "auth",
+   "incident": "Service 'auth' on host k8s-7: logins time out at peak. Host CPU is 88%, which is normal for this host at peak. Investigate.",
+   "state": {
+    "cpu": {
+     "util_pct": 88.0,
+     "user_pct": 76.0,
+     "run_queue_len": 18,
+     "cgroups": [
+      {
+       "name": "auth",
+       "cpu_max": "100000 100000",
+       "nr_periods_delta": 6000,
+       "nr_throttled_delta": 5400,
+       "throttled_usec_delta": 390000000
+      }
+     ]
+    }
+   },
+   "diagnostic_terms": [
+    "throttl",
+    "5400",
+    "nr_throttled",
+    "cpu_max"
+   ],
+   "distractors": [
+    "host util 88% (normal at peak)"
+   ],
+   "rationale": "Throttled 90% of periods; run queue below core count and run-queue delay normal."
+  },
+  {
+   "id": "B07",
+   "category": "B_cpu",
+   "subcase": "cgroup_throttling",
+   "gold": "cpu_throttling",
+   "required_any": [
+    "get_cpu_metrics"
+   ],
+   "host": "k8s-9",
+   "service": "thumbnailer",
+   "incident": "Service 'thumbnailer' on host k8s-9: p99 rose 12x while p50 stayed flat. Investigate.",
+   "state": {
+    "cpu": {
+     "util_pct": 22.0,
+     "cgroups": [
+      {
+       "name": "thumbnailer",
+       "cpu_max": "30000 100000",
+       "nr_periods_delta": 6000,
+       "nr_throttled_delta": 3300,
+       "throttled_usec_delta": 140000000
+      }
+     ]
+    }
+   },
+   "diagnostic_terms": [
+    "throttl",
+    "3300",
+    "30000"
+   ],
+   "distractors": [],
+   "rationale": "300m CPU limit throttled 55% of periods."
+  },
+  {
+   "id": "C01",
+   "category": "C_softirq",
+   "subcase": "single_queue_net_rx",
+   "gold": "softirq_overload",
+   "required_any": [
+    "get_cpu_metrics",
+    "get_scheduler_latency"
+   ],
+   "host": "ing-2",
+   "service": "ingest",
+   "incident": "Service 'ingest' on host ing-2: requests handled on CPU 3 have 20x higher p99 than other CPUs. Investigate.",
+   "state": {
+    "cpu": {
+     "util_pct": 38.0,
+     "softirq_by_type_pct": {
+      "NET_RX": 9.0
+     },
+     "per_cpu_hotspots": [
+      {
+       "cpu": 3,
+       "util_pct": 100.0,
+       "softirq_pct": 93.0
+      }
+     ],
+     "top_processes": [
+      {
+       "name": "ksoftirqd/3",
+       "cpu_pct": 64
+      }
+     ]
+    },
+    "net": {
+     "interfaces": {
+      "eth0": {
+       "rx_pps": 1250000,
+       "tx_pps": 43000,
+       "rx_mbps": 380,
+       "tx_mbps": 350,
+       "link_mbps": 10000,
+       "rx_dropped_per_s": 0,
+       "tx_dropped_per_s": 0,
+       "rx_missed_per_s": 0,
+       "rx_errors_per_s": 0,
+       "ring_rx": "1024/4096",
+       "rx_queues": 1
+      }
+     },
+     "softnet": {
+      "dropped_per_s": 0,
+      "time_squeeze_per_s": 900
+     }
+    },
+    "sched": {
+     "p99_ms_by_cpu": {
+      "3": 40.0
+     }
+    }
+   },
+   "diagnostic_terms": [
+    "softirq",
+    "93",
+    "cpu 3",
+    "net_rx",
+    "ksoftirqd"
+   ],
+   "distractors": [],
+   "rationale": "NET_RX softirq saturates CPU 3; no drops."
+  },
+  {
+   "id": "C02",
+   "category": "C_softirq",
+   "subcase": "irq_affinity",
+   "gold": "softirq_overload",
+   "required_any": [
+    "get_cpu_metrics",
+    "get_scheduler_latency"
+   ],
+   "host": "cache-1",
+   "service": "kv",
+   "incident": "Service 'kv' on host cache-1: p999 latency spikes to 300 ms on a subset of requests. Investigate.",
+   "state": {
+    "cpu": {
+     "util_pct": 31.0,
+     "per_cpu_hotspots": [
+      {
+       "cpu": 0,
+       "util_pct": 99.0,
+       "softirq_pct": 89.0
+      }
+     ],
+     "top_processes": [
+      {
+       "name": "ksoftirqd/0",
+       "cpu_pct": 71
+      }
+     ]
+    },
+    "net": {
+     "softnet": {
+      "time_squeeze_per_s": 650
+     }
+    },
+    "sched": {
+     "p99_ms_by_cpu": {
+      "0": 33.0
+     }
+    }
+   },
+   "diagnostic_terms": [
+    "softirq",
+    "89",
+    "cpu 0",
+    "ksoftirqd"
+   ],
+   "distractors": [],
+   "rationale": "All NIC IRQs on CPU 0: softirq saturation; no drops."
+  },
+  {
+   "id": "C03",
+   "category": "C_softirq",
+   "subcase": "napi_busy",
+   "gold": "softirq_overload",
+   "required_any": [
+    "get_cpu_metrics",
+    "get_scheduler_latency"
+   ],
+   "host": "lb-5",
+   "service": "proxy",
+   "incident": "Service 'proxy' on host lb-5: p99 rose from 3 ms to 45 ms at 2M packets/s. Investigate.",
+   "state": {
+    "cpu": {
+     "util_pct": 47.0,
+     "softirq_pct": 34.0,
+     "softirq_by_type_pct": {
+      "NET_RX": 33.0
+     },
+     "per_cpu_hotspots": [
+      {
+       "cpus": "0-7",
+       "util_pct": 98.0,
+       "softirq_pct": 82.0
+      }
+     ]
+    },
+    "memory": {
+     "available_mib": 5200
+    },
+    "net": {
+     "interfaces": {
+      "eth0": {
+       "rx_pps": 2100000,
+       "tx_pps": 43000,
+       "rx_mbps": 380,
+       "tx_mbps": 350,
+       "link_mbps": 10000,
+       "rx_dropped_per_s": 0,
+       "tx_dropped_per_s": 0,
+       "rx_missed_per_s": 0,
+       "rx_errors_per_s": 0,
+       "ring_rx": "1024/4096",
+       "rx_queues": 8
+      }
+     },
+     "softnet": {
+      "time_squeeze_per_s": 1400
+     }
+    },
+    "sched": {
+     "p99_ms_by_cpu": {
+      "0": 18.0,
+      "1": 18.0,
+      "2": 18.0,
+      "3": 18.0,
+      "4": 18.0,
+      "5": 18.0,
+      "6": 18.0,
+      "7": 18.0
+     }
+    }
+   },
+   "diagnostic_terms": [
+    "softirq",
+    "82",
+    "0-7",
+    "net_rx"
+   ],
+   "distractors": [
+    "available memory 5.2 GiB (PSI zero)"
+   ],
+   "rationale": "NET_RX/NAPI load saturates CPUs 0-7; memory is a distractor."
+  },
+  {
+   "id": "C04",
+   "category": "C_softirq",
+   "subcase": "small_packet_flood",
+   "gold": "softirq_overload",
+   "required_any": [
+    "get_cpu_metrics",
+    "get_scheduler_latency"
+   ],
+   "host": "dns-4",
+   "service": "resolver",
+   "incident": "Service 'resolver' on host dns-4: query p99 rose 9x during a traffic surge of small packets. Investigate.",
+   "state": {
+    "cpu": {
+     "util_pct": 29.0,
+     "per_cpu_hotspots": [
+      {
+       "cpus": "5-6",
+       "util_pct": 100.0,
+       "softirq_pct": 88.0
+      }
+     ]
+    },
+    "net": {
+     "interfaces": {
+      "eth0": {
+       "rx_pps": 1900000,
+       "tx_pps": 43000,
+       "rx_mbps": 380,
+       "tx_mbps": 350,
+       "link_mbps": 10000,
+       "rx_dropped_per_s": 0,
+       "tx_dropped_per_s": 0,
+       "rx_missed_per_s": 0,
+       "rx_errors_per_s": 0,
+       "ring_rx": "1024/4096",
+       "rx_queues": 8
+      }
+     },
+     "softnet": {
+      "time_squeeze_per_s": 2200
+     }
+    },
+    "sched": {
+     "p99_ms_by_cpu": {
+      "5": 28.0,
+      "6": 29.0
+     }
+    }
+   },
+   "diagnostic_terms": [
+    "softirq",
+    "88",
+    "5-6",
+    "time_squeeze"
+   ],
+   "distractors": [],
+   "rationale": "Small-packet flood saturates CPUs 5-6 in softirq; no drops."
+  },
+  {
+   "id": "C05",
+   "category": "C_softirq",
+   "subcase": "softirq_with_drops",
+   "gold": "network_packet_loss",
+   "required_any": [
+    "get_network_metrics"
+   ],
+   "host": "ing-6",
+   "service": "ingest",
+   "incident": "Service 'ingest' on host ing-6: p99 rose 15x and some client batches are lost. Investigate.",
+   "state": {
+    "cpu": {
+     "per_cpu_hotspots": [
+      {
+       "cpu": 2,
+       "util_pct": 100.0,
+       "softirq_pct": 95.0
+      }
+     ]
+    },
+    "net": {
+     "softnet": {
+      "dropped_per_s": 6000,
+      "time_squeeze_per_s": 3100
+     },
+     "kfree_skb": {
+      "drops_per_s": 6040,
+      "top_reasons": {
+       "CPU_BACKLOG": 6000,
+       "NOT_SPECIFIED": 40
+      }
+     }
+    },
+    "sched": {
+     "p99_ms_by_cpu": {
+      "2": 37.0
+     }
+    }
+   },
+   "diagnostic_terms": [
+    "softnet",
+    "dropped",
+    "6000",
+    "cpu_backlog"
+   ],
+   "distractors": [
+    "softirq 95% on CPU 2"
+   ],
+   "rationale": "Softirq saturation AND proven backlog drops: rule says drops proven -> network_packet_loss."
+  },
+  {
+   "id": "C06",
+   "category": "C_softirq",
+   "subcase": "weak_softirq_signal",
+   "gold": "INSUFFICIENT_EVIDENCE",
+   "required_any": [],
+   "host": "web-12",
+   "service": "frontend",
+   "incident": "Service 'frontend' on host web-12: one p999 spike to 250 ms was seen in the last hour. Investigate.",
+   "state": {
+    "cpu": {
+     "softirq_pct": 9.0,
+     "softirq_by_type_pct": {
+      "NET_RX": 8.0
+     }
+    }
+   },
+   "diagnostic_terms": [],
+   "distractors": [
+    "softirq 9% (baseline 5%)"
+   ],
+   "rationale": "Slightly elevated softirq without hotspot, drops or scheduling delay: inconclusive."
+  },
+  {
+   "id": "D01",
+   "category": "D_memory",
+   "subcase": "reclaim",
+   "gold": "memory_pressure",
+   "required_any": [
+    "get_cpu_metrics",
+    "get_recent_logs"
+   ],
+   "host": "app-4",
+   "service": "reports",
+   "incident": "Service 'reports' on host app-4: requests stall for seconds. Investigate.",
+   "state": {
+    "cpu": {
+     "system_pct": 27.0,
+     "psi": {
+      "memory_some_avg10": 52.0,
+      "memory_full_avg10": 24.0
+     },
+     "top_processes": [
+      {
+       "name": "kswapd0",
+       "cpu_pct": 97
+      }
+     ]
+    },
+    "memory": {
+     "available_mib": 600,
+     "pgscan_direct_per_s": 180000,
+     "kswapd_cpu_pct": 97
+    }
+   },
+   "diagnostic_terms": [
+    "psi",
+    "52",
+    "kswapd",
+    "pgscan",
+    "600"
+   ],
+   "distractors": [],
+   "rationale": "Memory PSI 52/24, direct reclaim, kswapd saturated."
+  },
+  {
+   "id": "D02",
+   "category": "D_memory",
+   "subcase": "swapping",
+   "gold": "memory_pressure",
+   "required_any": [
+    "get_cpu_metrics",
+    "get_recent_logs"
+   ],
+   "host": "db-3",
+   "service": "warehouse",
+   "incident": "Service 'warehouse' on host db-3: query latency rose 10x. Investigate.",
+   "state": {
+    "cpu": {
+     "iowait_pct": 14.0,
+     "psi": {
+      "memory_some_avg10": 38.0,
+      "memory_full_avg10": 15.0
+     }
+    },
+    "memory": {
+     "available_mib": 1200,
+     "swap_used_mib": 30000,
+     "swap_in_mib_per_s": 150.0,
+     "major_faults_per_s": 9000
+    }
+   },
+   "diagnostic_terms": [
+    "swap",
+    "150",
+    "major_faults",
+    "psi"
+   ],
+   "distractors": [],
+   "rationale": "Heavy swap-in and major faults."
+  },
+  {
+   "id": "D03",
+   "category": "D_memory",
+   "subcase": "oom_kills",
+   "gold": "memory_pressure",
+   "required_any": [
+    "get_cpu_metrics",
+    "get_recent_logs"
+   ],
+   "host": "k8s-4",
+   "service": "analytics",
+   "incident": "Service 'analytics' on host k8s-4: the service restarted 4 times in 10 minutes. Investigate.",
+   "state": {
+    "memory": {
+     "oom_kills_last_10m": 4
+    },
+    "logs": {
+     "analytics": [
+      [
+       "error",
+       "kernel: Memory cgroup out of memory: Killed process 4321 (analytics-jvm)"
+      ],
+      [
+       "info",
+       "service restarted"
+      ],
+      [
+       "error",
+       "kernel: Memory cgroup out of memory: Killed process 4410 (analytics-jvm)"
+      ]
+     ]
+    }
+   },
+   "diagnostic_terms": [
+    "oom",
+    "out of memory",
+    "killed"
+   ],
+   "distractors": [],
+   "rationale": "Cgroup OOM kills."
+  },
+  {
+   "id": "D04",
+   "category": "D_memory",
+   "subcase": "allocation_stalls",
+   "gold": "memory_pressure",
+   "required_any": [
+    "get_cpu_metrics",
+    "get_recent_logs"
+   ],
+   "host": "cache-3",
+   "service": "session",
+   "incident": "Service 'session' on host cache-3: p99 rose 20x. CPU system time is high. Investigate.",
+   "state": {
+    "cpu": {
+     "system_pct": 30.0,
+     "util_pct": 62.0,
+     "psi": {
+      "memory_some_avg10": 31.0,
+      "memory_full_avg10": 9.0
+     }
+    },
+    "memory": {
+     "available_mib": 900,
+     "pgscan_direct_per_s": 95000
+    },
+    "logs": {
+     "session": [
+      [
+       "warn",
+       "kernel: page allocation stall for 3120ms, order:2"
+      ],
+      [
+       "info",
+       "request completed status=200"
+      ]
+     ]
+    }
+   },
+   "diagnostic_terms": [
+    "allocation stall",
+    "psi",
+    "31",
+    "pgscan"
+   ],
+   "distractors": [
+    "system cpu 30% (caused by reclaim)"
+   ],
+   "rationale": "Allocation stalls with memory PSI 31."
+  },
+  {
+   "id": "D05",
+   "category": "D_memory",
+   "subcase": "page_cache_distractor",
+   "gold": "cpu_contention",
+   "required_any": [
+    "get_cpu_metrics",
+    "get_scheduler_latency"
+   ],
+   "host": "batch-2",
+   "service": "etl",
+   "incident": "Service 'etl' on host batch-2: job p99 runtime doubled. Free memory looks very low. Investigate.",
+   "state": {
+    "cpu": {
+     "util_pct": 99.0,
+     "run_queue_len": 52,
+     "top_processes": [
+      {
+       "name": "etl-worker",
+       "cpu_pct": 1300
+      },
+      {
+       "name": "backup-compress",
+       "cpu_pct": 980
+      }
+     ]
+    },
+    "memory": {
+     "available_mib": 41000,
+     "total_mib": 64000
+    },
+    "sched": {
+     "p99_ms_default": 41.0
+    }
+   },
+   "diagnostic_terms": [
+    "run_queue",
+    "52",
+    "41",
+    "99"
+   ],
+   "distractors": [
+    "'free' memory low but available 41 GiB, PSI ~0"
+   ],
+   "rationale": "Memory is page cache (available high, PSI 0); CPUs saturated."
+  },
+  {
+   "id": "E01",
+   "category": "E_application",
+   "subcase": "db_pool",
+   "gold": "application_bottleneck",
+   "required_any": [
+    "get_recent_logs"
+   ],
+   "host": "app-7",
+   "service": "orders",
+   "incident": "Service 'orders' on host app-7: p99 rose from 200 ms to 4 s. Investigate.",
+   "state": {
+    "logs": {
+     "orders": [
+      [
+       "error",
+       "db pool exhausted: 50/50 connections in use, waited 3800ms"
+      ],
+      [
+       "error",
+       "db pool exhausted: 50/50 connections in use"
+      ],
+      [
+       "info",
+       "request completed status=200"
+      ]
+     ]
+    }
+   },
+   "diagnostic_terms": [
+    "pool exhausted",
+    "50/50"
+   ],
+   "distractors": [],
+   "rationale": "Connection-pool exhaustion; kernel metrics normal."
+  },
+  {
+   "id": "E02",
+   "category": "E_application",
+   "subcase": "lock_contention",
+   "gold": "application_bottleneck",
+   "required_any": [
+    "get_recent_logs"
+   ],
+   "host": "app-9",
+   "service": "inventory",
+   "incident": "Service 'inventory' on host app-9: p99 rose 9x; CPU is low. Investigate.",
+   "state": {
+    "cpu": {
+     "util_pct": 12.0
+    },
+    "logs": {
+     "inventory": [
+      [
+       "warn",
+       "lock wait on stock_mutex 850ms (holder: reconcile-job)"
+      ],
+      [
+       "warn",
+       "lock wait on stock_mutex 910ms"
+      ]
+     ]
+    }
+   },
+   "diagnostic_terms": [
+    "lock",
+    "stock_mutex",
+    "850"
+   ],
+   "distractors": [],
+   "rationale": "Application lock contention."
+  },
+  {
+   "id": "E03",
+   "category": "E_application",
+   "subcase": "slow_dependency",
+   "gold": "application_bottleneck",
+   "required_any": [
+    "get_recent_logs"
+   ],
+   "host": "api-8",
+   "service": "checkout",
+   "incident": "Service 'checkout' on host api-8: p99 rose to 2.5 s. Network is suspected. Investigate.",
+   "state": {
+    "logs": {
+     "checkout": [
+      [
+       "error",
+       "call to fraud-check took 2300ms (timeout 2000ms)"
+      ],
+      [
+       "error",
+       "call to fraud-check took 2410ms"
+      ],
+      [
+       "info",
+       "request completed status=200"
+      ]
+     ]
+    }
+   },
+   "diagnostic_terms": [
+    "fraud-check",
+    "2300",
+    "timeout"
+   ],
+   "distractors": [
+    "network suspected by reporter"
+   ],
+   "rationale": "Slow downstream dependency; network/TCP normal."
+  },
+  {
+   "id": "E04",
+   "category": "E_application",
+   "subcase": "thread_pool",
+   "gold": "application_bottleneck",
+   "required_any": [
+    "get_recent_logs"
+   ],
+   "host": "web-11",
+   "service": "search-api",
+   "incident": "Service 'search-api' on host web-11: p99 rose 7x. CPU utilization is 92%. Investigate.",
+   "state": {
+    "cpu": {
+     "util_pct": 92.0,
+     "user_pct": 84.0,
+     "run_queue_len": 8
+    },
+    "logs": {
+     "search-api": [
+      [
+       "error",
+       "request rejected: worker pool saturated (64/64 busy, queue 500/500)"
+      ],
+      [
+       "warn",
+       "worker pool saturated (64/64 busy)"
+      ]
+     ]
+    }
+   },
+   "diagnostic_terms": [
+    "worker pool",
+    "64/64",
+    "saturated"
+   ],
+   "distractors": [
+    "cpu 92% but run queue 8 and run-queue delay normal"
+   ],
+   "rationale": "Worker-pool saturation; CPUs busy but not contended."
+  },
+  {
+   "id": "E05",
+   "category": "E_application",
+   "subcase": "request_queue",
+   "gold": "application_bottleneck",
+   "required_any": [
+    "get_recent_logs"
+   ],
+   "host": "app-15",
+   "service": "uploads",
+   "incident": "Service 'uploads' on host app-15: p99 upload latency rose 6x. Investigate.",
+   "state": {
+    "net": {
+     "tcp": {
+      "retrans_segs_per_s": 5.0,
+      "baseline_retrans_segs_per_s": 3.0
+     }
+    },
+    "logs": {
+     "uploads": [
+      [
+       "error",
+       "virus-scan queue full (1000/1000); upload waited 4100ms"
+      ],
+      [
+       "warn",
+       "virus-scan queue depth 990"
+      ]
+     ]
+    }
+   },
+   "diagnostic_terms": [
+    "virus-scan",
+    "queue full",
+    "4100"
+   ],
+   "distractors": [
+    "retrans 5/s vs 3/s baseline"
+   ],
+   "rationale": "Application work queue full; minor retransmissions are a distractor."
+  },
+  {
+   "id": "F01",
+   "category": "F_insufficient",
+   "subcase": "all_normal",
+   "gold": "INSUFFICIENT_EVIDENCE",
+   "required_any": [],
+   "host": "web-5",
+   "service": "profile",
+   "incident": "Service 'profile' on host web-5: p99 increased from 120 ms to 400 ms. Investigate.",
+   "state": {},
+   "diagnostic_terms": [],
+   "distractors": [],
+   "rationale": "All normal, logs clean."
+  },
+  {
+   "id": "F02",
+   "category": "F_insufficient",
+   "subcase": "data_missing",
+   "gold": "INSUFFICIENT_EVIDENCE",
+   "required_any": [],
+   "host": "app-9b",
+   "service": "billing",
+   "incident": "Service 'billing' on host app-9b: p99 is 6x higher than yesterday. Investigate.",
+   "state": {
+    "unavailable": {
+     "get_cpu_metrics": "metrics unavailable: node exporter down",
+     "get_network_metrics": "metrics unavailable: node exporter down",
+     "get_scheduler_latency": "tracer not deployed on this host"
+    }
+   },
+   "diagnostic_terms": [],
+   "distractors": [],
+   "rationale": "Only logs available, and they are normal."
+  },
+  {
+   "id": "F03",
+   "category": "F_insufficient",
+   "subcase": "weak_conflicting",
+   "gold": "INSUFFICIENT_EVIDENCE",
+   "required_any": [],
+   "host": "web-8",
+   "service": "catalog",
+   "incident": "Service 'catalog' on host web-8: a single customer reported slowness yesterday; dashboards show p99 in the normal range today. Investigate.",
+   "state": {
+    "cpu": {
+     "util_pct": 58.0,
+     "psi": {
+      "memory_some_avg10": 0.4
+     }
+    },
+    "net": {
+     "tcp": {
+      "retrans_segs_per_s": 3.0,
+      "baseline_retrans_segs_per_s": 2.5
+     }
+    },
+    "logs": {
+     "catalog": [
+      [
+       "warn",
+       "slow request 1200ms at 03:12 (single occurrence)"
+      ],
+      [
+       "info",
+       "request completed status=200"
+      ]
+     ]
+    }
+   },
+   "diagnostic_terms": [],
+   "distractors": [
+    "single slow request log"
+   ],
+   "rationale": "Weak, conflicting, non-recurring evidence."
+  },
+  {
+   "id": "F04",
+   "category": "F_insufficient",
+   "subcase": "outside_retention",
+   "gold": "INSUFFICIENT_EVIDENCE",
+   "required_any": [],
+   "host": "web-14",
+   "service": "maps",
+   "incident": "Service 'maps' on host web-14: a latency spike was reported 3 days ago; metrics retention is 24 hours. Investigate.",
+   "state": {},
+   "diagnostic_terms": [],
+   "distractors": [],
+   "rationale": "Current metrics normal; the incident window is not observable."
+  },
+  {
+   "id": "F05",
+   "category": "F_insufficient",
+   "subcase": "logs_only_generic",
+   "gold": "INSUFFICIENT_EVIDENCE",
+   "required_any": [],
+   "host": "app-30",
+   "service": "reports",
+   "incident": "Service 'reports' on host app-30: p99 doubled. Investigate.",
+   "state": {
+    "unavailable": {
+     "get_cpu_metrics": "metrics unavailable",
+     "get_network_metrics": "metrics unavailable",
+     "get_scheduler_latency": "tracer not deployed"
+    },
+    "logs": {
+     "reports": [
+      [
+       "warn",
+       "request slow: 2100ms"
+      ],
+      [
+       "warn",
+       "request slow: 1900ms"
+      ]
+     ]
+    }
+   },
+   "diagnostic_terms": [],
+   "distractors": [
+    "generic slow-request logs"
+   ],
+   "rationale": "Logs restate the symptom; no causal data."
+  },
+  {
+   "id": "F06",
+   "category": "F_insufficient",
+   "subcase": "multiple_moderate",
+   "gold": "INSUFFICIENT_EVIDENCE",
+   "required_any": [],
+   "host": "app-33",
+   "service": "pricing-api",
+   "incident": "Service 'pricing-api' on host app-33: p99 rose 2x. Investigate.",
+   "state": {
+    "cpu": {
+     "util_pct": 61.0,
+     "softirq_pct": 7.0,
+     "cgroups": [
+      {
+       "name": "pricing-api",
+       "cpu_max": "200000 100000",
+       "nr_periods_delta": 6000,
+       "nr_throttled_delta": 120,
+       "throttled_usec_delta": 900000
+      }
+     ]
+    },
+    "net": {
+     "tcp": {
+      "retrans_segs_per_s": 9.0,
+      "baseline_retrans_segs_per_s": 3.0
+     }
+    },
+    "sched": {
+     "p99_ms_default": 1.1
+    }
+   },
+   "diagnostic_terms": [],
+   "distractors": [
+    "2% throttled periods",
+    "retrans 3x of a low baseline",
+    "softirq 7%"
+   ],
+   "rationale": "Several minor deviations; none sufficient."
+  },
+  {
+   "id": "F07",
+   "category": "F_insufficient",
+   "subcase": "irrelevant_interface_drops",
+   "gold": "INSUFFICIENT_EVIDENCE",
+   "required_any": [],
+   "host": "app-40",
+   "service": "api",
+   "incident": "Service 'api' on host app-40 (service traffic uses interface eth1): p99 rose 3x. Investigate.",
+   "state": {
+    "net": {
+     "interfaces": {
+      "eth0": {
+       "rx_pps": 900,
+       "tx_pps": 850,
+       "rx_mbps": 2,
+       "tx_mbps": 350,
+       "link_mbps": 10000,
+       "rx_dropped_per_s": 150,
+       "tx_dropped_per_s": 0,
+       "rx_missed_per_s": 0,
+       "rx_errors_per_s": 0,
+       "ring_rx": "1024/4096",
+       "rx_queues": 8
+      },
+      "eth1": {
+       "rx_pps": 45000,
+       "tx_pps": 43000,
+       "rx_mbps": 380,
+       "tx_mbps": 350,
+       "link_mbps": 10000,
+       "rx_dropped_per_s": 0,
+       "tx_dropped_per_s": 0,
+       "rx_missed_per_s": 0,
+       "rx_errors_per_s": 0,
+       "ring_rx": "1024/4096",
+       "rx_queues": 8
+      }
+     }
+    }
+   },
+   "diagnostic_terms": [],
+   "distractors": [
+    "drops on eth0 (management interface, idle)"
+   ],
+   "rationale": "Drops only on the unused management interface; service interface clean."
+  }
+ ]
+}
