@@ -363,8 +363,8 @@ def score_model(md):
         "evidence": score_evidence(model, allrows.get("evidence", [])),
         "structured_prompt": score_structured(model, allrows.get("structured_prompt", []), "prompt"),
         "structured_constrained": score_structured(model, allrows.get("structured_constrained", []), "constrained"),
-        "tools": score_tools(model, allrows.get("tools", [])),
-        "agent": score_agent(model, allrows.get("agent", [])),
+        "tools": score_tools(model, [r for r in allrows.get("tools", []) if not r.get("slice")]),
+        "agent": score_agent(model, [r for r in allrows.get("agent", []) if not r.get("slice")]),
         "context": score_context(model, allrows.get("context", [])),
     }
     # performance (4K-context suites only)
@@ -411,6 +411,20 @@ def score_model(md):
         "G6_evidence": res["evidence"]["norm"] >= GATES["evidence_norm_min"],
     }
     res["gates"] = gates
+    # validation slice (scored with the same functions, reported separately)
+    sl_t = [r for r in allrows.get("tools", []) if r.get("slice")]
+    sl_a = [r for r in allrows.get("agent", []) if r.get("slice")]
+    if sl_t or sl_a:
+        res["validation_slice"] = {"tools": score_tools(model + "[slice]", sl_t) if sl_t else None,
+                                   "agent": score_agent(model + "[slice]", sl_a) if sl_a else None}
+    es = md / "early_stop.json"
+    res["early_stop"] = json.loads(es.read_text()) if es.exists() else None
+    # coverage: never report a score for a suite that did not run
+    expected = {"generation": 15, "knowledge": 10, "evidence": 8, "structured_prompt": 30,
+                "structured_constrained": 30, "tools": 28, "agent": 12, "context": 8}
+    res["coverage"] = {k: f"{len([r for r in allrows.get(k, []) if not r.get('slice')])}/{n}" for k, n in expected.items()}
+    if res["early_stop"]:
+        gates["G0_not_early_stopped"] = False
     res["eligible"] = all(gates.values())
     return res
 
@@ -444,6 +458,15 @@ def main():
     with open(OUT / "item_scores.csv", "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=["model", "suite", "item", "score", "note"]); w.writeheader(); w.writerows(ITEMS)
     flat = []
+    SHORT = {"generation": "gen", "knowledge": "know", "evidence": "evid", "structured_prompt": "sp",
+             "structured_constrained": "sc", "tools": "tools", "agent": "agent", "context": "ctx"}
+
+    def nr(r, suite, v):
+        if r["coverage"][suite].startswith("0/"):
+            return "NOT RUN"
+        if suite in ("tools", "agent") and not r[suite].get("supported", True):
+            return "unsupported"
+        return v
     for r in results:
         sz = manifest.get(r["model"], {}).get("size_bytes")
         flat.append({
@@ -451,17 +474,20 @@ def main():
             "peak_rss_gib_4k": round(r["perf"]["peak_runner_rss_mib_4k"] / 1024, 2),
             "gen_tok_s": r["perf"]["gen_tok_s_median"], "prompt_tok_s": r["perf"]["prompt_tok_s_median"],
             "ttft_s": r["perf"]["ttft_s_median"],
-            "tool_success": r["tools"].get("tool_call_success_rate"),
-            "arg_validity": r["tools"].get("argument_validity"),
-            "json_valid_prompt": r["structured_prompt"]["valid_json_rate"],
-            "schema_valid_prompt": r["structured_prompt"]["schema_valid_rate"],
-            "schema_valid_constrained": r["structured_constrained"]["schema_valid_rate"],
-            "structured_semantic_constrained": r["structured_constrained"]["semantic_correct_rate"],
-            "knowledge_norm": r["knowledge"]["norm"], "generation_norm": r["generation"]["norm"],
-            "evidence_norm": r["evidence"]["norm"], "agent_norm": r["agent"]["norm"],
-            "agent_success": r["agent"].get("success_rate"),
-            "agent_median_wall_s": r["agent"].get("median_scenario_wall_s"),
-            "fail_rate": r["stability"]["fail_rate"], "Q": r["Q"], "eligible": r["eligible"],
+            "tool_success": nr(r, "tools", r["tools"].get("tool_call_success_rate")),
+            "arg_validity": nr(r, "tools", r["tools"].get("argument_validity")),
+            "json_valid_prompt": nr(r, "structured_prompt", r["structured_prompt"]["valid_json_rate"]),
+            "schema_valid_prompt": nr(r, "structured_prompt", r["structured_prompt"]["schema_valid_rate"]),
+            "schema_valid_constrained": nr(r, "structured_constrained", r["structured_constrained"]["schema_valid_rate"]),
+            "structured_semantic_constrained": nr(r, "structured_constrained", r["structured_constrained"]["semantic_correct_rate"]),
+            "knowledge_norm": nr(r, "knowledge", r["knowledge"]["norm"]), "generation_norm": r["generation"]["norm"],
+            "evidence_norm": nr(r, "evidence", r["evidence"]["norm"]), "agent_norm": nr(r, "agent", r["agent"]["norm"]),
+            "agent_success": nr(r, "agent", r["agent"].get("success_rate")),
+            "agent_median_wall_s": nr(r, "agent", r["agent"].get("median_scenario_wall_s")),
+            "coverage": " ".join(f"{SHORT[k]}={v}" for k, v in r["coverage"].items()),
+            "early_stop": "yes" if r["early_stop"] else "no",
+            "fail_rate": r["stability"]["fail_rate"], "Q": r["Q"] if not r["early_stop"] else f"{r['Q']} (partial)",
+            "eligible": r["eligible"],
             "failed_gates": ",".join(g for g, ok in r["gates"].items() if not ok),
         })
     if flat:
