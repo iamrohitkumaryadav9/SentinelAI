@@ -1,0 +1,44 @@
+{
+ "note": "POST-HOC analysis, not pre-registered. Primary results are in summary.json.",
+ "qwen3:8b": {
+  "noise_citation_errors": 5,
+  "scenarios": [
+   "A01",
+   "A06",
+   "A13",
+   "A14",
+   "E03"
+  ],
+  "false_packet_loss_total": 6
+ },
+ "qwen3.5:9b": {
+  "noise_citation_errors": 1,
+  "scenarios": [
+   "A06"
+  ],
+  "false_packet_loss_total": 1
+ },
+ "sensitivity_excluding_noise_scenarios": {
+  "excluded": [
+   "A01",
+   "A06",
+   "A13",
+   "A14",
+   "E03"
+  ],
+  "n": 43,
+  "qwen3:8b": {
+   "correct": 18,
+   "rate": 0.419
+  },
+  "qwen3.5:9b": {
+   "correct": 20,
+   "rate": 0.465
+  },
+  "discordant": {
+   "a_only": 4,
+   "b_only": 6
+  },
+  "mcnemar_exact_p": 0.7539
+ }
+}

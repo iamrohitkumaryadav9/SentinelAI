@@ -1,5 +1,7 @@
 # Phase 1B Evaluation: Local LLM Laboratory and Primary Model Selection
 
+> **⚠ Superseded by the confirmatory experiment (2026-10-02, 21:00).** A pre-registered, 48-scenario confirmatory evaluation of qwen3:8b against qwen3.5:9b ([PHASE_1B_CONFIRMATORY_EVALUATION.md](PHASE_1B_CONFIRMATORY_EVALUATION.md)) found **neither model adequate as an autonomous diagnostician**: 37.5 % and 43.8 % correct, a non-robust difference (McNemar p = 0.55), 1/6 recall on TCP retransmission, and 9/13 guesses on ambiguous cases for both models. **Final Phase 1B verdict: FAIL. Primary: NO FINAL PRIMARY. Phase 1C: NO-GO.** The original benchmark results below are kept unchanged as the record of the first campaign; its provisional "PASS WITH CONSTRAINTS / GO WITH CONDITIONS" no longer holds.
+
 | Field | Value |
 |---|---|
 | Date | 2026-10-02, 13:56–18:50 IST |
@@ -345,6 +347,9 @@ I have **not** overridden the pre-registered decision on these grounds, because 
 5. **Loop control.** Loop termination is not guaranteed, as qwen3.5:4b shows. The SentinelAI orchestrator must enforce step budgets and a final-answer turn.
 
 ## PHASE 1B GATE
+
+> **Update:** this gate was conditional on confirmatory testing (condition 1). That test has now run and returned **FAIL** for both models (see [PHASE_1B_CONFIRMATORY_EVALUATION.md](PHASE_1B_CONFIRMATORY_EVALUATION.md)). The gate below is **superseded: Phase 1C is NO-GO.**
+
 
 ### **GO WITH CONDITIONS**
 

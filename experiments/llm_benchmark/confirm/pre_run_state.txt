@@ -1,0 +1,12 @@
+2026-10-02T19:18:06+05:30
+               total        used        free      shared  buff/cache   available
+Mem:           15677        2017        5657         136        8003       13185
+Swap:           2047        1552         495
+NAME      TYPE SIZE USED PRIO
+/swapfile file   2G 1.5G   -2
+some avg10=0.00 avg60=0.00 avg300=0.00 total=1415171
+full avg10=0.00 avg60=0.00 avg300=0.00 total=1400530
+{"models":[]}
+LLAMA_ARG_CACHE_RAM=0
+ollama version is 0.35.0
+ 19:18:06 up 3 days,  7:03,  1 user,  load average: 0.06, 0.08, 0.94

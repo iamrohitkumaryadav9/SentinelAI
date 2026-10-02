@@ -85,8 +85,12 @@ def score(r):
             "tool_arguments": json.dumps([t["arguments"] for t in r["tool_trace"]]), "n_tool_calls": len(called),
             "abstained": label == INS, "abstained_correctly": label == INS and gold == INS,
             "wall_s": r["wall_s"], "prompt_tokens": r["prompt_tokens_total"], "output_tokens": r["output_tokens_total"],
-            "termination": r["termination"], "conversation_tokens_est": r["conversation_tokens_est"],
-            "context_overflow_risk": r["context_overflow_risk"], **flags}
+            "termination": r["termination"],
+            # Post-registration correction C1: Ollama's prompt_eval_count is the FULL prompt per turn, so the
+            # runner's summed estimate over-counts. Conversation length = max over turns of prompt + output.
+            "conversation_tokens": max(((t["prompt_tokens"] or 0) + (t["output_tokens"] or 0)) for t in r["turns"]),
+            "context_overflow_risk": max(((t["prompt_tokens"] or 0) + (t["output_tokens"] or 0)) for t in r["turns"])
+                                     + PROTO["num_predict_per_turn"] > PROTO["num_ctx"], **flags}
 
 
 def wilson(k, n, z=1.96):
@@ -198,7 +202,7 @@ def paired(ra, rb):
     a_only = sum(x and not y for x, y in zip(a, b))
     b_only = sum(y and not x for x, y in zip(a, b))
     nd = a_only + b_only
-    p = binomtest(a_only, nd, 0.5).pvalue if nd else 1.0
+    p = float(binomtest(a_only, nd, 0.5).pvalue) if nd else 1.0  # correction C2: numpy -> float (JSON)
     rng = random.Random(T["rule2_bootstrap_seed"])
     diffs = []
     for _ in range(T["rule2_bootstrap_resamples"]):
@@ -211,7 +215,7 @@ def paired(ra, rb):
             "both_wrong": sum((not x) and (not y) for x, y in zip(a, b)), "mcnemar_exact_p": round(p, 4),
             "diff_correct_rate_a_minus_b": round(sum(a) / len(ids) - sum(b) / len(ids), 4),
             "bootstrap95_ci": [round(lo, 4), round(hi, 4)],
-            "robust": p < T["rule2_mcnemar_alpha"] and (lo > 0 or hi < 0),
+            "robust": bool(p < T["rule2_mcnemar_alpha"] and (lo > 0 or hi < 0)),
             "discordant_scenarios": {"a_only": [i for i, x, y in zip(ids, a, b) if x and not y],
                                      "b_only": [i for i, x, y in zip(ids, a, b) if y and not x]}}
 
