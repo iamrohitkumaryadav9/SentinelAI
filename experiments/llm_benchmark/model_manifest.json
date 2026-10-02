@@ -28,18 +28,7 @@
     "qwen3:4b": {
       "model": "qwen3:4b",
       "ollama_tag": "qwen3:4b",
-      "expected_size_bytes": 2497293444,
-      "before": {
-        "disk_free_gib": 139.31,
-        "mem_available_mib": 10132
-      },
-      "after": {
-        "disk_free_gib": 136.99,
-        "mem_available_mib": 10100
-      },
-      "download_seconds": 32,
-      "downloaded_in_phase": "1B",
-      "download_date": "2026-10-02",
+      "downloaded_in_phase": "pre-existing",
       "digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
       "size_bytes": 2497293931,
       "modified_at": "2026-10-02T14:28:20.337604276+05:30",
@@ -61,7 +50,18 @@
         "thinking"
       ],
       "license_first_line": "Apache License",
-      "ollama_version": "0.35.0"
+      "ollama_version": "0.35.0",
+      "before": {
+        "disk_free_gib": 139.31,
+        "mem_available_mib": 10132
+      },
+      "after": {
+        "disk_free_gib": 136.99,
+        "mem_available_mib": 10100
+      },
+      "expected_size_bytes": 2497293444,
+      "download_seconds": 32,
+      "download_date": "2026-10-02"
     }
   }
 }

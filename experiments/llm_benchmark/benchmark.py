@@ -314,8 +314,11 @@ class Run:
         rec = self.chat([{"role": "user", "content": "Reply with the single word: ready"}],
                         options={"num_predict": 8})
         runner_cmd = [" ".join(p.cmdline()) for p in runner_processes()]
+        svc_env = subprocess.run(["systemctl", "show", "ollama", "-p", "Environment"],
+                                 capture_output=True, text=True).stdout.strip()
         self.record("warmup", "load", rec, {"desktop": desktop_state(), "capabilities": self.caps,
                                             "think": self.think, "think_probe": self.think_probe,
+                                            "ollama_service_env": svc_env,
                                             "runner_cmdline": runner_cmd, "show_details": self.info.get("details"),
                                             "model_info_ctx": {k: v for k, v in self.info.get("model_info", {}).items()
                                                                if k.endswith((".context_length", ".block_count"))}})
