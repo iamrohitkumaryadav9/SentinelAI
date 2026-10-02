@@ -1,0 +1,7 @@
+{
+  "_purpose": "Fixed minimal agent/tool validation slice, run for any model that is early-stopped before reaching the tools/agent suites. Items are chosen by category (not by observed model behaviour); prompts, budgets and scoring are identical to the full suites.",
+  "tool_selection": ["T01", "T08", "T10", "T24", "T25"],
+  "tool_arguments": ["T04", "T05", "T14", "T17", "T22"],
+  "agent_single_step": ["S02_network_drops", "S05_tcp_retransmissions", "S07_cpu_throttling"],
+  "agent_two_step": ["S01_cpu_contention", "S09_noisy_neighbor"]
+}

@@ -57,3 +57,130 @@ gemma3:1b,structured_prompt,D22,0,parse failure
 gemma3:1b,structured_prompt,D23,0,parse failure
 gemma3:1b,structured_prompt,D24,0,parse failure
 gemma3:1b,structured_prompt,D25,0,parse failure
+gemma3:1b,structured_prompt,D26,0,parse failure
+gemma3:1b,structured_prompt,D27,0,parse failure
+gemma3:1b,structured_prompt,D28,0,parse failure
+gemma3:1b,structured_prompt,D29,0,parse failure
+gemma3:1b,structured_prompt,D30,0,parse failure
+gemma3:1b,structured_constrained,D01,1,"got memory_pressure/4 want cpu_contention/[3, 5]"
+gemma3:1b,structured_constrained,D02,1,"got memory_pressure/3 want cpu_contention/[2, 4]"
+gemma3:1b,structured_constrained,D03,2,ok
+gemma3:1b,structured_constrained,D04,1,"got memory_pressure/4 want cpu_contention/[3, 5]"
+gemma3:1b,structured_constrained,D05,1,"got memory_pressure/4 want cpu_throttling/[2, 4]"
+gemma3:1b,structured_constrained,D06,2,ok
+gemma3:1b,structured_constrained,D07,1,"got memory_pressure/4 want cpu_throttling/[1, 3]"
+gemma3:1b,structured_constrained,D08,2,ok
+gemma3:1b,structured_constrained,D09,2,ok
+gemma3:1b,structured_constrained,D10,1,"got softirq_overload/4 want network_packet_loss/[2, 4]"
+gemma3:1b,structured_constrained,D11,2,ok
+gemma3:1b,structured_constrained,D12,2,ok
+gemma3:1b,structured_constrained,D13,1,"got cpu_contention/5 want softirq_overload/[2, 4]"
+gemma3:1b,structured_constrained,D14,1,"got memory_pressure/3 want softirq_overload/[2, 4]"
+gemma3:1b,structured_constrained,D15,1,"got memory_pressure/4 want softirq_overload/[1, 3]"
+gemma3:1b,structured_constrained,D16,1,"got cpu_contention/4 want softirq_overload/[2, 4]"
+gemma3:1b,structured_constrained,D17,2,ok
+gemma3:1b,structured_constrained,D18,2,ok
+gemma3:1b,structured_constrained,D19,2,ok
+gemma3:1b,structured_constrained,D20,2,ok
+gemma3:1b,structured_constrained,D21,2,ok
+gemma3:1b,structured_constrained,D22,2,ok
+gemma3:1b,structured_constrained,D23,1,"got network_packet_loss/3 want tcp_retransmissions/[1, 3]"
+gemma3:1b,structured_constrained,D24,1,"got network_packet_loss/4 want tcp_retransmissions/[2, 4]"
+gemma3:1b,structured_constrained,D25,1,"got network_packet_loss/3 want INSUFFICIENT_EVIDENCE/[0, 5]"
+gemma3:1b,structured_constrained,D26,1,"got softirq_overload/0 want INSUFFICIENT_EVIDENCE/[0, 5]"
+gemma3:1b,structured_constrained,D27,1,"got memory_pressure/3 want INSUFFICIENT_EVIDENCE/[0, 5]"
+gemma3:1b,structured_constrained,D28,1,"got network_packet_loss/3 want INSUFFICIENT_EVIDENCE/[0, 5]"
+gemma3:1b,structured_constrained,D29,1,"got cpu_throttling/4 want INSUFFICIENT_EVIDENCE/[0, 5]"
+gemma3:1b,structured_constrained,D30,1,"got network_packet_loss/0 want INSUFFICIENT_EVIDENCE/[0, 5]"
+gemma3:1b,tools,T01,0,unsupported
+gemma3:1b,tools,T02,0,unsupported
+gemma3:1b,tools,T03,0,unsupported
+gemma3:1b,tools,T04,0,unsupported
+gemma3:1b,tools,T05,0,unsupported
+gemma3:1b,tools,T06,0,unsupported
+gemma3:1b,tools,T07,0,unsupported
+gemma3:1b,tools,T08,0,unsupported
+gemma3:1b,tools,T09,0,unsupported
+gemma3:1b,tools,T10,0,unsupported
+gemma3:1b,tools,T11,0,unsupported
+gemma3:1b,tools,T12,0,unsupported
+gemma3:1b,tools,T13,0,unsupported
+gemma3:1b,tools,T14,0,unsupported
+gemma3:1b,tools,T15,0,unsupported
+gemma3:1b,tools,T16,0,unsupported
+gemma3:1b,tools,T17,0,unsupported
+gemma3:1b,tools,T18,0,unsupported
+gemma3:1b,tools,T19,0,unsupported
+gemma3:1b,tools,T20,0,unsupported
+gemma3:1b,tools,T21,0,unsupported
+gemma3:1b,tools,T22,0,unsupported
+gemma3:1b,tools,T23,0,unsupported
+gemma3:1b,tools,T24,0,unsupported
+gemma3:1b,tools,T25,0,unsupported
+gemma3:1b,tools,N01,0,unsupported
+gemma3:1b,tools,N02,0,unsupported
+gemma3:1b,tools,N03,0,unsupported
+gemma3:1b,agent,S01_cpu_contention,0,unsupported
+gemma3:1b,agent,S02_network_drops,0,unsupported
+gemma3:1b,agent,S03_softirq_overload,0,unsupported
+gemma3:1b,agent,S04_memory_pressure,0,unsupported
+gemma3:1b,agent,S05_tcp_retransmissions,0,unsupported
+gemma3:1b,agent,S06_ambiguous_all_normal,0,unsupported
+gemma3:1b,agent,S07_cpu_throttling,0,unsupported
+gemma3:1b,agent,S08_ambiguous_missing_data,0,unsupported
+gemma3:1b,agent,S09_noisy_neighbor,0,unsupported
+gemma3:1b,agent,S10_conntrack_drops,0,unsupported
+gemma3:1b,agent,S11_retx_with_busy_cpu,0,unsupported
+gemma3:1b,agent,S12_weak_conflicting,0,unsupported
+gemma3:1b,context,ctx1024#r0,1,host=y time=n
+gemma3:1b,context,ctx1024#r1,1,host=y time=n
+gemma3:1b,context,ctx2048#r0,1,host=y time=n
+gemma3:1b,context,ctx2048#r1,1,host=y time=n
+gemma3:1b,context,ctx4096#r0,0,host=n time=n
+gemma3:1b,context,ctx4096#r1,0,host=n time=n
+gemma3:1b,context,ctx8192#r0,0,host=n time=n
+gemma3:1b,context,ctx8192#r1,0,host=n time=n
+qwen3:4b,generation,G1_simple_reasoning#r0,0,ok
+qwen3:4b,generation,G1_simple_reasoning#r1,0,ok
+qwen3:4b,generation,G1_simple_reasoning#r2,0,ok
+qwen3:4b,generation,G2_systems_reasoning#r0,1,ok
+qwen3:4b,generation,G2_systems_reasoning#r1,0,ok
+qwen3:4b,generation,G2_systems_reasoning#r2,1,ok
+qwen3:4b,generation,G3_debugging#r0,0,ok
+qwen3:4b,generation,G3_debugging#r1,0,ok
+qwen3:4b,generation,G3_debugging#r2,0,ok
+qwen3:4b,generation,G4_code_reasoning#r0,0,ok
+qwen3:4b,generation,G4_code_reasoning#r1,0,ok
+qwen3:4b,generation,G4_code_reasoning#r2,0,ok
+qwen3:4b,generation,G5_structured_analysis#r0,0,ok
+qwen3:4b,generation,G5_structured_analysis#r1,0,ok
+qwen3:4b,generation,G5_structured_analysis#r2,0,ok
+qwen3:4b,knowledge,K1_sched_switch,2,ok
+qwen3:4b,knowledge,K2_softirq,2,ok
+qwen3:4b,knowledge,K3_net_sched,2,ok
+qwen3:4b,knowledge,K4_cpu_throttling,2,ok
+qwen3:4b,knowledge,K5_cgroup,2,ok
+qwen3:4b,knowledge,K6_tcp_retx,2,ok
+qwen3:4b,knowledge,K7_p99,2,ok
+qwen3:4b,knowledge,K8_psi,1,ok
+qwen3:4b,knowledge,K9_tp_vs_kprobe,1,ok
+qwen3:4b,knowledge,K10_k8s_req_limit,2,ok
+qwen3:4b,evidence,E01,0,asserted: 
+qwen3:4b,evidence,E02,0,asserted: 
+qwen3:4b,evidence,E03,0,asserted: 
+qwen3:4b,evidence,E04,0,asserted: 
+qwen3:4b,evidence,E05,2,"abstained, 2 evidence groups"
+qwen3:4b,evidence,E06,0,asserted: 
+qwen3:4b,evidence,C01,0,wrong: 
+qwen3:4b,evidence,C02,0,wrong: 
+qwen3:4b,structured_prompt,D01,0,parse failure
+qwen3:4b,structured_prompt,D02,0,parse failure
+qwen3:4b,structured_prompt,D03,0,parse failure
+qwen3:4b,structured_prompt,D04,0,parse failure
+qwen3:4b,structured_prompt,D05,0,parse failure
+qwen3:4b,structured_prompt,D06,0,parse failure
+qwen3:4b,structured_prompt,D07,0,parse failure
+qwen3:4b,structured_prompt,D08,0,parse failure
+qwen3:4b,structured_prompt,D09,0,parse failure
+qwen3:4b,structured_prompt,D10,0,parse failure
+qwen3:4b,structured_prompt,D11,0,parse failure

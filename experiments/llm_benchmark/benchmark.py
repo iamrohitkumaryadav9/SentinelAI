@@ -52,6 +52,29 @@ class RamFloorBreached(RuntimeError):
     pass
 
 
+class EarlyStop(RuntimeError):
+    """Pre-registered objective early-stop condition met (see README)."""
+
+
+# Pre-registered early-stop thresholds (identical for every remaining model).
+ES_MIN_REQUESTS = 10          # evaluate a suite only after this many requests (agent: ES_MIN_SCENARIOS)
+ES_MIN_SCENARIOS = 5
+ES_MAX_INCOMPLETE = 0.50      # ES1: >50 % of requests produce no usable output
+ES_MAX_MEDIAN_WALL_S = 180    # ES2: median request latency
+ES_MAX_AGENT_SCENARIO_S = 900 # ES2: median agent scenario latency (evaluated after 3 scenarios)
+NOT_RUN = "NOT RUN — EARLY STOP AFTER OBJECTIVE DISQUALIFICATION"
+SLICE = json.loads((PROMPTS / "validation_slice.json").read_text())
+
+
+def incomplete(rec):
+    """A request/scenario that produced no usable output."""
+    if rec.get("status") != "ok":
+        return True
+    if "final_content" in rec:                      # agent scenario aggregate
+        return not (rec.get("final_content") or "").strip()
+    return not (rec.get("content") or "").strip() and not rec.get("tool_calls")
+
+
 # --------------------------------------------------------------------------- env
 def ollama_version():
     return httpx.get(f"{OLLAMA}/api/version", timeout=10).json()["version"]
@@ -283,13 +306,16 @@ class Run:
         self.env = environment()
         self.dir = RUNS / model.replace(":", "_").replace("/", "_")
         self.dir.mkdir(parents=True, exist_ok=True)
+        self.tag = {}
+        self.track = {}
+        self.completed = []
 
     def record(self, suite, item_id, rec, extra=None):
         others = [m for m in loaded_models() if m != self.model]
         row = {"timestamp": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
                "suite": suite, "item": item_id, "model": self.model, "model_digest": self.digest,
                "think_mode": self.think,
-               **self.env, "other_models_resident": others, **rec, **(extra or {})}
+               **self.env, "other_models_resident": others, **rec, **self.tag, **(extra or {})}
         with open(self.dir / f"{suite}.jsonl", "a") as f:
             f.write(json.dumps(row) + "\n")
         status = rec.get("status")
@@ -298,6 +324,21 @@ class Run:
               f"tok/s={rec.get('tokens_per_s')} rss={rec.get('peak_runner_rss_mib')}MiB", flush=True)
         if status == "aborted_ram" or rec.get("ram_floor_breached"):
             raise RamFloorBreached(f"MemAvailable fell below {MIN_MEM_GIB} GiB during {suite}/{item_id}")
+        if suite in ("warmup", "context_calibration") or self.tag.get("slice") or status == "unsupported":
+            return
+        t = self.track.setdefault(suite, {"n": 0, "incomplete": 0, "walls": []})
+        t["n"] += 1
+        t["incomplete"] += incomplete(rec)
+        t["walls"].append(rec.get("wall_s") or 0)
+        min_n = ES_MIN_SCENARIOS if suite == "agent" else ES_MIN_REQUESTS
+        med_wall = sorted(t["walls"])[len(t["walls"]) // 2]
+        if t["n"] >= min_n and t["incomplete"] / t["n"] > ES_MAX_INCOMPLETE:
+            raise EarlyStop(f"ES1 failure-to-complete: {t['incomplete']}/{t['n']} requests in '{suite}' "
+                            f"produced no usable output (> {ES_MAX_INCOMPLETE:.0%})")
+        if suite == "agent" and t["n"] >= 3 and med_wall > ES_MAX_AGENT_SCENARIO_S:
+            raise EarlyStop(f"ES2 latency: median agent scenario {med_wall:.0f}s > {ES_MAX_AGENT_SCENARIO_S}s")
+        if suite != "agent" and t["n"] >= ES_MIN_REQUESTS and med_wall > ES_MAX_MEDIAN_WALL_S:
+            raise EarlyStop(f"ES2 latency: median request {med_wall:.0f}s in '{suite}' > {ES_MAX_MEDIAN_WALL_S}s")
 
     def chat(self, messages, **kw):
         if self.think:
@@ -372,8 +413,10 @@ class Run:
                                 options={"num_predict": 320})
                 self.record(f"structured_{mode}", it["id"], rec, {"mode": mode})
 
-    def tools(self):
+    def tools(self, ids=None):
         d = json.loads((PROMPTS / "tool_tasks.json").read_text())
+        if ids is not None:
+            d["items"] = [it for it in d["items"] if it["id"] in ids]
         if "tools" not in self.caps:
             for it in d["items"]:
                 self.record("tools", it["id"], {"status": "unsupported",
@@ -384,8 +427,10 @@ class Run:
             rec = self.chat(msg, tools=TOOLS, options={"num_predict": 256})
             self.record("tools", it["id"], rec)
 
-    def agent(self):
+    def agent(self, ids=None):
         d = json.loads((PROMPTS / "agent_scenarios.json").read_text())
+        if ids is not None:
+            d["scenarios"] = [sc for sc in d["scenarios"] if sc["id"] in ids]
         if "tools" not in self.caps:
             for sc in d["scenarios"]:
                 self.record("agent", sc["id"], {"status": "unsupported",
@@ -459,15 +504,83 @@ class Run:
 
     SUITES = ("generation", "knowledge", "evidence", "structured", "tools", "agent", "context")
 
+    def slice(self):
+        """Fixed validation slice (prompts/validation_slice.json), tagged slice=true."""
+        if "tools" not in self.caps:
+            return
+        self.tag = {"slice": True}
+        try:
+            self.tools(SLICE["tool_selection"] + SLICE["tool_arguments"])
+            self.agent(SLICE["agent_single_step"] + SLICE["agent_two_step"])
+        finally:
+            self.tag = {}
+
     def run(self, suites):
         print(f"== {self.model} digest={self.digest} caps={self.caps}", flush=True)
         self.warmup()
         print(f"   think mode = {self.think}", flush=True)
         try:
             for s in suites:
+                if s == "slice":
+                    self.slice()
+                    continue
                 getattr(self, s)()
+                self.completed.append(s)
+        except EarlyStop as e:
+            print(f"EARLY STOP {self.model}: {e}", flush=True)
+            ran_tools = any(x in self.completed for x in ("tools", "agent"))
+            if not ran_tools:
+                print("   running validation slice before stopping", flush=True)
+                self.slice()
+            write_early_stop(self.model, trigger=str(e), decided_by="automatic (pre-registered ES rules)",
+                             planned=list(suites))
         finally:
             unload(self.model)
+
+
+def suite_stats(model_dir):
+    out = {}
+    for f in sorted(model_dir.glob("*.jsonl")):
+        rows = [json.loads(l) for l in f.read_text().splitlines() if l.strip()]
+        rows_full = [r for r in rows if not r.get("slice")]
+        rows_slice = [r for r in rows if r.get("slice")]
+        for label, rs in (("full", rows_full), ("slice", rows_slice)):
+            if not rs:
+                continue
+            walls = sorted(r.get("wall_s") or 0 for r in rs)
+            tps = sorted(r["tokens_per_s"] for r in rs if r.get("tokens_per_s"))
+            out[f"{f.stem}" + ("" if label == "full" else "[slice]")] = {
+                "n": len(rs), "ok": sum(r.get("status") == "ok" for r in rs),
+                "usable_output": sum(not incomplete(r) for r in rs),
+                "hit_token_budget": sum(r.get("done_reason") == "length" for r in rs),
+                "median_wall_s": walls[len(walls) // 2],
+                "median_tok_s": tps[len(tps) // 2] if tps else None,
+                "peak_runner_rss_mib": max((r.get("peak_runner_rss_mib") or 0) for r in rs)}
+    return out
+
+
+def write_early_stop(model, trigger, decided_by, planned=None):
+    md = RUNS / model.replace(":", "_").replace("/", "_")
+    stats = suite_stats(md)
+    w = json.loads((md / "warmup.jsonl").read_text().splitlines()[-1])
+    expected = {"generation": 15, "knowledge": 10, "evidence": 8, "structured_prompt": 30,
+                "structured_constrained": 30, "tools": 28, "agent": 12, "context": 8}
+    suites = {}
+    for k, n in expected.items():
+        got = stats.get(k, {}).get("n", 0)
+        suites[k] = "COMPLETE" if got >= n else (f"PARTIAL {got}/{n} — remainder {NOT_RUN}" if got else NOT_RUN)
+    rec = {"model": model, "digest": w.get("model_digest"), "ollama_version": w.get("ollama_version"),
+           "timestamp": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
+           "trigger": trigger, "decided_by": decided_by,
+           "config": {"num_ctx": DEFAULT_CTX, "temperature": BASE_OPTIONS["temperature"], "seed": BASE_OPTIONS["seed"],
+                      "think": w.get("think"), "think_probe": w.get("think_probe"),
+                      "think_budget_extra_tokens": THINK_BUDGET if w.get("think") else 0,
+                      "num_predict": {"generation": 384, "knowledge": 256, "evidence": 200, "structured": 320,
+                                      "tools": 256, "agent_turn": 320, "context": 128},
+                      "ollama_service_env": w.get("ollama_service_env")},
+           "suite_status": suites, "suite_stats": stats}
+    (md / "early_stop.json").write_text(json.dumps(rec, indent=2) + "\n")
+    print(json.dumps({"early_stop": model, "suite_status": suites}, indent=2), flush=True)
 
 
 # --------------------------------------------------------------------- context
@@ -512,10 +625,34 @@ def registry_size(model):
     return sum(l["size"] for l in r.json()["layers"])
 
 
+def runtime_compat(model):
+    """Compare the registry config's 'requires' field (minimum Ollama version) to the installed one."""
+    name, tag = model.split(":")
+    hdr = {"Accept": "application/vnd.docker.distribution.manifest.v2+json"}
+    installed = ollama_version()
+    try:
+        man = httpx.get(f"https://registry.ollama.ai/v2/library/{name}/manifests/{tag}", headers=hdr, timeout=30).json()
+        cfg = httpx.get(f"https://registry.ollama.ai/v2/library/{name}/blobs/{man['config']['digest']}",
+                        timeout=30, follow_redirects=True).json()
+    except Exception as e:  # noqa: BLE001
+        return {"installed": installed, "requires": None, "compatible": None, "note": f"config unreadable: {e}"}
+    req = cfg.get("requires")
+    v = lambda x: tuple(int(p) for p in re.findall(r"\d+", x)[:3])
+    return {"installed": installed, "requires": req, "model_type": cfg.get("model_type"),
+            "file_type": cfg.get("file_type"), "renderer": cfg.get("renderer"),
+            "compatible": True if req is None else v(installed) >= v(req)}
+
+
 def pull(model):
     have = {m["name"] for m in httpx.get(f"{OLLAMA}/api/tags").json()["models"]}
     entry = {"model": model, "ollama_tag": model}
     if model not in have:
+        compat = runtime_compat(model)
+        print(f"compat {model}: {compat}", flush=True)
+        if compat["compatible"] is False:
+            raise SystemExit(f"STOP: {model} requires Ollama >= {compat['requires']} (installed "
+                             f"{compat['installed']}). Not upgrading without approval.")
+        entry["runtime_compat"] = compat
         expected = registry_size(model)
         before = {"disk_free_gib": round(disk_free_gib(), 2),
                   "mem_available_mib": round(psutil.virtual_memory().available / 2**20)}
@@ -559,7 +696,13 @@ def main():
     p = sub.add_parser("pull"); p.add_argument("--model", required=True)
     r = sub.add_parser("run"); r.add_argument("--model", required=True); r.add_argument("--suites", default="all")
     c = sub.add_parser("campaign"); c.add_argument("--models", required=True); c.add_argument("--suites", default="all")
+    e = sub.add_parser("early-stop"); e.add_argument("--model", required=True)
+    e.add_argument("--trigger", required=True); e.add_argument("--decided-by", required=True)
     a = ap.parse_args()
+
+    if a.cmd == "early-stop":
+        write_early_stop(a.model, a.trigger, a.decided_by)
+        return
 
     if a.cmd == "pull":
         print(json.dumps(pull(a.model), indent=2))

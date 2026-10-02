@@ -96,3 +96,23 @@ Every item scores 0, 1 or 2. Each dataset's exact rule is in its `_rubric` field
 5. If no model passes every gate, the result is **FAIL**. No winner is forced.
 
 Raw metrics are always reported next to Q; Q never replaces them.
+
+## Early-stop rules (pre-registered 2026-10-02 16:10, before qwen3.5:4b / qwen3:8b / qwen3.5:9b ran)
+
+A model may be stopped early **only** when one of these objective conditions holds. The harness evaluates them automatically after every request, and the rules are identical for every model. Validation-slice requests are excluded.
+
+| Rule | Condition |
+|---|---|
+| ES1 Failure to complete | More than 50 % of requests in a suite produce no usable output (status not `ok`, or empty content with no tool call). Evaluated once the suite has at least 10 requests, or at least 5 agent scenarios. |
+| ES2 Latency | Median request latency above 180 s in a suite (after at least 10 requests), or median agent-scenario latency above 900 s (after at least 3 scenarios) |
+| ES3 Resources | `MemAvailable` below 2 GiB. This is the existing hard abort. |
+
+When a rule triggers:
+1. Every completed result is kept.
+2. If the tools and agent suites have not run yet, the fixed **validation slice** (`prompts/validation_slice.json`) runs, using the same prompts, budgets and scoring: 5 tool-selection tasks, 5 tool-argument tasks, 3 single-step agent scenarios and 2 two-step agent scenarios.
+3. `results/runs/<model>/early_stop.json` records the trigger, the configuration, per-suite statistics, and every suite that did not run, labelled `NOT RUN — EARLY STOP AFTER OBJECTIVE DISQUALIFICATION`.
+4. No scores are invented for suites that did not run, and an early-stopped model is never eligible as primary.
+
+**qwen3:4b** was stopped by reviewer decision before these rules existed. The evidence was 12/15 generation, 7/8 evidence and 14/14 structured-prompt requests hitting the token budget without an answer. It then ran the same validation slice. Its record is labelled `decided_by: reviewer`.
+
+**Compatibility check:** before every download, the registry config's `requires` field (minimum Ollama version) is compared with the installed version. A mismatch stops the campaign; Ollama is never upgraded without approval.

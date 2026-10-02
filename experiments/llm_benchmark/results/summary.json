@@ -31,18 +31,18 @@
         "completion"
       ],
       "desktop_at_start": {
-        "chrome_rss_mib": 3406,
-        "vscode_server_rss_mib": 1152,
-        "claude_rss_mib": 510,
-        "gnome_shell_rss_mib": 311,
+        "chrome_rss_mib": 0,
+        "vscode_server_rss_mib": 1740,
+        "claude_rss_mib": 1058,
+        "gnome_shell_rss_mib": 150,
         "ollama_runner_rss_mib": 896,
-        "mem_available_mib": 9057,
-        "swap_used_mib": 1
+        "mem_available_mib": 11249,
+        "swap_used_mib": 884
       },
       "runner_cmdline": [
-        "/usr/local/lib/ollama/llama-server --model /usr/share/ollama/.ollama/models/blobs/sha256-7cd4618c1faf8b7233c6c906dac1694b6a47684b37b8895d470ac688520b9c01 --port 39139 --host 127.0.0.1 --no-webui --offline -c 4096 -np 1 --log-verbosity 4 --no-log-prefix --no-log-timestamps --no-jinja --chat-template chatml --load-mode none --flash-attn auto -b 512 -ub 512 --context-shift --keep 4"
+        "/usr/local/lib/ollama/llama-server --model /usr/share/ollama/.ollama/models/blobs/sha256-7cd4618c1faf8b7233c6c906dac1694b6a47684b37b8895d470ac688520b9c01 --port 32789 --host 127.0.0.1 --no-webui --offline -c 4096 -np 1 --log-verbosity 4 --no-log-prefix --no-log-timestamps --no-jinja --chat-template chatml --load-mode none --flash-attn auto -b 512 -ub 512 --context-shift --keep 4"
       ],
-      "load_duration_s": 1.054,
+      "load_duration_s": 1.0564,
       "generation": {
         "n": 15,
         "mean": 0.8,
@@ -68,7 +68,7 @@
         "norm": 0.375
       },
       "structured_prompt": {
-        "n": 25,
+        "n": 30,
         "valid_json_rate": 0.0,
         "schema_valid_rate": 0.0,
         "missing_field_rate": 0.0,
@@ -76,6 +76,290 @@
         "parse_failure_rate": 1.0,
         "markdown_fenced_rate": 1.0,
         "lenient_schema_valid_rate": 0.8,
+        "semantic_correct_rate": 0.0,
+        "failed_requests": 0,
+        "mean": 0,
+        "norm": 0.0
+      },
+      "structured_constrained": {
+        "n": 30,
+        "valid_json_rate": 1.0,
+        "schema_valid_rate": 1.0,
+        "missing_field_rate": 0.0,
+        "extra_field_rate": 0.0,
+        "parse_failure_rate": 0.0,
+        "markdown_fenced_rate": 0.0,
+        "lenient_schema_valid_rate": 1.0,
+        "semantic_correct_rate": 0.4,
+        "failed_requests": 0,
+        "mean": 1.4,
+        "norm": 0.7
+      },
+      "tools": {
+        "supported": false,
+        "norm": 0.0
+      },
+      "agent": {
+        "supported": false,
+        "norm": 0.0
+      },
+      "context": {
+        "1024": {
+          "runs": [
+            {
+              "status": "ok",
+              "prompt_tokens": 1120,
+              "prompt_tok_s": 299.87,
+              "gen_tok_s": 54.49,
+              "wall_s": 5.606,
+              "ttft_s": 4.891,
+              "peak_rss_mib": 1036,
+              "min_mem_avail_mib": 11159,
+              "needle": 1,
+              "truncated": false,
+              "num_ctx": 2048
+            },
+            {
+              "status": "ok",
+              "prompt_tokens": 1120,
+              "prompt_tok_s": 293.22,
+              "gen_tok_s": 55.67,
+              "wall_s": 4.451,
+              "ttft_s": 3.858,
+              "peak_rss_mib": 946,
+              "min_mem_avail_mib": 11239,
+              "needle": 1,
+              "truncated": false,
+              "num_ctx": 2048
+            }
+          ],
+          "prompt_tokens": 1120.0,
+          "prompt_tok_s": 296.55,
+          "gen_tok_s": 55.08,
+          "wall_s": 5.03,
+          "ttft_s": 4.37,
+          "peak_rss_mib": 1036,
+          "min_mem_avail_mib": 11159,
+          "needle_mean": 1,
+          "failures": 0,
+          "truncated_any": false
+        },
+        "2048": {
+          "runs": [
+            {
+              "status": "ok",
+              "prompt_tokens": 2235,
+              "prompt_tok_s": 299.33,
+              "gen_tok_s": 54.93,
+              "wall_s": 9.32,
+              "ttft_s": 8.593,
+              "peak_rss_mib": 946,
+              "min_mem_avail_mib": 11229,
+              "needle": 1,
+              "truncated": false,
+              "num_ctx": 3072
+            },
+            {
+              "status": "ok",
+              "prompt_tokens": 2235,
+              "prompt_tok_s": 298.89,
+              "gen_tok_s": 54.13,
+              "wall_s": 8.259,
+              "ttft_s": 7.519,
+              "peak_rss_mib": 947,
+              "min_mem_avail_mib": 11229,
+              "needle": 1,
+              "truncated": false,
+              "num_ctx": 3072
+            }
+          ],
+          "prompt_tokens": 2235.0,
+          "prompt_tok_s": 299.11,
+          "gen_tok_s": 54.53,
+          "wall_s": 8.79,
+          "ttft_s": 8.06,
+          "peak_rss_mib": 947,
+          "min_mem_avail_mib": 11229,
+          "needle_mean": 1,
+          "failures": 0,
+          "truncated_any": false
+        },
+        "4096": {
+          "runs": [
+            {
+              "status": "ok",
+              "prompt_tokens": 4451,
+              "prompt_tok_s": 294.54,
+              "gen_tok_s": 53.32,
+              "wall_s": 16.996,
+              "ttft_s": 16.246,
+              "peak_rss_mib": 1034,
+              "min_mem_avail_mib": 11153,
+              "needle": 0,
+              "truncated": false,
+              "num_ctx": 5120
+            },
+            {
+              "status": "ok",
+              "prompt_tokens": 4451,
+              "prompt_tok_s": 293.58,
+              "gen_tok_s": 54.07,
+              "wall_s": 17.205,
+              "ttft_s": 15.207,
+              "peak_rss_mib": 1036,
+              "min_mem_avail_mib": 11153,
+              "needle": 0,
+              "truncated": false,
+              "num_ctx": 5120
+            }
+          ],
+          "prompt_tokens": 4451.0,
+          "prompt_tok_s": 294.06,
+          "gen_tok_s": 53.7,
+          "wall_s": 17.1,
+          "ttft_s": 15.73,
+          "peak_rss_mib": 1036,
+          "min_mem_avail_mib": 11153,
+          "needle_mean": 0,
+          "failures": 0,
+          "truncated_any": false
+        },
+        "8192": {
+          "runs": [
+            {
+              "status": "ok",
+              "prompt_tokens": 8745,
+              "prompt_tok_s": 283.66,
+              "gen_tok_s": 55.21,
+              "wall_s": 32.213,
+              "ttft_s": 31.978,
+              "peak_rss_mib": 1060,
+              "min_mem_avail_mib": 11141,
+              "needle": 0,
+              "truncated": false,
+              "num_ctx": 9216
+            },
+            {
+              "status": "ok",
+              "prompt_tokens": 8745,
+              "prompt_tok_s": 283.45,
+              "gen_tok_s": 53.1,
+              "wall_s": 31.168,
+              "ttft_s": 30.905,
+              "peak_rss_mib": 1064,
+              "min_mem_avail_mib": 11131,
+              "needle": 0,
+              "truncated": false,
+              "num_ctx": 9216
+            }
+          ],
+          "prompt_tokens": 8745.0,
+          "prompt_tok_s": 283.56,
+          "gen_tok_s": 54.16,
+          "wall_s": 31.69,
+          "ttft_s": 31.44,
+          "peak_rss_mib": 1064,
+          "min_mem_avail_mib": 11131,
+          "needle_mean": 0,
+          "failures": 0,
+          "truncated_any": false
+        }
+      },
+      "perf": {
+        "gen_tok_s_median": 56.59,
+        "gen_tok_s_min": 52.56,
+        "gen_tok_s_max": 60.86,
+        "prompt_tok_s_median": 294.1,
+        "ttft_s_median": 0.29,
+        "wall_s_median_generation": 4.3,
+        "output_tokens_median_generation": 220,
+        "agent_turn_wall_s_median": null,
+        "peak_runner_rss_mib_4k": 967,
+        "min_mem_available_mib": 11222,
+        "system_cpu_pct_mean_generation": 34.4,
+        "system_cpu_pct_max_generation": 36.1,
+        "runner_cpu_pct_mean_generation": 800.3
+      },
+      "stability": {
+        "requests": 102,
+        "failed": 0,
+        "fail_rate": 0.0,
+        "by_status": {},
+        "unsupported_requests": 40
+      },
+      "quality_components": {
+        "agent": 0.0,
+        "tools": 0.0,
+        "evidence": 0.375,
+        "structured": 0.7,
+        "knowledge": 0.55,
+        "generation": 0.4
+      },
+      "Q": 0.2363,
+      "gates": {
+        "G1_stability": true,
+        "G2_memory": true,
+        "G3_speed": true,
+        "G4_tools": false,
+        "G5_structured": true,
+        "G6_evidence": false
+      },
+      "eligible": false
+    },
+    {
+      "model": "qwen3:4b",
+      "digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+      "capabilities": [
+        "completion",
+        "tools",
+        "thinking"
+      ],
+      "desktop_at_start": {
+        "chrome_rss_mib": 0,
+        "vscode_server_rss_mib": 1741,
+        "claude_rss_mib": 1019,
+        "gnome_shell_rss_mib": 150,
+        "ollama_runner_rss_mib": 3040,
+        "mem_available_mib": 9142,
+        "swap_used_mib": 884
+      },
+      "runner_cmdline": [
+        "/usr/local/lib/ollama/llama-server --model /usr/share/ollama/.ollama/models/blobs/sha256-3e4cb14174460404e7a233e531675303b2fbf7749c02f91864fe311ab6344e4f --port 46073 --host 127.0.0.1 --no-webui --offline -c 4096 -np 1 --log-verbosity 4 --no-log-prefix --no-log-timestamps --no-jinja --chat-template chatml --load-mode none --flash-attn auto -b 512 -ub 512 --context-shift --keep 4"
+      ],
+      "load_duration_s": 0.0011,
+      "generation": {
+        "n": 15,
+        "mean": 0.133,
+        "norm": 0.067
+      },
+      "knowledge": {
+        "n": 10,
+        "mean": 1.8,
+        "norm": 0.9
+      },
+      "evidence": {
+        "insufficient_n": 6,
+        "insufficient_abstained": 1,
+        "confident_unsupported": 5,
+        "control_n": 2,
+        "control_correct": 0,
+        "control_overcautious": 0,
+        "format_ok": 1,
+        "fabricated_number_responses": 0,
+        "abstention_rate": 0.167,
+        "unsupported_claim_rate": 0.833,
+        "mean": 0.25,
+        "norm": 0.125
+      },
+      "structured_prompt": {
+        "n": 11,
+        "valid_json_rate": 0.0,
+        "schema_valid_rate": 0.0,
+        "missing_field_rate": 0.0,
+        "extra_field_rate": 0.0,
+        "parse_failure_rate": 1.0,
+        "markdown_fenced_rate": 0.0,
+        "lenient_schema_valid_rate": 0.0,
         "semantic_correct_rate": 0.0,
         "failed_requests": 0,
         "mean": 0,
@@ -105,22 +389,22 @@
       },
       "context": {},
       "perf": {
-        "gen_tok_s_median": 58.84,
-        "gen_tok_s_min": 55.87,
-        "gen_tok_s_max": 61.63,
-        "prompt_tok_s_median": 373.7,
-        "ttft_s_median": 0.29,
-        "wall_s_median_generation": 4.21,
-        "output_tokens_median_generation": 220,
+        "gen_tok_s_median": 18.41,
+        "gen_tok_s_min": 18.06,
+        "gen_tok_s_max": 19.65,
+        "prompt_tok_s_median": 101.9,
+        "ttft_s_median": 0.76,
+        "wall_s_median_generation": 77.12,
+        "output_tokens_median_generation": 1408,
         "agent_turn_wall_s_median": null,
-        "peak_runner_rss_mib_4k": 1380,
-        "min_mem_available_mib": 8640,
-        "system_cpu_pct_mean_generation": 34.4,
-        "system_cpu_pct_max_generation": 45.5,
-        "runner_cpu_pct_mean_generation": 800.4
+        "peak_runner_rss_mib_4k": 3071,
+        "min_mem_available_mib": 9090,
+        "system_cpu_pct_mean_generation": 34.3,
+        "system_cpu_pct_max_generation": 37.8,
+        "runner_cpu_pct_mean_generation": 800.2
       },
       "stability": {
-        "requests": 58,
+        "requests": 44,
         "failed": 0,
         "fail_rate": 0.0,
         "by_status": {},
@@ -129,12 +413,12 @@
       "quality_components": {
         "agent": 0.0,
         "tools": 0.0,
-        "evidence": 0.375,
+        "evidence": 0.125,
         "structured": 0.0,
-        "knowledge": 0.55,
-        "generation": 0.4
+        "knowledge": 0.9,
+        "generation": 0.067
       },
-      "Q": 0.1313,
+      "Q": 0.1121,
       "gates": {
         "G1_stability": true,
         "G2_memory": true,
