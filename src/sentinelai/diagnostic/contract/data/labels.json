@@ -1,5 +1,5 @@
 {
- "contract_version": "0.2.0-draft",
+ "contract_version": "0.3.0-draft",
  "labels": {
   "cpu_contention": {
    "confusable": [
@@ -263,7 +263,7 @@
   {
    "clause_id": "RT.R2",
    "label": "tcp_retransmissions",
-   "role": "required",
+   "role": "primary",
    "uses_baseline": true,
    "features": [
     "net.drop.qdisc",
@@ -276,7 +276,7 @@
     "net.drop.kfree_skb",
     "net.pkts.iface"
    ],
-   "definition": "EVALUATED(min_local_drop_set) and LOSS.LOCAL is FALSE",
+   "definition": "EVALUATED(min_local_drop_set) and LOSS.LOCAL is FALSE; Primary clause: required for tcp_retransmissions to be the decision, not for it to be CONTRIBUTING under PR-1",
    "components": [
     {
      "type": "item",
@@ -288,7 +288,11 @@
      "sub": "LOSS.LOCAL",
      "kind": "NEGATIVE"
     }
-   ]
+   ],
+   "subordinate": {
+    "rule": "PR-1",
+    "primary": "network_packet_loss"
+   }
   },
   {
    "clause_id": "MP.R1",
@@ -375,6 +379,7 @@
     "psi.cpu.some.target",
     "psi.cpu.some.host",
     "sched.latency_hist.target",
+    "throttle.quota_limited",
     "throttle.quota_cores",
     "throttle.ratio",
     "throttle.time_rate",

@@ -26,7 +26,7 @@ from ..contract.version import CONTRACT_VERSION
 from .logic import Eval, Tri, absolute, absolute_b, baseline_gate, dev, k_and, k_not, k_or, strongest, usable
 from .params import ParameterSet, UncalibratedParameters
 
-RULES_VERSION = "m2-1.0.0"
+RULES_VERSION = "m2-1.1.0"
 L = Label
 INFRA = (L.cpu_contention, L.cpu_throttling, L.softirq_overload, L.network_packet_loss, L.tcp_retransmissions,
          L.memory_pressure)
@@ -295,7 +295,8 @@ def loss_local(ctx):
         agg = Eval(Tri.TRUE, strongest(*(s[2].strength for s in true)),
                    used=tuple(sorted({u for s in true for u in s[2].used})))
     elif min_ok and usable_sources and all(s[2].tri is Tri.FALSE for s in usable_sources):
-        agg = Eval(Tri.FALSE, Strength.STRONG, used=all_used)
+        # FALSE cites only the usable sources that decided it (never an unusable measurement)
+        agg = Eval(Tri.FALSE, Strength.STRONG, used=tuple(sorted({u for s in usable_sources for u in s[2].used})))
     else:
         agg = Eval(Tri.MISSING, reason="local drops not determinable", used=all_used)
     ctx.__dict__["loss"] = (sources, evaluated, agg)
@@ -431,6 +432,15 @@ def _self_check():
 _self_check()
 
 
+def _self_check_subordination():
+    """Every contract subordination must be what the §9 resolver does for that pair."""
+    c = load_contract()
+    for cl in c.labels.clauses:
+        s = cl.subordinate
+        if s is not None and _resolve(None, s.primary, cl.label, {}) != (s.primary, s.rule):
+            raise ImportError(f"{cl.clause_id}: contract subordination {s.rule} disagrees with the precedence rules")
+
+
 def _supporting(ctx):
     """Evaluate supporting predicates. Returns {label: [missing supporting feature, ...]}."""
     missing = {l: [] for l in FAULT_LABELS}
@@ -472,10 +482,7 @@ def _ab_r3(ctx, clauses, infra_assertable):
     if clauses["RT.R0"].ev.tri is Tri.TRUE:
         fam_label += (("network_drops", L.network_packet_loss), ("network_tcp", L.tcp_retransmissions))
     c = load_contract()
-    # Items may cite only AB.R3's declared features. The contract's AB.R3 list omits throttle.quota_limited
-    # (contradiction C-3, M2 report): that measurement still drives evaluation but cannot be cited here.
-    allowed = set(c.labels.clause("AB.R3").features)
-    cite = lambda ids: tuple(sorted(u for u in ids if ctx.v.by_id[u].feature_id in allowed))
+    cite = lambda ids: tuple(sorted(ids))
     evs = []
     for fam, label in fam_label:
         req = [clauses[cl.clause_id].ev for cl in c.labels.required_clauses(label)]
@@ -533,6 +540,9 @@ def _resolve(ctx, a, b, clauses) -> Tuple[Optional[Label], Optional[str]]:
     return None, None                                                                # not in §9: conflict
 
 
+_self_check_subordination()
+
+
 # ============================================================================ diagnose
 @dataclass(frozen=True)
 class Diagnosis:
@@ -556,12 +566,22 @@ def diagnose(snapshot: EvidenceSnapshot, params: ParameterSet, *, code_commit: s
     support_missing = _supporting(ctx)
     impact = _impact(ctx)
 
-    def req_evs(label):
+    def req_evs(label):        # Required + Primary: what the label needs to be the decision
         return [clauses[cl.clause_id].ev for cl in c.labels.required_clauses(label)]
 
     infra_assertable = [l for l in INFRA if all(e.tri is Tri.TRUE for e in req_evs(l))]
     clauses["AB.R3"] = _ab_r3(ctx, clauses, infra_assertable)
     assertable = [l for l in FAULT_LABELS if all(e.tri is Tri.TRUE for e in req_evs(l))]
+
+    # v0.3.0 subordinate-only labels: Required clauses TRUE and a Primary clause FALSE (never MISSING).
+    # They take no part in precedence and create no conflict; see the CONTRIBUTING step below.
+    subordinate = {}
+    for label in FAULT_LABELS:
+        prim = c.labels.primary_clauses(label)
+        if (label not in assertable and prim
+                and all(clauses[cl.clause_id].ev.tri is Tri.TRUE for cl in c.labels.contributing_clauses(label))
+                and all(clauses[cl.clause_id].ev.tri is not Tri.MISSING for cl in prim)):   # so some Primary is FALSE
+            subordinate[label] = tuple(cl.subordinate for cl in prim if clauses[cl.clause_id].ev.tri is Tri.FALSE)
 
     # ---- precedence among assertable labels (closed table; anything else is a conflict)
     primary, conflicts = None, []
@@ -624,6 +644,11 @@ def diagnose(snapshot: EvidenceSnapshot, params: ParameterSet, *, code_commit: s
         if label in assertable:
             status = CandidateStatus.CONTRIBUTING if (decision not in (L.INSUFFICIENT_EVIDENCE, label)
                                                       and not conflicts) else CandidateStatus.ASSERTED
+        elif label in subordinate:
+            # CONTRIBUTING only as the declared subordinate of the decision (RT.R2: under PR-1 to
+            # network_packet_loss); _self_check_subordination ties each declaration to the §9 resolver.
+            ok = all(s.primary is decision for s in subordinate[label])   # catalog: Primary ⇔ subordination
+            status = CandidateStatus.CONTRIBUTING if ok else CandidateStatus.SUPPORTED_NOT_SUFFICIENT
         elif any(e.tri is Tri.FALSE for e in evs.values()):
             status = CandidateStatus.NOT_SUPPORTED
         elif supporting:

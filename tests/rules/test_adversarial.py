@@ -85,21 +85,21 @@ class TestADV4CpuBacklog(unittest.TestCase):
 
 
 class TestADV5RetransWithProvenDrops(unittest.TestCase):
-    """Contract-literal behaviour. The prompt also expects 'retransmissions contributing', but RT.R2 requires
-    LOSS.LOCAL FALSE, so under I4 tcp_retransmissions can never be CONTRIBUTING when drops are proven
-    (contradiction C-1, M2 report §11). The engine does not invent a resolution."""
+    """network_packet_loss primary, tcp_retransmissions contributing under PR-1 (contract v0.3.0: RT.R2 is a
+    Primary clause; C-1 resolution, docs/PHASE_1C_C1_REPORT.md)."""
 
     def test_packet_loss_asserted(self):
         d = run(scenario(retrans(), qdisc_drops()))
         self.assertIs(d.result.decision, L.network_packet_loss)
 
-    def test_retransmissions_not_contributing_c1(self):
+    def test_retransmissions_contributing(self):
         d = run(scenario(retrans(), qdisc_drops()))
-        self.assertEqual(d.result.contributing, ())
-        self.assertIs(status(d, L.tcp_retransmissions), S.NOT_SUPPORTED)
+        self.assertEqual(d.result.contributing, (L.tcp_retransmissions,))
+        self.assertIs(status(d, L.tcp_retransmissions), S.CONTRIBUTING)
+        self.assertEqual(d.snapshot.conflicts, ())
         tcp = next(c for c in d.result.candidates if c.label is L.tcp_retransmissions)
-        self.assertIn("RT.R1", tcp.required_met)       # the retransmission signal itself is recorded
-        self.assertIn("RT.R2", tcp.required_missing)
+        self.assertEqual(set(tcp.required_met), {"RT.R0", "RT.R1"})   # the retransmission signal itself
+        self.assertEqual(tcp.required_missing, ("RT.R2",))            # not the primary: local loss proven
         (it,) = [i for i in d.snapshot.evidence_items if i.predicate_id == "RT.R2"]
         self.assertIs(it.kind, K.NEGATIVE)
         self.assertEqual(it.contradicts, (L.tcp_retransmissions,))

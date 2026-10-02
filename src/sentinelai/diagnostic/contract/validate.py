@@ -36,6 +36,24 @@ def _clause_satisfied(clause, items, result) -> bool:
     return True
 
 
+def _check_subordination(cd, result, items) -> None:
+    """v0.3.0: a CONTRIBUTING candidate with an unmet Primary clause must be subordinate, as the
+    contract declares, to the decision, and the snapshot must show that Primary clause FALSE."""
+    for clause in load_contract().labels.primary_clauses(cd.label):
+        if clause.clause_id in cd.required_met:
+            continue
+        s = clause.subordinate
+        if s is None or result.decision is not s.primary:
+            raise ContractViolation("I4", f"{cd.label} CONTRIBUTING without {clause.clause_id}: allowed only "
+                                    "as the declared subordinate of the decision")
+        shown_false = any(it.kind is EvidenceKind.NEGATIVE and cd.label in it.contradicts
+                          and load_contract().parse_predicate(it.predicate_id).clause_id == clause.clause_id
+                          for it in items)
+        if not shown_false:
+            raise ContractViolation("I4", f"{cd.label} CONTRIBUTING under {s.rule}: no NEGATIVE "
+                                    f"{clause.clause_id} item shows the Primary clause FALSE")
+
+
 def validate_against_snapshot(result: DiagnosticResult, snapshot: EvidenceSnapshot) -> None:
     """Raise ContractViolation if the result is not backed by the snapshot."""
     c = load_contract()
@@ -61,7 +79,12 @@ def validate_against_snapshot(result: DiagnosticResult, snapshot: EvidenceSnapsh
             if cd.label not in items[iid].contradicts:
                 raise ContractViolation("I3", f"{cd.label}: contradicting item does not contradict it")
         if cd.status in ASSERTIVE:
-            for clause in c.labels.required_clauses(cd.label):
+            # ASSERTED needs Required and Primary clauses; CONTRIBUTING needs Required clauses only (v0.3.0).
+            clauses = (c.labels.required_clauses(cd.label) if cd.status is CandidateStatus.ASSERTED
+                       else c.labels.contributing_clauses(cd.label))
+            if cd.status is CandidateStatus.CONTRIBUTING:
+                _check_subordination(cd, result, snapshot.evidence_items)
+            for clause in clauses:
                 if not _clause_satisfied(clause, snapshot.evidence_items, result):
                     raise ContractViolation("I4" if cd.label is not result.decision else "I2",
                                             f"{cd.label} {cd.status}: required clause {clause.clause_id} "

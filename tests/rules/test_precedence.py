@@ -96,7 +96,10 @@ class TestThreeWayResolved(unittest.TestCase):
         d = run(scenario(softirq(), kfree_drops("CPU_BACKLOG", 500.0), retrans()))
         self.assertIs(d.result.decision, L.softirq_overload)
         self.assertEqual(d.result.contributing, (L.network_packet_loss,))
-        self.assertIs(status(d, L.tcp_retransmissions), S.NOT_SUPPORTED)   # C-1: RT.R2 FALSE under proven loss
+        # v0.3.0: tcp is subordinate only to network_packet_loss (PR-1); loss is not the decision here, so tcp
+        # is not CONTRIBUTING and no softirq/tcp conflict is created (subordinate-only labels skip precedence)
+        self.assertIs(status(d, L.tcp_retransmissions), S.SUPPORTED_NOT_SUFFICIENT)
+        self.assertEqual(d.snapshot.conflicts, ())
 
 
 if __name__ == "__main__":

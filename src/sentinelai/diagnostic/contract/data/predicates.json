@@ -1,5 +1,5 @@
 {
- "contract_version": "0.2.0-draft",
+ "contract_version": "0.3.0-draft",
  "primitives": {
   "DEV": {
    "uses_baseline": true,

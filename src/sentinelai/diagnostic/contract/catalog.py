@@ -150,18 +150,31 @@ class LabelsNotAssertedComponent(BaseModel):
     labels: Tuple[Label, ...] = Field(min_length=1)
 
 
+class Subordination(BaseModel):
+    """v0.3.0: when a Primary clause is FALSE, the label may still be CONTRIBUTING, but only under
+    precedence rule ``rule`` and only when ``primary`` is the decision (contract §8, §9)."""
+    model_config = STRICT
+    rule: str
+    primary: Label
+
+
 class Clause(BaseModel):
     model_config = STRICT
     clause_id: str
     label: Label
-    role: Literal["required", "contradictory"]
+    role: Literal["required", "primary", "contradictory"]
     uses_baseline: bool
     features: Tuple[str, ...] = Field(min_length=1)
     definition: str = Field(min_length=1)
     components: Tuple[Union[ItemComponent, LabelsNotAssertedComponent], ...] = Field(min_length=1)
+    subordinate: Optional[Subordination] = None
 
     @model_validator(mode="after")
     def _check(self):
+        if (self.subordinate is not None) != (self.role == "primary"):
+            raise ValueError(f"{self.clause_id}: a Primary clause, and only a Primary clause, declares a subordination")
+        if self.subordinate is not None and self.subordinate.primary is self.label:
+            raise ValueError(f"{self.clause_id}: a label cannot be subordinate to itself")
         if not CLAUSE_ID_RE.match(self.clause_id):
             raise ValueError(f"bad clause id {self.clause_id}")
         if CLAUSE_PREFIX_LABEL[self.clause_id[:2]] is not self.label:
@@ -169,7 +182,7 @@ class Clause(BaseModel):
         if self.label is Label.INSUFFICIENT_EVIDENCE:
             raise ValueError("INSUFFICIENT_EVIDENCE has no clauses")
         if (self.role == "contradictory") != (self.clause_id[3] == "X"):
-            raise ValueError(f"{self.clause_id}: role does not match id (R = required, X = contradictory)")
+            raise ValueError(f"{self.clause_id}: role does not match id (R = required or primary, X = contradictory)")
         return self
 
 
@@ -212,6 +225,12 @@ class LabelContracts(BaseModel):
         for p in self.precedence:
             if Label.INSUFFICIENT_EVIDENCE in p.labels:
                 raise ValueError("precedence rules relate fault labels only")
+        rules = {p.rule_id: p for p in self.precedence}
+        for cl in self.clauses:
+            s = cl.subordinate
+            if s is not None and (s.rule not in rules or not {s.primary, cl.label} <= set(rules[s.rule].labels)):
+                raise ValueError(f"{cl.clause_id}: subordination must name a precedence rule relating "
+                                 f"{s.primary} and {cl.label}")
         return self
 
     def clause(self, clause_id: str) -> Clause:
@@ -221,7 +240,16 @@ class LabelContracts(BaseModel):
         raise ContractViolation("I4", f"unknown clause {clause_id!r}")
 
     def required_clauses(self, label: Label) -> Tuple[Clause, ...]:
+        """Clauses required for the label to be ASSERTED (the decision): Required and Primary (§8)."""
+        return tuple(c for c in self.clauses if c.label is label and c.role in ("required", "primary"))
+
+    def contributing_clauses(self, label: Label) -> Tuple[Clause, ...]:
+        """Clauses required for the label to take part in precedence and be CONTRIBUTING: Required only."""
         return tuple(c for c in self.clauses if c.label is label and c.role == "required")
+
+    def primary_clauses(self, label: Label) -> Tuple[Clause, ...]:
+        """Clauses needed only for the label to be the primary decision (v0.3.0, §8)."""
+        return tuple(c for c in self.clauses if c.label is label and c.role == "primary")
 
 
 # --------------------------------------------------------------------------- predicates / parameters

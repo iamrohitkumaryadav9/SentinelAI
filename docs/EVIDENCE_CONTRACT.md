@@ -3,8 +3,8 @@
 | Field | Value |
 |---|---|
 | Contract ID | `sentinelai.evidence-contract` |
-| Version | **0.2.0-draft** (pre-M2 correction of 0.1.0-draft; see the revision history below) |
-| Date | 2026-10-02 |
+| Version | **0.3.0-draft** (C-1 resolution of 0.2.0-draft; see the revision history below) |
+| Date | 2026-10-03 |
 | Status | DESIGN; schema implemented in M1 (schema version `0.2.0`). Every numeric threshold is an **uncalibrated parameter** (§6). |
 | Consumers | Deterministic rule engine, ML classifier, tests, and (later) the LLM orchestrator |
 | Normative keywords | **MUST**, **MUST NOT**, **SHOULD** and **MAY** carry their RFC 2119 meaning |
@@ -18,6 +18,7 @@ This contract defines what SentinelAI may claim about a performance incident, an
 |---|---|
 | 0.1.0-draft | Initial contract (implemented by M1, commit `33aed1b`) |
 | **0.2.0-draft** | Pre-M2 correction approved from `PHASE_1C_PRE_M2_AUDIT.md`:<br>**R-1** unlimited CPU quota represented by the new feature `throttle.quota_limited` (Unit `boolean`); CT.R1 now reads it (§4.2, §8.2).<br>**R-2** `mem.reclaim.target` defined as Δ`pgscan` only (§4.6).<br>**R-3** `Measurement.qualifier` for registry-declared dimensions (`kfree_skb` reason, `app.events` code) (§4.3, §4.7, §10.3, §10.5).<br>**R-4** every parameter is typed (`number` / `reason_set`), numeric thresholds reference `number` only; `τ_DISAGREE` added (§6).<br>**R-5** `DiagnosticResult.flags` (`IMPACT_NOT_MEASURED`, `ML_DISAGREEMENT`) (§10.6, §10.7).<br>Version number decided by the reviewer (see §12). |
+| **0.3.0-draft** | C-1 resolution (found by M2, `docs/PHASE_1C_M2_REPORT.md` §15; resolved in `docs/PHASE_1C_C1_REPORT.md`):<br>**C-1** RT.R2 becomes a **Primary** clause (§8): it is required for `tcp_retransmissions` to be the *decision*, not for it to be *contributing*. When local loss is proven (RT.R2 FALSE), `tcp_retransmissions` with RT.R0 and RT.R1 TRUE is CONTRIBUTING under PR-1 when `network_packet_loss` is the decision (§8.5, §9, §10.7 I2/I4). The RT.R2 predicate itself is unchanged.<br>**C-3** `throttle.quota_limited` added to the AB.R3 feature list, so AB.R3 can cite the CT.R1 measurement (§8.7).<br>Schema version unchanged (`0.2.0`): no field of any evidence object changes. |
 
 ---
 
@@ -282,7 +283,7 @@ A predicate has an ID, input features, a three-valued output (`TRUE`, `FALSE`, `
 
 ## 8. Label contracts
 
-For each label: **Required** is necessary for assertion (all clauses). **Supporting** raises confidence and is never required. **Contradictory** lowers confidence or blocks assertion as stated. **Insufficient** gives the conditions that force `INSUFFICIENT_EVIDENCE` for that label. **Confusable** gives the boundary rules.
+For each label: **Required** is necessary for assertion (all clauses). **Primary** (v0.3.0) is an additional clause necessary for the label to be the **decision**, but not for it to be **CONTRIBUTING**: a Primary clause declares the precedence rule and the primary label under which the label may contribute when that clause is FALSE (§9). Only `tcp_retransmissions` has one (RT.R2). **Supporting** raises confidence and is never required. **Contradictory** lowers confidence or blocks assertion as stated. **Insufficient** gives the conditions that force `INSUFFICIENT_EVIDENCE` for that label. **Confusable** gives the boundary rules.
 
 ### 8.1 `cpu_contention`
 *Runnable target tasks wait for CPU because the CPUs available to them are saturated by competing work. This includes pinned-CPU hotspots and hypervisor steal.*
@@ -344,11 +345,11 @@ For each label: **Required** is necessary for assertion (all clauses). **Support
 - **Required:**
   - **RT.R0** `tcp.out_segs_rate ≥ SEG_MIN` (enough traffic for the ratios to mean anything).
   - **RT.R1** `ABS(tcp.retrans_frac, RT_FRAC_MIN)` **and** `DEV(tcp.retrans_frac)` TRUE. Optionally `DEV(tcp.timeouts_rate)` may substitute when `RetransSegs` is dominated by RTOs.
-  - **RT.R2** `EVALUATED(min local drop set)` TRUE **and** `LOSS.LOCAL` FALSE. Drops were checked and are not proven.
+  - **RT.R2** *(Primary clause, v0.3.0)* `EVALUATED(min local drop set)` TRUE **and** `LOSS.LOCAL` FALSE. Drops were checked and are not proven. RT.R2 is required for `tcp_retransmissions` to be the **decision**. It is **not** required for `tcp_retransmissions` to be **contributing**: with RT.R2 FALSE (local loss proven) and RT.R0, RT.R1 TRUE, the label is CONTRIBUTING under PR-1 when `network_packet_loss` is the decision. Declared subordination: `PR-1`, primary `network_packet_loss`.
 - **Supporting:** `DEV(tcp.srtt_ms)` (RTT increase), `DEV(tcp.timeouts_rate)`, a `tcp.cwnd` decrease, a throughput decrease.
-- **Contradictory:** `LOSS.LOCAL` TRUE. The label becomes *contributing* under PR-1.
+- **Contradictory:** `LOSS.LOCAL` TRUE (RT.R2 FALSE). The label cannot be the decision; it becomes *contributing* under PR-1 when `network_packet_loss` is the decision, and is otherwise `SUPPORTED_NOT_SUFFICIENT`.
 - **Insufficient:**
-  - RT.R1 TRUE but RT.R2 MISSING (drop counters unavailable) → the engine **cannot distinguish** retransmissions from local loss. The decision is `INSUFFICIENT_EVIDENCE` with reason `LOSS_VS_RETRANS_UNDECIDABLE`.
+  - RT.R1 TRUE but RT.R2 MISSING (drop counters unavailable) → the engine **cannot distinguish** retransmissions from local loss. The decision is `INSUFFICIENT_EVIDENCE` with reason `LOSS_VS_RETRANS_UNDECIDABLE`. With RT.R2 MISSING the label is neither the decision nor contributing (a MISSING Primary clause never enables the contributing path).
   - RT.R0 FALSE → MISSING (low volume).
 - **Boundary with `network_packet_loss`:**
 
@@ -383,7 +384,7 @@ For each label: **Required** is necessary for assertion (all clauses). **Support
     - `DEV(app.pool_rejections)`, or
     - `DEV(app.events[code])` for a code in the closed set.
   - **AB.R2** the application-level wait explains a share ≥ `APP_SHARE_MIN` of the p99 latency increase.
-  - **AB.R3** `EVALUATED` for the infrastructure families {CPU/scheduler, throttling, memory, softirq}, plus network (min local drop set and TCP features) whenever `tcp.out_segs_rate ≥ SEG_MIN`. **None of** the six infrastructure labels is assertable.
+  - **AB.R3** `EVALUATED` for the infrastructure families {CPU/scheduler, throttling, memory, softirq}, plus network (min local drop set and TCP features) whenever `tcp.out_segs_rate ≥ SEG_MIN`. **None of** the six infrastructure labels is assertable. AB.R3's feature list contains every feature of the infrastructure labels' Required and Primary clauses (v0.3.0 added `throttle.quota_limited`, C-3).
 - **Never sufficient:**
   - normal kernel evidence;
   - free-text logs ("slow request", "timeout") without a closed-set event code;
@@ -408,11 +409,13 @@ A decision, not a fault class. It is returned with one or more **reason codes** 
 
 ## 9. Precedence and conflict resolution
 
-Precedence is applied **only** among labels whose Required clauses are all TRUE. The table is closed: any pair not listed is a conflict and yields `INSUFFICIENT_EVIDENCE` (`CONFLICT_UNRESOLVED`), with both candidates reported.
+Precedence is applied **only** among labels whose Required and Primary clauses are all TRUE. The table is closed: any pair not listed is a conflict and yields `INSUFFICIENT_EVIDENCE` (`CONFLICT_UNRESOLVED`), with both candidates reported.
+
+**Subordinate-only labels (v0.3.0).** A label whose Required clauses are all TRUE and whose Primary clause is FALSE (never MISSING) takes no part in pairwise precedence and never creates a conflict. It is CONTRIBUTING iff the primary label named by its Primary clause's declared subordination is the decision (RT.R2: `network_packet_loss`, rule PR-1); otherwise it is `SUPPORTED_NOT_SUFFICIENT`. A label with a MISSING Primary clause is never CONTRIBUTING.
 
 | Rule | Co-assertable labels | Resolution | Rationale |
 |---|---|---|---|
-| PR-1 | `network_packet_loss` + `tcp_retransmissions` | primary `network_packet_loss`; contributing `tcp_retransmissions` | Proven local drops explain the retransmissions |
+| PR-1 | `network_packet_loss` + `tcp_retransmissions` | primary `network_packet_loss`; contributing `tcp_retransmissions` (applied through the RT.R2 subordination, since proven loss makes RT.R2 FALSE) | Proven local drops explain the retransmissions |
 | PR-2 | `softirq_overload` + `network_packet_loss`, where **all** qualifying drop sources are softnet drops on the softirq-saturated CPUs (or `kfree_skb` reason `CPU_BACKLOG`) | primary `softirq_overload`; contributing `network_packet_loss` | Backlog drops are a consequence of softirq saturation. *This deliberately differs from the Phase 1B confirmatory convention (C05).* |
 | PR-2b | Same pair, with drops from any non-softnet source | `CONFLICT_UNRESOLVED` | Independent mechanisms; no causal claim is made |
 | PR-3 | `cpu_throttling` + `cpu_contention` | primary = larger of `throttle.time_rate` and `sched.run_delay_excess.target` if the larger ≥ `DOM_RATIO` × the smaller; otherwise conflict | Both are waiting time for the same tasks, so they compare directly |
@@ -525,9 +528,9 @@ A `boolean` measurement's value is exactly `0.0` or `1.0` (or null with MISSING/
 
 ### 10.7 Invariants (validated by the schema and by tests)
 - **I1.** `abstained ⇔ decision = INSUFFICIENT_EVIDENCE ⇔ abstention_reasons ≠ ∅`.
-- **I2.** If `decision ≠ INSUFFICIENT_EVIDENCE`, every Required clause of `decision` has a POSITIVE item (or, for RT.R2 and AB.R3, the specified FALSE/EVALUATED items).
+- **I2.** If `decision ≠ INSUFFICIENT_EVIDENCE`, every Required and Primary clause of `decision` has a POSITIVE item (or, for RT.R2 and AB.R3, the specified FALSE/EVALUATED items).
 - **I3.** No MISSING item appears in any `supports`.
-- **I4.** No candidate is ASSERTED unless all its required items are POSITIVE (or the required negations are satisfied).
+- **I4.** No candidate is ASSERTED unless all its Required and Primary items are POSITIVE (or the required negations are satisfied). No candidate is CONTRIBUTING unless all its Required items are POSITIVE; if one of its Primary clauses is unmet, the decision must be that clause's declared primary label and the snapshot must contain a NEGATIVE item of that clause contradicting the candidate (v0.3.0). `required_met`/`required_missing` partition the Required and Primary clauses.
 - **I5.** Every `measurement_ids` reference resolves, and every measurement's `feature_id` and `unit` match the registry.
 - **I6.** `application_bottleneck` ASSERTED implies at least one POSITIVE item from an `app.*` feature other than `app.latency_ms` or `app.error_rate`.
 - **I7.** Same inputs and parameter set give a byte-identical serialised result (sorted keys, fixed float formatting).
@@ -564,6 +567,7 @@ FaultLab ground truth (`FAULTLAB_GROUND_TRUTH`) **MUST NOT** appear in a snapsho
 ## 12. Versioning
 
 - The contract uses semantic versioning.
+- **0.3.0-draft governance note.** C-1 changes the role of the Required clause RT.R2, which this section classifies as a major change. Following the 0.2.0-draft precedent (pre-release draft, consumers M1 and M2 only), it is released as `0.3.0-draft`; the reviewer may decide otherwise. The evidence object schema is unchanged, so `schema_version` stays `0.2.0`, and snapshots recorded under `0.2.0-draft` (same major version 0) remain accepted.
 - **0.2.0-draft governance note.** R-1 changes the Required clause CT.R1, which this section classifies as a major change. Because the contract is a pre-release draft whose only consumer is M1, the reviewer decided to release the pre-M2 correction as `0.2.0-draft` (schema `0.2.0`). Snapshots with `schema_version` other than `0.2.0` are rejected; there is no migration.
 - Adding a feature or parameter is a **minor** bump.
 - Changing a Required clause, the precedence table or a label is a **major** bump.

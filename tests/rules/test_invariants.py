@@ -58,8 +58,14 @@ class TestInvariantsAcrossScenarios(unittest.TestCase):
                 with self.subTest(name=name, label=c.label.value):
                     self.assertEqual(set(c.required_met) | set(c.required_missing), req)
                     self.assertFalse(set(c.required_met) & set(c.required_missing))
-                    if c.status in (S.ASSERTED, S.CONTRIBUTING):
+                    if c.status is S.ASSERTED:
                         self.assertEqual(c.required_missing, ())
+                    if c.status is S.CONTRIBUTING:   # v0.3.0: only an unmet Primary clause, as a declared subordinate
+                        prim = {cl.clause_id for cl in C.labels.primary_clauses(c.label)}
+                        self.assertLessEqual(set(c.required_missing), prim)
+                        for cl in C.labels.primary_clauses(c.label):
+                            if cl.clause_id in c.required_missing:
+                                self.assertIs(r.decision, cl.subordinate.primary)
                     self.assertNotEqual(c.status, S.CONTRADICTED)   # unused by M2 (report §10)
             self.assertEqual(len(r.candidates), 7)
 

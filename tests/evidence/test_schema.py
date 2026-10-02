@@ -163,7 +163,7 @@ class TestEnums(unittest.TestCase):
 class TestVersioning(unittest.TestCase):
     def test_versions(self):
         self.assertEqual(SCHEMA_VERSION, "0.2.0")
-        self.assertEqual(CONTRACT_VERSION, "0.2.0-draft")
+        self.assertEqual(CONTRACT_VERSION, "0.3.0-draft")
 
     def test_major_mismatch_rejected_minor_accepted(self):
         with self.assertRaises(ValueError):

@@ -300,10 +300,10 @@ class EvidenceItem(BaseModel):
             raise ValueError("a label cannot be both supported and contradicted by one item")
         if p.clause_id and self.kind is EvidenceKind.POSITIVE:
             cl = c.labels.clause(p.clause_id)
-            target = self.supports if cl.role == "required" else self.contradicts
+            target = self.contradicts if cl.role == "contradictory" else self.supports
             if cl.label not in target:
                 raise ValueError(f"POSITIVE {cl.role} item for {p.clause_id} must list {cl.label} in "
-                                 f"{'supports' if cl.role == 'required' else 'contradicts'}")
+                                 f"{'contradicts' if cl.role == 'contradictory' else 'supports'}")
         expect = c.render_rationale(self.predicate_id, self.kind, self.strength, self.observed, self.threshold)
         if self.rationale != expect:
             raise ValueError("rationale must be the contract template rendering, not free text (contract §10.4)")
@@ -475,8 +475,12 @@ class Candidate(BaseModel):
             _no_dupes(name, seq)
         if met & miss or (met | miss) != req:
             raise ValueError(f"required_met and required_missing must partition {sorted(req)}")
-        if self.status in (CandidateStatus.ASSERTED, CandidateStatus.CONTRIBUTING) and miss:
-            raise ValueError(f"I4: {self.label} cannot be {self.status} with required clauses missing {sorted(miss)}")
+        if self.status is CandidateStatus.ASSERTED and miss:
+            raise ValueError(f"I4: {self.label} cannot be ASSERTED with required clauses missing {sorted(miss)}")
+        primary = {cl.clause_id for cl in c.labels.primary_clauses(self.label)}
+        if self.status is CandidateStatus.CONTRIBUTING and miss - primary:   # v0.3.0: Primary clauses not needed
+            raise ValueError(f"I4: {self.label} cannot be CONTRIBUTING with required clauses missing "
+                             f"{sorted(miss - primary)}")
         if self.status in (CandidateStatus.NOT_EVALUABLE, CandidateStatus.NOT_SUPPORTED,
                            CandidateStatus.SUPPORTED_NOT_SUFFICIENT) and not miss:
             raise ValueError(f"status {self.status} requires at least one unmet required clause")

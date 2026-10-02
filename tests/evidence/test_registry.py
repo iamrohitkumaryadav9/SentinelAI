@@ -45,7 +45,7 @@ class TestRegistry(unittest.TestCase):
     def test_ids_unique_and_versioned(self):
         ids = [f.id for f in C.registry.features]
         self.assertEqual(len(ids), len(set(ids)))
-        self.assertEqual(C.registry.contract_version, "0.2.0-draft")
+        self.assertEqual(C.registry.contract_version, "0.3.0-draft")
 
     def test_unknown_feature_rejected(self):
         with self.assertRaises(ContractViolation):
