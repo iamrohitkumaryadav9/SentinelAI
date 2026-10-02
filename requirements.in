@@ -1,0 +1,9 @@
+# Direct dependencies (Phase 1A). Exact resolved versions live in requirements.lock.
+numpy
+pandas
+scipy
+scikit-learn
+psutil
+pydantic
+httpx
+prometheus-client

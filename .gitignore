@@ -1,0 +1,19 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Runtime output (keep directory markers only)
+logs/*
+!logs/.gitkeep
+results/**/raw/
+
+# Model weights / large artifacts never go into git
+*.gguf
+*.safetensors
+*.bin
+
+# Secrets / local overrides
+.env
+*.local

@@ -1,0 +1,31 @@
+# privileged_smoke start 2026-10-02T13:40:31+05:30 kernel=6.8.0-138-generic user=iiitd
+bpf programs loaded before tests: 23
+tracefs has sched/sched_switch
+tracefs has sched/sched_wakeup
+tracefs has irq/softirq_entry
+tracefs has irq/softirq_exit
+tracefs has tcp/tcp_retransmit_skb
+tracefs has sock/inet_sock_set_state
+tracefs has skb/kfree_skb
+[PASS] sched_switch attached=yes events=2650 duration=3.66s rc=0
+[PASS] sched_wakeup attached=yes events=1874 duration=3.64s rc=0
+[PASS] softirq_entry attached=yes events=2437 duration=3.64s rc=0
+[PASS] softirq_exit attached=yes events=2037 duration=3.66s rc=0
+[PASS] tcp_retransmit_skb attached=yes events=0 duration=3.64s rc=0
+[PASS] inet_sock_set_state attached=yes events=10 duration=3.66s rc=0
+[PASS] kfree_skb attached=yes events=91 duration=3.63s rc=0
+bpf programs loaded after tests: 22
+# privileged_smoke end 2026-10-02T13:41:00+05:30
+
+bpftool_feature_probe         PASS  rc=0                                                                                                       bpftool_feature_probe.txt (2243 lines)
+btf_dump                      PASS  -                                                                                                          btf.txt
+bpftrace:sched_switch         PASS  -                                                                                                          attached=yes events=2650 duration_s=3.66
+bpftrace:sched_wakeup         PASS  -                                                                                                          attached=yes events=1874 duration_s=3.64
+bpftrace:softirq_entry        PASS  -                                                                                                          attached=yes events=2437 duration_s=3.64
+bpftrace:softirq_exit         PASS  -                                                                                                          attached=yes events=2037 duration_s=3.66
+bpftrace:tcp_retransmit_skb   PASS  -                                                                                                          attached=yes events=0 duration_s=3.64
+bpftrace:inet_sock_set_state  PASS  -                                                                                                          attached=yes events=10 duration_s=3.66
+bpftrace:kfree_skb            PASS  -                                                                                                          attached=yes events=91 duration_s=3.63
+bcc_runqlat                   FAIL  rc=1 /virtual/main.c:54:15: error: no member named 'state' in 'struct task_struct'; did you mean 'stats'?  bcc_runqlat.txt
+perf_stat_root                PASS  -                                                                                                          perf_stat_root.txt
+bpf_leak_check                PASS  -                                                                                                          before=23 after=22

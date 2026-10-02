@@ -1,0 +1,59 @@
+In file included from <built-in>:2:
+In file included from /virtual/include/bcc/bpf.h:12:
+In file included from include/linux/types.h:6:
+In file included from include/uapi/linux/types.h:14:
+In file included from include/uapi/linux/posix_types.h:5:
+In file included from include/linux/stddef.h:5:
+In file included from include/uapi/linux/stddef.h:5:
+In file included from include/linux/compiler_types.h:161:
+include/linux/compiler-clang.h:64:9: warning: '__HAVE_BUILTIN_BSWAP32__' macro redefined [-Wmacro-redefined]
+#define __HAVE_BUILTIN_BSWAP32__
+        ^
+<command line>:4:9: note: previous definition is here
+#define __HAVE_BUILTIN_BSWAP32__ 1
+        ^
+In file included from <built-in>:2:
+In file included from /virtual/include/bcc/bpf.h:12:
+In file included from include/linux/types.h:6:
+In file included from include/uapi/linux/types.h:14:
+In file included from include/uapi/linux/posix_types.h:5:
+In file included from include/linux/stddef.h:5:
+In file included from include/uapi/linux/stddef.h:5:
+In file included from include/linux/compiler_types.h:161:
+include/linux/compiler-clang.h:65:9: warning: '__HAVE_BUILTIN_BSWAP64__' macro redefined [-Wmacro-redefined]
+#define __HAVE_BUILTIN_BSWAP64__
+        ^
+<command line>:5:9: note: previous definition is here
+#define __HAVE_BUILTIN_BSWAP64__ 1
+        ^
+In file included from <built-in>:2:
+In file included from /virtual/include/bcc/bpf.h:12:
+In file included from include/linux/types.h:6:
+In file included from include/uapi/linux/types.h:14:
+In file included from include/uapi/linux/posix_types.h:5:
+In file included from include/linux/stddef.h:5:
+In file included from include/uapi/linux/stddef.h:5:
+In file included from include/linux/compiler_types.h:161:
+include/linux/compiler-clang.h:66:9: warning: '__HAVE_BUILTIN_BSWAP16__' macro redefined [-Wmacro-redefined]
+#define __HAVE_BUILTIN_BSWAP16__
+        ^
+<command line>:3:9: note: previous definition is here
+#define __HAVE_BUILTIN_BSWAP16__ 1
+        ^
+/virtual/main.c:54:15: error: no member named 'state' in 'struct task_struct'; did you mean 'stats'?
+    if (prev->state == TASK_RUNNING) {
+              ^~~~~
+              stats
+include/linux/sched.h:828:34: note: 'stats' declared here
+        struct sched_statistics         stats;
+                                        ^
+/virtual/main.c:54:21: error: invalid operands to binary expression ('struct sched_statistics' and 'int')
+    if (prev->state == TASK_RUNNING) {
+        ~~~~~~~~~~~ ^  ~~~~~~~~~~~~
+3 warnings and 2 errors generated.
+Traceback (most recent call last):
+  File "/usr/sbin/runqlat-bpfcc", line 251, in <module>
+    b = BPF(text=bpf_text)
+  File "/usr/lib/python3/dist-packages/bcc/__init__.py", line 364, in __init__
+    raise Exception("Failed to compile BPF module %s" % (src_file or "<text>"))
+Exception: Failed to compile BPF module <text>

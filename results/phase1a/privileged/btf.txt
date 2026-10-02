@@ -1,0 +1,21 @@
+-r--r--r-- 1 root root 5.9M Oct  2 13:30 /sys/kernel/btf/vmlinux
+[1] INT 'long unsigned int' size=8 bits_offset=0 nr_bits=64 encoding=(none)
+[2] PTR '(anon)' type_id=5
+[3] CONST '(anon)' type_id=2
+[4] INT 'char' size=1 bits_offset=0 nr_bits=8 encoding=(none)
+[5] CONST '(anon)' type_id=4
+[6] INT 'unsigned int' size=4 bits_offset=0 nr_bits=32 encoding=(none)
+[7] PTR '(anon)' type_id=0
+[8] INT 'signed char' size=1 bits_offset=0 nr_bits=8 encoding=SIGNED
+[9] TYPEDEF '__u8' type_id=10
+[10] INT 'unsigned char' size=1 bits_offset=0 nr_bits=8 encoding=(none)
+[11] INT 'short int' size=2 bits_offset=0 nr_bits=16 encoding=SIGNED
+[12] TYPEDEF '__u16' type_id=13
+[13] INT 'short unsigned int' size=2 bits_offset=0 nr_bits=16 encoding=(none)
+[14] TYPEDEF '__s32' type_id=15
+[15] INT 'int' size=4 bits_offset=0 nr_bits=32 encoding=SIGNED
+[16] TYPEDEF '__u32' type_id=6
+[17] TYPEDEF '__s64' type_id=18
+[18] INT 'long long int' size=8 bits_offset=0 nr_bits=64 encoding=SIGNED
+[19] TYPEDEF '__u64' type_id=20
+[20] INT 'long long unsigned int' size=8 bits_offset=0 nr_bits=64 encoding=(none)

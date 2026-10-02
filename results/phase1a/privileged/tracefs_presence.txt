@@ -1,0 +1,7 @@
+tracefs has sched/sched_switch
+tracefs has sched/sched_wakeup
+tracefs has irq/softirq_entry
+tracefs has irq/softirq_exit
+tracefs has tcp/tcp_retransmit_skb
+tracefs has sock/inet_sock_set_state
+tracefs has skb/kfree_skb
