@@ -174,7 +174,7 @@ def score_structured(model, rows, mode):
             k["valid_json"] += isinstance(obj, dict)
         except json.JSONDecodeError:
             m = re.search(r"\{.*\}", txt, re.S)
-            if txt.startswith("```"):
+            if "```" in txt:  # leading or trailing markdown fence
                 k["fenced"] += 1
             if m:
                 try:
