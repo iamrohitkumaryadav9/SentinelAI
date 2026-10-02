@@ -357,7 +357,8 @@ def score_model(md):
     res = {
         "model": model, "digest": w.get("model_digest"), "capabilities": w.get("capabilities"),
         "desktop_at_start": w.get("desktop"), "runner_cmdline": w.get("runner_cmdline"),
-        "load_duration_s": w.get("load_duration_s"),
+        "load_duration_s": w.get("load_duration_s"), "think": w.get("think"), "think_probe": w.get("think_probe"),
+        "ollama_service_env": w.get("ollama_service_env"),
         "generation": score_rubric(model, gen, P("generation.json")["items"], "generation"),
         "knowledge": score_rubric(model, allrows.get("knowledge", []), P("knowledge.json")["items"], "knowledge"),
         "evidence": score_evidence(model, allrows.get("evidence", [])),

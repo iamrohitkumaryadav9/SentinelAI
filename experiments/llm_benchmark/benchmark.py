@@ -679,9 +679,11 @@ def pull(model):
                   "ollama_version": ollama_version()})
     man = json.loads(MANIFEST.read_text()) if MANIFEST.exists() else {"models": {}}
     prev = man["models"].get(model, {})
-    for k in ("before", "after", "expected_size_bytes", "download_seconds", "download_date", "downloaded_in_phase"):
+    for k in ("before", "after", "expected_size_bytes", "download_seconds", "download_date", "runtime_compat"):
         if k in prev and k not in entry:
             entry[k] = prev[k]
+    if prev.get("downloaded_in_phase") == "1B":   # never downgrade a recorded Phase 1B download
+        entry["downloaded_in_phase"] = "1B"
     man["models"][model] = entry
     MANIFEST.write_text(json.dumps(man, indent=2) + "\n")
     if disk_free_gib() < MIN_DISK_GIB:

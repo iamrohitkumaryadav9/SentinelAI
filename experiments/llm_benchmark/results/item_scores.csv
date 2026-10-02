@@ -140,6 +140,273 @@ gemma3:1b,context,ctx4096#r0,0,host=n time=n
 gemma3:1b,context,ctx4096#r1,0,host=n time=n
 gemma3:1b,context,ctx8192#r0,0,host=n time=n
 gemma3:1b,context,ctx8192#r1,0,host=n time=n
+qwen3.5:4b,generation,G1_simple_reasoning#r0,1,ok
+qwen3.5:4b,generation,G1_simple_reasoning#r1,1,ok
+qwen3.5:4b,generation,G1_simple_reasoning#r2,1,ok
+qwen3.5:4b,generation,G2_systems_reasoning#r0,2,ok
+qwen3.5:4b,generation,G2_systems_reasoning#r1,1,ok
+qwen3.5:4b,generation,G2_systems_reasoning#r2,1,ok
+qwen3.5:4b,generation,G3_debugging#r0,2,ok
+qwen3.5:4b,generation,G3_debugging#r1,2,ok
+qwen3.5:4b,generation,G3_debugging#r2,2,ok
+qwen3.5:4b,generation,G4_code_reasoning#r0,2,ok
+qwen3.5:4b,generation,G4_code_reasoning#r1,2,ok
+qwen3.5:4b,generation,G4_code_reasoning#r2,2,ok
+qwen3.5:4b,generation,G5_structured_analysis#r0,2,ok
+qwen3.5:4b,generation,G5_structured_analysis#r1,2,ok
+qwen3.5:4b,generation,G5_structured_analysis#r2,2,ok
+qwen3.5:4b,knowledge,K1_sched_switch,1,ok
+qwen3.5:4b,knowledge,K2_softirq,1,ok
+qwen3.5:4b,knowledge,K3_net_sched,2,ok
+qwen3.5:4b,knowledge,K4_cpu_throttling,2,ok
+qwen3.5:4b,knowledge,K5_cgroup,2,ok
+qwen3.5:4b,knowledge,K6_tcp_retx,2,ok
+qwen3.5:4b,knowledge,K7_p99,1,ok
+qwen3.5:4b,knowledge,K8_psi,1,ok
+qwen3.5:4b,knowledge,K9_tp_vs_kprobe,2,ok
+qwen3.5:4b,knowledge,K10_k8s_req_limit,2,ok
+qwen3.5:4b,evidence,E01,2,"abstained, 3 evidence groups"
+qwen3.5:4b,evidence,E02,2,"abstained, 2 evidence groups"
+qwen3.5:4b,evidence,E03,2,"abstained, 3 evidence groups"
+qwen3.5:4b,evidence,E04,2,"abstained, 3 evidence groups"
+qwen3.5:4b,evidence,E05,2,"abstained, 2 evidence groups"
+qwen3.5:4b,evidence,E06,2,"abstained, 3 evidence groups"
+qwen3.5:4b,evidence,C01,2,correct
+qwen3.5:4b,evidence,C02,1,over-cautious
+qwen3.5:4b,structured_prompt,D01,0,parse failure
+qwen3.5:4b,structured_prompt,D02,0,parse failure
+qwen3.5:4b,structured_prompt,D03,2,ok
+qwen3.5:4b,structured_prompt,D04,0,parse failure
+qwen3.5:4b,structured_prompt,D05,1,"got cpu_throttling/1 want cpu_throttling/[2, 4]"
+qwen3.5:4b,structured_prompt,D06,2,ok
+qwen3.5:4b,structured_prompt,D07,2,ok
+qwen3.5:4b,structured_prompt,D08,0,parse failure
+qwen3.5:4b,structured_prompt,D09,2,ok
+qwen3.5:4b,structured_prompt,D10,2,ok
+qwen3.5:4b,structured_prompt,D11,1,"got network_packet_loss/1 want network_packet_loss/[2, 4]"
+qwen3.5:4b,structured_prompt,D12,2,ok
+qwen3.5:4b,structured_prompt,D13,2,ok
+qwen3.5:4b,structured_prompt,D14,2,ok
+qwen3.5:4b,structured_prompt,D15,2,ok
+qwen3.5:4b,structured_prompt,D16,2,ok
+qwen3.5:4b,structured_prompt,D17,0,parse failure
+qwen3.5:4b,structured_prompt,D18,2,ok
+qwen3.5:4b,structured_prompt,D19,0,parse failure
+qwen3.5:4b,structured_prompt,D20,2,ok
+qwen3.5:4b,structured_prompt,D21,2,ok
+qwen3.5:4b,structured_prompt,D22,1,"got network_packet_loss/3 want tcp_retransmissions/[2, 4]"
+qwen3.5:4b,structured_prompt,D23,2,ok
+qwen3.5:4b,structured_prompt,D24,2,ok
+qwen3.5:4b,structured_prompt,D25,0,parse failure
+qwen3.5:4b,structured_prompt,D26,0,parse failure
+qwen3.5:4b,structured_prompt,D27,0,parse failure
+qwen3.5:4b,structured_prompt,D28,0,parse failure
+qwen3.5:4b,structured_prompt,D29,0,parse failure
+qwen3.5:4b,structured_prompt,D30,0,parse failure
+qwen3.5:4b,structured_constrained,D01,2,ok
+qwen3.5:4b,structured_constrained,D02,1,"got cpu_contention/1 want cpu_contention/[2, 4]"
+qwen3.5:4b,structured_constrained,D03,2,ok
+qwen3.5:4b,structured_constrained,D04,1,"got cpu_contention/2 want cpu_contention/[3, 5]"
+qwen3.5:4b,structured_constrained,D05,1,"got cpu_throttling/1 want cpu_throttling/[2, 4]"
+qwen3.5:4b,structured_constrained,D06,2,ok
+qwen3.5:4b,structured_constrained,D07,2,ok
+qwen3.5:4b,structured_constrained,D08,1,"got cpu_contention/3 want cpu_throttling/[3, 5]"
+qwen3.5:4b,structured_constrained,D09,2,ok
+qwen3.5:4b,structured_constrained,D10,2,ok
+qwen3.5:4b,structured_constrained,D11,1,"got network_packet_loss/1 want network_packet_loss/[2, 4]"
+qwen3.5:4b,structured_constrained,D12,2,ok
+qwen3.5:4b,structured_constrained,D13,2,ok
+qwen3.5:4b,structured_constrained,D14,2,ok
+qwen3.5:4b,structured_constrained,D15,2,ok
+qwen3.5:4b,structured_constrained,D16,2,ok
+qwen3.5:4b,structured_constrained,D17,2,ok
+qwen3.5:4b,structured_constrained,D18,2,ok
+qwen3.5:4b,structured_constrained,D19,2,ok
+qwen3.5:4b,structured_constrained,D20,2,ok
+qwen3.5:4b,structured_constrained,D21,2,ok
+qwen3.5:4b,structured_constrained,D22,1,"got network_packet_loss/3 want tcp_retransmissions/[2, 4]"
+qwen3.5:4b,structured_constrained,D23,2,ok
+qwen3.5:4b,structured_constrained,D24,2,ok
+qwen3.5:4b,structured_constrained,D25,2,ok
+qwen3.5:4b,structured_constrained,D26,2,ok
+qwen3.5:4b,structured_constrained,D27,2,ok
+qwen3.5:4b,structured_constrained,D28,2,ok
+qwen3.5:4b,structured_constrained,D29,2,ok
+qwen3.5:4b,structured_constrained,D30,2,ok
+qwen3.5:4b,tools,T01,2,ok
+qwen3.5:4b,tools,T02,2,ok
+qwen3.5:4b,tools,T03,2,ok
+qwen3.5:4b,tools,T04,2,ok
+qwen3.5:4b,tools,T05,2,ok
+qwen3.5:4b,tools,T06,2,ok
+qwen3.5:4b,tools,T07,2,ok
+qwen3.5:4b,tools,T08,2,ok
+qwen3.5:4b,tools,T09,2,ok
+qwen3.5:4b,tools,T10,2,ok
+qwen3.5:4b,tools,T11,2,ok
+qwen3.5:4b,tools,T12,2,ok
+qwen3.5:4b,tools,T13,2,ok
+qwen3.5:4b,tools,T14,2,ok
+qwen3.5:4b,tools,T15,2,ok
+qwen3.5:4b,tools,T16,2,ok
+qwen3.5:4b,tools,T17,2,ok
+qwen3.5:4b,tools,T18,2,ok
+qwen3.5:4b,tools,T19,2,ok
+qwen3.5:4b,tools,T20,2,ok
+qwen3.5:4b,tools,T21,2,ok
+qwen3.5:4b,tools,T22,2,ok
+qwen3.5:4b,tools,T23,2,ok
+qwen3.5:4b,tools,T24,2,ok
+qwen3.5:4b,tools,T25,2,ok
+qwen3.5:4b,tools,N01,2,no-call
+qwen3.5:4b,tools,N02,2,no-call
+qwen3.5:4b,tools,N03,2,no-call
+qwen3.5:4b,agent,S01_cpu_contention,0,step_budget_exhausted
+qwen3.5:4b,agent,S02_network_drops,0,step_budget_exhausted
+qwen3.5:4b,agent,S03_softirq_overload,0,step_budget_exhausted
+qwen3.5:4b,agent,S04_memory_pressure,0,step_budget_exhausted
+qwen3.5:4b,agent,S05_tcp_retransmissions,0,step_budget_exhausted
+qwen3.5:9b,generation,G1_simple_reasoning#r0,1,ok
+qwen3.5:9b,generation,G1_simple_reasoning#r1,1,ok
+qwen3.5:9b,generation,G1_simple_reasoning#r2,1,ok
+qwen3.5:9b,generation,G2_systems_reasoning#r0,1,ok
+qwen3.5:9b,generation,G2_systems_reasoning#r1,2,ok
+qwen3.5:9b,generation,G2_systems_reasoning#r2,2,ok
+qwen3.5:9b,generation,G3_debugging#r0,1,ok
+qwen3.5:9b,generation,G3_debugging#r1,1,ok
+qwen3.5:9b,generation,G3_debugging#r2,2,ok
+qwen3.5:9b,generation,G4_code_reasoning#r0,2,ok
+qwen3.5:9b,generation,G4_code_reasoning#r1,2,ok
+qwen3.5:9b,generation,G4_code_reasoning#r2,2,ok
+qwen3.5:9b,generation,G5_structured_analysis#r0,2,ok
+qwen3.5:9b,generation,G5_structured_analysis#r1,2,ok
+qwen3.5:9b,generation,G5_structured_analysis#r2,2,ok
+qwen3.5:9b,knowledge,K1_sched_switch,2,ok
+qwen3.5:9b,knowledge,K2_softirq,2,ok
+qwen3.5:9b,knowledge,K3_net_sched,2,ok
+qwen3.5:9b,knowledge,K4_cpu_throttling,2,ok
+qwen3.5:9b,knowledge,K5_cgroup,2,ok
+qwen3.5:9b,knowledge,K6_tcp_retx,2,ok
+qwen3.5:9b,knowledge,K7_p99,1,ok
+qwen3.5:9b,knowledge,K8_psi,1,ok
+qwen3.5:9b,knowledge,K9_tp_vs_kprobe,2,ok
+qwen3.5:9b,knowledge,K10_k8s_req_limit,2,ok
+qwen3.5:9b,evidence,E01,2,"abstained, 4 evidence groups"
+qwen3.5:9b,evidence,E02,2,"abstained, 4 evidence groups"
+qwen3.5:9b,evidence,E03,2,"abstained, 4 evidence groups"
+qwen3.5:9b,evidence,E04,2,"abstained, 3 evidence groups"
+qwen3.5:9b,evidence,E05,2,"abstained, 2 evidence groups"
+qwen3.5:9b,evidence,E06,2,"abstained, 3 evidence groups"
+qwen3.5:9b,evidence,C01,2,correct
+qwen3.5:9b,evidence,C02,2,correct
+qwen3.5:9b,structured_prompt,D01,2,ok
+qwen3.5:9b,structured_prompt,D02,2,ok
+qwen3.5:9b,structured_prompt,D03,2,ok
+qwen3.5:9b,structured_prompt,D04,2,ok
+qwen3.5:9b,structured_prompt,D05,2,ok
+qwen3.5:9b,structured_prompt,D06,2,ok
+qwen3.5:9b,structured_prompt,D07,1,"got cpu_throttling/4 want cpu_throttling/[1, 3]"
+qwen3.5:9b,structured_prompt,D08,2,ok
+qwen3.5:9b,structured_prompt,D09,2,ok
+qwen3.5:9b,structured_prompt,D10,1,"got memory_pressure/5 want network_packet_loss/[2, 4]"
+qwen3.5:9b,structured_prompt,D11,2,ok
+qwen3.5:9b,structured_prompt,D12,2,ok
+qwen3.5:9b,structured_prompt,D13,1,"got softirq_overload/5 want softirq_overload/[2, 4]"
+qwen3.5:9b,structured_prompt,D14,2,ok
+qwen3.5:9b,structured_prompt,D15,1,"got softirq_overload/4 want softirq_overload/[1, 3]"
+qwen3.5:9b,structured_prompt,D16,2,ok
+qwen3.5:9b,structured_prompt,D17,2,ok
+qwen3.5:9b,structured_prompt,D18,2,ok
+qwen3.5:9b,structured_prompt,D19,2,ok
+qwen3.5:9b,structured_prompt,D20,1,"got memory_pressure/5 want memory_pressure/[2, 4]"
+qwen3.5:9b,structured_prompt,D21,1,"got network_packet_loss/5 want tcp_retransmissions/[2, 4]"
+qwen3.5:9b,structured_prompt,D22,1,"got network_packet_loss/4 want tcp_retransmissions/[2, 4]"
+qwen3.5:9b,structured_prompt,D23,1,"got tcp_retransmissions/4 want tcp_retransmissions/[1, 3]"
+qwen3.5:9b,structured_prompt,D24,1,"got network_packet_loss/3 want tcp_retransmissions/[2, 4]"
+qwen3.5:9b,structured_prompt,D25,2,ok
+qwen3.5:9b,structured_prompt,D26,2,ok
+qwen3.5:9b,structured_prompt,D27,2,ok
+qwen3.5:9b,structured_prompt,D28,2,ok
+qwen3.5:9b,structured_prompt,D29,2,ok
+qwen3.5:9b,structured_prompt,D30,2,ok
+qwen3.5:9b,structured_constrained,D01,2,ok
+qwen3.5:9b,structured_constrained,D02,2,ok
+qwen3.5:9b,structured_constrained,D03,2,ok
+qwen3.5:9b,structured_constrained,D04,2,ok
+qwen3.5:9b,structured_constrained,D05,2,ok
+qwen3.5:9b,structured_constrained,D06,2,ok
+qwen3.5:9b,structured_constrained,D07,1,"got cpu_throttling/4 want cpu_throttling/[1, 3]"
+qwen3.5:9b,structured_constrained,D08,2,ok
+qwen3.5:9b,structured_constrained,D09,2,ok
+qwen3.5:9b,structured_constrained,D10,1,"got memory_pressure/5 want network_packet_loss/[2, 4]"
+qwen3.5:9b,structured_constrained,D11,2,ok
+qwen3.5:9b,structured_constrained,D12,2,ok
+qwen3.5:9b,structured_constrained,D13,1,"got softirq_overload/5 want softirq_overload/[2, 4]"
+qwen3.5:9b,structured_constrained,D14,2,ok
+qwen3.5:9b,structured_constrained,D15,1,"got softirq_overload/4 want softirq_overload/[1, 3]"
+qwen3.5:9b,structured_constrained,D16,2,ok
+qwen3.5:9b,structured_constrained,D17,2,ok
+qwen3.5:9b,structured_constrained,D18,2,ok
+qwen3.5:9b,structured_constrained,D19,2,ok
+qwen3.5:9b,structured_constrained,D20,1,"got memory_pressure/5 want memory_pressure/[2, 4]"
+qwen3.5:9b,structured_constrained,D21,1,"got network_packet_loss/5 want tcp_retransmissions/[2, 4]"
+qwen3.5:9b,structured_constrained,D22,1,"got network_packet_loss/4 want tcp_retransmissions/[2, 4]"
+qwen3.5:9b,structured_constrained,D23,1,"got tcp_retransmissions/4 want tcp_retransmissions/[1, 3]"
+qwen3.5:9b,structured_constrained,D24,1,"got network_packet_loss/3 want tcp_retransmissions/[2, 4]"
+qwen3.5:9b,structured_constrained,D25,2,ok
+qwen3.5:9b,structured_constrained,D26,2,ok
+qwen3.5:9b,structured_constrained,D27,2,ok
+qwen3.5:9b,structured_constrained,D28,2,ok
+qwen3.5:9b,structured_constrained,D29,2,ok
+qwen3.5:9b,structured_constrained,D30,2,ok
+qwen3.5:9b,tools,T01,2,ok
+qwen3.5:9b,tools,T02,2,ok
+qwen3.5:9b,tools,T03,2,ok
+qwen3.5:9b,tools,T04,2,ok
+qwen3.5:9b,tools,T05,2,ok
+qwen3.5:9b,tools,T06,2,ok
+qwen3.5:9b,tools,T07,2,ok
+qwen3.5:9b,tools,T08,2,ok
+qwen3.5:9b,tools,T09,2,ok
+qwen3.5:9b,tools,T10,2,ok
+qwen3.5:9b,tools,T11,2,ok
+qwen3.5:9b,tools,T12,2,ok
+qwen3.5:9b,tools,T13,2,ok
+qwen3.5:9b,tools,T14,2,ok
+qwen3.5:9b,tools,T15,2,ok
+qwen3.5:9b,tools,T16,2,ok
+qwen3.5:9b,tools,T17,2,ok
+qwen3.5:9b,tools,T18,2,ok
+qwen3.5:9b,tools,T19,2,ok
+qwen3.5:9b,tools,T20,2,ok
+qwen3.5:9b,tools,T21,2,ok
+qwen3.5:9b,tools,T22,2,ok
+qwen3.5:9b,tools,T23,2,ok
+qwen3.5:9b,tools,T24,2,ok
+qwen3.5:9b,tools,T25,2,ok
+qwen3.5:9b,tools,N01,2,no-call
+qwen3.5:9b,tools,N02,2,no-call
+qwen3.5:9b,tools,N03,2,no-call
+qwen3.5:9b,agent,S01_cpu_contention,2,"label=cpu_contention calls=['get_cpu_metrics', 'get_network_metrics', 'get_scheduler_latency']"
+qwen3.5:9b,agent,S02_network_drops,2,"label=network_packet_loss calls=['get_cpu_metrics', 'get_network_metrics', 'get_recent_logs']"
+qwen3.5:9b,agent,S03_softirq_overload,2,"label=softirq_overload calls=['get_scheduler_latency', 'get_cpu_metrics', 'get_network_metrics']"
+qwen3.5:9b,agent,S04_memory_pressure,2,"label=memory_pressure calls=['get_cpu_metrics', 'get_network_metrics', 'get_recent_logs']"
+qwen3.5:9b,agent,S05_tcp_retransmissions,0,"label=network_packet_loss calls=['get_cpu_metrics', 'get_network_metrics']"
+qwen3.5:9b,agent,S06_ambiguous_all_normal,2,"label=INSUFFICIENT_EVIDENCE calls=['get_cpu_metrics', 'get_scheduler_latency', 'get_network_metrics']"
+qwen3.5:9b,agent,S07_cpu_throttling,2,"label=cpu_throttling calls=['get_cpu_metrics', 'get_scheduler_latency', 'get_network_metrics']"
+qwen3.5:9b,agent,S08_ambiguous_missing_data,2,"label=INSUFFICIENT_EVIDENCE calls=['get_cpu_metrics', 'get_network_metrics']"
+qwen3.5:9b,agent,S09_noisy_neighbor,2,"label=cpu_contention calls=['get_cpu_metrics', 'get_scheduler_latency', 'get_recent_logs']"
+qwen3.5:9b,agent,S10_conntrack_drops,2,"label=network_packet_loss calls=['get_network_metrics', 'get_cpu_metrics']"
+qwen3.5:9b,agent,S11_retx_with_busy_cpu,0,"label=network_packet_loss calls=['get_cpu_metrics', 'get_scheduler_latency', 'get_network_metrics']"
+qwen3.5:9b,agent,S12_weak_conflicting,2,"label=INSUFFICIENT_EVIDENCE calls=['get_cpu_metrics', 'get_network_metrics']"
+qwen3.5:9b,context,ctx1024#r0,2,host=y time=y
+qwen3.5:9b,context,ctx1024#r1,2,host=y time=y
+qwen3.5:9b,context,ctx2048#r0,1,host=n time=y
+qwen3.5:9b,context,ctx2048#r1,1,host=n time=y
+qwen3.5:9b,context,ctx4096#r0,2,host=y time=y
+qwen3.5:9b,context,ctx4096#r1,2,host=y time=y
+qwen3.5:9b,context,ctx8192#r0,1,host=n time=y
+qwen3.5:9b,context,ctx8192#r1,1,host=n time=y
 qwen3:4b,generation,G1_simple_reasoning#r0,0,ok
 qwen3:4b,generation,G1_simple_reasoning#r1,0,ok
 qwen3:4b,generation,G1_simple_reasoning#r2,0,ok
@@ -184,3 +451,162 @@ qwen3:4b,structured_prompt,D08,0,parse failure
 qwen3:4b,structured_prompt,D09,0,parse failure
 qwen3:4b,structured_prompt,D10,0,parse failure
 qwen3:4b,structured_prompt,D11,0,parse failure
+qwen3:4b,structured_prompt,D12,0,parse failure
+qwen3:4b,structured_prompt,D13,0,parse failure
+qwen3:4b,structured_prompt,D14,0,parse failure
+qwen3:4b[slice],tools,T01,1,acceptable alt get_scheduler_latency
+qwen3:4b[slice],tools,T04,2,ok
+qwen3:4b[slice],tools,T05,2,ok
+qwen3:4b[slice],tools,T08,0,missing call
+qwen3:4b[slice],tools,T10,0,missing call
+qwen3:4b[slice],tools,T14,2,ok
+qwen3:4b[slice],tools,T17,2,ok
+qwen3:4b[slice],tools,T22,0,missing call
+qwen3:4b[slice],tools,T24,0,missing call
+qwen3:4b[slice],tools,T25,0,missing call
+qwen3:4b[slice],agent,S01_cpu_contention,2,label=cpu_contention calls=['get_cpu_metrics']
+qwen3:4b[slice],agent,S02_network_drops,0,no parseable diagnosis: ''
+qwen3:4b[slice],agent,S05_tcp_retransmissions,0,no parseable diagnosis: ''
+qwen3:4b[slice],agent,S07_cpu_throttling,2,label=cpu_throttling calls=['get_cpu_metrics']
+qwen3:4b[slice],agent,S09_noisy_neighbor,0,no parseable diagnosis: ''
+qwen3:8b,generation,G1_simple_reasoning#r0,0,ok
+qwen3:8b,generation,G1_simple_reasoning#r1,0,ok
+qwen3:8b,generation,G1_simple_reasoning#r2,0,ok
+qwen3:8b,generation,G2_systems_reasoning#r0,1,ok
+qwen3:8b,generation,G2_systems_reasoning#r1,1,ok
+qwen3:8b,generation,G2_systems_reasoning#r2,2,ok
+qwen3:8b,generation,G3_debugging#r0,2,ok
+qwen3:8b,generation,G3_debugging#r1,2,ok
+qwen3:8b,generation,G3_debugging#r2,2,ok
+qwen3:8b,generation,G4_code_reasoning#r0,2,ok
+qwen3:8b,generation,G4_code_reasoning#r1,2,ok
+qwen3:8b,generation,G4_code_reasoning#r2,2,ok
+qwen3:8b,generation,G5_structured_analysis#r0,2,ok
+qwen3:8b,generation,G5_structured_analysis#r1,2,ok
+qwen3:8b,generation,G5_structured_analysis#r2,2,ok
+qwen3:8b,knowledge,K1_sched_switch,2,ok
+qwen3:8b,knowledge,K2_softirq,2,ok
+qwen3:8b,knowledge,K3_net_sched,2,ok
+qwen3:8b,knowledge,K4_cpu_throttling,1,ok
+qwen3:8b,knowledge,K5_cgroup,2,ok
+qwen3:8b,knowledge,K6_tcp_retx,2,ok
+qwen3:8b,knowledge,K7_p99,1,ok
+qwen3:8b,knowledge,K8_psi,1,ok
+qwen3:8b,knowledge,K9_tp_vs_kprobe,2,ok
+qwen3:8b,knowledge,K10_k8s_req_limit,2,ok
+qwen3:8b,evidence,E01,2,"abstained, 3 evidence groups"
+qwen3:8b,evidence,E02,2,"abstained, 2 evidence groups"
+qwen3:8b,evidence,E03,1,"abstained, 0 evidence groups"
+qwen3:8b,evidence,E04,2,"abstained, 4 evidence groups"
+qwen3:8b,evidence,E05,2,"abstained, 2 evidence groups"
+qwen3:8b,evidence,E06,2,"abstained, 3 evidence groups"
+qwen3:8b,evidence,C01,2,correct
+qwen3:8b,evidence,C02,1,over-cautious
+qwen3:8b,structured_prompt,D01,2,ok
+qwen3:8b,structured_prompt,D02,2,ok
+qwen3:8b,structured_prompt,D03,2,ok
+qwen3:8b,structured_prompt,D04,2,ok
+qwen3:8b,structured_prompt,D05,2,ok
+qwen3:8b,structured_prompt,D06,2,ok
+qwen3:8b,structured_prompt,D07,2,ok
+qwen3:8b,structured_prompt,D08,1,"got cpu_contention/4 want cpu_throttling/[3, 5]"
+qwen3:8b,structured_prompt,D09,2,ok
+qwen3:8b,structured_prompt,D10,1,"got memory_pressure/4 want network_packet_loss/[2, 4]"
+qwen3:8b,structured_prompt,D11,2,ok
+qwen3:8b,structured_prompt,D12,2,ok
+qwen3:8b,structured_prompt,D13,2,ok
+qwen3:8b,structured_prompt,D14,1,"got network_packet_loss/4 want softirq_overload/[2, 4]"
+qwen3:8b,structured_prompt,D15,1,"got softirq_overload/4 want softirq_overload/[1, 3]"
+qwen3:8b,structured_prompt,D16,1,"got cpu_contention/4 want softirq_overload/[2, 4]"
+qwen3:8b,structured_prompt,D17,2,ok
+qwen3:8b,structured_prompt,D18,2,ok
+qwen3:8b,structured_prompt,D19,2,ok
+qwen3:8b,structured_prompt,D20,2,ok
+qwen3:8b,structured_prompt,D21,2,ok
+qwen3:8b,structured_prompt,D22,2,ok
+qwen3:8b,structured_prompt,D23,2,ok
+qwen3:8b,structured_prompt,D24,2,ok
+qwen3:8b,structured_prompt,D25,2,ok
+qwen3:8b,structured_prompt,D26,2,ok
+qwen3:8b,structured_prompt,D27,2,ok
+qwen3:8b,structured_prompt,D28,1,"got tcp_retransmissions/2 want INSUFFICIENT_EVIDENCE/[0, 5]"
+qwen3:8b,structured_prompt,D29,2,ok
+qwen3:8b,structured_prompt,D30,2,ok
+qwen3:8b,structured_constrained,D01,2,ok
+qwen3:8b,structured_constrained,D02,2,ok
+qwen3:8b,structured_constrained,D03,2,ok
+qwen3:8b,structured_constrained,D04,2,ok
+qwen3:8b,structured_constrained,D05,2,ok
+qwen3:8b,structured_constrained,D06,2,ok
+qwen3:8b,structured_constrained,D07,2,ok
+qwen3:8b,structured_constrained,D08,1,"got cpu_contention/4 want cpu_throttling/[3, 5]"
+qwen3:8b,structured_constrained,D09,2,ok
+qwen3:8b,structured_constrained,D10,1,"got memory_pressure/4 want network_packet_loss/[2, 4]"
+qwen3:8b,structured_constrained,D11,2,ok
+qwen3:8b,structured_constrained,D12,2,ok
+qwen3:8b,structured_constrained,D13,2,ok
+qwen3:8b,structured_constrained,D14,1,"got network_packet_loss/4 want softirq_overload/[2, 4]"
+qwen3:8b,structured_constrained,D15,1,"got softirq_overload/4 want softirq_overload/[1, 3]"
+qwen3:8b,structured_constrained,D16,1,"got cpu_contention/4 want softirq_overload/[2, 4]"
+qwen3:8b,structured_constrained,D17,2,ok
+qwen3:8b,structured_constrained,D18,2,ok
+qwen3:8b,structured_constrained,D19,2,ok
+qwen3:8b,structured_constrained,D20,2,ok
+qwen3:8b,structured_constrained,D21,2,ok
+qwen3:8b,structured_constrained,D22,2,ok
+qwen3:8b,structured_constrained,D23,2,ok
+qwen3:8b,structured_constrained,D24,2,ok
+qwen3:8b,structured_constrained,D25,2,ok
+qwen3:8b,structured_constrained,D26,2,ok
+qwen3:8b,structured_constrained,D27,2,ok
+qwen3:8b,structured_constrained,D28,1,"got tcp_retransmissions/2 want INSUFFICIENT_EVIDENCE/[0, 5]"
+qwen3:8b,structured_constrained,D29,2,ok
+qwen3:8b,structured_constrained,D30,2,ok
+qwen3:8b,tools,T01,0,missing call
+qwen3:8b,tools,T02,2,ok
+qwen3:8b,tools,T03,2,ok
+qwen3:8b,tools,T04,2,ok
+qwen3:8b,tools,T05,2,ok
+qwen3:8b,tools,T06,2,ok
+qwen3:8b,tools,T07,2,ok
+qwen3:8b,tools,T08,2,ok
+qwen3:8b,tools,T09,2,ok
+qwen3:8b,tools,T10,2,ok
+qwen3:8b,tools,T11,2,ok
+qwen3:8b,tools,T12,2,ok
+qwen3:8b,tools,T13,2,ok
+qwen3:8b,tools,T14,2,ok
+qwen3:8b,tools,T15,2,ok
+qwen3:8b,tools,T16,2,ok
+qwen3:8b,tools,T17,2,ok
+qwen3:8b,tools,T18,2,ok
+qwen3:8b,tools,T19,2,ok
+qwen3:8b,tools,T20,2,ok
+qwen3:8b,tools,T21,2,ok
+qwen3:8b,tools,T22,2,ok
+qwen3:8b,tools,T23,2,ok
+qwen3:8b,tools,T24,2,ok
+qwen3:8b,tools,T25,2,ok
+qwen3:8b,tools,N01,2,no-call
+qwen3:8b,tools,N02,2,no-call
+qwen3:8b,tools,N03,2,no-call
+qwen3:8b,agent,S01_cpu_contention,2,"label=cpu_contention calls=['get_cpu_metrics', 'get_scheduler_latency', 'get_network_metrics', 'get_recent_logs']"
+qwen3:8b,agent,S02_network_drops,2,"label=network_packet_loss calls=['get_recent_logs', 'get_network_metrics', 'get_cpu_metrics', 'get_scheduler_latency']"
+qwen3:8b,agent,S03_softirq_overload,2,"label=softirq_overload calls=['get_cpu_metrics', 'get_scheduler_latency']"
+qwen3:8b,agent,S04_memory_pressure,2,"label=memory_pressure calls=['get_recent_logs', 'get_cpu_metrics', 'get_network_metrics', 'get_scheduler_latency']"
+qwen3:8b,agent,S05_tcp_retransmissions,2,"label=tcp_retransmissions calls=['get_cpu_metrics', 'get_network_metrics', 'get_scheduler_latency']"
+qwen3:8b,agent,S06_ambiguous_all_normal,2,"label=INSUFFICIENT_EVIDENCE calls=['get_cpu_metrics', 'get_scheduler_latency', 'get_scheduler_latency', 'get_network_metrics', 'get_recent_logs']"
+qwen3:8b,agent,S07_cpu_throttling,2,"label=cpu_throttling calls=['get_cpu_metrics', 'get_scheduler_latency', 'get_network_metrics', 'get_recent_logs']"
+qwen3:8b,agent,S08_ambiguous_missing_data,2,"label=INSUFFICIENT_EVIDENCE calls=['get_cpu_metrics', 'get_scheduler_latency', 'get_network_metrics', 'get_recent_logs']"
+qwen3:8b,agent,S09_noisy_neighbor,2,"label=cpu_contention calls=['get_cpu_metrics', 'get_scheduler_latency', 'get_network_metrics', 'get_recent_logs']"
+qwen3:8b,agent,S10_conntrack_drops,0,"label=tcp_retransmissions calls=['get_network_metrics', 'get_cpu_metrics', 'get_scheduler_latency']"
+qwen3:8b,agent,S11_retx_with_busy_cpu,2,"label=tcp_retransmissions calls=['get_scheduler_latency', 'get_scheduler_latency', 'get_cpu_metrics', 'get_network_metrics']"
+qwen3:8b,agent,S12_weak_conflicting,2,"label=INSUFFICIENT_EVIDENCE calls=['get_recent_logs', 'get_cpu_metrics', 'get_network_metrics', 'get_scheduler_latency']"
+qwen3:8b,context,ctx1024#r0,2,host=y time=y
+qwen3:8b,context,ctx1024#r1,2,host=y time=y
+qwen3:8b,context,ctx2048#r0,2,host=y time=y
+qwen3:8b,context,ctx2048#r1,2,host=y time=y
+qwen3:8b,context,ctx4096#r0,2,host=y time=y
+qwen3:8b,context,ctx4096#r1,2,host=y time=y
+qwen3:8b,context,ctx8192#r0,2,host=y time=y
+qwen3:8b,context,ctx8192#r1,2,host=y time=y

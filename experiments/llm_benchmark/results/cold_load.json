@@ -1,0 +1,107 @@
+{
+  "gemma3:1b": {
+    "reps": [
+      {
+        "load_duration_s": 1.327,
+        "client_wall_s": 1.416,
+        "runner_os_threads": 35
+      },
+      {
+        "load_duration_s": 1.056,
+        "client_wall_s": 1.135,
+        "runner_os_threads": 35
+      },
+      {
+        "load_duration_s": 1.079,
+        "client_wall_s": 1.152,
+        "runner_os_threads": 35
+      }
+    ],
+    "median_load_s": 1.079,
+    "runner_cmdline": "/usr/local/lib/ollama/llama-server --model /usr/share/ollama/.ollama/models/blobs/sha256-7cd4618c1faf8b7233c6c906dac1694b6a47684b37b8895d470ac688520b9c01 --port 37437 --host 127.0.0.1 --no-webui --offline -c 4096 -np 1 --log-verbosity 4 --no-log-prefix --no-log-timestamps --no-jinja --chat-template chatml --load-mode none --flash-attn auto -b 512 -ub 512 --context-shift --keep 4"
+  },
+  "qwen3:4b": {
+    "reps": [
+      {
+        "load_duration_s": 2.542,
+        "client_wall_s": 2.709,
+        "runner_os_threads": 35
+      },
+      {
+        "load_duration_s": 2.03,
+        "client_wall_s": 2.181,
+        "runner_os_threads": 35
+      },
+      {
+        "load_duration_s": 2.038,
+        "client_wall_s": 2.185,
+        "runner_os_threads": 35
+      }
+    ],
+    "median_load_s": 2.038,
+    "runner_cmdline": "/usr/local/lib/ollama/llama-server --model /usr/share/ollama/.ollama/models/blobs/sha256-3e4cb14174460404e7a233e531675303b2fbf7749c02f91864fe311ab6344e4f --port 36993 --host 127.0.0.1 --no-webui --offline -c 4096 -np 1 --log-verbosity 4 --no-log-prefix --no-log-timestamps --no-jinja --chat-template chatml --load-mode none --flash-attn auto -b 512 -ub 512 --context-shift --keep 4"
+  },
+  "qwen3.5:4b": {
+    "reps": [
+      {
+        "load_duration_s": 3.559,
+        "client_wall_s": 3.766,
+        "runner_os_threads": 35
+      },
+      {
+        "load_duration_s": 2.796,
+        "client_wall_s": 3.0,
+        "runner_os_threads": 35
+      },
+      {
+        "load_duration_s": 2.814,
+        "client_wall_s": 3.022,
+        "runner_os_threads": 35
+      }
+    ],
+    "median_load_s": 2.814,
+    "runner_cmdline": "/usr/local/lib/ollama/llama-server --model /usr/share/ollama/.ollama/models/blobs/sha256-81fb60c7daa80fc1123380b98970b320ae233409f0f71a72ed7b9b0d62f40490 --port 36429 --host 127.0.0.1 --no-webui --offline -c 4096 -np 1 --log-verbosity 4 --no-log-prefix --no-log-timestamps --no-jinja --chat-template chatml --mmproj /usr/share/ollama/.ollama/models/blobs/sha256-81fb60c7daa80fc1123380b98970b320ae233409f0f71a72ed7b9b0d62f40490 --load-mode none --flash-attn auto -b 512 -ub 512 --context-shift --keep 4"
+  },
+  "qwen3:8b": {
+    "reps": [
+      {
+        "load_duration_s": 4.809,
+        "client_wall_s": 5.076,
+        "runner_os_threads": 35
+      },
+      {
+        "load_duration_s": 4.552,
+        "client_wall_s": 4.812,
+        "runner_os_threads": 35
+      },
+      {
+        "load_duration_s": 3.794,
+        "client_wall_s": 4.05,
+        "runner_os_threads": 35
+      }
+    ],
+    "median_load_s": 4.552,
+    "runner_cmdline": "/usr/local/lib/ollama/llama-server --model /usr/share/ollama/.ollama/models/blobs/sha256-a3de86cd1c132c822487ededd47a324c50491393e6565cd14bafa40d0b8e686f --port 38255 --host 127.0.0.1 --no-webui --offline -c 4096 -np 1 --log-verbosity 4 --no-log-prefix --no-log-timestamps --no-jinja --chat-template chatml --load-mode none --flash-attn auto -b 512 -ub 512 --context-shift --keep 4"
+  },
+  "qwen3.5:9b": {
+    "reps": [
+      {
+        "load_duration_s": 5.818,
+        "client_wall_s": 6.149,
+        "runner_os_threads": 35
+      },
+      {
+        "load_duration_s": 4.81,
+        "client_wall_s": 5.156,
+        "runner_os_threads": 35
+      },
+      {
+        "load_duration_s": 5.059,
+        "client_wall_s": 5.413,
+        "runner_os_threads": 35
+      }
+    ],
+    "median_load_s": 5.059,
+    "runner_cmdline": "/usr/local/lib/ollama/llama-server --model /usr/share/ollama/.ollama/models/blobs/sha256-dec52a44569a2a25341c4e4d3fee25846eed4f6f0b936278e3a3c900bb99d37c --port 46701 --host 127.0.0.1 --no-webui --offline -c 4096 -np 1 --log-verbosity 4 --no-log-prefix --no-log-timestamps --no-jinja --chat-template chatml --mmproj /usr/share/ollama/.ollama/models/blobs/sha256-dec52a44569a2a25341c4e4d3fee25846eed4f6f0b936278e3a3c900bb99d37c --load-mode none --flash-attn auto -b 512 -ub 512 --context-shift --keep 4"
+  }
+}

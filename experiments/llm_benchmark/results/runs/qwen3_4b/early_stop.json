@@ -1,0 +1,108 @@
+{
+  "model": "qwen3:4b",
+  "digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+  "ollama_version": "0.35.0",
+  "timestamp": "2026-10-02T16:25:50+05:30",
+  "trigger": "Reviewer stop on objective evidence: generation 12/15, evidence 7/8, structured_prompt 14/14 requests hit the token budget (num_predict + 1024 thinking) with no answer; median latency 66-77 s/request",
+  "decided_by": "reviewer (user instruction 2026-10-02 ~16:05), before ES rules were pre-registered; validation slice run afterwards",
+  "config": {
+    "num_ctx": 4096,
+    "temperature": 0,
+    "seed": 42,
+    "think": true,
+    "think_probe": {
+      "think_false_content": "First, the user asked: \"What is 17*3? Answer with just the number.\"\n\nI need to calculate 17 multiplied by 3. That's straightforward multiplication.\n\nLet me do the math: 17 times 3.\n\n17 * 3 = 51.\n\nI sh",
+      "output_tokens": 64,
+      "direct_answer": false,
+      "chosen_think": true,
+      "finetune": "Thinking",
+      "version": "2507"
+    },
+    "think_budget_extra_tokens": 1024,
+    "num_predict": {
+      "generation": 384,
+      "knowledge": 256,
+      "evidence": 200,
+      "structured": 320,
+      "tools": 256,
+      "agent_turn": 320,
+      "context": 128
+    },
+    "ollama_service_env": "Environment=PATH=/home/iiitd/anaconda3/bin:/home/iiitd/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin LLAMA_ARG_CACHE_RAM=0"
+  },
+  "suite_status": {
+    "generation": "COMPLETE",
+    "knowledge": "COMPLETE",
+    "evidence": "COMPLETE",
+    "structured_prompt": "PARTIAL 14/30 \u2014 remainder NOT RUN \u2014 EARLY STOP AFTER OBJECTIVE DISQUALIFICATION",
+    "structured_constrained": "NOT RUN \u2014 EARLY STOP AFTER OBJECTIVE DISQUALIFICATION",
+    "tools": "NOT RUN \u2014 EARLY STOP AFTER OBJECTIVE DISQUALIFICATION",
+    "agent": "NOT RUN \u2014 EARLY STOP AFTER OBJECTIVE DISQUALIFICATION",
+    "context": "NOT RUN \u2014 EARLY STOP AFTER OBJECTIVE DISQUALIFICATION"
+  },
+  "suite_stats": {
+    "agent[slice]": {
+      "n": 5,
+      "ok": 5,
+      "usable_output": 2,
+      "hit_token_budget": 0,
+      "median_wall_s": 78.89,
+      "median_tok_s": null,
+      "peak_runner_rss_mib": 3116
+    },
+    "evidence": {
+      "n": 8,
+      "ok": 8,
+      "usable_output": 1,
+      "hit_token_budget": 7,
+      "median_wall_s": 65.964,
+      "median_tok_s": 18.88,
+      "peak_runner_rss_mib": 3064
+    },
+    "generation": {
+      "n": 15,
+      "ok": 15,
+      "usable_output": 3,
+      "hit_token_budget": 12,
+      "median_wall_s": 77.123,
+      "median_tok_s": 18.41,
+      "peak_runner_rss_mib": 3054
+    },
+    "knowledge": {
+      "n": 10,
+      "ok": 10,
+      "usable_output": 10,
+      "hit_token_budget": 0,
+      "median_wall_s": 21.874,
+      "median_tok_s": 19.32,
+      "peak_runner_rss_mib": 3055
+    },
+    "structured_prompt": {
+      "n": 14,
+      "ok": 14,
+      "usable_output": 0,
+      "hit_token_budget": 14,
+      "median_wall_s": 74.755,
+      "median_tok_s": 18.22,
+      "peak_runner_rss_mib": 3071
+    },
+    "tools[slice]": {
+      "n": 10,
+      "ok": 10,
+      "usable_output": 5,
+      "hit_token_budget": 5,
+      "median_wall_s": 72.452,
+      "median_tok_s": 18.07,
+      "peak_runner_rss_mib": 3115
+    },
+    "warmup": {
+      "n": 2,
+      "ok": 2,
+      "usable_output": 2,
+      "hit_token_budget": 0,
+      "median_wall_s": 10.284,
+      "median_tok_s": 20.38,
+      "peak_runner_rss_mib": 3040
+    }
+  }
+}

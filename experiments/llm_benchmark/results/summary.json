@@ -17,11 +17,12 @@
     "evidence_norm_min": 0.6
   },
   "decision": {
-    "primary": null,
-    "secondary": null,
+    "primary": "qwen3.5:9b",
+    "primary_rule": "highest Q",
+    "best_Q_model": "qwen3.5:9b",
+    "secondary": "qwen3:8b",
     "baseline": "gemma3:1b",
-    "verdict": "FAIL",
-    "reason": "no model passed all hard gates"
+    "verdict": "PASS"
   },
   "models": [
     {
@@ -43,6 +44,11 @@
         "/usr/local/lib/ollama/llama-server --model /usr/share/ollama/.ollama/models/blobs/sha256-7cd4618c1faf8b7233c6c906dac1694b6a47684b37b8895d470ac688520b9c01 --port 32789 --host 127.0.0.1 --no-webui --offline -c 4096 -np 1 --log-verbosity 4 --no-log-prefix --no-log-timestamps --no-jinja --chat-template chatml --load-mode none --flash-attn auto -b 512 -ub 512 --context-shift --keep 4"
       ],
       "load_duration_s": 1.0564,
+      "think": null,
+      "think_probe": {
+        "result": "no thinking capability"
+      },
+      "ollama_service_env": "Environment=PATH=/home/iiitd/anaconda3/bin:/home/iiitd/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin LLAMA_ARG_CACHE_RAM=0",
       "generation": {
         "n": 15,
         "mean": 0.8,
@@ -304,6 +310,17 @@
         "G5_structured": true,
         "G6_evidence": false
       },
+      "early_stop": null,
+      "coverage": {
+        "generation": "15/15",
+        "knowledge": "10/10",
+        "evidence": "8/8",
+        "structured_prompt": "30/30",
+        "structured_constrained": "30/30",
+        "tools": "28/28",
+        "agent": "12/12",
+        "context": "8/8"
+      },
       "eligible": false
     },
     {
@@ -316,17 +333,27 @@
       ],
       "desktop_at_start": {
         "chrome_rss_mib": 0,
-        "vscode_server_rss_mib": 1741,
-        "claude_rss_mib": 1019,
+        "vscode_server_rss_mib": 1755,
+        "claude_rss_mib": 1033,
         "gnome_shell_rss_mib": 150,
         "ollama_runner_rss_mib": 3040,
-        "mem_available_mib": 9142,
-        "swap_used_mib": 884
+        "mem_available_mib": 9127,
+        "swap_used_mib": 882
       },
       "runner_cmdline": [
-        "/usr/local/lib/ollama/llama-server --model /usr/share/ollama/.ollama/models/blobs/sha256-3e4cb14174460404e7a233e531675303b2fbf7749c02f91864fe311ab6344e4f --port 46073 --host 127.0.0.1 --no-webui --offline -c 4096 -np 1 --log-verbosity 4 --no-log-prefix --no-log-timestamps --no-jinja --chat-template chatml --load-mode none --flash-attn auto -b 512 -ub 512 --context-shift --keep 4"
+        "/usr/local/lib/ollama/llama-server --model /usr/share/ollama/.ollama/models/blobs/sha256-3e4cb14174460404e7a233e531675303b2fbf7749c02f91864fe311ab6344e4f --port 35479 --host 127.0.0.1 --no-webui --offline -c 4096 -np 1 --log-verbosity 4 --no-log-prefix --no-log-timestamps --no-jinja --chat-template chatml --load-mode none --flash-attn auto -b 512 -ub 512 --context-shift --keep 4"
       ],
       "load_duration_s": 0.0011,
+      "think": true,
+      "think_probe": {
+        "think_false_content": "First, the user asked: \"What is 17*3? Answer with just the number.\"\n\nI need to calculate 17 multiplied by 3. That's straightforward multiplication.\n\nLet me do the math: 17 times 3.\n\n17 * 3 = 51.\n\nI sh",
+        "output_tokens": 64,
+        "direct_answer": false,
+        "chosen_think": true,
+        "finetune": "Thinking",
+        "version": "2507"
+      },
+      "ollama_service_env": "Environment=PATH=/home/iiitd/anaconda3/bin:/home/iiitd/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin LLAMA_ARG_CACHE_RAM=0",
       "generation": {
         "n": 15,
         "mean": 0.133,
@@ -352,7 +379,7 @@
         "norm": 0.125
       },
       "structured_prompt": {
-        "n": 11,
+        "n": 14,
         "valid_json_rate": 0.0,
         "schema_valid_rate": 0.0,
         "missing_field_rate": 0.0,
@@ -396,15 +423,15 @@
         "ttft_s_median": 0.76,
         "wall_s_median_generation": 77.12,
         "output_tokens_median_generation": 1408,
-        "agent_turn_wall_s_median": null,
-        "peak_runner_rss_mib_4k": 3071,
-        "min_mem_available_mib": 9090,
+        "agent_turn_wall_s_median": 77.83,
+        "peak_runner_rss_mib_4k": 3116,
+        "min_mem_available_mib": 9009,
         "system_cpu_pct_mean_generation": 34.3,
         "system_cpu_pct_max_generation": 37.8,
         "runner_cpu_pct_mean_generation": 800.2
       },
       "stability": {
-        "requests": 44,
+        "requests": 62,
         "failed": 0,
         "fail_rate": 0.0,
         "by_status": {},
@@ -425,9 +452,1169 @@
         "G3_speed": true,
         "G4_tools": false,
         "G5_structured": false,
-        "G6_evidence": false
+        "G6_evidence": false,
+        "G0_not_early_stopped": false
+      },
+      "validation_slice": {
+        "tools": {
+          "supported": true,
+          "n_expected": 10,
+          "success": 4,
+          "acceptable": 1,
+          "wrong": 0,
+          "missing": 5,
+          "hallucinated": 0,
+          "invalid_args": 0,
+          "calls_known": 5,
+          "valid_known": 5,
+          "no_tool_n": 0,
+          "no_tool_ok": 0,
+          "text_tool_calls": 0,
+          "parallel": 0,
+          "failed": 0,
+          "tool_call_success_rate": 0.4,
+          "argument_validity": 1.0,
+          "wrong_tool_rate": 0.0,
+          "missing_tool_call_rate": 0.5,
+          "hallucinated_tool_rate": 0.0,
+          "no_tool_correct_rate": null,
+          "mean": 0.9,
+          "norm": 0.45
+        },
+        "agent": {
+          "supported": true,
+          "n": 5,
+          "success": 2,
+          "multi_step_success": 0,
+          "confident_wrong": 0,
+          "no_diagnosis": 3,
+          "overcautious": 0,
+          "ambiguous_n": 0,
+          "ambiguous_correct": 0,
+          "failed": 0,
+          "hallucinated_calls": 0,
+          "invalid_arg_calls": 1,
+          "total_calls": 2,
+          "success_rate": 0.4,
+          "multi_step_success_rate": 0.0,
+          "confident_wrong_rate": 0.0,
+          "mean_tool_calls": 0.4,
+          "median_scenario_wall_s": 78.89,
+          "mean": 0.8,
+          "norm": 0.4
+        }
+      },
+      "early_stop": {
+        "model": "qwen3:4b",
+        "digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+        "ollama_version": "0.35.0",
+        "timestamp": "2026-10-02T16:25:50+05:30",
+        "trigger": "Reviewer stop on objective evidence: generation 12/15, evidence 7/8, structured_prompt 14/14 requests hit the token budget (num_predict + 1024 thinking) with no answer; median latency 66-77 s/request",
+        "decided_by": "reviewer (user instruction 2026-10-02 ~16:05), before ES rules were pre-registered; validation slice run afterwards",
+        "config": {
+          "num_ctx": 4096,
+          "temperature": 0,
+          "seed": 42,
+          "think": true,
+          "think_probe": {
+            "think_false_content": "First, the user asked: \"What is 17*3? Answer with just the number.\"\n\nI need to calculate 17 multiplied by 3. That's straightforward multiplication.\n\nLet me do the math: 17 times 3.\n\n17 * 3 = 51.\n\nI sh",
+            "output_tokens": 64,
+            "direct_answer": false,
+            "chosen_think": true,
+            "finetune": "Thinking",
+            "version": "2507"
+          },
+          "think_budget_extra_tokens": 1024,
+          "num_predict": {
+            "generation": 384,
+            "knowledge": 256,
+            "evidence": 200,
+            "structured": 320,
+            "tools": 256,
+            "agent_turn": 320,
+            "context": 128
+          },
+          "ollama_service_env": "Environment=PATH=/home/iiitd/anaconda3/bin:/home/iiitd/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin LLAMA_ARG_CACHE_RAM=0"
+        },
+        "suite_status": {
+          "generation": "COMPLETE",
+          "knowledge": "COMPLETE",
+          "evidence": "COMPLETE",
+          "structured_prompt": "PARTIAL 14/30 \u2014 remainder NOT RUN \u2014 EARLY STOP AFTER OBJECTIVE DISQUALIFICATION",
+          "structured_constrained": "NOT RUN \u2014 EARLY STOP AFTER OBJECTIVE DISQUALIFICATION",
+          "tools": "NOT RUN \u2014 EARLY STOP AFTER OBJECTIVE DISQUALIFICATION",
+          "agent": "NOT RUN \u2014 EARLY STOP AFTER OBJECTIVE DISQUALIFICATION",
+          "context": "NOT RUN \u2014 EARLY STOP AFTER OBJECTIVE DISQUALIFICATION"
+        },
+        "suite_stats": {
+          "agent[slice]": {
+            "n": 5,
+            "ok": 5,
+            "usable_output": 2,
+            "hit_token_budget": 0,
+            "median_wall_s": 78.89,
+            "median_tok_s": null,
+            "peak_runner_rss_mib": 3116
+          },
+          "evidence": {
+            "n": 8,
+            "ok": 8,
+            "usable_output": 1,
+            "hit_token_budget": 7,
+            "median_wall_s": 65.964,
+            "median_tok_s": 18.88,
+            "peak_runner_rss_mib": 3064
+          },
+          "generation": {
+            "n": 15,
+            "ok": 15,
+            "usable_output": 3,
+            "hit_token_budget": 12,
+            "median_wall_s": 77.123,
+            "median_tok_s": 18.41,
+            "peak_runner_rss_mib": 3054
+          },
+          "knowledge": {
+            "n": 10,
+            "ok": 10,
+            "usable_output": 10,
+            "hit_token_budget": 0,
+            "median_wall_s": 21.874,
+            "median_tok_s": 19.32,
+            "peak_runner_rss_mib": 3055
+          },
+          "structured_prompt": {
+            "n": 14,
+            "ok": 14,
+            "usable_output": 0,
+            "hit_token_budget": 14,
+            "median_wall_s": 74.755,
+            "median_tok_s": 18.22,
+            "peak_runner_rss_mib": 3071
+          },
+          "tools[slice]": {
+            "n": 10,
+            "ok": 10,
+            "usable_output": 5,
+            "hit_token_budget": 5,
+            "median_wall_s": 72.452,
+            "median_tok_s": 18.07,
+            "peak_runner_rss_mib": 3115
+          },
+          "warmup": {
+            "n": 2,
+            "ok": 2,
+            "usable_output": 2,
+            "hit_token_budget": 0,
+            "median_wall_s": 10.284,
+            "median_tok_s": 20.38,
+            "peak_runner_rss_mib": 3040
+          }
+        }
+      },
+      "coverage": {
+        "generation": "15/15",
+        "knowledge": "10/10",
+        "evidence": "8/8",
+        "structured_prompt": "14/30",
+        "structured_constrained": "0/30",
+        "tools": "0/28",
+        "agent": "0/12",
+        "context": "0/8"
       },
       "eligible": false
+    },
+    {
+      "model": "qwen3.5:4b",
+      "digest": "2a654d98e6fba55d452b7043684e9b57a947e393bbffa62485a7aac05ee4eefd",
+      "capabilities": [
+        "completion",
+        "vision",
+        "tools",
+        "thinking"
+      ],
+      "desktop_at_start": {
+        "chrome_rss_mib": 0,
+        "vscode_server_rss_mib": 1752,
+        "claude_rss_mib": 1039,
+        "gnome_shell_rss_mib": 148,
+        "ollama_runner_rss_mib": 3657,
+        "mem_available_mib": 8470,
+        "swap_used_mib": 898
+      },
+      "runner_cmdline": [
+        "/usr/local/lib/ollama/llama-server --model /usr/share/ollama/.ollama/models/blobs/sha256-81fb60c7daa80fc1123380b98970b320ae233409f0f71a72ed7b9b0d62f40490 --port 38929 --host 127.0.0.1 --no-webui --offline -c 4096 -np 1 --log-verbosity 4 --no-log-prefix --no-log-timestamps --no-jinja --chat-template chatml --mmproj /usr/share/ollama/.ollama/models/blobs/sha256-81fb60c7daa80fc1123380b98970b320ae233409f0f71a72ed7b9b0d62f40490 --load-mode none --flash-attn auto -b 512 -ub 512 --context-shift --keep 4"
+      ],
+      "load_duration_s": 0.0088,
+      "think": false,
+      "think_probe": {
+        "think_false_content": "51",
+        "output_tokens": 3,
+        "direct_answer": true,
+        "chosen_think": false,
+        "finetune": null,
+        "version": null
+      },
+      "ollama_service_env": "Environment=PATH=/home/iiitd/anaconda3/bin:/home/iiitd/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin LLAMA_ARG_CACHE_RAM=0",
+      "generation": {
+        "n": 15,
+        "mean": 1.667,
+        "norm": 0.833
+      },
+      "knowledge": {
+        "n": 10,
+        "mean": 1.6,
+        "norm": 0.8
+      },
+      "evidence": {
+        "insufficient_n": 6,
+        "insufficient_abstained": 6,
+        "confident_unsupported": 0,
+        "control_n": 2,
+        "control_correct": 1,
+        "control_overcautious": 1,
+        "format_ok": 8,
+        "fabricated_number_responses": 0,
+        "abstention_rate": 1.0,
+        "unsupported_claim_rate": 0.0,
+        "mean": 1.875,
+        "norm": 0.938
+      },
+      "structured_prompt": {
+        "n": 30,
+        "valid_json_rate": 0.6,
+        "schema_valid_rate": 0.6,
+        "missing_field_rate": 0.0,
+        "extra_field_rate": 0.0,
+        "parse_failure_rate": 0.4,
+        "markdown_fenced_rate": 0.4,
+        "lenient_schema_valid_rate": 0.933,
+        "semantic_correct_rate": 0.5,
+        "failed_requests": 0,
+        "mean": 1.1,
+        "norm": 0.55
+      },
+      "structured_constrained": {
+        "n": 30,
+        "valid_json_rate": 1.0,
+        "schema_valid_rate": 1.0,
+        "missing_field_rate": 0.0,
+        "extra_field_rate": 0.0,
+        "parse_failure_rate": 0.0,
+        "markdown_fenced_rate": 0.0,
+        "lenient_schema_valid_rate": 1.0,
+        "semantic_correct_rate": 0.8,
+        "failed_requests": 0,
+        "mean": 1.8,
+        "norm": 0.9
+      },
+      "tools": {
+        "supported": true,
+        "n_expected": 25,
+        "success": 25,
+        "acceptable": 0,
+        "wrong": 0,
+        "missing": 0,
+        "hallucinated": 0,
+        "invalid_args": 0,
+        "calls_known": 25,
+        "valid_known": 25,
+        "no_tool_n": 3,
+        "no_tool_ok": 3,
+        "text_tool_calls": 0,
+        "parallel": 0,
+        "failed": 0,
+        "tool_call_success_rate": 1.0,
+        "argument_validity": 1.0,
+        "wrong_tool_rate": 0.0,
+        "missing_tool_call_rate": 0.0,
+        "hallucinated_tool_rate": 0.0,
+        "no_tool_correct_rate": 1.0,
+        "mean": 2,
+        "norm": 1.0
+      },
+      "agent": {
+        "supported": true,
+        "n": 5,
+        "success": 0,
+        "multi_step_success": 0,
+        "confident_wrong": 0,
+        "no_diagnosis": 0,
+        "overcautious": 0,
+        "ambiguous_n": 0,
+        "ambiguous_correct": 0,
+        "failed": 5,
+        "hallucinated_calls": 0,
+        "invalid_arg_calls": 0,
+        "total_calls": 30,
+        "success_rate": 0.0,
+        "multi_step_success_rate": 0.0,
+        "confident_wrong_rate": 0.0,
+        "mean_tool_calls": 6.0,
+        "median_scenario_wall_s": 30.72,
+        "mean": 0,
+        "norm": 0.0
+      },
+      "context": {},
+      "perf": {
+        "gen_tok_s_median": 16.73,
+        "gen_tok_s_min": 16.31,
+        "gen_tok_s_max": 17.69,
+        "prompt_tok_s_median": 85.74,
+        "ttft_s_median": 0.92,
+        "wall_s_median_generation": 16.59,
+        "output_tokens_median_generation": 266,
+        "agent_turn_wall_s_median": 3.81,
+        "peak_runner_rss_mib_4k": 4406,
+        "min_mem_available_mib": 7846,
+        "system_cpu_pct_mean_generation": 34.3,
+        "system_cpu_pct_max_generation": 36.7,
+        "runner_cpu_pct_mean_generation": 800.1
+      },
+      "stability": {
+        "requests": 126,
+        "failed": 5,
+        "fail_rate": 0.0397,
+        "by_status": {
+          "step_budget_exhausted": 5
+        },
+        "unsupported_requests": 0
+      },
+      "quality_components": {
+        "agent": 0.0,
+        "tools": 1.0,
+        "evidence": 0.938,
+        "structured": 0.9,
+        "knowledge": 0.8,
+        "generation": 0.833
+      },
+      "Q": 0.6474,
+      "gates": {
+        "G1_stability": true,
+        "G2_memory": true,
+        "G3_speed": true,
+        "G4_tools": true,
+        "G5_structured": true,
+        "G6_evidence": true,
+        "G0_not_early_stopped": false
+      },
+      "early_stop": {
+        "model": "qwen3.5:4b",
+        "digest": "2a654d98e6fba55d452b7043684e9b57a947e393bbffa62485a7aac05ee4eefd",
+        "ollama_version": "0.35.0",
+        "timestamp": "2026-10-02T16:51:23+05:30",
+        "trigger": "ES1 failure-to-complete: 5/5 requests in 'agent' produced no usable output (> 50%)",
+        "decided_by": "automatic (pre-registered ES rules)",
+        "config": {
+          "num_ctx": 4096,
+          "temperature": 0,
+          "seed": 42,
+          "think": false,
+          "think_probe": {
+            "think_false_content": "51",
+            "output_tokens": 3,
+            "direct_answer": true,
+            "chosen_think": false,
+            "finetune": null,
+            "version": null
+          },
+          "think_budget_extra_tokens": 0,
+          "num_predict": {
+            "generation": 384,
+            "knowledge": 256,
+            "evidence": 200,
+            "structured": 320,
+            "tools": 256,
+            "agent_turn": 320,
+            "context": 128
+          },
+          "ollama_service_env": "Environment=PATH=/home/iiitd/anaconda3/bin:/home/iiitd/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin LLAMA_ARG_CACHE_RAM=0"
+        },
+        "suite_status": {
+          "generation": "COMPLETE",
+          "knowledge": "COMPLETE",
+          "evidence": "COMPLETE",
+          "structured_prompt": "COMPLETE",
+          "structured_constrained": "COMPLETE",
+          "tools": "COMPLETE",
+          "agent": "PARTIAL 5/12 \u2014 remainder NOT RUN \u2014 EARLY STOP AFTER OBJECTIVE DISQUALIFICATION",
+          "context": "NOT RUN \u2014 EARLY STOP AFTER OBJECTIVE DISQUALIFICATION"
+        },
+        "suite_stats": {
+          "agent": {
+            "n": 5,
+            "ok": 0,
+            "usable_output": 0,
+            "hit_token_budget": 0,
+            "median_wall_s": 30.72,
+            "median_tok_s": null,
+            "peak_runner_rss_mib": 4406
+          },
+          "evidence": {
+            "n": 8,
+            "ok": 8,
+            "usable_output": 8,
+            "hit_token_budget": 0,
+            "median_wall_s": 5.955,
+            "median_tok_s": 16.87,
+            "peak_runner_rss_mib": 3686
+          },
+          "generation": {
+            "n": 15,
+            "ok": 15,
+            "usable_output": 15,
+            "hit_token_budget": 4,
+            "median_wall_s": 16.591,
+            "median_tok_s": 16.73,
+            "peak_runner_rss_mib": 3675
+          },
+          "knowledge": {
+            "n": 10,
+            "ok": 10,
+            "usable_output": 10,
+            "hit_token_budget": 0,
+            "median_wall_s": 8.028,
+            "median_tok_s": 16.74,
+            "peak_runner_rss_mib": 3676
+          },
+          "structured_constrained": {
+            "n": 30,
+            "ok": 30,
+            "usable_output": 30,
+            "hit_token_budget": 0,
+            "median_wall_s": 11.742,
+            "median_tok_s": 16.96,
+            "peak_runner_rss_mib": 3727
+          },
+          "structured_prompt": {
+            "n": 30,
+            "ok": 30,
+            "usable_output": 30,
+            "hit_token_budget": 0,
+            "median_wall_s": 11.855,
+            "median_tok_s": 16.81,
+            "peak_runner_rss_mib": 3693
+          },
+          "tools": {
+            "n": 28,
+            "ok": 28,
+            "usable_output": 28,
+            "hit_token_budget": 0,
+            "median_wall_s": 8.081,
+            "median_tok_s": 17.31,
+            "peak_runner_rss_mib": 4003
+          },
+          "warmup": {
+            "n": 1,
+            "ok": 1,
+            "usable_output": 1,
+            "hit_token_budget": 0,
+            "median_wall_s": 0.346,
+            "median_tok_s": 34.4,
+            "peak_runner_rss_mib": 3657
+          }
+        }
+      },
+      "coverage": {
+        "generation": "15/15",
+        "knowledge": "10/10",
+        "evidence": "8/8",
+        "structured_prompt": "30/30",
+        "structured_constrained": "30/30",
+        "tools": "28/28",
+        "agent": "5/12",
+        "context": "0/8"
+      },
+      "eligible": false
+    },
+    {
+      "model": "qwen3:8b",
+      "digest": "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41",
+      "capabilities": [
+        "completion",
+        "tools",
+        "thinking"
+      ],
+      "desktop_at_start": {
+        "chrome_rss_mib": 0,
+        "vscode_server_rss_mib": 1307,
+        "claude_rss_mib": 1016,
+        "gnome_shell_rss_mib": 131,
+        "ollama_runner_rss_mib": 5657,
+        "mem_available_mib": 7151,
+        "swap_used_mib": 1554
+      },
+      "runner_cmdline": [
+        "/usr/local/lib/ollama/llama-server --model /usr/share/ollama/.ollama/models/blobs/sha256-a3de86cd1c132c822487ededd47a324c50491393e6565cd14bafa40d0b8e686f --port 39425 --host 127.0.0.1 --no-webui --offline -c 4096 -np 1 --log-verbosity 4 --no-log-prefix --no-log-timestamps --no-jinja --chat-template chatml --load-mode none --flash-attn auto -b 512 -ub 512 --context-shift --keep 4"
+      ],
+      "load_duration_s": 0.0088,
+      "think": false,
+      "think_probe": {
+        "think_false_content": "51",
+        "output_tokens": 3,
+        "direct_answer": true,
+        "chosen_think": false,
+        "finetune": null,
+        "version": null
+      },
+      "ollama_service_env": "Environment=PATH=/home/iiitd/anaconda3/bin:/home/iiitd/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin LLAMA_ARG_CACHE_RAM=0",
+      "generation": {
+        "n": 15,
+        "mean": 1.467,
+        "norm": 0.733
+      },
+      "knowledge": {
+        "n": 10,
+        "mean": 1.7,
+        "norm": 0.85
+      },
+      "evidence": {
+        "insufficient_n": 6,
+        "insufficient_abstained": 6,
+        "confident_unsupported": 0,
+        "control_n": 2,
+        "control_correct": 1,
+        "control_overcautious": 1,
+        "format_ok": 8,
+        "fabricated_number_responses": 0,
+        "abstention_rate": 1.0,
+        "unsupported_claim_rate": 0.0,
+        "mean": 1.75,
+        "norm": 0.875
+      },
+      "structured_prompt": {
+        "n": 30,
+        "valid_json_rate": 1.0,
+        "schema_valid_rate": 1.0,
+        "missing_field_rate": 0.0,
+        "extra_field_rate": 0.0,
+        "parse_failure_rate": 0.0,
+        "markdown_fenced_rate": 0.0,
+        "lenient_schema_valid_rate": 1.0,
+        "semantic_correct_rate": 0.8,
+        "failed_requests": 0,
+        "mean": 1.8,
+        "norm": 0.9
+      },
+      "structured_constrained": {
+        "n": 30,
+        "valid_json_rate": 1.0,
+        "schema_valid_rate": 1.0,
+        "missing_field_rate": 0.0,
+        "extra_field_rate": 0.0,
+        "parse_failure_rate": 0.0,
+        "markdown_fenced_rate": 0.0,
+        "lenient_schema_valid_rate": 1.0,
+        "semantic_correct_rate": 0.8,
+        "failed_requests": 0,
+        "mean": 1.8,
+        "norm": 0.9
+      },
+      "tools": {
+        "supported": true,
+        "n_expected": 25,
+        "success": 24,
+        "acceptable": 0,
+        "wrong": 0,
+        "missing": 1,
+        "hallucinated": 0,
+        "invalid_args": 0,
+        "calls_known": 24,
+        "valid_known": 24,
+        "no_tool_n": 3,
+        "no_tool_ok": 3,
+        "text_tool_calls": 0,
+        "parallel": 0,
+        "failed": 0,
+        "tool_call_success_rate": 0.96,
+        "argument_validity": 1.0,
+        "wrong_tool_rate": 0.0,
+        "missing_tool_call_rate": 0.04,
+        "hallucinated_tool_rate": 0.0,
+        "no_tool_correct_rate": 1.0,
+        "mean": 1.929,
+        "norm": 0.964
+      },
+      "agent": {
+        "supported": true,
+        "n": 12,
+        "success": 11,
+        "multi_step_success": 11,
+        "confident_wrong": 1,
+        "no_diagnosis": 0,
+        "overcautious": 0,
+        "ambiguous_n": 3,
+        "ambiguous_correct": 3,
+        "failed": 0,
+        "hallucinated_calls": 0,
+        "invalid_arg_calls": 0,
+        "total_calls": 45,
+        "success_rate": 0.917,
+        "multi_step_success_rate": 0.917,
+        "confident_wrong_rate": 0.083,
+        "mean_tool_calls": 3.75,
+        "median_scenario_wall_s": 28.05,
+        "mean": 1.833,
+        "norm": 0.917
+      },
+      "context": {
+        "1024": {
+          "runs": [
+            {
+              "status": "ok",
+              "prompt_tokens": 1118,
+              "prompt_tok_s": 50.36,
+              "gen_tok_s": 9.91,
+              "wall_s": 31.499,
+              "ttft_s": 25.95,
+              "peak_rss_mib": 6435,
+              "min_mem_avail_mib": 6389,
+              "needle": 2,
+              "truncated": false,
+              "num_ctx": 2048
+            },
+            {
+              "status": "ok",
+              "prompt_tokens": 1118,
+              "prompt_tok_s": 50.21,
+              "gen_tok_s": 9.9,
+              "wall_s": 27.046,
+              "ttft_s": 22.301,
+              "peak_rss_mib": 5461,
+              "min_mem_avail_mib": 7328,
+              "needle": 2,
+              "truncated": false,
+              "num_ctx": 2048
+            }
+          ],
+          "prompt_tokens": 1118.0,
+          "prompt_tok_s": 50.28,
+          "gen_tok_s": 9.91,
+          "wall_s": 29.27,
+          "ttft_s": 24.13,
+          "peak_rss_mib": 6435,
+          "min_mem_avail_mib": 6389,
+          "needle_mean": 2,
+          "failures": 0,
+          "truncated_any": false
+        },
+        "2048": {
+          "runs": [
+            {
+              "status": "ok",
+              "prompt_tokens": 2227,
+              "prompt_tok_s": 48.73,
+              "gen_tok_s": 9.54,
+              "wall_s": 55.512,
+              "ttft_s": 49.436,
+              "peak_rss_mib": 5605,
+              "min_mem_avail_mib": 7197,
+              "needle": 2,
+              "truncated": false,
+              "num_ctx": 3072
+            },
+            {
+              "status": "ok",
+              "prompt_tokens": 2227,
+              "prompt_tok_s": 48.32,
+              "gen_tok_s": 9.18,
+              "wall_s": 52.559,
+              "ttft_s": 46.134,
+              "peak_rss_mib": 5607,
+              "min_mem_avail_mib": 7193,
+              "needle": 2,
+              "truncated": false,
+              "num_ctx": 3072
+            }
+          ],
+          "prompt_tokens": 2227.0,
+          "prompt_tok_s": 48.52,
+          "gen_tok_s": 9.36,
+          "wall_s": 54.04,
+          "ttft_s": 47.78,
+          "peak_rss_mib": 5607,
+          "min_mem_avail_mib": 7193,
+          "needle_mean": 2,
+          "failures": 0,
+          "truncated_any": false
+        },
+        "4096": {
+          "runs": [
+            {
+              "status": "ok",
+              "prompt_tokens": 4433,
+              "prompt_tok_s": 45.07,
+              "gen_tok_s": 7.29,
+              "wall_s": 108.106,
+              "ttft_s": 102.345,
+              "peak_rss_mib": 5997,
+              "min_mem_avail_mib": 6785,
+              "needle": 2,
+              "truncated": false,
+              "num_ctx": 5120
+            },
+            {
+              "status": "ok",
+              "prompt_tokens": 4433,
+              "prompt_tok_s": 44.78,
+              "gen_tok_s": 7.26,
+              "wall_s": 104.833,
+              "ttft_s": 99.051,
+              "peak_rss_mib": 6000,
+              "min_mem_avail_mib": 6788,
+              "needle": 2,
+              "truncated": false,
+              "num_ctx": 5120
+            }
+          ],
+          "prompt_tokens": 4433.0,
+          "prompt_tok_s": 44.92,
+          "gen_tok_s": 7.28,
+          "wall_s": 106.47,
+          "ttft_s": 100.7,
+          "peak_rss_mib": 6000,
+          "min_mem_avail_mib": 6785,
+          "needle_mean": 2,
+          "failures": 0,
+          "truncated_any": false
+        },
+        "8192": {
+          "runs": [
+            {
+              "status": "ok",
+              "prompt_tokens": 8745,
+              "prompt_tok_s": 39.62,
+              "gen_tok_s": 5.13,
+              "wall_s": 237.28,
+              "ttft_s": 224.992,
+              "peak_rss_mib": 6583,
+              "min_mem_avail_mib": 6201,
+              "needle": 2,
+              "truncated": false,
+              "num_ctx": 9216
+            },
+            {
+              "status": "ok",
+              "prompt_tokens": 8745,
+              "prompt_tok_s": 39.42,
+              "gen_tok_s": 5.03,
+              "wall_s": 234.412,
+              "ttft_s": 221.882,
+              "peak_rss_mib": 6588,
+              "min_mem_avail_mib": 6325,
+              "needle": 2,
+              "truncated": false,
+              "num_ctx": 9216
+            }
+          ],
+          "prompt_tokens": 8745.0,
+          "prompt_tok_s": 39.52,
+          "gen_tok_s": 5.08,
+          "wall_s": 235.85,
+          "ttft_s": 223.44,
+          "peak_rss_mib": 6588,
+          "min_mem_avail_mib": 6201,
+          "needle_mean": 2,
+          "failures": 0,
+          "truncated_any": false
+        }
+      },
+      "perf": {
+        "gen_tok_s_median": 10.57,
+        "gen_tok_s_min": 10.43,
+        "gen_tok_s_max": 10.95,
+        "prompt_tok_s_median": 53.32,
+        "ttft_s_median": 1.54,
+        "wall_s_median_generation": 22.14,
+        "output_tokens_median_generation": 220,
+        "agent_turn_wall_s_median": 5.03,
+        "peak_runner_rss_mib_4k": 5755,
+        "min_mem_available_mib": 7018,
+        "system_cpu_pct_mean_generation": 34.3,
+        "system_cpu_pct_max_generation": 39.8,
+        "runner_cpu_pct_mean_generation": 800.0
+      },
+      "stability": {
+        "requests": 142,
+        "failed": 0,
+        "fail_rate": 0.0,
+        "by_status": {},
+        "unsupported_requests": 0
+      },
+      "quality_components": {
+        "agent": 0.917,
+        "tools": 0.964,
+        "evidence": 0.875,
+        "structured": 0.9,
+        "knowledge": 0.85,
+        "generation": 0.733
+      },
+      "Q": 0.904,
+      "gates": {
+        "G1_stability": true,
+        "G2_memory": true,
+        "G3_speed": true,
+        "G4_tools": true,
+        "G5_structured": true,
+        "G6_evidence": true
+      },
+      "early_stop": null,
+      "coverage": {
+        "generation": "15/15",
+        "knowledge": "10/10",
+        "evidence": "8/8",
+        "structured_prompt": "30/30",
+        "structured_constrained": "30/30",
+        "tools": "28/28",
+        "agent": "12/12",
+        "context": "8/8"
+      },
+      "eligible": true
+    },
+    {
+      "model": "qwen3.5:9b",
+      "digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+      "capabilities": [
+        "completion",
+        "vision",
+        "tools",
+        "thinking"
+      ],
+      "desktop_at_start": {
+        "chrome_rss_mib": 0,
+        "vscode_server_rss_mib": 569,
+        "claude_rss_mib": 656,
+        "gnome_shell_rss_mib": 113,
+        "ollama_runner_rss_mib": 6679,
+        "mem_available_mib": 6614,
+        "swap_used_mib": 2048
+      },
+      "runner_cmdline": [
+        "/usr/local/lib/ollama/llama-server --model /usr/share/ollama/.ollama/models/blobs/sha256-dec52a44569a2a25341c4e4d3fee25846eed4f6f0b936278e3a3c900bb99d37c --port 37925 --host 127.0.0.1 --no-webui --offline -c 4096 -np 1 --log-verbosity 4 --no-log-prefix --no-log-timestamps --no-jinja --chat-template chatml --mmproj /usr/share/ollama/.ollama/models/blobs/sha256-dec52a44569a2a25341c4e4d3fee25846eed4f6f0b936278e3a3c900bb99d37c --load-mode none --flash-attn auto -b 512 -ub 512 --context-shift --keep 4"
+      ],
+      "load_duration_s": 0.0014,
+      "think": false,
+      "think_probe": {
+        "think_false_content": "51",
+        "output_tokens": 3,
+        "direct_answer": true,
+        "chosen_think": false,
+        "finetune": null,
+        "version": null
+      },
+      "ollama_service_env": "Environment=PATH=/home/iiitd/anaconda3/bin:/home/iiitd/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin LLAMA_ARG_CACHE_RAM=0",
+      "generation": {
+        "n": 15,
+        "mean": 1.6,
+        "norm": 0.8
+      },
+      "knowledge": {
+        "n": 10,
+        "mean": 1.8,
+        "norm": 0.9
+      },
+      "evidence": {
+        "insufficient_n": 6,
+        "insufficient_abstained": 6,
+        "confident_unsupported": 0,
+        "control_n": 2,
+        "control_correct": 2,
+        "control_overcautious": 0,
+        "format_ok": 8,
+        "fabricated_number_responses": 0,
+        "abstention_rate": 1.0,
+        "unsupported_claim_rate": 0.0,
+        "mean": 2,
+        "norm": 1.0
+      },
+      "structured_prompt": {
+        "n": 30,
+        "valid_json_rate": 1.0,
+        "schema_valid_rate": 1.0,
+        "missing_field_rate": 0.0,
+        "extra_field_rate": 0.0,
+        "parse_failure_rate": 0.0,
+        "markdown_fenced_rate": 0.0,
+        "lenient_schema_valid_rate": 1.0,
+        "semantic_correct_rate": 0.7,
+        "failed_requests": 0,
+        "mean": 1.7,
+        "norm": 0.85
+      },
+      "structured_constrained": {
+        "n": 30,
+        "valid_json_rate": 1.0,
+        "schema_valid_rate": 1.0,
+        "missing_field_rate": 0.0,
+        "extra_field_rate": 0.0,
+        "parse_failure_rate": 0.0,
+        "markdown_fenced_rate": 0.0,
+        "lenient_schema_valid_rate": 1.0,
+        "semantic_correct_rate": 0.7,
+        "failed_requests": 0,
+        "mean": 1.7,
+        "norm": 0.85
+      },
+      "tools": {
+        "supported": true,
+        "n_expected": 25,
+        "success": 25,
+        "acceptable": 0,
+        "wrong": 0,
+        "missing": 0,
+        "hallucinated": 0,
+        "invalid_args": 0,
+        "calls_known": 25,
+        "valid_known": 25,
+        "no_tool_n": 3,
+        "no_tool_ok": 3,
+        "text_tool_calls": 0,
+        "parallel": 0,
+        "failed": 0,
+        "tool_call_success_rate": 1.0,
+        "argument_validity": 1.0,
+        "wrong_tool_rate": 0.0,
+        "missing_tool_call_rate": 0.0,
+        "hallucinated_tool_rate": 0.0,
+        "no_tool_correct_rate": 1.0,
+        "mean": 2,
+        "norm": 1.0
+      },
+      "agent": {
+        "supported": true,
+        "n": 12,
+        "success": 10,
+        "multi_step_success": 10,
+        "confident_wrong": 2,
+        "no_diagnosis": 0,
+        "overcautious": 0,
+        "ambiguous_n": 3,
+        "ambiguous_correct": 3,
+        "failed": 0,
+        "hallucinated_calls": 0,
+        "invalid_arg_calls": 0,
+        "total_calls": 32,
+        "success_rate": 0.833,
+        "multi_step_success_rate": 0.833,
+        "confident_wrong_rate": 0.167,
+        "mean_tool_calls": 2.67,
+        "median_scenario_wall_s": 39.25,
+        "mean": 1.667,
+        "norm": 0.833
+      },
+      "context": {
+        "1024": {
+          "runs": [
+            {
+              "status": "ok",
+              "prompt_tokens": 1115,
+              "prompt_tok_s": 49.43,
+              "gen_tok_s": 9.66,
+              "wall_s": 32.254,
+              "ttft_s": 27.596,
+              "peak_rss_mib": 7076,
+              "min_mem_avail_mib": 6726,
+              "needle": 2,
+              "truncated": false,
+              "num_ctx": 2048
+            },
+            {
+              "status": "ok",
+              "prompt_tokens": 1115,
+              "prompt_tok_s": 48.86,
+              "gen_tok_s": 9.54,
+              "wall_s": 27.578,
+              "ttft_s": 22.864,
+              "peak_rss_mib": 6745,
+              "min_mem_avail_mib": 7007,
+              "needle": 2,
+              "truncated": false,
+              "num_ctx": 2048
+            }
+          ],
+          "prompt_tokens": 1115.0,
+          "prompt_tok_s": 49.14,
+          "gen_tok_s": 9.6,
+          "wall_s": 29.92,
+          "ttft_s": 25.23,
+          "peak_rss_mib": 7076,
+          "min_mem_avail_mib": 6726,
+          "needle_mean": 2,
+          "failures": 0,
+          "truncated_any": false
+        },
+        "2048": {
+          "runs": [
+            {
+              "status": "ok",
+              "prompt_tokens": 2224,
+              "prompt_tok_s": 49.06,
+              "gen_tok_s": 9.45,
+              "wall_s": 54.981,
+              "ttft_s": 50.117,
+              "peak_rss_mib": 6830,
+              "min_mem_avail_mib": 6982,
+              "needle": 1,
+              "truncated": false,
+              "num_ctx": 3072
+            },
+            {
+              "status": "ok",
+              "prompt_tokens": 2224,
+              "prompt_tok_s": 48.78,
+              "gen_tok_s": 9.51,
+              "wall_s": 50.467,
+              "ttft_s": 45.632,
+              "peak_rss_mib": 6831,
+              "min_mem_avail_mib": 6983,
+              "needle": 1,
+              "truncated": false,
+              "num_ctx": 3072
+            }
+          ],
+          "prompt_tokens": 2224.0,
+          "prompt_tok_s": 48.92,
+          "gen_tok_s": 9.48,
+          "wall_s": 52.72,
+          "ttft_s": 47.87,
+          "peak_rss_mib": 6831,
+          "min_mem_avail_mib": 6982,
+          "needle_mean": 1,
+          "failures": 0,
+          "truncated_any": false
+        },
+        "4096": {
+          "runs": [
+            {
+              "status": "ok",
+              "prompt_tokens": 4430,
+              "prompt_tok_s": 47.27,
+              "gen_tok_s": 9.03,
+              "wall_s": 103.751,
+              "ttft_s": 98.769,
+              "peak_rss_mib": 6979,
+              "min_mem_avail_mib": 6839,
+              "needle": 2,
+              "truncated": false,
+              "num_ctx": 5120
+            },
+            {
+              "status": "ok",
+              "prompt_tokens": 4430,
+              "prompt_tok_s": 47.07,
+              "gen_tok_s": 9.06,
+              "wall_s": 99.135,
+              "ttft_s": 94.165,
+              "peak_rss_mib": 6981,
+              "min_mem_avail_mib": 6835,
+              "needle": 2,
+              "truncated": false,
+              "num_ctx": 5120
+            }
+          ],
+          "prompt_tokens": 4430.0,
+          "prompt_tok_s": 47.17,
+          "gen_tok_s": 9.04,
+          "wall_s": 101.44,
+          "ttft_s": 96.47,
+          "peak_rss_mib": 6981,
+          "min_mem_avail_mib": 6835,
+          "needle_mean": 2,
+          "failures": 0,
+          "truncated_any": false
+        },
+        "8192": {
+          "runs": [
+            {
+              "status": "ok",
+              "prompt_tokens": 8742,
+              "prompt_tok_s": 45.53,
+              "gen_tok_s": 8.18,
+              "wall_s": 201.764,
+              "ttft_s": 196.754,
+              "peak_rss_mib": 7117,
+              "min_mem_avail_mib": 6650,
+              "needle": 1,
+              "truncated": false,
+              "num_ctx": 9216
+            },
+            {
+              "status": "ok",
+              "prompt_tokens": 8742,
+              "prompt_tok_s": 45.5,
+              "gen_tok_s": 8.2,
+              "wall_s": 198.77,
+              "ttft_s": 192.183,
+              "peak_rss_mib": 7122,
+              "min_mem_avail_mib": 6725,
+              "needle": 1,
+              "truncated": false,
+              "num_ctx": 9216
+            }
+          ],
+          "prompt_tokens": 8742.0,
+          "prompt_tok_s": 45.52,
+          "gen_tok_s": 8.19,
+          "wall_s": 200.27,
+          "ttft_s": 194.47,
+          "peak_rss_mib": 7122,
+          "min_mem_avail_mib": 6650,
+          "needle_mean": 1,
+          "failures": 0,
+          "truncated_any": false
+        }
+      },
+      "perf": {
+        "gen_tok_s_median": 9.69,
+        "gen_tok_s_min": 9.45,
+        "gen_tok_s_max": 9.87,
+        "prompt_tok_s_median": 46.38,
+        "ttft_s_median": 1.67,
+        "wall_s_median_generation": 28.05,
+        "output_tokens_median_generation": 259,
+        "agent_turn_wall_s_median": 9.25,
+        "peak_runner_rss_mib_4k": 7317,
+        "min_mem_available_mib": 6298,
+        "system_cpu_pct_mean_generation": 34.3,
+        "system_cpu_pct_max_generation": 36.8,
+        "runner_cpu_pct_mean_generation": 800.0
+      },
+      "stability": {
+        "requests": 142,
+        "failed": 0,
+        "fail_rate": 0.0,
+        "by_status": {},
+        "unsupported_requests": 0
+      },
+      "quality_components": {
+        "agent": 0.833,
+        "tools": 1.0,
+        "evidence": 1.0,
+        "structured": 0.85,
+        "knowledge": 0.9,
+        "generation": 0.8
+      },
+      "Q": 0.9074,
+      "gates": {
+        "G1_stability": true,
+        "G2_memory": true,
+        "G3_speed": true,
+        "G4_tools": true,
+        "G5_structured": true,
+        "G6_evidence": true
+      },
+      "early_stop": null,
+      "coverage": {
+        "generation": "15/15",
+        "knowledge": "10/10",
+        "evidence": "8/8",
+        "structured_prompt": "30/30",
+        "structured_constrained": "30/30",
+        "tools": "28/28",
+        "agent": "12/12",
+        "context": "8/8"
+      },
+      "eligible": true
     }
   ]
 }

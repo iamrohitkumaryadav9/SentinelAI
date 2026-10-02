@@ -1,0 +1,117 @@
+{
+  "model": "qwen3.5:4b",
+  "digest": "2a654d98e6fba55d452b7043684e9b57a947e393bbffa62485a7aac05ee4eefd",
+  "ollama_version": "0.35.0",
+  "timestamp": "2026-10-02T16:51:23+05:30",
+  "trigger": "ES1 failure-to-complete: 5/5 requests in 'agent' produced no usable output (> 50%)",
+  "decided_by": "automatic (pre-registered ES rules)",
+  "config": {
+    "num_ctx": 4096,
+    "temperature": 0,
+    "seed": 42,
+    "think": false,
+    "think_probe": {
+      "think_false_content": "51",
+      "output_tokens": 3,
+      "direct_answer": true,
+      "chosen_think": false,
+      "finetune": null,
+      "version": null
+    },
+    "think_budget_extra_tokens": 0,
+    "num_predict": {
+      "generation": 384,
+      "knowledge": 256,
+      "evidence": 200,
+      "structured": 320,
+      "tools": 256,
+      "agent_turn": 320,
+      "context": 128
+    },
+    "ollama_service_env": "Environment=PATH=/home/iiitd/anaconda3/bin:/home/iiitd/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin LLAMA_ARG_CACHE_RAM=0"
+  },
+  "suite_status": {
+    "generation": "COMPLETE",
+    "knowledge": "COMPLETE",
+    "evidence": "COMPLETE",
+    "structured_prompt": "COMPLETE",
+    "structured_constrained": "COMPLETE",
+    "tools": "COMPLETE",
+    "agent": "PARTIAL 5/12 \u2014 remainder NOT RUN \u2014 EARLY STOP AFTER OBJECTIVE DISQUALIFICATION",
+    "context": "NOT RUN \u2014 EARLY STOP AFTER OBJECTIVE DISQUALIFICATION"
+  },
+  "suite_stats": {
+    "agent": {
+      "n": 5,
+      "ok": 0,
+      "usable_output": 0,
+      "hit_token_budget": 0,
+      "median_wall_s": 30.72,
+      "median_tok_s": null,
+      "peak_runner_rss_mib": 4406
+    },
+    "evidence": {
+      "n": 8,
+      "ok": 8,
+      "usable_output": 8,
+      "hit_token_budget": 0,
+      "median_wall_s": 5.955,
+      "median_tok_s": 16.87,
+      "peak_runner_rss_mib": 3686
+    },
+    "generation": {
+      "n": 15,
+      "ok": 15,
+      "usable_output": 15,
+      "hit_token_budget": 4,
+      "median_wall_s": 16.591,
+      "median_tok_s": 16.73,
+      "peak_runner_rss_mib": 3675
+    },
+    "knowledge": {
+      "n": 10,
+      "ok": 10,
+      "usable_output": 10,
+      "hit_token_budget": 0,
+      "median_wall_s": 8.028,
+      "median_tok_s": 16.74,
+      "peak_runner_rss_mib": 3676
+    },
+    "structured_constrained": {
+      "n": 30,
+      "ok": 30,
+      "usable_output": 30,
+      "hit_token_budget": 0,
+      "median_wall_s": 11.742,
+      "median_tok_s": 16.96,
+      "peak_runner_rss_mib": 3727
+    },
+    "structured_prompt": {
+      "n": 30,
+      "ok": 30,
+      "usable_output": 30,
+      "hit_token_budget": 0,
+      "median_wall_s": 11.855,
+      "median_tok_s": 16.81,
+      "peak_runner_rss_mib": 3693
+    },
+    "tools": {
+      "n": 28,
+      "ok": 28,
+      "usable_output": 28,
+      "hit_token_budget": 0,
+      "median_wall_s": 8.081,
+      "median_tok_s": 17.31,
+      "peak_runner_rss_mib": 4003
+    },
+    "warmup": {
+      "n": 1,
+      "ok": 1,
+      "usable_output": 1,
+      "hit_token_budget": 0,
+      "median_wall_s": 0.346,
+      "median_tok_s": 34.4,
+      "peak_runner_rss_mib": 3657
+    }
+  }
+}
