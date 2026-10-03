@@ -22,7 +22,7 @@ from typing import Dict, List, Optional, Tuple
 
 from ..diagnostic.contract import Unit, load_contract
 from .errors import Bad, Status
-from .features import C, G, T, Calc
+from .features import C, G, H, T, Calc
 from .probes import get
 
 INVALID_STATUSES = (Status.MALFORMED,)
@@ -82,6 +82,20 @@ def _part(part, a: Tick, b: Tick, resets: set, k: int) -> Outcome:
                 return Outcome(False, invalid=True, reason=f"{RESET}: {src}:{fld}")
             total += y - x
         return Outcome(True, values=total)
+    if isinstance(part, H):
+        x, y = get(a.obs, part.source, part.field), get(b.obs, part.source, part.field)
+        for v in (x, y):
+            if isinstance(v, Bad):
+                return Outcome(False, invalid=v.status in INVALID_STATUSES, reason=_reason(v))
+        out = {}
+        for i in sorted(set(x) | set(y)):
+            d = y.get(i, 0.0) - x.get(i, 0.0)
+            if d < 0:
+                resets.add((part.source, f"{part.field}[{i}]", k))
+                return Outcome(False, invalid=True, reason=f"{RESET}: {part.source}:{part.field}[{i}]")
+            if d > 0:
+                out[i] = d
+        return Outcome(True, values=out)
     if isinstance(part, T):
         x, y = get(a.obs, "task", part.field), get(b.obs, "task", part.field)
         for v in (x, y):
@@ -175,7 +189,14 @@ def _window_value(calc: Calc, ev: Evaluation, per_k, nB: int) -> None:
         agg, dt = {}, 0.0
         for name, part in calc.parts:
             xs = [per_k[k][0][name] for k in ev.w_valid]
-            agg[name] = sum(xs) / len(xs) if isinstance(part, G) else sum(xs)
+            if isinstance(part, H):
+                merged = {}
+                for x in xs:
+                    for i, c in x.items():
+                        merged[i] = merged.get(i, 0.0) + c
+                agg[name] = merged
+            else:
+                agg[name] = sum(xs) / len(xs) if isinstance(part, G) else sum(xs)
         dt = sum(per_k[k][1] for k in ev.w_valid)
         v = calc.combine(agg, dt)
     if v is None:

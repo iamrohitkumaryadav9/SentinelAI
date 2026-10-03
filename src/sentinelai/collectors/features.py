@@ -7,6 +7,7 @@ Parts of a computation:
   C  counter: sum of (source, field) cumulative counters; contributes its delta per interval
   T  per-thread counter of the target (summed over threads present at both ends of an interval)
   G  gauge: a function of one tick's observations, sampled at the start of each interval
+  H  histogram counter: a dict of cumulative bucket counts; contributes its per-bucket delta (M3B)
 ``combine(d, dt)`` turns the parts' values for an interval (or for the whole window) into the
 feature value; it returns None when the value is undefined (e.g. a ratio whose denominator did
 not advance), which is never turned into a number.
@@ -16,7 +17,7 @@ from dataclasses import dataclass, field
 from statistics import median
 from typing import Callable, Optional, Tuple
 
-from ..diagnostic.contract import SourceType, Target
+from ..diagnostic.contract import Aggregation, SourceType, Target
 from .errors import Bad, Status
 from .probes import IFACE_FIELDS, cgroup_dir, get, netns_pid
 
@@ -40,6 +41,12 @@ class G:
 
 
 @dataclass(frozen=True)
+class H:
+    source: str
+    field: str
+
+
+@dataclass(frozen=True)
 class Calc:
     feature: str
     scope: str
@@ -51,6 +58,9 @@ class Calc:
     gauge_agg: str = "mean"                      # pure-gauge window aggregate: mean | last | bool
     derived_from: Tuple[Tuple[str, str], ...] = field(default_factory=tuple)
     undefined: str = "undefined over the window: the denominator did not advance"
+    aggregation: Optional[Aggregation] = None    # None: the feature's single registered aggregation
+    qualifier: Optional[Tuple[str, str]] = None  # (dimension, value) for features that declare one (M3B)
+    version: str = COLLECTOR_VERSION
 
     @property
     def gauge_only(self) -> bool:
