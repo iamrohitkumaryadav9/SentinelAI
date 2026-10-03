@@ -25,6 +25,11 @@
 
 #include "sentinel_shared.h"
 
+/* Same definition as libbpf's bpf_helpers.h, for the userspace build of this file. */
+#ifndef barrier_var
+#define barrier_var(var) asm volatile("" : "+r"(var))
+#endif
+
 static __always_inline void sn_count(__u32 i)
 {
 	__u64 *s = SN_STAT(i);
@@ -83,8 +88,8 @@ static __always_inline void sn_on_switch(__u32 prev_tid, __u32 next_tid)
 {
 	struct sn_wake *w;
 	struct sn_hist *h;
-	__u64 now, ts, d;
-	__u32 wcpu, i;
+	__u64 now, ts, d, i;
+	__u32 wcpu;
 
 	now = SN_NOW();
 	if (prev_tid != 0 && SN_WAKE_DELETE(prev_tid) == 0)
@@ -111,9 +116,15 @@ static __always_inline void sn_on_switch(__u32 prev_tid, __u32 next_tid)
 	h = SN_HIST();
 	if (!h)
 		return;
+	/* R1.1: a 64-bit index, so the clamp and the array offset use one register. A __u32 index let clang 14
+	 * zero-extend a copy for the comparison and re-extend the original for the access, and the verifier
+	 * rejected the unlinked offset (R0 unbounded memory access). barrier_var pins the clamped value as the
+	 * one that is indexed; it emits no instruction. 0 <= i <= SN_HIST_BUCKETS - 1 holds at the access.
+	 */
 	i = sn_hist_index(d);
 	if (i >= SN_HIST_BUCKETS)
 		i = SN_HIST_BUCKETS - 1;
+	barrier_var(i);
 	h->slots[i] += 1;
 	sn_count(SN_ST_LAT_RECORDED);
 }
