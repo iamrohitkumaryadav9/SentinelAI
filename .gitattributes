@@ -1,0 +1,2 @@
+# R1 evidence: verbatim kernel verifier output; its trailing whitespace is part of the record, not an error.
+results/phase1c_m3b_r1/*/verifier_log.txt -whitespace

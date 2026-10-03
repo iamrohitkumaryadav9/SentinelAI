@@ -1,0 +1,8 @@
+commit=f18e9fc1f44ad4966f731dcc45adc16b15f3d72a
+Linux iiitd-Precision-3660 6.8.0-138-generic #138~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  7 13:43:15 UTC  x86_64 x86_64 x86_64 GNU/Linux
+user=iiitd
+Sat Oct  3 07:57:32 AM UTC 2026
+{"producer":"sentinel_loader","version":"m3b-1.0.0","libbpf_compiled":"1.4","libbpf_linked":"1.4","libbpf_linked_string":"v1.4","match":true}
+0c70a6006a974e226049ac9cc627b2c8f8cfa410c8bc2ac732c5864df6cbb1d2  /home/iiitd/sentinelai/ebpf/build/sentinel_loader
+b04954865ff5688b3318884c8ce841ac144277980da10dc375463027232c23ce  /home/iiitd/sentinelai/ebpf/build/sentinel.bpf.o
+6238e0adcc62bab5a71a09077630723c1250bf8f252fd90473bd3724a8f06bbe  /home/iiitd/sentinelai/ebpf/build/sentinel.skel.h

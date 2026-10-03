@@ -1,0 +1,13 @@
+{
+ "interfaces_identical": false,
+ "enp0s31f6_identical": true,
+ "docker0_identical": false,
+ "addresses_identical": true,
+ "routes_identical": true,
+ "netns_identical": true,
+ "sysctls_identical": true,
+ "bpf_progs_identical": true,
+ "bpf_links_identical": true,
+ "bpf_maps_identical": true,
+ "sn_programs_left": []
+}

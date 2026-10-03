@@ -1,0 +1,5 @@
+kernel/unprivileged_bpf_disabled=2
+kernel/perf_event_paranoid=4
+kernel/bpf_stats_enabled=0
+net/core/bpf_jit_enable=1
+net/ipv4/ip_forward=1

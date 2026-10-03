@@ -1,0 +1,20 @@
+{
+ "interfaces_identical": true,
+ "enp0s31f6_identical": true,
+ "docker0_identical": true,
+ "interfaces_differing": [],
+ "addresses_identical": true,
+ "routes_identical": true,
+ "netns_identical": true,
+ "sysctls_identical": true,
+ "bpf_progs_identical": true,
+ "bpf_links_identical": true,
+ "bpf_maps_identical": true,
+ "sn_programs_left": [],
+ "ignored_volatile_fields": [
+  "linkinfo.info_data.hello_timer (bridge)",
+  "linkinfo.info_data.tcn_timer (bridge)",
+  "linkinfo.info_data.topology_change_timer (bridge)",
+  "linkinfo.info_data.gc_timer (bridge)"
+ ]
+}

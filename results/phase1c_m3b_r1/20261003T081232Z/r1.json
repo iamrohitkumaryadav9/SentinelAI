@@ -1,0 +1,4697 @@
+{
+ "phases": {
+  "A_load_attach": {
+   "after": {
+    "all_link_ids": [
+     1
+    ],
+    "all_map_ids": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     7
+    ],
+    "all_prog_ids": [
+     2,
+     54,
+     57,
+     61454,
+     61455,
+     61456,
+     61457,
+     61458,
+     61459,
+     61460,
+     61461,
+     61462,
+     61463,
+     61464,
+     61465,
+     61466,
+     61467,
+     61468,
+     61469,
+     61470,
+     61471,
+     61472
+    ],
+    "links": [],
+    "maps": [],
+    "progs": []
+   },
+   "attach_targets": {
+    "links": [
+     {
+      "attach_type": null,
+      "fd": 19,
+      "link_id": 65,
+      "link_type": "raw_tracepoint",
+      "prog_id": 68633,
+      "target": "sched_wakeup",
+      "target_btf_id": -1,
+      "tp_name": "sched_wakeup"
+     },
+     {
+      "attach_type": null,
+      "fd": 20,
+      "link_id": 66,
+      "link_type": "raw_tracepoint",
+      "prog_id": 68635,
+      "target": "sched_wakeup_new",
+      "target_btf_id": -1,
+      "tp_name": "sched_wakeup_new"
+     },
+     {
+      "attach_type": null,
+      "fd": 21,
+      "link_id": 67,
+      "link_type": "raw_tracepoint",
+      "prog_id": 68636,
+      "target": "sched_switch",
+      "target_btf_id": -1,
+      "tp_name": "sched_switch"
+     },
+     {
+      "attach_type": null,
+      "fd": 22,
+      "link_id": 68,
+      "link_type": "raw_tracepoint",
+      "prog_id": 68637,
+      "target": "softirq_entry",
+      "target_btf_id": -1,
+      "tp_name": "softirq_entry"
+     },
+     {
+      "attach_type": null,
+      "fd": 23,
+      "link_id": 69,
+      "link_type": "raw_tracepoint",
+      "prog_id": 68638,
+      "target": "softirq_exit",
+      "target_btf_id": -1,
+      "tp_name": "softirq_exit"
+     },
+     {
+      "attach_type": null,
+      "fd": 24,
+      "link_id": 70,
+      "link_type": "raw_tracepoint",
+      "prog_id": 68639,
+      "target": "tcp_retransmit_skb",
+      "target_btf_id": -1,
+      "tp_name": "tcp_retransmit_skb"
+     },
+     {
+      "attach_type": null,
+      "fd": 25,
+      "link_id": 71,
+      "link_type": "raw_tracepoint",
+      "prog_id": 68640,
+      "target": "kfree_skb",
+      "target_btf_id": -1,
+      "tp_name": "kfree_skb"
+     }
+    ],
+    "prog_fds": {
+     "68633": {
+      "fd": 12,
+      "prog_type": "26",
+      "tag": "0251ccef12031d46"
+     },
+     "68635": {
+      "fd": 13,
+      "prog_type": "26",
+      "tag": "ec8ae7431c023347"
+     },
+     "68636": {
+      "fd": 14,
+      "prog_type": "26",
+      "tag": "ecf272e4e57b3c50"
+     },
+     "68637": {
+      "fd": 15,
+      "prog_type": "26",
+      "tag": "e5fce7cacf09ccb7"
+     },
+     "68638": {
+      "fd": 16,
+      "prog_type": "26",
+      "tag": "62d8293538063e4f"
+     },
+     "68639": {
+      "fd": 17,
+      "prog_type": "26",
+      "tag": "9c5e9d388e236655"
+     },
+     "68640": {
+      "fd": 18,
+      "prog_type": "26",
+      "tag": "af9f157fe947a49d"
+     }
+    }
+   },
+   "before": {
+    "all_link_ids": [
+     1
+    ],
+    "all_map_ids": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     7
+    ],
+    "all_prog_ids": [
+     2,
+     54,
+     57,
+     61454,
+     61455,
+     61456,
+     61457,
+     61458,
+     61459,
+     61460,
+     61461,
+     61462,
+     61463,
+     61464,
+     61465,
+     61466,
+     61467,
+     61468,
+     61469,
+     61470,
+     61471,
+     61472
+    ],
+    "links": [],
+    "maps": [],
+    "progs": []
+   },
+   "during": {
+    "all_link_ids": [
+     1,
+     65,
+     66,
+     67,
+     68,
+     69,
+     70,
+     71
+    ],
+    "all_map_ids": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     259,
+     260,
+     261,
+     262,
+     263,
+     264,
+     265,
+     267
+    ],
+    "all_prog_ids": [
+     2,
+     54,
+     57,
+     61454,
+     61455,
+     61456,
+     61457,
+     61458,
+     61459,
+     61460,
+     61461,
+     61462,
+     61463,
+     61464,
+     61465,
+     61466,
+     61467,
+     61468,
+     61469,
+     61470,
+     61471,
+     61472,
+     68633,
+     68635,
+     68636,
+     68637,
+     68638,
+     68639,
+     68640
+    ],
+    "links": [
+     {
+      "id": 65,
+      "prog_id": 68633,
+      "tp_name": "sched_wakeup",
+      "type": "raw_tracepoint"
+     },
+     {
+      "id": 66,
+      "prog_id": 68635,
+      "tp_name": "sched_wakeup_new",
+      "type": "raw_tracepoint"
+     },
+     {
+      "id": 67,
+      "prog_id": 68636,
+      "tp_name": "sched_switch",
+      "type": "raw_tracepoint"
+     },
+     {
+      "id": 68,
+      "prog_id": 68637,
+      "tp_name": "softirq_entry",
+      "type": "raw_tracepoint"
+     },
+     {
+      "id": 69,
+      "prog_id": 68638,
+      "tp_name": "softirq_exit",
+      "type": "raw_tracepoint"
+     },
+     {
+      "id": 70,
+      "prog_id": 68639,
+      "tp_name": "tcp_retransmit_skb",
+      "type": "raw_tracepoint"
+     },
+     {
+      "id": 71,
+      "prog_id": 68640,
+      "tp_name": "kfree_skb",
+      "type": "raw_tracepoint"
+     }
+    ],
+    "maps": [
+     {
+      "btf_id": 304,
+      "bytes_key": 4,
+      "bytes_memlock": 1443520,
+      "bytes_value": 16,
+      "flags": 0,
+      "frozen": 0,
+      "id": 259,
+      "max_entries": 16384,
+      "name": "sn_wake",
+      "type": "lru_hash"
+     },
+     {
+      "btf_id": 304,
+      "bytes_key": 4,
+      "bytes_memlock": 101768,
+      "bytes_value": 4224,
+      "flags": 0,
+      "frozen": 0,
+      "id": 260,
+      "max_entries": 1,
+      "name": "sn_hist",
+      "type": "percpu_array"
+     },
+     {
+      "btf_id": 304,
+      "bytes_key": 4,
+      "bytes_memlock": 4784,
+      "bytes_value": 8,
+      "flags": 0,
+      "frozen": 0,
+      "id": 261,
+      "max_entries": 22,
+      "name": "sn_stats",
+      "type": "percpu_array"
+     },
+     {
+      "btf_id": 304,
+      "bytes_key": 4,
+      "bytes_memlock": 776,
+      "bytes_value": 16,
+      "flags": 0,
+      "frozen": 0,
+      "id": 262,
+      "max_entries": 1,
+      "name": "sn_sirq_start",
+      "type": "percpu_array"
+     },
+     {
+      "btf_id": 304,
+      "bytes_key": 4,
+      "bytes_memlock": 4304,
+      "bytes_value": 16,
+      "flags": 0,
+      "frozen": 0,
+      "id": 263,
+      "max_entries": 10,
+      "name": "sn_sirq_acc",
+      "type": "percpu_array"
+     },
+     {
+      "btf_id": 304,
+      "bytes_key": 4,
+      "bytes_memlock": 584,
+      "bytes_value": 8,
+      "flags": 0,
+      "frozen": 0,
+      "id": 264,
+      "max_entries": 1,
+      "name": "sn_retrans",
+      "type": "percpu_array"
+     },
+     {
+      "btf_id": 304,
+      "bytes_key": 4,
+      "bytes_memlock": 26184,
+      "bytes_value": 8,
+      "flags": 0,
+      "frozen": 0,
+      "id": 265,
+      "max_entries": 129,
+      "name": "sn_kfree",
+      "type": "percpu_array"
+     },
+     {
+      "btf_id": 304,
+      "bytes_key": 4,
+      "bytes_memlock": 8192,
+      "bytes_value": 32,
+      "flags": 1152,
+      "frozen": 1,
+      "id": 267,
+      "max_entries": 1,
+      "name": "sentinel.rodata",
+      "type": "array"
+     }
+    ],
+    "progs": [
+     {
+      "btf_id": 304,
+      "bytes_jited": 590,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 1064,
+      "gpl_compatible": true,
+      "id": 68633,
+      "jited": true,
+      "loaded_at": 1791015152,
+      "map_ids": [
+       267,
+       259,
+       261
+      ],
+      "name": "sn_sched_wakeup",
+      "orphaned": false,
+      "tag": "0251ccef12031d46",
+      "type": "tracing",
+      "uid": 0
+     },
+     {
+      "btf_id": 304,
+      "bytes_jited": 640,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 1152,
+      "gpl_compatible": true,
+      "id": 68635,
+      "jited": true,
+      "loaded_at": 1791015152,
+      "map_ids": [
+       267,
+       259,
+       261
+      ],
+      "name": "sn_sched_wakeup_new",
+      "orphaned": false,
+      "tag": "ec8ae7431c023347",
+      "type": "tracing",
+      "uid": 0
+     },
+     {
+      "btf_id": 304,
+      "bytes_jited": 827,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 1456,
+      "gpl_compatible": true,
+      "id": 68636,
+      "jited": true,
+      "loaded_at": 1791015152,
+      "map_ids": [
+       259,
+       261,
+       267,
+       260
+      ],
+      "name": "sn_sched_switch",
+      "orphaned": false,
+      "tag": "ecf272e4e57b3c50",
+      "type": "tracing",
+      "uid": 0
+     },
+     {
+      "btf_id": 304,
+      "bytes_jited": 219,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 376,
+      "gpl_compatible": true,
+      "id": 68637,
+      "jited": true,
+      "loaded_at": 1791015152,
+      "map_ids": [
+       261,
+       262,
+       267
+      ],
+      "name": "sn_softirq_entry",
+      "orphaned": false,
+      "tag": "e5fce7cacf09ccb7",
+      "type": "tracing",
+      "uid": 0
+     },
+     {
+      "btf_id": 304,
+      "bytes_jited": 486,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 832,
+      "gpl_compatible": true,
+      "id": 68638,
+      "jited": true,
+      "loaded_at": 1791015152,
+      "map_ids": [
+       261,
+       262,
+       267,
+       263
+      ],
+      "name": "sn_softirq_exit",
+      "orphaned": false,
+      "tag": "62d8293538063e4f",
+      "type": "tracing",
+      "uid": 0
+     },
+     {
+      "btf_id": 304,
+      "bytes_jited": 231,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 416,
+      "gpl_compatible": true,
+      "id": 68639,
+      "jited": true,
+      "loaded_at": 1791015152,
+      "map_ids": [
+       261,
+       267,
+       264
+      ],
+      "name": "sn_tcp_retransmit_skb",
+      "orphaned": false,
+      "tag": "9c5e9d388e236655",
+      "type": "tracing",
+      "uid": 0
+     },
+     {
+      "btf_id": 304,
+      "bytes_jited": 523,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 920,
+      "gpl_compatible": true,
+      "id": 68640,
+      "jited": true,
+      "loaded_at": 1791015152,
+      "map_ids": [
+       261,
+       267,
+       265
+      ],
+      "name": "sn_kfree_skb",
+      "orphaned": false,
+      "tag": "af9f157fe947a49d",
+      "type": "tracing",
+      "uid": 0
+     }
+    ]
+   },
+   "firing_counts_delta_3s": {
+    "kfree_target": 107,
+    "latency_samples": 9399,
+    "retrans_target": 0,
+    "softirq_pairs": 11777
+   },
+   "firing_stats_delta_3s": {
+    "kfree_other_netns": 0,
+    "kfree_overflow": 0,
+    "kfree_unattributed": 172,
+    "lat_migrated": 70,
+    "lat_negative": 0,
+    "lat_recorded": 9399,
+    "lat_stale": 0,
+    "retrans_other_netns": 0,
+    "retrans_unattributed": 0,
+    "sirq_entry_overwritten": 0,
+    "sirq_invalid_vec": 0,
+    "sirq_mismatch": 0,
+    "sirq_negative": 0,
+    "sirq_recorded": 11777,
+    "sirq_stale": 0,
+    "sirq_unmatched_exit": 0,
+    "wake_cancelled_running": 0,
+    "wake_new": 70,
+    "wake_new_replaced": 0,
+    "wake_recorded": 9329,
+    "wake_repeat": 0,
+    "wake_update_failed": 0
+   },
+   "first_line": "{\"v\":1,\"type\":\"meta\",\"producer\":\"sentinel_loader\",\"version\":\"m3b-1.0.0\",\"libbpf\":\"1.4\",\"ncpu\":24,\"cfg\":{\"cgroup_id\":2129446,\"cgroup_level\":3,\"netns_inum\":4026531840,\"lat_stale_ns\":10000000000,\"sirq_stale_ns\":1000000000},\"hist\":{\"sub_bits\":4,\"max_msb\":35,\"buckets\":528},\"kfree_slots\":128,\"vectors\":[\"HI\",\"TIMER\",\"NET_TX\",\"NET_RX\",\"BLOCK\",\"IRQ_POLL\",\"TASKLET\",\"SCHED\",\"HRTIMER\",\"RCU\"],\"reasons\":[[0,\"NOT_DROPPED_YET\"],[1,\"CONSUMED\"],[2,\"NOT_SPECIFIED\"],[3,\"NO_SOCKET\"],[4,\"PKT_TOO_SMALL\"],[5,\"TCP_CSUM\"],[6,\"SOCKET_FILTER\"],[7,\"UDP_CSUM\"],[8,\"NETFILTER_DROP\"],[9,\"OTHERHOST\"],[10,\"IP_CSUM\"],[11,\"IP_INHDR\"],[12,\"IP_RPFILTER\"],[13,\"UNICAST_IN_L2_MULTICAST\"],[14,\"XFRM_POLICY\"],[15,\"IP_NOPROTO\"],[16,\"SOCKET_RCVBUFF\"],[17,\"PROTO_MEM\"],[18,\"TCP_AUTH_HDR\"],[19,\"TCP_MD5NOTFOUND\"],[20,\"TCP_MD5UNEXPECTED\"],[21,\"TCP_MD5FAILURE\"],[22,\"TCP_AONOTFOUND\"],[23,\"TCP_AOUNEXPECTED\"],[24,\"TCP_AOKEYNOTFOUND\"],[25,\"TCP_AOFAILURE\"],[26,\"SOCKET_BACKLOG\"],[27,\"TCP_FLAGS\"],[28,\"TCP_ZEROWINDOW\"],[29,\"TCP_OLD_DATA\"],[30,\"TCP_OVERWINDOW\"],[31,\"TCP_OFOMERGE\"],[32,\"TCP_RFC7323_PAWS\"],[33,\"TCP_OLD_SEQUENCE\"],[34,\"TCP_INVALID_SEQUENCE\"],[35,\"TCP_RESET\"],[36,\"TCP_INVALID_SYN\"],[37,\"TCP_CLOSE\"],[38,\"TCP_FASTOPEN\"],[39,\"TCP_OLD_ACK\"],[40,\"TCP_TOO_OLD_ACK\"],[41,\"TCP_ACK_UNSENT_DATA\"],[42,\"TCP_OFO_QUEUE_PRUNE\"],[43,\"TCP_OFO_DROP\"],[44,\"IP_OUTNOROUTES\"],[45,\"BPF_CGROUP_EGRESS\"],[46,\"IPV6DISABLED\"],[47,\"NEIGH_CREATEFAIL\"],[48,\"NEIGH_FAILED\"],[49,\"NEIGH_QUEUEFULL\"],[50,\"NEIGH_DEAD\"],[51,\"TC_EGRESS\"],[52,\"QDISC_DROP\"],[53,\"CPU_BACKLOG\"],[54,\"XDP\"],[55,\"TC_INGRESS\"],[56,\"UNHANDLED_PROTO\"],[57,\"SKB_CSUM\"],[58,\"SKB_GSO_SEG\"],[59,\"SKB_UCOPY_FAULT\"],[60,\"DEV_HDR\"],[61,\"DEV_READY\"],[62,\"FULL_RING\"],[63,\"NOMEM\"],[64,\"HDR_TRUNC\"],[65,\"TAP_FILTER\"],[66,\"TAP_TXFILTER\"],[67,\"ICMP_CSUM\"],[68,\"INVALID_PROTO\"],[69,\"IP_INADDRERRORS\"],[70,\"IP_INNOROUTES\"],[71,\"PKT_TOO_BIG\"],[72,\"DUP_FRAG\"],[73,\"FRAG_REASM_TIMEOUT\"],[74,\"FRAG_TOO_FAR\"],[75,\"TCP_MINTTL\"],[76,\"IPV6_BAD_EXTHDR\"],[77,\"IPV6_NDISC_FRAG\"],[78,\"IPV6_NDISC_HOP_LIMIT\"],[79,\"IPV6_NDISC_BAD_CODE\"],[80,\"IPV6_NDISC_BAD_OPTIONS\"],[81,\"IPV6_NDISC_NS_OTHERHOST\"],[82,\"QUEUE_PURGE\"],[83,\"TC_COOKIE_ERROR\"],[84,\"PACKET_SOCK_ERROR\"],[85,\"TC_CHAIN_NOTFOUND\"],[86,\"TC_RECLASSIFY_LOOP\"],[87,\"VXLAN_INVALID_HDR\"],[88,\"VXLAN_VNI_NOT_FOUND\"],[89,\"MAC_INVALID_SOURCE\"],[90,\"VXLAN_ENTRY_EXISTS\"],[91,\"NO_TX_TARGET\"],[92,\"IP_TUNNEL_ECN\"],[93,\"TUNNEL_TXINFO\"],[94,\"LOCAL_MAC\"]],\"stats\":[\"wake_recorded\",\"wake_repeat\",\"wake_new\",\"wake_new_replaced\",\"wake_update_failed\",\"wake_cancelled_running\",\"lat_recorded\",\"lat_migrated\",\"lat_stale\",\"lat_negative\",\"sirq_recorded\",\"sirq_unmatched_exit\",\"sirq_mismatch\",\"sirq_entry_overwritten\",\"sirq_invalid_vec\",\"sirq_stale\",\"sirq_negative\",\"retrans_other_netns\",\"retrans_unattributed\",\"kfree_other_netns\",\"kfree_unattributed\",\"kfree_overflow\"]}",
+   "meta_ok": true,
+   "rest_stdout": "{\"v\":1,\"type\":\"end\",\"reason\":\"quit requested\"}\n",
+   "returncode": 0,
+   "stderr": ""
+  },
+  "B_end_to_end": {
+   "after_close": {
+    "all_link_ids": [
+     1
+    ],
+    "all_map_ids": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     270,
+     271,
+     272,
+     273,
+     274,
+     275,
+     276,
+     278
+    ],
+    "all_prog_ids": [
+     2,
+     54,
+     57,
+     61454,
+     61455,
+     61456,
+     61457,
+     61458,
+     61459,
+     61460,
+     61461,
+     61462,
+     61463,
+     61464,
+     61465,
+     61466,
+     61467,
+     61468,
+     61469,
+     61470,
+     61471,
+     61472,
+     68648,
+     68650,
+     68651,
+     68652,
+     68653,
+     68654,
+     68655
+    ],
+    "links": [],
+    "maps": [
+     {
+      "btf_id": 314,
+      "bytes_key": 4,
+      "bytes_memlock": 1443520,
+      "bytes_value": 16,
+      "flags": 0,
+      "frozen": 0,
+      "id": 270,
+      "max_entries": 16384,
+      "name": "sn_wake",
+      "type": "lru_hash"
+     },
+     {
+      "btf_id": 314,
+      "bytes_key": 4,
+      "bytes_memlock": 101768,
+      "bytes_value": 4224,
+      "flags": 0,
+      "frozen": 0,
+      "id": 271,
+      "max_entries": 1,
+      "name": "sn_hist",
+      "type": "percpu_array"
+     },
+     {
+      "btf_id": 314,
+      "bytes_key": 4,
+      "bytes_memlock": 4784,
+      "bytes_value": 8,
+      "flags": 0,
+      "frozen": 0,
+      "id": 272,
+      "max_entries": 22,
+      "name": "sn_stats",
+      "type": "percpu_array"
+     },
+     {
+      "btf_id": 314,
+      "bytes_key": 4,
+      "bytes_memlock": 776,
+      "bytes_value": 16,
+      "flags": 0,
+      "frozen": 0,
+      "id": 273,
+      "max_entries": 1,
+      "name": "sn_sirq_start",
+      "type": "percpu_array"
+     },
+     {
+      "btf_id": 314,
+      "bytes_key": 4,
+      "bytes_memlock": 4304,
+      "bytes_value": 16,
+      "flags": 0,
+      "frozen": 0,
+      "id": 274,
+      "max_entries": 10,
+      "name": "sn_sirq_acc",
+      "type": "percpu_array"
+     },
+     {
+      "btf_id": 314,
+      "bytes_key": 4,
+      "bytes_memlock": 584,
+      "bytes_value": 8,
+      "flags": 0,
+      "frozen": 0,
+      "id": 275,
+      "max_entries": 1,
+      "name": "sn_retrans",
+      "type": "percpu_array"
+     },
+     {
+      "btf_id": 314,
+      "bytes_key": 4,
+      "bytes_memlock": 26184,
+      "bytes_value": 8,
+      "flags": 0,
+      "frozen": 0,
+      "id": 276,
+      "max_entries": 129,
+      "name": "sn_kfree",
+      "type": "percpu_array"
+     },
+     {
+      "btf_id": 314,
+      "bytes_key": 4,
+      "bytes_memlock": 8192,
+      "bytes_value": 32,
+      "flags": 1152,
+      "frozen": 1,
+      "id": 278,
+      "max_entries": 1,
+      "name": "sentinel.rodata",
+      "type": "array"
+     }
+    ],
+    "progs": [
+     {
+      "btf_id": 314,
+      "bytes_jited": 590,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 1064,
+      "gpl_compatible": true,
+      "id": 68648,
+      "jited": true,
+      "loaded_at": 1791015157,
+      "map_ids": [
+       278,
+       270,
+       272
+      ],
+      "name": "sn_sched_wakeup",
+      "orphaned": false,
+      "tag": "0251ccef12031d46",
+      "type": "tracing",
+      "uid": 0
+     },
+     {
+      "btf_id": 314,
+      "bytes_jited": 640,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 1152,
+      "gpl_compatible": true,
+      "id": 68650,
+      "jited": true,
+      "loaded_at": 1791015157,
+      "map_ids": [
+       278,
+       270,
+       272
+      ],
+      "name": "sn_sched_wakeup_new",
+      "orphaned": false,
+      "tag": "ec8ae7431c023347",
+      "type": "tracing",
+      "uid": 0
+     },
+     {
+      "btf_id": 314,
+      "bytes_jited": 827,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 1456,
+      "gpl_compatible": true,
+      "id": 68651,
+      "jited": true,
+      "loaded_at": 1791015157,
+      "map_ids": [
+       270,
+       272,
+       278,
+       271
+      ],
+      "name": "sn_sched_switch",
+      "orphaned": false,
+      "tag": "ecf272e4e57b3c50",
+      "type": "tracing",
+      "uid": 0
+     },
+     {
+      "btf_id": 314,
+      "bytes_jited": 219,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 376,
+      "gpl_compatible": true,
+      "id": 68652,
+      "jited": true,
+      "loaded_at": 1791015157,
+      "map_ids": [
+       272,
+       273,
+       278
+      ],
+      "name": "sn_softirq_entry",
+      "orphaned": false,
+      "tag": "e5fce7cacf09ccb7",
+      "type": "tracing",
+      "uid": 0
+     },
+     {
+      "btf_id": 314,
+      "bytes_jited": 486,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 832,
+      "gpl_compatible": true,
+      "id": 68653,
+      "jited": true,
+      "loaded_at": 1791015157,
+      "map_ids": [
+       272,
+       273,
+       278,
+       274
+      ],
+      "name": "sn_softirq_exit",
+      "orphaned": false,
+      "tag": "62d8293538063e4f",
+      "type": "tracing",
+      "uid": 0
+     },
+     {
+      "btf_id": 314,
+      "bytes_jited": 231,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 416,
+      "gpl_compatible": true,
+      "id": 68654,
+      "jited": true,
+      "loaded_at": 1791015157,
+      "map_ids": [
+       272,
+       278,
+       275
+      ],
+      "name": "sn_tcp_retransmit_skb",
+      "orphaned": false,
+      "tag": "9c5e9d388e236655",
+      "type": "tracing",
+      "uid": 0
+     },
+     {
+      "btf_id": 314,
+      "bytes_jited": 523,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 920,
+      "gpl_compatible": true,
+      "id": 68655,
+      "jited": true,
+      "loaded_at": 1791015157,
+      "map_ids": [
+       272,
+       278,
+       276
+      ],
+      "name": "sn_kfree_skb",
+      "orphaned": false,
+      "tag": "af9f157fe947a49d",
+      "type": "tracing",
+      "uid": 0
+     }
+    ]
+   },
+   "counters_monotonic": true,
+   "loader_pid": 1048892,
+   "loader_returncode": 0,
+   "sample_latency_s": {
+    "max": 0.0016156460042111576,
+    "median": 0.0005027830484323204,
+    "n": 63
+   },
+   "seq_strictly_increasing": true,
+   "start": null,
+   "windows": [
+    {
+     "checks": {
+      "duplicate_ids": 0,
+      "ebpf_measurements": 247,
+      "problems": [],
+      "round_trip_identical": true
+     },
+     "collect_max_tick_read_s": 0.011332507012411952,
+     "crosscheck": {
+      "dt_s": 10.00040728598833,
+      "latency_samples_in_W": 30924,
+      "mismatches": [],
+      "softirq_count_vs_proc": {
+       "NET_RX": {
+        "ebpf_count": 4667,
+        "proc_softirqs_count": 4667,
+        "rel_diff": 0.0
+       },
+       "NET_TX": {
+        "ebpf_count": 2,
+        "proc_softirqs_count": 2,
+        "rel_diff": 0.0
+       },
+       "RCU": {
+        "ebpf_count": 5643,
+        "proc_softirqs_count": 5643,
+        "rel_diff": 0.0
+       },
+       "TIMER": {
+        "ebpf_count": 2591,
+        "proc_softirqs_count": 2591,
+        "rel_diff": 0.0
+       }
+      },
+      "stats_delta_W": {
+       "kfree_other_netns": 0,
+       "kfree_overflow": 0,
+       "kfree_unattributed": 344,
+       "lat_migrated": 17,
+       "lat_negative": 0,
+       "lat_recorded": 30924,
+       "lat_stale": 0,
+       "retrans_other_netns": 0,
+       "retrans_unattributed": 0,
+       "sirq_entry_overwritten": 0,
+       "sirq_invalid_vec": 0,
+       "sirq_mismatch": 0,
+       "sirq_negative": 0,
+       "sirq_recorded": 23513,
+       "sirq_stale": 0,
+       "sirq_unmatched_exit": 0,
+       "wake_cancelled_running": 3,
+       "wake_new": 17,
+       "wake_new_replaced": 0,
+       "wake_recorded": 30910,
+       "wake_repeat": 0,
+       "wake_update_failed": 0
+      }
+     },
+     "deterministic_rebuild": true,
+     "m2": {
+      "accepted": true,
+      "decision": "INSUFFICIENT_EVIDENCE"
+     },
+     "measurements": [
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "net.drop.kfree_skb",
+       "id": "0b1f86e2a8eb2696",
+       "qualifier": "QUEUE_PURGE",
+       "quality": "OK",
+       "scope": "netns:r1",
+       "unit": "packets_per_second",
+       "value": 0.19999185461198363
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "net.drop.kfree_skb",
+       "id": "36f17a6609258f61",
+       "qualifier": "NO_SOCKET",
+       "quality": "OK",
+       "scope": "netns:r1",
+       "unit": "packets_per_second",
+       "value": 0.4999796365299591
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "net.drop.kfree_skb",
+       "id": "77f36dfb43279359",
+       "qualifier": "NOT_SPECIFIED",
+       "quality": "OK",
+       "scope": "netns:r1",
+       "unit": "packets_per_second",
+       "value": 33.898619356731224
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "net.drop.kfree_skb",
+       "id": "db8c7d1b0c890727",
+       "qualifier": "OTHERHOST",
+       "quality": "OK",
+       "scope": "netns:r1",
+       "unit": "packets_per_second",
+       "value": 0.19999185461198363
+      },
+      {
+       "aggregation": "P50",
+       "coverage": 1.0,
+       "feature": "sched.latency_hist.target",
+       "id": "726cfa973d130bf5",
+       "qualifier": null,
+       "quality": "OK",
+       "scope": "cgroup:/user.slice/user-1000.slice/session-136.scope",
+       "unit": "ms",
+       "value": 0.000383
+      },
+      {
+       "aggregation": "P99",
+       "coverage": 1.0,
+       "feature": "sched.latency_hist.target",
+       "id": "9646b0725b6fc083",
+       "qualifier": null,
+       "quality": "OK",
+       "scope": "cgroup:/user.slice/user-1000.slice/session-136.scope",
+       "unit": "ms",
+       "value": 0.014335
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "2937e6f0226e1035",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:0",
+       "unit": "cores",
+       "value": 9.747203010078859e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "d311d452b13f9f4f",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:0",
+       "unit": "cores",
+       "value": 4.051654981769638e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "fb83c26a79361e8c",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:0",
+       "unit": "cores",
+       "value": 0.001339298252258766
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "6c08fba4c83a9350",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:1",
+       "unit": "cores",
+       "value": 1.4144123929650623e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "a65afe46df7a8dba",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:1",
+       "unit": "cores",
+       "value": 0.00010530241118033887
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "fb284e31cde509f5",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:1",
+       "unit": "cores",
+       "value": 7.1081104966191215e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "6d7f08dd6bcf8579",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:10",
+       "unit": "cores",
+       "value": 0.00019531064527108092
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "aed2cfa094a38019",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:10",
+       "unit": "cores",
+       "value": 2.6125935927236484e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "dbc55f5f8d690930",
+       "qualifier": "NET_RX",
+       "quality": "OK",
+       "scope": "cpu:10",
+       "unit": "cores",
+       "value": 0.00014460731034686856
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "dea1c18e3889b95d",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:10",
+       "unit": "cores",
+       "value": 6.143169797301763e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "61f0b1bef83fcc6d",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:11",
+       "unit": "cores",
+       "value": 4.2438271548662926e-07
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "6e9b8949f6532507",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:11",
+       "unit": "cores",
+       "value": 1.7980267688890387e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "9d771f9835c3bb6f",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:11",
+       "unit": "cores",
+       "value": 1.8499246551608488e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "4508eb3c26448d74",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:12",
+       "unit": "cores",
+       "value": 0.00028842705277027514
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "54acd4dab8626331",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:12",
+       "unit": "cores",
+       "value": 2.8392743603336013e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "ec9c4b17bd00dbb3",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:12",
+       "unit": "cores",
+       "value": 7.537722999103855e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "ff76ca7adb6ab9d5",
+       "qualifier": "NET_RX",
+       "quality": "OK",
+       "scope": "cpu:12",
+       "unit": "cores",
+       "value": 0.00034452986778122914
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "0b021fc2612c5006",
+       "qualifier": "NET_TX",
+       "quality": "OK",
+       "scope": "cpu:14",
+       "unit": "cores",
+       "value": 4.959797994377194e-08
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "23fe6aa9f47edf66",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:14",
+       "unit": "cores",
+       "value": 2.061306045892985e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "6f0ec6f8115e76c0",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:14",
+       "unit": "cores",
+       "value": 0.00012869645837357567
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "a3bb5a844160cbc5",
+       "qualifier": "NET_RX",
+       "quality": "OK",
+       "scope": "cpu:14",
+       "unit": "cores",
+       "value": 0.00020741135242623363
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "c6c4091870445ce0",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:14",
+       "unit": "cores",
+       "value": 2.8591735498674935e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "2357e6a7aeaeed5d",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:15",
+       "unit": "cores",
+       "value": 2.5722952340193337e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "5a38554957a6f5c0",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:15",
+       "unit": "cores",
+       "value": 3.9268400653062984e-07
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "5e59fc0f9bb7433c",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:15",
+       "unit": "cores",
+       "value": 1.5330375615281604e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "bb3dc61f1947b19d",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:16",
+       "unit": "cores",
+       "value": 1.8207858419438824e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "dd39ddb82d6519cb",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:16",
+       "unit": "cores",
+       "value": 2.4549900116966746e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "f254b6b80f1770b5",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:16",
+       "unit": "cores",
+       "value": 2.6017040362400256e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "1a824493bf1e67ae",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:17",
+       "unit": "cores",
+       "value": 2.0587661493394126e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "4528053f74ee00f0",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:17",
+       "unit": "cores",
+       "value": 1.8195358928525578e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "79c4bffa95e842d8",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:17",
+       "unit": "cores",
+       "value": 9.880497581177747e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "6679e19e3a1403b8",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:18",
+       "unit": "cores",
+       "value": 4.207778623072482e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "7e15d64b1a242a2c",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:18",
+       "unit": "cores",
+       "value": 5.5852725196761725e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "973a4d98c45a158c",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:18",
+       "unit": "cores",
+       "value": 3.147541805032513e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "60b8342ff86ee81a",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:19",
+       "unit": "cores",
+       "value": 4.315644229857456e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "668af4eac66b81a3",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:19",
+       "unit": "cores",
+       "value": 7.537233019060055e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "915fa7800987c3b2",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:19",
+       "unit": "cores",
+       "value": 3.2962257493437915e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "6692970e0643ac57",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:2",
+       "unit": "cores",
+       "value": 3.517536735657413e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "8b47e71defa40522",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:2",
+       "unit": "cores",
+       "value": 4.167950245226506e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "aa1ddbe8cbcc9054",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:2",
+       "unit": "cores",
+       "value": 3.480138258844972e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "5597a2f1fa032585",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:20",
+       "unit": "cores",
+       "value": 1.3321657427558842e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "8687684d7c54f295",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:20",
+       "unit": "cores",
+       "value": 1.543797123306285e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "8a9217ef649f8670",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:20",
+       "unit": "cores",
+       "value": 3.585853953192867e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "b1132810266272b4",
+       "qualifier": "NET_TX",
+       "quality": "OK",
+       "scope": "cpu:20",
+       "unit": "cores",
+       "value": 4.289825281427049e-08
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "2202066721a1d969",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:21",
+       "unit": "cores",
+       "value": 0.00022713084927875713
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "2d5cf34cad8af71d",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:21",
+       "unit": "cores",
+       "value": 0.0003542169732389971
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "7fd9c78b19be5889",
+       "qualifier": "NET_RX",
+       "quality": "OK",
+       "scope": "cpu:21",
+       "unit": "cores",
+       "value": 0.005920460167952913
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "a8bc34584d1da947",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:21",
+       "unit": "cores",
+       "value": 0.0004445175954211819
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "f321fc1769af3dc2",
+       "qualifier": "TASKLET",
+       "quality": "OK",
+       "scope": "cpu:21",
+       "unit": "cores",
+       "value": 3.909140786173138e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "19ab63aea71d0369",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:22",
+       "unit": "cores",
+       "value": 4.7099081720395205e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "40c1d22d133fcacc",
+       "qualifier": "NET_RX",
+       "quality": "OK",
+       "scope": "cpu:22",
+       "unit": "cores",
+       "value": 8.620048917485719e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "47fc9c4f82db45de",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:22",
+       "unit": "cores",
+       "value": 3.657191047732962e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "bc7e8abb83619a28",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:22",
+       "unit": "cores",
+       "value": 3.473348535380895e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "226f5d9342b6b6ce",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:23",
+       "unit": "cores",
+       "value": 3.464008915770516e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "3c6f3302d95c8235",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:23",
+       "unit": "cores",
+       "value": 7.220625914023825e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "a677e03955699df7",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:23",
+       "unit": "cores",
+       "value": 4.111382549149506e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "252d0f9ea4c1ede2",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:3",
+       "unit": "cores",
+       "value": 4.730007353428025e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "4eb4c6d497a3c6a9",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:3",
+       "unit": "cores",
+       "value": 2.0729155730532103e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "89cc44604fb5055e",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:4",
+       "unit": "cores",
+       "value": 4.044595269301834e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "caa257d44a87338b",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:4",
+       "unit": "cores",
+       "value": 4.662430105754636e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "d98f30f82224d7a5",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:4",
+       "unit": "cores",
+       "value": 2.0105481131924633e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "5bef225ce797feee",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:5",
+       "unit": "cores",
+       "value": 9.479613908608025e-08
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "21cc8a0bb1f2a15c",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:6",
+       "unit": "cores",
+       "value": 2.5417564778200834e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "4d09cf39d7800d9c",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:6",
+       "unit": "cores",
+       "value": 3.8950213612375325e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "94eec9b6d1fb12aa",
+       "qualifier": "NET_RX",
+       "quality": "OK",
+       "scope": "cpu:6",
+       "unit": "cores",
+       "value": 0.00013641904384349013
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "b271e2271a730f4d",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:6",
+       "unit": "cores",
+       "value": 0.000178412533507496
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "51fc722889ff29b6",
+       "qualifier": "NET_RX",
+       "quality": "OK",
+       "scope": "cpu:8",
+       "unit": "cores",
+       "value": 2.6213332367701918e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "58f0f06594ea92b5",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:8",
+       "unit": "cores",
+       "value": 3.398911567094315e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "62c698bc217813a1",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:8",
+       "unit": "cores",
+       "value": 1.7138701964683162e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "9441176e229dd74f",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:8",
+       "unit": "cores",
+       "value": 0.000148916534838193
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "7abe27e16a6c6635",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:9",
+       "unit": "cores",
+       "value": 6.503735111981708e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "85df15dabca4da3d",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:9",
+       "unit": "cores",
+       "value": 1.622123933165069e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "d41618e99605e1b4",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:9",
+       "unit": "cores",
+       "value": 1.5523367754982172e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "tcp.retrans_skb_rate",
+       "id": "e00667937a0bec21",
+       "qualifier": null,
+       "quality": "OK",
+       "scope": "netns:r1",
+       "unit": "events_per_second",
+       "value": 0.0
+      }
+     ],
+     "privileged_sources_unavailable": [],
+     "proc_retrans_segs_rate": 0.0
+    },
+    {
+     "checks": {
+      "duplicate_ids": 0,
+      "ebpf_measurements": 246,
+      "problems": [],
+      "round_trip_identical": true
+     },
+     "collect_max_tick_read_s": 0.010396706988103688,
+     "crosscheck": {
+      "dt_s": 9.999996072961949,
+      "latency_samples_in_W": 30231,
+      "mismatches": [],
+      "softirq_count_vs_proc": {
+       "NET_RX": {
+        "ebpf_count": 4437,
+        "proc_softirqs_count": 4436,
+        "rel_diff": 0.0002254283137962128
+       },
+       "NET_TX": {
+        "ebpf_count": 1,
+        "proc_softirqs_count": 1,
+        "rel_diff": 0.0
+       },
+       "RCU": {
+        "ebpf_count": 5390,
+        "proc_softirqs_count": 5389,
+        "rel_diff": 0.00018556318426424197
+       },
+       "TIMER": {
+        "ebpf_count": 2474,
+        "proc_softirqs_count": 2472,
+        "rel_diff": 0.0008090614886731392
+       }
+      },
+      "stats_delta_W": {
+       "kfree_other_netns": 0,
+       "kfree_overflow": 0,
+       "kfree_unattributed": 172,
+       "lat_migrated": 11,
+       "lat_negative": 0,
+       "lat_recorded": 30232,
+       "lat_stale": 0,
+       "retrans_other_netns": 0,
+       "retrans_unattributed": 0,
+       "sirq_entry_overwritten": 0,
+       "sirq_invalid_vec": 0,
+       "sirq_mismatch": 0,
+       "sirq_negative": 0,
+       "sirq_recorded": 23512,
+       "sirq_stale": 0,
+       "sirq_unmatched_exit": 0,
+       "wake_cancelled_running": 7,
+       "wake_new": 10,
+       "wake_new_replaced": 0,
+       "wake_recorded": 30229,
+       "wake_repeat": 0,
+       "wake_update_failed": 0
+      }
+     },
+     "deterministic_rebuild": true,
+     "m2": {
+      "accepted": true,
+      "decision": "INSUFFICIENT_EVIDENCE"
+     },
+     "measurements": [
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "net.drop.kfree_skb",
+       "id": "153be33a800ed026",
+       "qualifier": "QUEUE_PURGE",
+       "quality": "OK",
+       "scope": "netns:r1",
+       "unit": "packets_per_second",
+       "value": 0.10000003927039593
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "net.drop.kfree_skb",
+       "id": "7f4f1684db0e845c",
+       "qualifier": "OTHERHOST",
+       "quality": "OK",
+       "scope": "netns:r1",
+       "unit": "packets_per_second",
+       "value": 0.10000003927039593
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "net.drop.kfree_skb",
+       "id": "ab3e60305896647c",
+       "qualifier": "NOT_SPECIFIED",
+       "quality": "OK",
+       "scope": "netns:r1",
+       "unit": "packets_per_second",
+       "value": 31.9000125272563
+      },
+      {
+       "aggregation": "P99",
+       "coverage": 1.0,
+       "feature": "sched.latency_hist.target",
+       "id": "74bcd90e93416b0d",
+       "qualifier": null,
+       "quality": "OK",
+       "scope": "cgroup:/user.slice/user-1000.slice/session-136.scope",
+       "unit": "ms",
+       "value": 0.013823
+      },
+      {
+       "aggregation": "P50",
+       "coverage": 1.0,
+       "feature": "sched.latency_hist.target",
+       "id": "a131de8ae925654d",
+       "qualifier": null,
+       "quality": "OK",
+       "scope": "cgroup:/user.slice/user-1000.slice/session-136.scope",
+       "unit": "ms",
+       "value": 0.000383
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "52f6f43b311b6e41",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:0",
+       "unit": "cores",
+       "value": 1.637550643072369e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "720501a23afd2a10",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:0",
+       "unit": "cores",
+       "value": 6.48100254511436e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "b1d54d9d631821e4",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:0",
+       "unit": "cores",
+       "value": 0.0014168603564064534
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "a54e0a387a886d0b",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:1",
+       "unit": "cores",
+       "value": 3.5429013913108578e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "ae1c2585d3f04974",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:1",
+       "unit": "cores",
+       "value": 3.4580013579702915e-07
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "b9ac8593bf77391b",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:1",
+       "unit": "cores",
+       "value": 8.952003515485846e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "141f335645315eae",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:10",
+       "unit": "cores",
+       "value": 2.8591411227955986e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "3eeecc4b48c99a4e",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:10",
+       "unit": "cores",
+       "value": 0.00022624698884805342
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "603935f8e1f91065",
+       "qualifier": "NET_RX",
+       "quality": "OK",
+       "scope": "cpu:10",
+       "unit": "cores",
+       "value": 0.00021024778256510424
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "9f00913e35f34784",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:10",
+       "unit": "cores",
+       "value": 6.63480260551223e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "a8e7336fc4c09669",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:11",
+       "unit": "cores",
+       "value": 6.987152743881469e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "c04e188058d96aba",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:11",
+       "unit": "cores",
+       "value": 4.070601598540737e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "d2e1a7557a2ea15e",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:11",
+       "unit": "cores",
+       "value": 7.515902951523688e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "704d0580fa74a7b0",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:12",
+       "unit": "cores",
+       "value": 1.7822206998848506e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "93caa2e99dc5508b",
+       "qualifier": "NET_RX",
+       "quality": "OK",
+       "scope": "cpu:12",
+       "unit": "cores",
+       "value": 0.00022999059031817996
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "b0946052c5ff04fc",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:12",
+       "unit": "cores",
+       "value": 0.00017610576915740568
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "d9640c667ded12d5",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:12",
+       "unit": "cores",
+       "value": 2.2011308643924664e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "d060a97145936f6b",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:13",
+       "unit": "cores",
+       "value": 4.43000173967854e-08
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "68d230addaea9e64",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:14",
+       "unit": "cores",
+       "value": 0.00011138494374129125
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "e944fe20e950e18a",
+       "qualifier": "NET_RX",
+       "quality": "OK",
+       "scope": "cpu:14",
+       "unit": "cores",
+       "value": 9.507063733460104e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "f0c7f55d65b13265",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:14",
+       "unit": "cores",
+       "value": 1.203690472693829e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "ff0b714f24db23a8",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:14",
+       "unit": "cores",
+       "value": 1.1850404653699e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "162de8f9acfbf2b8",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:15",
+       "unit": "cores",
+       "value": 1.4360005639228857e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "23233556916b3099",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:15",
+       "unit": "cores",
+       "value": 3.340001311631224e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "d5afbd4dfac97202",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:15",
+       "unit": "cores",
+       "value": 3.951001551573343e-07
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "02dd9904ffd81c07",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:16",
+       "unit": "cores",
+       "value": 2.1841308577164986e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "55ad0615612cd4f4",
+       "qualifier": "NET_RX",
+       "quality": "OK",
+       "scope": "cpu:16",
+       "unit": "cores",
+       "value": 1.6844006614705491e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "8c94f776a21968a5",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:16",
+       "unit": "cores",
+       "value": 1.3701705380711841e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "bc7cb30a30e514ce",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:16",
+       "unit": "cores",
+       "value": 1.7455006854647612e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "13a5322eb8d13bcd",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:17",
+       "unit": "cores",
+       "value": 6.569962580049306e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "1da6f59dbb125d4e",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:17",
+       "unit": "cores",
+       "value": 2.57289101038409e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "1e3fa22b7cd7c321",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:17",
+       "unit": "cores",
+       "value": 1.0398704083610663e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "522e585b19d229b4",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:18",
+       "unit": "cores",
+       "value": 1.3425205272129196e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "9beb1c2da95c7448",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:18",
+       "unit": "cores",
+       "value": 1.2023504721676056e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "e131c1c944cbcff0",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:18",
+       "unit": "cores",
+       "value": 1.5730906177586714e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "473dd17f6d940122",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:19",
+       "unit": "cores",
+       "value": 5.887902312201643e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "4f73e55bfbea3e48",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:19",
+       "unit": "cores",
+       "value": 1.1533404529211845e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "b3c9a0b45445b49a",
+       "qualifier": "NET_RX",
+       "quality": "OK",
+       "scope": "cpu:19",
+       "unit": "cores",
+       "value": 8.027003152234683e-07
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "bbbc0b2c7b7acc1e",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:19",
+       "unit": "cores",
+       "value": 9.057403556876841e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "316a5471bdd4b5f8",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:2",
+       "unit": "cores",
+       "value": 5.967012343268453e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "4d15c0aba8fb716b",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:2",
+       "unit": "cores",
+       "value": 1.3149405163821444e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "86fbfe54647e5bc0",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:2",
+       "unit": "cores",
+       "value": 4.055791592724792e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "033c7f28726a5917",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:20",
+       "unit": "cores",
+       "value": 2.614491026720575e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "0a6adfbd09df0b0b",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:20",
+       "unit": "cores",
+       "value": 0.00018300617186722004
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "69ac31aae8928ed4",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:20",
+       "unit": "cores",
+       "value": 8.935723509092624e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "1860aba66e093707",
+       "qualifier": "NET_RX",
+       "quality": "OK",
+       "scope": "cpu:21",
+       "unit": "cores",
+       "value": 0.00515996772633896
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "47b68ee78ac74ff0",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:21",
+       "unit": "cores",
+       "value": 0.00039419145480048423
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "4c369f92f4222c21",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:21",
+       "unit": "cores",
+       "value": 0.0003088455212848114
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "99ce6ac4feca15e6",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:21",
+       "unit": "cores",
+       "value": 0.00022393808794133924
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "32f7aa33e5b2c418",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:22",
+       "unit": "cores",
+       "value": 3.3448013135162036e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "81d650bd6f6f45db",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:22",
+       "unit": "cores",
+       "value": 8.589403373091389e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "a527ad0064c747d0",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:22",
+       "unit": "cores",
+       "value": 1.9544607675241803e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "54b16183dd71a36f",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:23",
+       "unit": "cores",
+       "value": 8.376303289406175e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "86e8880efb399fec",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:23",
+       "unit": "cores",
+       "value": 6.738302646157089e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "be666d08ac53b138",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:23",
+       "unit": "cores",
+       "value": 2.6293010325365203e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "180c482944cded1c",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:3",
+       "unit": "cores",
+       "value": 6.404602515111778e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "6c57204da37b70e2",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:3",
+       "unit": "cores",
+       "value": 6.7180026381852e-07
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "f578a19a201e368e",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:3",
+       "unit": "cores",
+       "value": 3.2670012829638354e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "375c8506f9c530e3",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:4",
+       "unit": "cores",
+       "value": 3.033261191173212e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "a936ebd16900e95f",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:4",
+       "unit": "cores",
+       "value": 0.00015279356000261242
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "e6e4fdb25aba43ff",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:4",
+       "unit": "cores",
+       "value": 0.00018851817403180428
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "35cf2846b12f288d",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:5",
+       "unit": "cores",
+       "value": 1.742400684247379e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "ecd8292dc7dbe46f",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:5",
+       "unit": "cores",
+       "value": 4.785001879088445e-07
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "f9c2b9f0e07360ef",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:5",
+       "unit": "cores",
+       "value": 2.497000980581786e-07
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "162d6120b2482f83",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:6",
+       "unit": "cores",
+       "value": 8.263533245120949e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "6b576f852c555133",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:6",
+       "unit": "cores",
+       "value": 2.7562710823981424e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "7b83088258680a0d",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:6",
+       "unit": "cores",
+       "value": 2.5367009961721338e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "94fd5cb422f88780",
+       "qualifier": "NET_TX",
+       "quality": "OK",
+       "scope": "cpu:6",
+       "unit": "cores",
+       "value": 4.1300016218673524e-08
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "ebf4d4a4fb5493f7",
+       "qualifier": "NET_RX",
+       "quality": "OK",
+       "scope": "cpu:6",
+       "unit": "cores",
+       "value": 1.0730804214027648e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "4661cff00cf81610",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:7",
+       "unit": "cores",
+       "value": 5.4600021441636185e-08
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "0dac3fc52abbba11",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:8",
+       "unit": "cores",
+       "value": 0.00018839397398303046
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "93fdfc3aa95fc30f",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:8",
+       "unit": "cores",
+       "value": 2.3115709077626915e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "a8e5525c4caa141b",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:8",
+       "unit": "cores",
+       "value": 6.469742540692515e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "bd6d3c13e57714e0",
+       "qualifier": "NET_RX",
+       "quality": "OK",
+       "scope": "cpu:8",
+       "unit": "cores",
+       "value": 0.00023164179096661278
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "374ae34e9f327e19",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:9",
+       "unit": "cores",
+       "value": 2.2141008694858363e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "5152596ea57ec3d2",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:9",
+       "unit": "cores",
+       "value": 1.7106906717947362e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "89c711f1f0715151",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:9",
+       "unit": "cores",
+       "value": 8.584303371088599e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "tcp.retrans_skb_rate",
+       "id": "839991857f3235af",
+       "qualifier": null,
+       "quality": "OK",
+       "scope": "netns:r1",
+       "unit": "events_per_second",
+       "value": 0.0
+      }
+     ],
+     "privileged_sources_unavailable": [],
+     "proc_retrans_segs_rate": 0.0
+    },
+    {
+     "checks": {
+      "duplicate_ids": 0,
+      "ebpf_measurements": 247,
+      "problems": [],
+      "round_trip_identical": true
+     },
+     "collect_max_tick_read_s": 0.01064108801074326,
+     "crosscheck": {
+      "dt_s": 10.000741688010748,
+      "latency_samples_in_W": 30229,
+      "mismatches": [],
+      "softirq_count_vs_proc": {
+       "NET_RX": {
+        "ebpf_count": 4436,
+        "proc_softirqs_count": 4436,
+        "rel_diff": 0.0
+       },
+       "NET_TX": {
+        "ebpf_count": 2,
+        "proc_softirqs_count": 2,
+        "rel_diff": 0.0
+       },
+       "RCU": {
+        "ebpf_count": 6129,
+        "proc_softirqs_count": 6129,
+        "rel_diff": 0.0
+       },
+       "TIMER": {
+        "ebpf_count": 2497,
+        "proc_softirqs_count": 2497,
+        "rel_diff": 0.0
+       }
+      },
+      "stats_delta_W": {
+       "kfree_other_netns": 0,
+       "kfree_overflow": 0,
+       "kfree_unattributed": 344,
+       "lat_migrated": 11,
+       "lat_negative": 0,
+       "lat_recorded": 30229,
+       "lat_stale": 0,
+       "retrans_other_netns": 0,
+       "retrans_unattributed": 0,
+       "sirq_entry_overwritten": 0,
+       "sirq_invalid_vec": 0,
+       "sirq_mismatch": 0,
+       "sirq_negative": 0,
+       "sirq_recorded": 24732,
+       "sirq_stale": 0,
+       "sirq_unmatched_exit": 0,
+       "wake_cancelled_running": 5,
+       "wake_new": 10,
+       "wake_new_replaced": 0,
+       "wake_recorded": 30224,
+       "wake_repeat": 0,
+       "wake_update_failed": 0
+      }
+     },
+     "deterministic_rebuild": true,
+     "m2": {
+      "accepted": true,
+      "decision": "INSUFFICIENT_EVIDENCE"
+     },
+     "measurements": [
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "net.drop.kfree_skb",
+       "id": "03401e625b2ec8ac",
+       "qualifier": "NOT_SPECIFIED",
+       "quality": "OK",
+       "scope": "netns:r1",
+       "unit": "packets_per_second",
+       "value": 31.397671272365187
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "net.drop.kfree_skb",
+       "id": "d727fcb9f9f6d3a9",
+       "qualifier": "QUEUE_PURGE",
+       "quality": "OK",
+       "scope": "netns:r1",
+       "unit": "packets_per_second",
+       "value": 0.19998516733990565
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "net.drop.kfree_skb",
+       "id": "dfc11e826a50ea2d",
+       "qualifier": "NO_SOCKET",
+       "quality": "OK",
+       "scope": "netns:r1",
+       "unit": "packets_per_second",
+       "value": 0.09999258366995283
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "net.drop.kfree_skb",
+       "id": "e94101b80113d42c",
+       "qualifier": "OTHERHOST",
+       "quality": "OK",
+       "scope": "netns:r1",
+       "unit": "packets_per_second",
+       "value": 0.09999258366995283
+      },
+      {
+       "aggregation": "P50",
+       "coverage": 1.0,
+       "feature": "sched.latency_hist.target",
+       "id": "5a83cf8a15d9370e",
+       "qualifier": null,
+       "quality": "OK",
+       "scope": "cgroup:/user.slice/user-1000.slice/session-136.scope",
+       "unit": "ms",
+       "value": 0.000383
+      },
+      {
+       "aggregation": "P99",
+       "coverage": 1.0,
+       "feature": "sched.latency_hist.target",
+       "id": "b707254a2d354014",
+       "qualifier": null,
+       "quality": "OK",
+       "scope": "cgroup:/user.slice/user-1000.slice/session-136.scope",
+       "unit": "ms",
+       "value": 0.013823
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "5060d77bffb77c30",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:0",
+       "unit": "cores",
+       "value": 0.0002968973794773219
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "c27633fcb8d71113",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:0",
+       "unit": "cores",
+       "value": 4.80525360010162e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "ea329a3d86a4c3bd",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:0",
+       "unit": "cores",
+       "value": 0.001488101729278862
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "31d882e2d9df7672",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:1",
+       "unit": "cores",
+       "value": 3.747642041882896e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "9f15d0b8c1478b3b",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:1",
+       "unit": "cores",
+       "value": 3.5281383222106156e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "e6fa63fee422512e",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:1",
+       "unit": "cores",
+       "value": 6.8403926562778025e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "2a741c356a123d61",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:10",
+       "unit": "cores",
+       "value": 0.00017975126806395604
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "2d196292cae20398",
+       "qualifier": "NET_RX",
+       "quality": "OK",
+       "scope": "cpu:10",
+       "unit": "cores",
+       "value": 7.766703952879513e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "33a5aa1b81349a67",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:10",
+       "unit": "cores",
+       "value": 5.334114375132e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "aba894b3a652649a",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:10",
+       "unit": "cores",
+       "value": 2.7399067843987443e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "f3ee0a20a947b441",
+       "qualifier": "NET_TX",
+       "quality": "OK",
+       "scope": "cpu:10",
+       "unit": "cores",
+       "value": 4.469668490046891e-08
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "13f9e8fdc176eeb7",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:11",
+       "unit": "cores",
+       "value": 0.00013977733288280265
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "416dfa10e916d900",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:11",
+       "unit": "cores",
+       "value": 1.6990439839447373e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "d2113d77db332f11",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:11",
+       "unit": "cores",
+       "value": 1.623779566216364e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "24139800c22cc6f3",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:12",
+       "unit": "cores",
+       "value": 4.98772006678255e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "9075d63bfb294b3c",
+       "qualifier": "NET_RX",
+       "quality": "OK",
+       "scope": "cpu:12",
+       "unit": "cores",
+       "value": 0.00027279866684994493
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "cfc6652ad0c34a95",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:12",
+       "unit": "cores",
+       "value": 0.000291464282443615
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "df58cd9db1536d91",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:12",
+       "unit": "cores",
+       "value": 6.536425201179513e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "33be9c3253e4a2fd",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:13",
+       "unit": "cores",
+       "value": 1.8450631538779697e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "5f32fc20aec6b2f9",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:13",
+       "unit": "cores",
+       "value": 4.860639492196407e-07
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "fc611cfaa81df253",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:13",
+       "unit": "cores",
+       "value": 1.4918893483556962e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "20d947e5145a17de",
+       "qualifier": "NET_RX",
+       "quality": "OK",
+       "scope": "cpu:14",
+       "unit": "cores",
+       "value": 0.00023337089116079685
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "6c3efa1aa7358d2d",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:14",
+       "unit": "cores",
+       "value": 0.00010809438276922709
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "8d73f76c902e99e0",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:14",
+       "unit": "cores",
+       "value": 1.715162788432334e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "98ecf5e3b3ad1afd",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:14",
+       "unit": "cores",
+       "value": 1.7164426935033093e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "5b182ee51b435e4d",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:15",
+       "unit": "cores",
+       "value": 2.760395264792718e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "7120e27c7b2f77a2",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:15",
+       "unit": "cores",
+       "value": 1.6615767628436062e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "c6ab69725c42fee8",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:15",
+       "unit": "cores",
+       "value": 4.0926964496111695e-07
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "26c776d8c574dbc3",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:16",
+       "unit": "cores",
+       "value": 2.2755612243522175e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "9b86962a8eb02e8c",
+       "qualifier": "NET_RX",
+       "quality": "OK",
+       "scope": "cpu:16",
+       "unit": "cores",
+       "value": 7.427549107587766e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "d60c974b354ac8de",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:16",
+       "unit": "cores",
+       "value": 3.697405767847112e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "f1453baaea38ad17",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:16",
+       "unit": "cores",
+       "value": 5.3144558331824884e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "658830043d787343",
+       "qualifier": "NET_RX",
+       "quality": "OK",
+       "scope": "cpu:17",
+       "unit": "cores",
+       "value": 1.1036081467069025e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "8201176785ea3d34",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:17",
+       "unit": "cores",
+       "value": 2.304069109956521e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "bdc5229cb04bb7ea",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:17",
+       "unit": "cores",
+       "value": 3.097540259152698e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "fa2cee8cb23243ed",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:17",
+       "unit": "cores",
+       "value": 2.4959248802440594e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "0b05f542e153028f",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:18",
+       "unit": "cores",
+       "value": 1.5739232639985255e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "cd6fbfc811ce6d13",
+       "qualifier": "NET_RX",
+       "quality": "OK",
+       "scope": "cpu:18",
+       "unit": "cores",
+       "value": 8.168394159998447e-07
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "d89287a19b9dd9fc",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:18",
+       "unit": "cores",
+       "value": 2.1729488349901118e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "ffb68b9099cf2fb0",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:18",
+       "unit": "cores",
+       "value": 1.1867519800284682e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "10f89e21474d6a9b",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:19",
+       "unit": "cores",
+       "value": 3.338562382830752e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "376de567ef5b9129",
+       "qualifier": "NET_RX",
+       "quality": "OK",
+       "scope": "cpu:19",
+       "unit": "cores",
+       "value": 6.002554797707268e-07
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "43e4e6dd52f169a4",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:19",
+       "unit": "cores",
+       "value": 3.541257349188114e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "9bf1b5384ec4c965",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:19",
+       "unit": "cores",
+       "value": 3.346301808806806e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "4e88f975e9e2c5bd",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:2",
+       "unit": "cores",
+       "value": 6.893138744163704e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "56db421942e290fc",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:2",
+       "unit": "cores",
+       "value": 9.332787798318314e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "f84a0c6ac8b65c07",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:2",
+       "unit": "cores",
+       "value": 2.0082910474608008e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "b681a58b3d24325b",
+       "qualifier": "NET_TX",
+       "quality": "OK",
+       "scope": "cpu:20",
+       "unit": "cores",
+       "value": 4.719649949221774e-08
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "cbc275d8ad30eb2e",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:20",
+       "unit": "cores",
+       "value": 1.7628192538094332e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "f0147168b4afad43",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:20",
+       "unit": "cores",
+       "value": 2.310478634569765e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "f601ce794b9d0037",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:20",
+       "unit": "cores",
+       "value": 2.2497431392486357e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "17636cd263666a95",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:21",
+       "unit": "cores",
+       "value": 0.00021133622544553505
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "40dcd01ffbba739b",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:21",
+       "unit": "cores",
+       "value": 0.000373751879271215
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "d2c25cd900acdb7d",
+       "qualifier": "NET_RX",
+       "quality": "OK",
+       "scope": "cpu:21",
+       "unit": "cores",
+       "value": 0.005096231618610848
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "dee35431e0c4b2c3",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:21",
+       "unit": "cores",
+       "value": 0.0002954926836619264
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "1a86f26cebb82488",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:22",
+       "unit": "cores",
+       "value": 1.6208897805483022e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "dea0032b3c98095a",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:22",
+       "unit": "cores",
+       "value": 8.066801694989774e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "e6d8597fb299dd72",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:22",
+       "unit": "cores",
+       "value": 1.6290791731508718e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "4bbad9aaa47a4d1e",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:23",
+       "unit": "cores",
+       "value": 7.3977513176541195e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "6abb78a4da0147a2",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:23",
+       "unit": "cores",
+       "value": 5.315105784976343e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "ac5992c481f0c4ab",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:23",
+       "unit": "cores",
+       "value": 7.16416864220111e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "19e77946ef1bf2f9",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:3",
+       "unit": "cores",
+       "value": 3.2071621286300674e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "9a5524a0fe97fdc0",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:3",
+       "unit": "cores",
+       "value": 3.3863488385666227e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "b3fec958191df381",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:3",
+       "unit": "cores",
+       "value": 9.269312506204627e-08
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "813749de7e82166f",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:4",
+       "unit": "cores",
+       "value": 8.711683864852401e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "d017b0f2a33dfc2e",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:4",
+       "unit": "cores",
+       "value": 2.2204553114917064e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "d8ffdba36f987b70",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:4",
+       "unit": "cores",
+       "value": 1.5827726076533163e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "8cbc9a61c3d96c22",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:5",
+       "unit": "cores",
+       "value": 4.42967145657891e-08
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "83302b5b12c73e18",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:6",
+       "unit": "cores",
+       "value": 9.553491428994633e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "99d062e9b1ba2752",
+       "qualifier": "NET_RX",
+       "quality": "OK",
+       "scope": "cpu:6",
+       "unit": "cores",
+       "value": 2.3598249746108865e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "b47de710a04d09bc",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:6",
+       "unit": "cores",
+       "value": 6.514316840930088e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "c95f415d398d04a8",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:6",
+       "unit": "cores",
+       "value": 2.6212555846159786e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "1326da83ea30e1a1",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:8",
+       "unit": "cores",
+       "value": 3.080901493230018e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "461e0b752c71c92d",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:8",
+       "unit": "cores",
+       "value": 0.00016158701528480707
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "7b37cc2cc5e4696c",
+       "qualifier": "NET_RX",
+       "quality": "OK",
+       "scope": "cpu:8",
+       "unit": "cores",
+       "value": 0.00021349026568295317
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "93a9e42ac4ded2cc",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:8",
+       "unit": "cores",
+       "value": 2.6688320559261423e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "3ec76b5bf15b13af",
+       "qualifier": "SCHED",
+       "quality": "OK",
+       "scope": "cpu:9",
+       "unit": "cores",
+       "value": 1.3870771221528515e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "ac5342955fe64186",
+       "qualifier": "TIMER",
+       "quality": "OK",
+       "scope": "cpu:9",
+       "unit": "cores",
+       "value": 2.9524010239557612e-05
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "softirq.exec_time.percpu",
+       "id": "c496aa5875a5f6f9",
+       "qualifier": "RCU",
+       "quality": "OK",
+       "scope": "cpu:9",
+       "unit": "cores",
+       "value": 2.9650800835651112e-06
+      },
+      {
+       "aggregation": "RATE",
+       "coverage": 1.0,
+       "feature": "tcp.retrans_skb_rate",
+       "id": "cb0af46d5a814b6c",
+       "qualifier": null,
+       "quality": "OK",
+       "scope": "netns:r1",
+       "unit": "events_per_second",
+       "value": 0.0
+      }
+     ],
+     "privileged_sources_unavailable": [],
+     "proc_retrans_segs_rate": 0.0
+    }
+   ],
+   "workload": {
+    "spawned": 61,
+    "tcp_bytes": 492371968,
+    "wake_loops": 114400
+   }
+  },
+  "C_restart": {
+   "after_close": {
+    "all_link_ids": [
+     1
+    ],
+    "all_map_ids": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     281,
+     282,
+     283,
+     284,
+     285,
+     286,
+     287,
+     289
+    ],
+    "all_prog_ids": [
+     2,
+     54,
+     57,
+     61454,
+     61455,
+     61456,
+     61457,
+     61458,
+     61459,
+     61460,
+     61461,
+     61462,
+     61463,
+     61464,
+     61465,
+     61466,
+     61467,
+     61468,
+     61469,
+     61470,
+     61471,
+     61472,
+     68673,
+     68675,
+     68676,
+     68677,
+     68678,
+     68679,
+     68680
+    ],
+    "links": [],
+    "maps": [
+     {
+      "btf_id": 324,
+      "bytes_key": 4,
+      "bytes_memlock": 1443520,
+      "bytes_value": 16,
+      "flags": 0,
+      "frozen": 0,
+      "id": 281,
+      "max_entries": 16384,
+      "name": "sn_wake",
+      "type": "lru_hash"
+     },
+     {
+      "btf_id": 324,
+      "bytes_key": 4,
+      "bytes_memlock": 101768,
+      "bytes_value": 4224,
+      "flags": 0,
+      "frozen": 0,
+      "id": 282,
+      "max_entries": 1,
+      "name": "sn_hist",
+      "type": "percpu_array"
+     },
+     {
+      "btf_id": 324,
+      "bytes_key": 4,
+      "bytes_memlock": 4784,
+      "bytes_value": 8,
+      "flags": 0,
+      "frozen": 0,
+      "id": 283,
+      "max_entries": 22,
+      "name": "sn_stats",
+      "type": "percpu_array"
+     },
+     {
+      "btf_id": 324,
+      "bytes_key": 4,
+      "bytes_memlock": 776,
+      "bytes_value": 16,
+      "flags": 0,
+      "frozen": 0,
+      "id": 284,
+      "max_entries": 1,
+      "name": "sn_sirq_start",
+      "type": "percpu_array"
+     },
+     {
+      "btf_id": 324,
+      "bytes_key": 4,
+      "bytes_memlock": 4304,
+      "bytes_value": 16,
+      "flags": 0,
+      "frozen": 0,
+      "id": 285,
+      "max_entries": 10,
+      "name": "sn_sirq_acc",
+      "type": "percpu_array"
+     },
+     {
+      "btf_id": 324,
+      "bytes_key": 4,
+      "bytes_memlock": 584,
+      "bytes_value": 8,
+      "flags": 0,
+      "frozen": 0,
+      "id": 286,
+      "max_entries": 1,
+      "name": "sn_retrans",
+      "type": "percpu_array"
+     },
+     {
+      "btf_id": 324,
+      "bytes_key": 4,
+      "bytes_memlock": 26184,
+      "bytes_value": 8,
+      "flags": 0,
+      "frozen": 0,
+      "id": 287,
+      "max_entries": 129,
+      "name": "sn_kfree",
+      "type": "percpu_array"
+     },
+     {
+      "btf_id": 324,
+      "bytes_key": 4,
+      "bytes_memlock": 8192,
+      "bytes_value": 32,
+      "flags": 1152,
+      "frozen": 1,
+      "id": 289,
+      "max_entries": 1,
+      "name": "sentinel.rodata",
+      "type": "array"
+     }
+    ],
+    "progs": [
+     {
+      "btf_id": 324,
+      "bytes_jited": 590,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 1064,
+      "gpl_compatible": true,
+      "id": 68673,
+      "jited": true,
+      "loaded_at": 1791015218,
+      "map_ids": [
+       289,
+       281,
+       283
+      ],
+      "name": "sn_sched_wakeup",
+      "orphaned": false,
+      "tag": "0251ccef12031d46",
+      "type": "tracing",
+      "uid": 0
+     },
+     {
+      "btf_id": 324,
+      "bytes_jited": 640,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 1152,
+      "gpl_compatible": true,
+      "id": 68675,
+      "jited": true,
+      "loaded_at": 1791015218,
+      "map_ids": [
+       289,
+       281,
+       283
+      ],
+      "name": "sn_sched_wakeup_new",
+      "orphaned": false,
+      "tag": "ec8ae7431c023347",
+      "type": "tracing",
+      "uid": 0
+     },
+     {
+      "btf_id": 324,
+      "bytes_jited": 827,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 1456,
+      "gpl_compatible": true,
+      "id": 68676,
+      "jited": true,
+      "loaded_at": 1791015218,
+      "map_ids": [
+       281,
+       283,
+       289,
+       282
+      ],
+      "name": "sn_sched_switch",
+      "orphaned": false,
+      "tag": "ecf272e4e57b3c50",
+      "type": "tracing",
+      "uid": 0
+     },
+     {
+      "btf_id": 324,
+      "bytes_jited": 219,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 376,
+      "gpl_compatible": true,
+      "id": 68677,
+      "jited": true,
+      "loaded_at": 1791015218,
+      "map_ids": [
+       283,
+       284,
+       289
+      ],
+      "name": "sn_softirq_entry",
+      "orphaned": false,
+      "tag": "e5fce7cacf09ccb7",
+      "type": "tracing",
+      "uid": 0
+     },
+     {
+      "btf_id": 324,
+      "bytes_jited": 486,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 832,
+      "gpl_compatible": true,
+      "id": 68678,
+      "jited": true,
+      "loaded_at": 1791015218,
+      "map_ids": [
+       283,
+       284,
+       289,
+       285
+      ],
+      "name": "sn_softirq_exit",
+      "orphaned": false,
+      "tag": "62d8293538063e4f",
+      "type": "tracing",
+      "uid": 0
+     },
+     {
+      "btf_id": 324,
+      "bytes_jited": 231,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 416,
+      "gpl_compatible": true,
+      "id": 68679,
+      "jited": true,
+      "loaded_at": 1791015218,
+      "map_ids": [
+       283,
+       289,
+       286
+      ],
+      "name": "sn_tcp_retransmit_skb",
+      "orphaned": false,
+      "tag": "9c5e9d388e236655",
+      "type": "tracing",
+      "uid": 0
+     },
+     {
+      "btf_id": 324,
+      "bytes_jited": 523,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 920,
+      "gpl_compatible": true,
+      "id": 68680,
+      "jited": true,
+      "loaded_at": 1791015218,
+      "map_ids": [
+       283,
+       289,
+       287
+      ],
+      "name": "sn_kfree_skb",
+      "orphaned": false,
+      "tag": "af9f157fe947a49d",
+      "type": "tracing",
+      "uid": 0
+     }
+    ]
+   },
+   "checks": {
+    "duplicate_ids": 0,
+    "ebpf_measurements": 246,
+    "problems": [],
+    "round_trip_identical": true
+   },
+   "crosscheck": {
+    "dt_s": 9.99990425404394,
+    "latency_samples_in_W": 30521,
+    "mismatches": [],
+    "softirq_count_vs_proc": {
+     "NET_RX": {
+      "ebpf_count": 4383,
+      "proc_softirqs_count": 4383,
+      "rel_diff": 0.0
+     },
+     "NET_TX": {
+      "ebpf_count": 2,
+      "proc_softirqs_count": 2,
+      "rel_diff": 0.0
+     },
+     "RCU": {
+      "ebpf_count": 6136,
+      "proc_softirqs_count": 6136,
+      "rel_diff": 0.0
+     },
+     "TIMER": {
+      "ebpf_count": 2462,
+      "proc_softirqs_count": 2462,
+      "rel_diff": 0.0
+     }
+    },
+    "stats_delta_W": {
+     "kfree_other_netns": 0,
+     "kfree_overflow": 0,
+     "kfree_unattributed": 344,
+     "lat_migrated": 17,
+     "lat_negative": 0,
+     "lat_recorded": 30521,
+     "lat_stale": 0,
+     "retrans_other_netns": 0,
+     "retrans_unattributed": 0,
+     "sirq_entry_overwritten": 0,
+     "sirq_invalid_vec": 0,
+     "sirq_mismatch": 0,
+     "sirq_negative": 0,
+     "sirq_recorded": 24444,
+     "sirq_stale": 0,
+     "sirq_unmatched_exit": 0,
+     "wake_cancelled_running": 5,
+     "wake_new": 17,
+     "wake_new_replaced": 0,
+     "wake_recorded": 30509,
+     "wake_repeat": 0,
+     "wake_update_failed": 0
+    }
+   },
+   "first_sample": {
+    "latency_samples": 97,
+    "seq": 1,
+    "stats_total": 300
+   },
+   "loader_returncode": 0,
+   "start": null
+  },
+  "D_kill": {
+   "after_kill": {
+    "all_link_ids": [
+     1
+    ],
+    "all_map_ids": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     7
+    ],
+    "all_prog_ids": [
+     2,
+     54,
+     57,
+     61454,
+     61455,
+     61456,
+     61457,
+     61458,
+     61459,
+     61460,
+     61461,
+     61462,
+     61463,
+     61464,
+     61465,
+     61466,
+     61467,
+     61468,
+     61469,
+     61470,
+     61471,
+     61472
+    ],
+    "links": [],
+    "maps": [],
+    "progs": []
+   },
+   "checks": {
+    "duplicate_ids": 0,
+    "ebpf_measurements": 245,
+    "problems": [],
+    "round_trip_identical": true
+   },
+   "loader_returncode": -9,
+   "max_coverage": 0.4,
+   "privileged_sources_unavailable": [
+    "EBPF"
+   ],
+   "qualities": [
+    "MISSING"
+   ],
+   "start": null
+  },
+  "E_overhead": {
+   "after": {
+    "all_link_ids": [
+     1
+    ],
+    "all_map_ids": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     347,
+     348,
+     349,
+     350,
+     351,
+     352,
+     353,
+     355
+    ],
+    "all_prog_ids": [
+     2,
+     54,
+     57,
+     61454,
+     61455,
+     61456,
+     61457,
+     61458,
+     61459,
+     61460,
+     61461,
+     61462,
+     61463,
+     61464,
+     61465,
+     61466,
+     61467,
+     61468,
+     61469,
+     61470,
+     61471,
+     61472,
+     68791,
+     68793,
+     68794,
+     68795,
+     68796,
+     68797,
+     68798
+    ],
+    "links": [],
+    "maps": [
+     {
+      "btf_id": 384,
+      "bytes_key": 4,
+      "bytes_memlock": 1443520,
+      "bytes_value": 16,
+      "flags": 0,
+      "frozen": 0,
+      "id": 347,
+      "max_entries": 16384,
+      "name": "sn_wake",
+      "type": "lru_hash"
+     },
+     {
+      "btf_id": 384,
+      "bytes_key": 4,
+      "bytes_memlock": 101768,
+      "bytes_value": 4224,
+      "flags": 0,
+      "frozen": 0,
+      "id": 348,
+      "max_entries": 1,
+      "name": "sn_hist",
+      "type": "percpu_array"
+     },
+     {
+      "btf_id": 384,
+      "bytes_key": 4,
+      "bytes_memlock": 4784,
+      "bytes_value": 8,
+      "flags": 0,
+      "frozen": 0,
+      "id": 349,
+      "max_entries": 22,
+      "name": "sn_stats",
+      "type": "percpu_array"
+     },
+     {
+      "btf_id": 384,
+      "bytes_key": 4,
+      "bytes_memlock": 776,
+      "bytes_value": 16,
+      "flags": 0,
+      "frozen": 0,
+      "id": 350,
+      "max_entries": 1,
+      "name": "sn_sirq_start",
+      "type": "percpu_array"
+     },
+     {
+      "btf_id": 384,
+      "bytes_key": 4,
+      "bytes_memlock": 4304,
+      "bytes_value": 16,
+      "flags": 0,
+      "frozen": 0,
+      "id": 351,
+      "max_entries": 10,
+      "name": "sn_sirq_acc",
+      "type": "percpu_array"
+     },
+     {
+      "btf_id": 384,
+      "bytes_key": 4,
+      "bytes_memlock": 584,
+      "bytes_value": 8,
+      "flags": 0,
+      "frozen": 0,
+      "id": 352,
+      "max_entries": 1,
+      "name": "sn_retrans",
+      "type": "percpu_array"
+     },
+     {
+      "btf_id": 384,
+      "bytes_key": 4,
+      "bytes_memlock": 26184,
+      "bytes_value": 8,
+      "flags": 0,
+      "frozen": 0,
+      "id": 353,
+      "max_entries": 129,
+      "name": "sn_kfree",
+      "type": "percpu_array"
+     },
+     {
+      "btf_id": 384,
+      "bytes_key": 4,
+      "bytes_memlock": 8192,
+      "bytes_value": 32,
+      "flags": 1152,
+      "frozen": 1,
+      "id": 355,
+      "max_entries": 1,
+      "name": "sentinel.rodata",
+      "type": "array"
+     }
+    ],
+    "progs": [
+     {
+      "btf_id": 384,
+      "bytes_jited": 590,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 1064,
+      "gpl_compatible": true,
+      "id": 68791,
+      "jited": true,
+      "loaded_at": 1791015396,
+      "map_ids": [
+       355,
+       347,
+       349
+      ],
+      "name": "sn_sched_wakeup",
+      "orphaned": false,
+      "tag": "0251ccef12031d46",
+      "type": "tracing",
+      "uid": 0
+     },
+     {
+      "btf_id": 384,
+      "bytes_jited": 640,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 1152,
+      "gpl_compatible": true,
+      "id": 68793,
+      "jited": true,
+      "loaded_at": 1791015396,
+      "map_ids": [
+       355,
+       347,
+       349
+      ],
+      "name": "sn_sched_wakeup_new",
+      "orphaned": false,
+      "tag": "ec8ae7431c023347",
+      "type": "tracing",
+      "uid": 0
+     },
+     {
+      "btf_id": 384,
+      "bytes_jited": 827,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 1456,
+      "gpl_compatible": true,
+      "id": 68794,
+      "jited": true,
+      "loaded_at": 1791015396,
+      "map_ids": [
+       347,
+       349,
+       355,
+       348
+      ],
+      "name": "sn_sched_switch",
+      "orphaned": false,
+      "tag": "ecf272e4e57b3c50",
+      "type": "tracing",
+      "uid": 0
+     },
+     {
+      "btf_id": 384,
+      "bytes_jited": 219,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 376,
+      "gpl_compatible": true,
+      "id": 68795,
+      "jited": true,
+      "loaded_at": 1791015396,
+      "map_ids": [
+       349,
+       350,
+       355
+      ],
+      "name": "sn_softirq_entry",
+      "orphaned": false,
+      "tag": "e5fce7cacf09ccb7",
+      "type": "tracing",
+      "uid": 0
+     },
+     {
+      "btf_id": 384,
+      "bytes_jited": 486,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 832,
+      "gpl_compatible": true,
+      "id": 68796,
+      "jited": true,
+      "loaded_at": 1791015396,
+      "map_ids": [
+       349,
+       350,
+       355,
+       351
+      ],
+      "name": "sn_softirq_exit",
+      "orphaned": false,
+      "tag": "62d8293538063e4f",
+      "type": "tracing",
+      "uid": 0
+     },
+     {
+      "btf_id": 384,
+      "bytes_jited": 231,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 416,
+      "gpl_compatible": true,
+      "id": 68797,
+      "jited": true,
+      "loaded_at": 1791015396,
+      "map_ids": [
+       349,
+       355,
+       352
+      ],
+      "name": "sn_tcp_retransmit_skb",
+      "orphaned": false,
+      "tag": "9c5e9d388e236655",
+      "type": "tracing",
+      "uid": 0
+     },
+     {
+      "btf_id": 384,
+      "bytes_jited": 523,
+      "bytes_memlock": 4096,
+      "bytes_xlated": 920,
+      "gpl_compatible": true,
+      "id": 68798,
+      "jited": true,
+      "loaded_at": 1791015396,
+      "map_ids": [
+       349,
+       355,
+       353
+      ],
+      "name": "sn_kfree_skb",
+      "orphaned": false,
+      "tag": "af9f157fe947a49d",
+      "type": "tracing",
+      "uid": 0
+     }
+    ]
+   },
+   "host_busy_cores": {
+    "baseline_mean": 0.04306137123872245,
+    "baseline_stdev": 0.004648798662120783,
+    "enabled_mean": 0.039451178305005566,
+    "enabled_stdev": 0.004365058853297437,
+    "paired_diffs": [
+     -0.004680530338619204,
+     -0.006662518539081841,
+     0.0019832310204877523,
+     -0.004680747360278376,
+     -0.004010399451092793
+    ]
+   },
+   "trials": [
+    {
+     "driver_cpu_s": 0.23804599999999976,
+     "host_busy_cores": 0.05132905591200733,
+     "mode": "baseline",
+     "seconds": 15.02253231802024,
+     "tcp_MBps": 8.079374996877705,
+     "trial": 0,
+     "wake_loops_per_s": 1896.8173538770754
+    },
+    {
+     "driver_cpu_s": 0.2036130000000007,
+     "host_busy_cores": 0.046648525573388125,
+     "loader_cpu_s": 0.0,
+     "loader_hwm_kb": 14860,
+     "loader_rss_kb": 2852,
+     "maps_memlock_bytes": 1590112,
+     "mode": "enabled",
+     "sample_latency_ms_median": 0.5431110039353371,
+     "seconds": 15.025866423966363,
+     "start": null,
+     "tcp_MBps": 8.10811307397742,
+     "trial": 0,
+     "wake_loops_per_s": 1899.2581988138593
+    },
+    {
+     "driver_cpu_s": 0.19135499999999972,
+     "host_busy_cores": 0.04066440753291484,
+     "mode": "baseline",
+     "seconds": 15.016253281966783,
+     "tcp_MBps": 8.108939408089917,
+     "trial": 1,
+     "wake_loops_per_s": 1900.9402321603131
+    },
+    {
+     "driver_cpu_s": 0.19691100000000006,
+     "host_busy_cores": 0.034001888993832996,
+     "loader_cpu_s": 0.01,
+     "loader_hwm_kb": 14660,
+     "loader_rss_kb": 2880,
+     "maps_memlock_bytes": 1590112,
+     "mode": "enabled",
+     "sample_latency_ms_median": 0.5011319881305099,
+     "seconds": 15.018431562988553,
+     "start": null,
+     "tcp_MBps": 8.120854397376926,
+     "trial": 1,
+     "wake_loops_per_s": 1898.6003884899637
+    },
+    {
+     "driver_cpu_s": 0.1805519999999996,
+     "host_busy_cores": 0.037997889006166324,
+     "mode": "baseline",
+     "seconds": 15.016896846995223,
+     "tcp_MBps": 8.10422774025723,
+     "trial": 2,
+     "wake_loops_per_s": 1900.0596655033464
+    },
+    {
+     "driver_cpu_s": 0.1908050000000001,
+     "host_busy_cores": 0.03998112002665408,
+     "loader_cpu_s": 0.01,
+     "loader_hwm_kb": 14716,
+     "loader_rss_kb": 2876,
+     "maps_memlock_bytes": 1590112,
+     "mode": "enabled",
+     "sample_latency_ms_median": 0.5076370434835553,
+     "seconds": 15.022542327002157,
+     "start": null,
+     "tcp_MBps": 8.122994719785986,
+     "trial": 2,
+     "wake_loops_per_s": 1900.1444215398883
+    },
+    {
+     "driver_cpu_s": 0.18337999999999965,
+     "host_busy_cores": 0.04065876079651179,
+     "mode": "baseline",
+     "seconds": 15.018651514023077,
+     "tcp_MBps": 8.112008184372923,
+     "trial": 3,
+     "wake_loops_per_s": 1899.7045089807361
+    },
+    {
+     "driver_cpu_s": 0.21286199999999944,
+     "host_busy_cores": 0.035978013436233414,
+     "loader_cpu_s": 0.0,
+     "loader_hwm_kb": 14784,
+     "loader_rss_kb": 2880,
+     "maps_memlock_bytes": 1590112,
+     "mode": "enabled",
+     "sample_latency_ms_median": 0.5805049440823495,
+     "seconds": 15.02856069803238,
+     "start": null,
+     "tcp_MBps": 8.089216422163203,
+     "trial": 3,
+     "wake_loops_per_s": 1898.917705654697
+    },
+    {
+     "driver_cpu_s": 0.24192999999999998,
+     "host_busy_cores": 0.044656742946012,
+     "mode": "baseline",
+     "seconds": 15.022953057021368,
+     "tcp_MBps": 8.026800026752456,
+     "trial": 4,
+     "wake_loops_per_s": 1898.6280454806476
+    },
+    {
+     "driver_cpu_s": 0.19054799999999972,
+     "host_busy_cores": 0.040646343494919204,
+     "loader_cpu_s": 0.0,
+     "loader_hwm_kb": 14848,
+     "loader_rss_kb": 2884,
+     "maps_memlock_bytes": 1590112,
+     "mode": "enabled",
+     "sample_latency_ms_median": 0.6036160048097372,
+     "seconds": 15.024166879011318,
+     "start": null,
+     "tcp_MBps": 8.113392308647038,
+     "trial": 4,
+     "wake_loops_per_s": 1899.206806592507
+    }
+   ]
+  }
+ },
+ "real": true,
+ "target": {
+  "cgroup_path": "/user.slice/user-1000.slice/session-136.scope",
+  "ebpf": {
+   "cgroup_id": 2129446,
+   "cgroup_level": 3,
+   "netns_inum": 4026531840
+  },
+  "pids": 42
+ }
+}

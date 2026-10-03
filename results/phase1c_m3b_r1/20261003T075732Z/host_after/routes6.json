@@ -1,0 +1,1 @@
+[{"dst":"::1","dev":"lo","protocol":"kernel","metric":256,"flags":[],"pref":"medium"},{"dst":"fe80::/64","dev":"docker0","protocol":"kernel","metric":256,"flags":["linkdown"],"pref":"medium"},{"dst":"fe80::/64","dev":"enp0s31f6","protocol":"kernel","metric":1024,"flags":[],"pref":"medium"}]
