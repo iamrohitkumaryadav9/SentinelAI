@@ -1,0 +1,51 @@
+{"op": ["mkdir", "/sys/fs/cgroup/sentinel-r2c"], "phase": "intent", "t": 390933.406021731}
+{"ok": true, "op": ["mkdir", "/sys/fs/cgroup/sentinel-r2c"], "phase": "result", "pid": null, "t": 390933.406135942}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/cpuset.mems"], "phase": "intent", "t": 390933.40616215}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/cpuset.mems"], "phase": "result", "pid": null, "t": 390933.406187888}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/cpuset.cpus"], "phase": "intent", "t": 390933.406205397}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/cpuset.cpus"], "phase": "result", "pid": null, "t": 390933.406221558}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/cgroup.subtree_control"], "phase": "intent", "t": 390933.406235643}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/cgroup.subtree_control"], "phase": "result", "pid": null, "t": 390933.406252076}
+{"op": ["mkdir", "/sys/fs/cgroup/sentinel-r2c/target"], "phase": "intent", "t": 390933.406261394}
+{"ok": true, "op": ["mkdir", "/sys/fs/cgroup/sentinel-r2c/target"], "phase": "result", "pid": null, "t": 390933.406314748}
+{"op": ["mkdir", "/sys/fs/cgroup/sentinel-r2c/contender"], "phase": "intent", "t": 390933.406324502}
+{"ok": true, "op": ["mkdir", "/sys/fs/cgroup/sentinel-r2c/contender"], "phase": "result", "pid": null, "t": 390933.406377699}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/target/cpuset.cpus"], "phase": "intent", "t": 390933.406391446}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/target/cpuset.cpus"], "phase": "result", "pid": null, "t": 390933.406406813}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/target/cpuset.mems"], "phase": "intent", "t": 390933.406419253}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/target/cpuset.mems"], "phase": "result", "pid": null, "t": 390933.406432998}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/target/cpu.weight"], "phase": "intent", "t": 390933.406445542}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/target/cpu.weight"], "phase": "result", "pid": null, "t": 390933.40645854}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/target/pids.max"], "phase": "intent", "t": 390933.406475856}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/target/pids.max"], "phase": "result", "pid": null, "t": 390933.406490753}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/contender/cpuset.cpus"], "phase": "intent", "t": 390933.406503326}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/contender/cpuset.cpus"], "phase": "result", "pid": null, "t": 390933.406517769}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/contender/cpuset.mems"], "phase": "intent", "t": 390933.406530195}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/contender/cpuset.mems"], "phase": "result", "pid": null, "t": 390933.40654404}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/contender/cpu.weight"], "phase": "intent", "t": 390933.406556348}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/contender/cpu.weight"], "phase": "result", "pid": null, "t": 390933.406569012}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/contender/pids.max"], "phase": "intent", "t": 390933.406581775}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/contender/pids.max"], "phase": "result", "pid": null, "t": 390933.406595045}
+{"op": ["spawn", "target"], "phase": "intent", "t": 390933.406848319}
+{"ok": true, "op": ["spawn", "target"], "phase": "result", "pid": 1206950, "t": 390933.406998777}
+{"op": ["quota", "/sys/fs/cgroup/sentinel-r2c/target/cpu.max"], "phase": "intent", "prev": "max 100000", "t": 390933.427399337, "value": "100000 100000"}
+{"ok": true, "op": ["quota", "/sys/fs/cgroup/sentinel-r2c/target/cpu.max"], "phase": "result", "post": "100000 100000", "prev": "max 100000", "t": 390933.42745255, "t0": 390933.427412098, "t1": 390933.427443604, "value": "100000 100000"}
+{"op": ["spawn", "contender"], "phase": "intent", "t": 390953.471410883}
+{"ok": true, "op": ["spawn", "contender"], "phase": "result", "pid": 1207034, "t": 390953.471787312}
+{"op": ["quota", "/sys/fs/cgroup/sentinel-r2c/target/cpu.max"], "phase": "intent", "prev": "100000 100000", "t": 390963.47208973, "value": "max 100000"}
+{"ok": true, "op": ["quota", "/sys/fs/cgroup/sentinel-r2c/target/cpu.max"], "phase": "result", "post": "max 100000", "prev": "100000 100000", "t": 390963.472163655, "t0": 390963.472121241, "t1": 390963.472153841, "value": "max 100000"}
+{"op": ["kill", 1207035], "phase": "intent", "t": 390963.472186185}
+{"ok": true, "op": ["kill", 1207035], "phase": "result", "pid": null, "t": 390963.47221109}
+{"noop": true, "ok": true, "op": ["quota_restore", "/sys/fs/cgroup/sentinel-r2c/target/cpu.max"], "phase": "result", "post": "max 100000", "prev": "max 100000", "t": 390973.990719818, "value": "max 100000"}
+{"op": ["kill", 1206950], "phase": "intent", "t": 390973.99076058}
+{"ok": true, "op": ["kill", 1206950], "phase": "result", "pid": null, "t": 390973.990784774}
+{"op": ["kill", 1207034], "phase": "intent", "t": 390973.990798567}
+{"ok": true, "op": ["kill", 1207034], "phase": "result", "pid": null, "t": 390973.990810984}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/cgroup.kill"], "phase": "intent", "t": 390973.990848783}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/cgroup.kill"], "phase": "result", "pid": null, "t": 390973.990872058}
+{"op": ["rmdir", "/sys/fs/cgroup/sentinel-r2c/contender"], "phase": "intent", "t": 390973.993326688}
+{"ok": true, "op": ["rmdir", "/sys/fs/cgroup/sentinel-r2c/contender"], "phase": "result", "pid": null, "t": 390973.993374699}
+{"op": ["rmdir", "/sys/fs/cgroup/sentinel-r2c/target"], "phase": "intent", "t": 390973.993388653}
+{"ok": true, "op": ["rmdir", "/sys/fs/cgroup/sentinel-r2c/target"], "phase": "result", "pid": null, "t": 390973.993421926}
+{"op": ["rmdir", "/sys/fs/cgroup/sentinel-r2c"], "phase": "intent", "t": 390973.993433981}
+{"ok": true, "op": ["rmdir", "/sys/fs/cgroup/sentinel-r2c"], "phase": "result", "pid": null, "t": 390973.993470524}

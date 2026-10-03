@@ -1,0 +1,245 @@
+{
+ "final": {
+  "checks": {
+   "lab_cgroup_absent": true,
+   "no_lab_process": true,
+   "no_logged_pid_alive_in_lab": true,
+   "no_sentinel_cgroup": true,
+   "no_wrapper_alive": true
+  },
+  "ok": true
+ },
+ "runs": {
+  "/home/iiitd/sentinelai/results/phase1c_r2c/20261003T175532Z/E0-close/ops.jsonl": {
+   "errors": [],
+   "ok": true,
+   "steps": [
+    "kill 1190254"
+   ],
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_logged_pid_alive_in_lab": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  },
+  "/home/iiitd/sentinelai/results/phase1c_r2c/20261003T175532Z/E0-open/ops.jsonl": {
+   "errors": [],
+   "ok": true,
+   "steps": [
+    "kill 1188837"
+   ],
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_logged_pid_alive_in_lab": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  },
+  "/home/iiitd/sentinelai/results/phase1c_r2c/20261003T175532Z/E1-rep1/ops.jsonl": {
+   "errors": [],
+   "ok": true,
+   "steps": [
+    "kill 1189462",
+    "kill 1189544"
+   ],
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_logged_pid_alive_in_lab": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  },
+  "/home/iiitd/sentinelai/results/phase1c_r2c/20261003T175532Z/E1-rep2/ops.jsonl": {
+   "errors": [],
+   "ok": true,
+   "steps": [
+    "kill 1189590",
+    "kill 1189673"
+   ],
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_logged_pid_alive_in_lab": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  },
+  "/home/iiitd/sentinelai/results/phase1c_r2c/20261003T175532Z/E1-rep3/ops.jsonl": {
+   "errors": [],
+   "ok": true,
+   "steps": [
+    "kill 1189729",
+    "kill 1189806"
+   ],
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_logged_pid_alive_in_lab": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  },
+  "/home/iiitd/sentinelai/results/phase1c_r2c/20261003T175532Z/E2-rep1/ops.jsonl": {
+   "errors": [],
+   "ok": true,
+   "steps": [
+    "kill 1189856",
+    "kill 1189943"
+   ],
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_logged_pid_alive_in_lab": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  },
+  "/home/iiitd/sentinelai/results/phase1c_r2c/20261003T175532Z/E2-rep2/ops.jsonl": {
+   "errors": [],
+   "ok": true,
+   "steps": [
+    "kill 1189991",
+    "kill 1190073"
+   ],
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_logged_pid_alive_in_lab": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  },
+  "/home/iiitd/sentinelai/results/phase1c_r2c/20261003T175532Z/E2-rep3/ops.jsonl": {
+   "errors": [],
+   "ok": true,
+   "steps": [
+    "kill 1190127",
+    "kill 1190202"
+   ],
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_logged_pid_alive_in_lab": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  },
+  "/home/iiitd/sentinelai/results/phase1c_r2c/20261003T175532Z/N1-rep1/ops.jsonl": {
+   "errors": [],
+   "ok": true,
+   "steps": [
+    "kill 1188941",
+    "kill 1189024"
+   ],
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_logged_pid_alive_in_lab": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  },
+  "/home/iiitd/sentinelai/results/phase1c_r2c/20261003T175532Z/N1-rep2/ops.jsonl": {
+   "errors": [],
+   "ok": true,
+   "steps": [
+    "kill 1189076",
+    "kill 1189151"
+   ],
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_logged_pid_alive_in_lab": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  },
+  "/home/iiitd/sentinelai/results/phase1c_r2c/20261003T175532Z/N2-rep1/ops.jsonl": {
+   "errors": [],
+   "ok": true,
+   "steps": [
+    "kill 1189204",
+    "kill 1189286"
+   ],
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_logged_pid_alive_in_lab": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  },
+  "/home/iiitd/sentinelai/results/phase1c_r2c/20261003T175532Z/N2-rep2/ops.jsonl": {
+   "errors": [],
+   "ok": true,
+   "steps": [
+    "kill 1189329",
+    "kill 1189412"
+   ],
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_logged_pid_alive_in_lab": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  },
+  "/home/iiitd/sentinelai/results/phase1c_r2c/20261003T175532Z/calibration/ops.jsonl": {
+   "errors": [],
+   "ok": true,
+   "steps": [
+    "kill 1188775"
+   ],
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_logged_pid_alive_in_lab": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  }
+ }
+}

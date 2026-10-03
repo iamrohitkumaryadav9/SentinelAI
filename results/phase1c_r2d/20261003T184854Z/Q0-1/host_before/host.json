@@ -1,0 +1,2500 @@
+{
+ "addrs": [
+  {
+   "addr_info": [
+    {
+     "family": "inet",
+     "label": "lo",
+     "local": "127.0.0.1",
+     "preferred_life_time": 4294967295,
+     "prefixlen": 8,
+     "scope": "host",
+     "valid_life_time": 4294967295
+    },
+    {
+     "family": "inet6",
+     "local": "::1",
+     "preferred_life_time": 4294967295,
+     "prefixlen": 128,
+     "scope": "host",
+     "valid_life_time": 4294967295
+    }
+   ],
+   "address": "00:00:00:00:00:00",
+   "broadcast": "00:00:00:00:00:00",
+   "flags": [
+    "LOOPBACK",
+    "UP",
+    "LOWER_UP"
+   ],
+   "group": "default",
+   "ifindex": 1,
+   "ifname": "lo",
+   "link_type": "loopback",
+   "mtu": 65536,
+   "operstate": "UNKNOWN",
+   "qdisc": "noqueue",
+   "txqlen": 1000
+  },
+  {
+   "addr_info": [
+    {
+     "broadcast": "192.168.207.255",
+     "dynamic": true,
+     "family": "inet",
+     "label": "enp0s31f6",
+     "local": "192.168.192.151",
+     "noprefixroute": true,
+     "preferred_life_time": 647681,
+     "prefixlen": 20,
+     "scope": "global",
+     "valid_life_time": 647681
+    },
+    {
+     "family": "inet6",
+     "local": "fe80::ee1d:b010:7719:8efc",
+     "noprefixroute": true,
+     "preferred_life_time": 4294967295,
+     "prefixlen": 64,
+     "scope": "link",
+     "valid_life_time": 4294967295
+    }
+   ],
+   "address": "4c:d7:17:87:53:ae",
+   "broadcast": "ff:ff:ff:ff:ff:ff",
+   "flags": [
+    "BROADCAST",
+    "MULTICAST",
+    "UP",
+    "LOWER_UP"
+   ],
+   "group": "default",
+   "ifindex": 2,
+   "ifname": "enp0s31f6",
+   "link_type": "ether",
+   "mtu": 1500,
+   "operstate": "UP",
+   "qdisc": "fq_codel",
+   "txqlen": 1000
+  },
+  {
+   "addr_info": [
+    {
+     "broadcast": "172.17.255.255",
+     "family": "inet",
+     "label": "docker0",
+     "local": "172.17.0.1",
+     "preferred_life_time": 4294967295,
+     "prefixlen": 16,
+     "scope": "global",
+     "valid_life_time": 4294967295
+    },
+    {
+     "family": "inet6",
+     "local": "fe80::3c21:b8ff:feb7:ee35",
+     "preferred_life_time": 4294967295,
+     "prefixlen": 64,
+     "scope": "link",
+     "valid_life_time": 4294967295
+    }
+   ],
+   "address": "3e:21:b8:b7:ee:35",
+   "broadcast": "ff:ff:ff:ff:ff:ff",
+   "flags": [
+    "NO-CARRIER",
+    "BROADCAST",
+    "MULTICAST",
+    "UP"
+   ],
+   "group": "default",
+   "ifindex": 4,
+   "ifname": "docker0",
+   "link_type": "ether",
+   "mtu": 1500,
+   "operstate": "DOWN",
+   "qdisc": "noqueue"
+  }
+ ],
+ "bpf": {
+  "link": [
+   {
+    "attach_type": "modify_return",
+    "id": 1,
+    "prog_id": 2,
+    "prog_type": "tracing",
+    "target_btf_id": 94924,
+    "target_obj_id": 1,
+    "type": "tracing"
+   }
+  ],
+  "map": [
+   {
+    "bytes_key": 4,
+    "bytes_memlock": 8576,
+    "bytes_value": 4,
+    "flags": 0,
+    "frozen": 0,
+    "id": 2,
+    "max_entries": 1024,
+    "name": "hid_jmp_table",
+    "owner_jited": true,
+    "owner_prog_type": "tracing",
+    "type": "prog_array"
+   },
+   {
+    "bytes_key": 9,
+    "bytes_memlock": 92032,
+    "bytes_value": 1,
+    "flags": 0,
+    "frozen": 0,
+    "id": 3,
+    "max_entries": 1000,
+    "name": "s_snapd_desktop",
+    "type": "hash"
+   },
+   {
+    "bytes_key": 9,
+    "bytes_memlock": 92032,
+    "bytes_value": 1,
+    "flags": 0,
+    "frozen": 0,
+    "id": 4,
+    "max_entries": 1000,
+    "name": "s_snap_store_ub",
+    "type": "hash"
+   },
+   {
+    "bytes_key": 9,
+    "bytes_memlock": 92032,
+    "bytes_value": 1,
+    "flags": 0,
+    "frozen": 0,
+    "id": 5,
+    "max_entries": 1000,
+    "name": "s_firefox_firef",
+    "type": "hash"
+   },
+   {
+    "bytes_key": 9,
+    "bytes_memlock": 92032,
+    "bytes_value": 1,
+    "flags": 0,
+    "frozen": 0,
+    "id": 6,
+    "max_entries": 1000,
+    "name": "s_firefox_hook_",
+    "type": "hash"
+   },
+   {
+    "bytes_key": 9,
+    "bytes_memlock": 92032,
+    "bytes_value": 1,
+    "flags": 0,
+    "frozen": 0,
+    "id": 7,
+    "max_entries": 1000,
+    "name": "s_firefox_hook_",
+    "type": "hash"
+   }
+  ],
+  "prog": [
+   {
+    "btf_id": 2,
+    "bytes_jited": 133,
+    "bytes_memlock": 4096,
+    "bytes_xlated": 56,
+    "gpl_compatible": true,
+    "id": 2,
+    "jited": true,
+    "loaded_at": 1790664249,
+    "map_ids": [
+     2
+    ],
+    "name": "hid_tail_call",
+    "orphaned": false,
+    "tag": "7cc47bbf07148bfe",
+    "type": "tracing",
+    "uid": 0
+   },
+   {
+    "bytes_jited": 164,
+    "bytes_memlock": 4096,
+    "bytes_xlated": 296,
+    "gpl_compatible": true,
+    "id": 54,
+    "jited": true,
+    "loaded_at": 1790664324,
+    "map_ids": [
+     4
+    ],
+    "name": "s_snap_store_ub",
+    "orphaned": false,
+    "tag": "03b4eaae2f14641a",
+    "type": "cgroup_device",
+    "uid": 1000
+   },
+   {
+    "bytes_jited": 164,
+    "bytes_memlock": 4096,
+    "bytes_xlated": 296,
+    "gpl_compatible": true,
+    "id": 57,
+    "jited": true,
+    "loaded_at": 1790664327,
+    "map_ids": [
+     3
+    ],
+    "name": "s_snapd_desktop",
+    "orphaned": false,
+    "tag": "03b4eaae2f14641a",
+    "type": "cgroup_device",
+    "uid": 1000
+   },
+   {
+    "bytes_jited": 449,
+    "bytes_memlock": 4096,
+    "bytes_xlated": 744,
+    "gpl_compatible": true,
+    "id": 75672,
+    "jited": true,
+    "loaded_at": 1791049072,
+    "orphaned": false,
+    "tag": "8b9c33f36f812014",
+    "type": "cgroup_device",
+    "uid": 0
+   },
+   {
+    "bytes_jited": 56,
+    "bytes_memlock": 4096,
+    "bytes_xlated": 64,
+    "gpl_compatible": true,
+    "id": 75673,
+    "jited": true,
+    "loaded_at": 1791049072,
+    "orphaned": false,
+    "tag": "6deef7357e7b4530",
+    "type": "cgroup_skb",
+    "uid": 0
+   },
+   {
+    "bytes_jited": 56,
+    "bytes_memlock": 4096,
+    "bytes_xlated": 64,
+    "gpl_compatible": true,
+    "id": 75674,
+    "jited": true,
+    "loaded_at": 1791049072,
+    "orphaned": false,
+    "tag": "6deef7357e7b4530",
+    "type": "cgroup_skb",
+    "uid": 0
+   },
+   {
+    "bytes_jited": 1133,
+    "bytes_memlock": 4096,
+    "bytes_xlated": 1856,
+    "gpl_compatible": true,
+    "id": 75675,
+    "jited": true,
+    "loaded_at": 1791049072,
+    "orphaned": false,
+    "tag": "5802d43284af8d1b",
+    "type": "cgroup_device",
+    "uid": 0
+   },
+   {
+    "bytes_jited": 260,
+    "bytes_memlock": 4096,
+    "bytes_xlated": 416,
+    "gpl_compatible": true,
+    "id": 75676,
+    "jited": true,
+    "loaded_at": 1791049072,
+    "orphaned": false,
+    "tag": "ee0e253c78993a24",
+    "type": "cgroup_device",
+    "uid": 0
+   },
+   {
+    "bytes_jited": 260,
+    "bytes_memlock": 4096,
+    "bytes_xlated": 416,
+    "gpl_compatible": true,
+    "id": 75677,
+    "jited": true,
+    "loaded_at": 1791049072,
+    "orphaned": false,
+    "tag": "ee0e253c78993a24",
+    "type": "cgroup_device",
+    "uid": 0
+   },
+   {
+    "bytes_jited": 290,
+    "bytes_memlock": 4096,
+    "bytes_xlated": 464,
+    "gpl_compatible": true,
+    "id": 75678,
+    "jited": true,
+    "loaded_at": 1791049072,
+    "orphaned": false,
+    "tag": "c8b47a902f1cc68b",
+    "type": "cgroup_device",
+    "uid": 0
+   },
+   {
+    "bytes_jited": 56,
+    "bytes_memlock": 4096,
+    "bytes_xlated": 64,
+    "gpl_compatible": true,
+    "id": 75679,
+    "jited": true,
+    "loaded_at": 1791049072,
+    "orphaned": false,
+    "tag": "6deef7357e7b4530",
+    "type": "cgroup_skb",
+    "uid": 0
+   },
+   {
+    "bytes_jited": 56,
+    "bytes_memlock": 4096,
+    "bytes_xlated": 64,
+    "gpl_compatible": true,
+    "id": 75680,
+    "jited": true,
+    "loaded_at": 1791049072,
+    "orphaned": false,
+    "tag": "6deef7357e7b4530",
+    "type": "cgroup_skb",
+    "uid": 0
+   },
+   {
+    "bytes_jited": 56,
+    "bytes_memlock": 4096,
+    "bytes_xlated": 64,
+    "gpl_compatible": true,
+    "id": 75681,
+    "jited": true,
+    "loaded_at": 1791049072,
+    "orphaned": false,
+    "tag": "6deef7357e7b4530",
+    "type": "cgroup_skb",
+    "uid": 0
+   },
+   {
+    "bytes_jited": 56,
+    "bytes_memlock": 4096,
+    "bytes_xlated": 64,
+    "gpl_compatible": true,
+    "id": 75682,
+    "jited": true,
+    "loaded_at": 1791049072,
+    "orphaned": false,
+    "tag": "6deef7357e7b4530",
+    "type": "cgroup_skb",
+    "uid": 0
+   },
+   {
+    "bytes_jited": 290,
+    "bytes_memlock": 4096,
+    "bytes_xlated": 464,
+    "gpl_compatible": true,
+    "id": 75683,
+    "jited": true,
+    "loaded_at": 1791049072,
+    "orphaned": false,
+    "tag": "c8b47a902f1cc68b",
+    "type": "cgroup_device",
+    "uid": 0
+   },
+   {
+    "bytes_jited": 311,
+    "bytes_memlock": 4096,
+    "bytes_xlated": 504,
+    "gpl_compatible": true,
+    "id": 75684,
+    "jited": true,
+    "loaded_at": 1791049072,
+    "orphaned": false,
+    "tag": "e3dbd137be8d6168",
+    "type": "cgroup_device",
+    "uid": 0
+   },
+   {
+    "bytes_jited": 56,
+    "bytes_memlock": 4096,
+    "bytes_xlated": 64,
+    "gpl_compatible": true,
+    "id": 75685,
+    "jited": true,
+    "loaded_at": 1791049072,
+    "orphaned": false,
+    "tag": "6deef7357e7b4530",
+    "type": "cgroup_skb",
+    "uid": 0
+   },
+   {
+    "bytes_jited": 56,
+    "bytes_memlock": 4096,
+    "bytes_xlated": 64,
+    "gpl_compatible": true,
+    "id": 75686,
+    "jited": true,
+    "loaded_at": 1791049072,
+    "orphaned": false,
+    "tag": "6deef7357e7b4530",
+    "type": "cgroup_skb",
+    "uid": 0
+   },
+   {
+    "bytes_jited": 260,
+    "bytes_memlock": 4096,
+    "bytes_xlated": 416,
+    "gpl_compatible": true,
+    "id": 75687,
+    "jited": true,
+    "loaded_at": 1791049072,
+    "orphaned": false,
+    "tag": "ee0e253c78993a24",
+    "type": "cgroup_device",
+    "uid": 0
+   },
+   {
+    "bytes_jited": 309,
+    "bytes_memlock": 4096,
+    "bytes_xlated": 496,
+    "gpl_compatible": true,
+    "id": 75688,
+    "jited": true,
+    "loaded_at": 1791049072,
+    "orphaned": false,
+    "tag": "0ecd07b7b633809f",
+    "type": "cgroup_device",
+    "uid": 0
+   },
+   {
+    "bytes_jited": 56,
+    "bytes_memlock": 4096,
+    "bytes_xlated": 64,
+    "gpl_compatible": true,
+    "id": 75689,
+    "jited": true,
+    "loaded_at": 1791049072,
+    "orphaned": false,
+    "tag": "6deef7357e7b4530",
+    "type": "cgroup_skb",
+    "uid": 0
+   },
+   {
+    "bytes_jited": 56,
+    "bytes_memlock": 4096,
+    "bytes_xlated": 64,
+    "gpl_compatible": true,
+    "id": 75690,
+    "jited": true,
+    "loaded_at": 1791049072,
+    "orphaned": false,
+    "tag": "6deef7357e7b4530",
+    "type": "cgroup_skb",
+    "uid": 0
+   }
+  ]
+ },
+ "bpf_available": true,
+ "cgroup_dirs": [
+  "",
+  "dev-hugepages.mount",
+  "dev-mqueue.mount",
+  "init.scope",
+  "proc-sys-fs-binfmt_misc.mount",
+  "sys-fs-fuse-connections.mount",
+  "sys-kernel-config.mount",
+  "sys-kernel-debug.mount",
+  "sys-kernel-tracing.mount",
+  "system.slice",
+  "system.slice/ModemManager.service",
+  "system.slice/NetworkManager.service",
+  "system.slice/accounts-daemon.service",
+  "system.slice/acpid.service",
+  "system.slice/avahi-daemon.service",
+  "system.slice/bluetooth.service",
+  "system.slice/boot-efi.mount",
+  "system.slice/boot.mount",
+  "system.slice/colord.service",
+  "system.slice/containerd.service",
+  "system.slice/cron.service",
+  "system.slice/cups-browsed.service",
+  "system.slice/cups.service",
+  "system.slice/dbus.service",
+  "system.slice/docker.service",
+  "system.slice/docker.socket",
+  "system.slice/fwupd.service",
+  "system.slice/gdm.service",
+  "system.slice/irqbalance.service",
+  "system.slice/kerneloops.service",
+  "system.slice/networkd-dispatcher.service",
+  "system.slice/ollama.service",
+  "system.slice/packagekit.service",
+  "system.slice/pcscd.service",
+  "system.slice/polkit.service",
+  "system.slice/power-profiles-daemon.service",
+  "system.slice/rsyslog.service",
+  "system.slice/rtkit-daemon.service",
+  "system.slice/run-qemu.mount",
+  "system.slice/snap-android\\x2dstudio-244.mount",
+  "system.slice/snap-android\\x2dstudio-247.mount",
+  "system.slice/snap-bare-5.mount",
+  "system.slice/snap-brave-688.mount",
+  "system.slice/snap-brave-690.mount",
+  "system.slice/snap-core20-2866.mount",
+  "system.slice/snap-core20-2922.mount",
+  "system.slice/snap-core22-2437.mount",
+  "system.slice/snap-core22-2955.mount",
+  "system.slice/snap-core24-1643.mount",
+  "system.slice/snap-core24-2124.mount",
+  "system.slice/snap-firefox-8763.mount",
+  "system.slice/snap-firefox-8995.mount",
+  "system.slice/snap-gnome\\x2d3\\x2d38\\x2d2004-143.mount",
+  "system.slice/snap-gnome\\x2d3\\x2d38\\x2d2004-99.mount",
+  "system.slice/snap-gnome\\x2d42\\x2d2204-247.mount",
+  "system.slice/snap-gnome\\x2d42\\x2d2204-263.mount",
+  "system.slice/snap-gnome\\x2d46\\x2d2404-164.mount",
+  "system.slice/snap-gnome\\x2d46\\x2d2404-168.mount",
+  "system.slice/snap-gtk\\x2dcommon\\x2dthemes-1534.mount",
+  "system.slice/snap-gtk\\x2dcommon\\x2dthemes-1535.mount",
+  "system.slice/snap-intellij\\x2didea\\x2dcommunity-812.mount",
+  "system.slice/snap-intellij\\x2didea\\x2dcommunity-822.mount",
+  "system.slice/snap-mesa\\x2d2404-1165.mount",
+  "system.slice/snap-mesa\\x2d2404-1839.mount",
+  "system.slice/snap-metasploit\\x2dframework-2395.mount",
+  "system.slice/snap-metasploit\\x2dframework-2435.mount",
+  "system.slice/snap-netbeans-145.mount",
+  "system.slice/snap-netbeans-149.mount",
+  "system.slice/snap-nvim-4847.mount",
+  "system.slice/snap-nvim-4866.mount",
+  "system.slice/snap-snap\\x2dstore-1113.mount",
+  "system.slice/snap-snap\\x2dstore-1216.mount",
+  "system.slice/snap-snapd-27738.mount",
+  "system.slice/snap-snapd-28254.mount",
+  "system.slice/snap-snapd\\x2ddesktop\\x2dintegration-387.mount",
+  "system.slice/snap-snapd\\x2ddesktop\\x2dintegration-391.mount",
+  "system.slice/snapd.service",
+  "system.slice/snapd.socket",
+  "system.slice/snort.service",
+  "system.slice/ssh.service",
+  "system.slice/swapfile.swap",
+  "system.slice/switcheroo-control.service",
+  "system.slice/system-getty.slice",
+  "system.slice/system-modprobe.slice",
+  "system.slice/system-openvpn\\x2dserver.slice",
+  "system.slice/system-systemd\\x2dfsck.slice",
+  "system.slice/systemd-journald.service",
+  "system.slice/systemd-logind.service",
+  "system.slice/systemd-oomd.service",
+  "system.slice/systemd-resolved.service",
+  "system.slice/systemd-timesyncd.service",
+  "system.slice/systemd-udevd.service",
+  "system.slice/thermald.service",
+  "system.slice/ubuntu-advantage-desktop-daemon.service",
+  "system.slice/udisks2.service",
+  "system.slice/unattended-upgrades.service",
+  "system.slice/upower.service",
+  "system.slice/var-snap-firefox-common-host\\x2dhunspell.mount",
+  "system.slice/wpa_supplicant.service",
+  "user.slice",
+  "user.slice/user-1000.slice",
+  "user.slice/user-1000.slice/session-136.scope",
+  "user.slice/user-1000.slice/session-191.scope",
+  "user.slice/user-1000.slice/session-193.scope",
+  "user.slice/user-1000.slice/session-2.scope",
+  "user.slice/user-1000.slice/user@1000.service",
+  "user.slice/user-1000.slice/user@1000.service/app.slice",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/app-gnome-org.gnome.Evolution\\x2dalarm\\x2dnotify-3008.scope",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/app-gnome-org.gnome.SettingsDaemon.DiskUtilityNotify-3010.scope",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/app-gnome-update\\x2dnotifier-4914.scope",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/app-gnome\\x2dsession\\x2dmanager.slice",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/app-gnome\\x2dsession\\x2dmanager.slice/gnome-session-manager@ubuntu.service",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/app-org.gnome.Terminal.slice",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/at-spi-dbus-bus.service",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/dbus.service",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/dbus.socket",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/dconf.service",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/evolution-addressbook-factory.service",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/evolution-calendar-factory.service",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/evolution-source-registry.service",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/gnome-session-monitor.service",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/gvfs-afc-volume-monitor.service",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/gvfs-daemon.service",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/gvfs-goa-volume-monitor.service",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/gvfs-gphoto2-volume-monitor.service",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/gvfs-metadata.service",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/gvfs-mtp-volume-monitor.service",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/gvfs-udisks2-volume-monitor.service",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/snap.snap-store.ubuntu-software-de7bb5ea-f46d-43cc-af2a-a3dc53796511.scope",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/snap.snapd-desktop-integration.snapd-desktop-integration.service",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/xdg-desktop-portal-gnome.service",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/xdg-desktop-portal-gtk.service",
+  "user.slice/user-1000.slice/user@1000.service/app.slice/xdg-permission-store.service",
+  "user.slice/user-1000.slice/user@1000.service/background.slice",
+  "user.slice/user-1000.slice/user@1000.service/background.slice/tracker-miner-fs-3.service",
+  "user.slice/user-1000.slice/user@1000.service/init.scope",
+  "user.slice/user-1000.slice/user@1000.service/session.slice",
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.freedesktop.IBus.session.GNOME.service",
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.A11ySettings.service",
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.Color.service",
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.Datetime.service",
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.Housekeeping.service",
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.Keyboard.service",
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.MediaKeys.service",
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.Power.service",
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.PrintNotifications.service",
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.Rfkill.service",
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.ScreensaverProxy.service",
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.Sharing.service",
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.Smartcard.service",
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.Sound.service",
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.Wacom.service",
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.XSettings.service",
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.Shell@x11.service",
+  "user.slice/user-1000.slice/user@1000.service/session.slice/pipewire-media-session.service",
+  "user.slice/user-1000.slice/user@1000.service/session.slice/pipewire.service",
+  "user.slice/user-1000.slice/user@1000.service/session.slice/pulseaudio.service",
+  "user.slice/user-1000.slice/user@1000.service/session.slice/xdg-desktop-portal.service",
+  "user.slice/user-1000.slice/user@1000.service/session.slice/xdg-document-portal.service"
+ ],
+ "cgroups": {
+  "": {
+   "cgroup.subtree_control": "cpuset cpu io memory hugetlb pids rdma misc",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "dev-hugepages.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "dev-mqueue.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "init.scope": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "proc-sys-fs-binfmt_misc.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "sys-fs-fuse-connections.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "sys-kernel-config.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "sys-kernel-debug.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "sys-kernel-tracing.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice": {
+   "cgroup.subtree_control": "cpuset cpu io memory hugetlb pids rdma misc",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/ModemManager.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/NetworkManager.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/accounts-daemon.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/acpid.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/avahi-daemon.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/bluetooth.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/boot-efi.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/boot.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/colord.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/containerd.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/cron.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/cups-browsed.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/cups.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/dbus.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/docker.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/docker.socket": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/fwupd.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/gdm.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/irqbalance.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/kerneloops.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/networkd-dispatcher.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/ollama.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/packagekit.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/pcscd.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/polkit.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/power-profiles-daemon.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/rsyslog.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/rtkit-daemon.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/run-qemu.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-android\\x2dstudio-244.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-android\\x2dstudio-247.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-bare-5.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-brave-688.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-brave-690.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-core20-2866.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-core20-2922.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-core22-2437.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-core22-2955.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-core24-1643.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-core24-2124.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-firefox-8763.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-firefox-8995.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-gnome\\x2d3\\x2d38\\x2d2004-143.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-gnome\\x2d3\\x2d38\\x2d2004-99.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-gnome\\x2d42\\x2d2204-247.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-gnome\\x2d42\\x2d2204-263.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-gnome\\x2d46\\x2d2404-164.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-gnome\\x2d46\\x2d2404-168.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-gtk\\x2dcommon\\x2dthemes-1534.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-gtk\\x2dcommon\\x2dthemes-1535.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-intellij\\x2didea\\x2dcommunity-812.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-intellij\\x2didea\\x2dcommunity-822.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-mesa\\x2d2404-1165.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-mesa\\x2d2404-1839.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-metasploit\\x2dframework-2395.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-metasploit\\x2dframework-2435.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-netbeans-145.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-netbeans-149.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-nvim-4847.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-nvim-4866.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-snap\\x2dstore-1113.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-snap\\x2dstore-1216.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-snapd-27738.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-snapd-28254.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-snapd\\x2ddesktop\\x2dintegration-387.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snap-snapd\\x2ddesktop\\x2dintegration-391.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snapd.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snapd.socket": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/snort.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/ssh.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/swapfile.swap": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/switcheroo-control.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/system-getty.slice": {
+   "cgroup.subtree_control": "memory pids",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/system-modprobe.slice": {
+   "cgroup.subtree_control": "memory pids",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/system-openvpn\\x2dserver.slice": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/system-systemd\\x2dfsck.slice": {
+   "cgroup.subtree_control": "memory pids",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/systemd-journald.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/systemd-logind.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/systemd-oomd.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/systemd-resolved.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/systemd-timesyncd.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/systemd-udevd.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/thermald.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/ubuntu-advantage-desktop-daemon.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/udisks2.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/unattended-upgrades.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/upower.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/var-snap-firefox-common-host\\x2dhunspell.mount": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "system.slice/wpa_supplicant.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "user.slice": {
+   "cgroup.subtree_control": "memory pids",
+   "cpu.max": "max 100000",
+   "cpu.weight": "100",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": "member"
+  },
+  "user.slice/user-1000.slice": {
+   "cgroup.subtree_control": "memory pids",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/session-136.scope": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/session-191.scope": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/session-193.scope": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/session-2.scope": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service": {
+   "cgroup.subtree_control": "memory pids",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice": {
+   "cgroup.subtree_control": "memory pids",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/app-gnome-org.gnome.Evolution\\x2dalarm\\x2dnotify-3008.scope": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/app-gnome-org.gnome.SettingsDaemon.DiskUtilityNotify-3010.scope": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/app-gnome-update\\x2dnotifier-4914.scope": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/app-gnome\\x2dsession\\x2dmanager.slice": {
+   "cgroup.subtree_control": "memory pids",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/app-gnome\\x2dsession\\x2dmanager.slice/gnome-session-manager@ubuntu.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/app-org.gnome.Terminal.slice": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/at-spi-dbus-bus.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/dbus.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/dbus.socket": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/dconf.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/evolution-addressbook-factory.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/evolution-calendar-factory.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/evolution-source-registry.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/gnome-session-monitor.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/gvfs-afc-volume-monitor.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/gvfs-daemon.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/gvfs-goa-volume-monitor.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/gvfs-gphoto2-volume-monitor.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/gvfs-metadata.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/gvfs-mtp-volume-monitor.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/gvfs-udisks2-volume-monitor.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/snap.snap-store.ubuntu-software-de7bb5ea-f46d-43cc-af2a-a3dc53796511.scope": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/snap.snapd-desktop-integration.snapd-desktop-integration.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/xdg-desktop-portal-gnome.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/xdg-desktop-portal-gtk.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/app.slice/xdg-permission-store.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/background.slice": {
+   "cgroup.subtree_control": "memory pids",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/background.slice/tracker-miner-fs-3.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/init.scope": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/session.slice": {
+   "cgroup.subtree_control": "memory pids",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.freedesktop.IBus.session.GNOME.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.A11ySettings.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.Color.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.Datetime.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.Housekeeping.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.Keyboard.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.MediaKeys.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.Power.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.PrintNotifications.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.Rfkill.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.ScreensaverProxy.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.Sharing.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.Smartcard.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.Sound.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.Wacom.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.XSettings.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.Shell@x11.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/session.slice/pipewire-media-session.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/session.slice/pipewire.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/session.slice/pulseaudio.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/session.slice/xdg-desktop-portal.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  },
+  "user.slice/user-1000.slice/user@1000.service/session.slice/xdg-document-portal.service": {
+   "cgroup.subtree_control": "",
+   "cpu.max": "",
+   "cpu.weight": "",
+   "cpuset.cpus": "",
+   "cpuset.cpus.partition": ""
+  }
+ },
+ "dynamic": {
+  "lab_pids": [],
+  "psi_cpu": {
+   "full_avg10": 0.0,
+   "full_total": 0,
+   "some_avg10": 0.0,
+   "some_total": 439198007
+  },
+  "psi_memory": {
+   "full_avg10": 0.0,
+   "full_total": 1715431,
+   "some_avg10": 0.0,
+   "some_total": 1737826
+  },
+  "slices_cpu_pressure": {
+   "init.scope": {
+    "full_avg10": 0.0,
+    "full_total": 3427358,
+    "some_avg10": 0.0,
+    "some_total": 3428786
+   },
+   "system.slice": {
+    "full_avg10": 0.0,
+    "full_total": 159803762,
+    "some_avg10": 0.0,
+    "some_total": 160320870
+   },
+   "user.slice": {
+    "full_avg10": 0.0,
+    "full_total": 247939768,
+    "some_avg10": 0.0,
+    "some_total": 250743907
+   }
+  },
+  "stat": {
+   "all": {
+    "busy": 21146983,
+    "idle": 911428425,
+    "softirq": 84484,
+    "total": 932575408
+   },
+   "cpu0": {
+    "busy": 1296576,
+    "idle": 37514548,
+    "softirq": 902,
+    "total": 38811124
+   },
+   "cpu1": {
+    "busy": 986525,
+    "idle": 37905603,
+    "softirq": 673,
+    "total": 38892128
+   },
+   "cpu10": {
+    "busy": 1254450,
+    "idle": 37580784,
+    "softirq": 1569,
+    "total": 38835234
+   },
+   "cpu11": {
+    "busy": 1417541,
+    "idle": 37456973,
+    "softirq": 51,
+    "total": 38874514
+   },
+   "cpu12": {
+    "busy": 1255926,
+    "idle": 37581232,
+    "softirq": 294,
+    "total": 38837158
+   },
+   "cpu13": {
+    "busy": 1134361,
+    "idle": 37774302,
+    "softirq": 1,
+    "total": 38908663
+   },
+   "cpu14": {
+    "busy": 999746,
+    "idle": 37847128,
+    "softirq": 146,
+    "total": 38846874
+   },
+   "cpu15": {
+    "busy": 1366419,
+    "idle": 37543746,
+    "softirq": 0,
+    "total": 38910165
+   },
+   "cpu16": {
+    "busy": 395473,
+    "idle": 38491609,
+    "softirq": 259,
+    "total": 38887082
+   },
+   "cpu17": {
+    "busy": 282399,
+    "idle": 38606022,
+    "softirq": 280,
+    "total": 38888421
+   },
+   "cpu18": {
+    "busy": 271896,
+    "idle": 38629000,
+    "softirq": 215,
+    "total": 38900896
+   },
+   "cpu19": {
+    "busy": 199548,
+    "idle": 38695057,
+    "softirq": 188,
+    "total": 38894605
+   },
+   "cpu2": {
+    "busy": 500440,
+    "idle": 38335547,
+    "softirq": 64,
+    "total": 38835987
+   },
+   "cpu20": {
+    "busy": 142108,
+    "idle": 38752158,
+    "softirq": 97,
+    "total": 38894266
+   },
+   "cpu21": {
+    "busy": 220364,
+    "idle": 38215796,
+    "softirq": 77777,
+    "total": 38436160
+   },
+   "cpu22": {
+    "busy": 115381,
+    "idle": 38772582,
+    "softirq": 94,
+    "total": 38887963
+   },
+   "cpu23": {
+    "busy": 103834,
+    "idle": 38792305,
+    "softirq": 87,
+    "total": 38896139
+   },
+   "cpu3": {
+    "busy": 1857315,
+    "idle": 37046981,
+    "softirq": 4,
+    "total": 38904296
+   },
+   "cpu4": {
+    "busy": 1036120,
+    "idle": 37808526,
+    "softirq": 58,
+    "total": 38844646
+   },
+   "cpu5": {
+    "busy": 1304999,
+    "idle": 37603377,
+    "softirq": 3,
+    "total": 38908376
+   },
+   "cpu6": {
+    "busy": 942577,
+    "idle": 37905728,
+    "softirq": 65,
+    "total": 38848305
+   },
+   "cpu7": {
+    "busy": 1382452,
+    "idle": 37526648,
+    "softirq": 2,
+    "total": 38909100
+   },
+   "cpu8": {
+    "busy": 1746076,
+    "idle": 37081963,
+    "softirq": 1548,
+    "total": 38828039
+   },
+   "cpu9": {
+    "busy": 934414,
+    "idle": 37960790,
+    "softirq": 95,
+    "total": 38895204
+   }
+  }
+ },
+ "irq": {
+  "0": [
+   "0-23",
+   "0"
+  ],
+  "1": [
+   "0-23",
+   "0"
+  ],
+  "10": [
+   "0-23",
+   "0"
+  ],
+  "11": [
+   "0-23",
+   "0"
+  ],
+  "12": [
+   "0-23",
+   "0"
+  ],
+  "120": [
+   "0-23",
+   "0"
+  ],
+  "121": [
+   "0-23",
+   "0"
+  ],
+  "122": [
+   "20-23",
+   "20"
+  ],
+  "123": [
+   "8-9",
+   "8"
+  ],
+  "124": [
+   "14",
+   "14"
+  ],
+  "125": [
+   "0-23",
+   "8"
+  ],
+  "126": [
+   "12-13",
+   "12"
+  ],
+  "13": [
+   "0-23",
+   "0"
+  ],
+  "134": [
+   "21",
+   "21"
+  ],
+  "135": [
+   "10",
+   "10"
+  ],
+  "136": [
+   "0",
+   "0"
+  ],
+  "137": [
+   "1",
+   "1"
+  ],
+  "138": [
+   "2",
+   "2"
+  ],
+  "139": [
+   "3",
+   "3"
+  ],
+  "14": [
+   "0-23",
+   "5"
+  ],
+  "140": [
+   "4",
+   "4"
+  ],
+  "141": [
+   "5",
+   "5"
+  ],
+  "142": [
+   "6",
+   "6"
+  ],
+  "143": [
+   "7",
+   "7"
+  ],
+  "144": [
+   "8",
+   "8"
+  ],
+  "145": [
+   "9",
+   "9"
+  ],
+  "146": [
+   "10",
+   "10"
+  ],
+  "147": [
+   "11",
+   "11"
+  ],
+  "148": [
+   "12",
+   "12"
+  ],
+  "149": [
+   "13",
+   "13"
+  ],
+  "15": [
+   "0-23",
+   "0"
+  ],
+  "150": [
+   "14",
+   "14"
+  ],
+  "151": [
+   "15",
+   "15"
+  ],
+  "152": [
+   "16",
+   "16"
+  ],
+  "153": [
+   "17",
+   "17"
+  ],
+  "154": [
+   "18",
+   "18"
+  ],
+  "155": [
+   "19",
+   "19"
+  ],
+  "156": [
+   "20",
+   "20"
+  ],
+  "157": [
+   "21",
+   "21"
+  ],
+  "158": [
+   "22",
+   "22"
+  ],
+  "159": [
+   "23",
+   "23"
+  ],
+  "16": [
+   "0-23",
+   "21"
+  ],
+  "160": [
+   "0-23",
+   "20"
+  ],
+  "161": [
+   "6",
+   "6"
+  ],
+  "162": [
+   "0-23",
+   "23"
+  ],
+  "18": [
+   "0-1",
+   "1"
+  ],
+  "2": [
+   "0-23",
+   ""
+  ],
+  "27": [
+   "10-11",
+   "11"
+  ],
+  "3": [
+   "0-23",
+   "0"
+  ],
+  "4": [
+   "0-23",
+   "0"
+  ],
+  "5": [
+   "0-23",
+   "0"
+  ],
+  "6": [
+   "0-23",
+   "0"
+  ],
+  "7": [
+   "0-23",
+   "0"
+  ],
+  "8": [
+   "0-23",
+   "4"
+  ],
+  "9": [
+   "0-23",
+   "1"
+  ]
+ },
+ "links": [
+  {
+   "address": "00:00:00:00:00:00",
+   "broadcast": "00:00:00:00:00:00",
+   "flags": [
+    "LOOPBACK",
+    "UP",
+    "LOWER_UP"
+   ],
+   "group": "default",
+   "gso_max_segs": 65535,
+   "gso_max_size": 65536,
+   "ifindex": 1,
+   "ifname": "lo",
+   "inet6_addr_gen_mode": "eui64",
+   "link_type": "loopback",
+   "linkmode": "DEFAULT",
+   "max_mtu": 0,
+   "min_mtu": 0,
+   "mtu": 65536,
+   "num_rx_queues": 1,
+   "num_tx_queues": 1,
+   "operstate": "UNKNOWN",
+   "promiscuity": 0,
+   "qdisc": "noqueue",
+   "txqlen": 1000
+  },
+  {
+   "address": "4c:d7:17:87:53:ae",
+   "broadcast": "ff:ff:ff:ff:ff:ff",
+   "flags": [
+    "BROADCAST",
+    "MULTICAST",
+    "UP",
+    "LOWER_UP"
+   ],
+   "group": "default",
+   "gso_max_segs": 65535,
+   "gso_max_size": 65536,
+   "ifindex": 2,
+   "ifname": "enp0s31f6",
+   "inet6_addr_gen_mode": "none",
+   "link_type": "ether",
+   "linkmode": "DEFAULT",
+   "max_mtu": 9000,
+   "min_mtu": 68,
+   "mtu": 1500,
+   "num_rx_queues": 1,
+   "num_tx_queues": 1,
+   "operstate": "UP",
+   "parentbus": "pci",
+   "parentdev": "0000:00:1f.6",
+   "promiscuity": 1,
+   "qdisc": "fq_codel",
+   "txqlen": 1000
+  },
+  {
+   "address": "3e:21:b8:b7:ee:35",
+   "broadcast": "ff:ff:ff:ff:ff:ff",
+   "flags": [
+    "NO-CARRIER",
+    "BROADCAST",
+    "MULTICAST",
+    "UP"
+   ],
+   "group": "default",
+   "gso_max_segs": 65535,
+   "gso_max_size": 65536,
+   "ifindex": 4,
+   "ifname": "docker0",
+   "inet6_addr_gen_mode": "eui64",
+   "link_type": "ether",
+   "linkinfo": {
+    "info_data": {
+     "ageing_time": 30000,
+     "bridge_id": "8000.3e:21:b8:b7:ee:35",
+     "forward_delay": 1500,
+     "gc_timer": 132.5,
+     "group_addr": "01:80:c2:00:00:00",
+     "group_fwd_mask": "0",
+     "hello_time": 200,
+     "hello_timer": 0.0,
+     "max_age": 2000,
+     "mcast_hash_elasticity": 16,
+     "mcast_hash_max": 4096,
+     "mcast_igmp_version": 2,
+     "mcast_last_member_cnt": 2,
+     "mcast_last_member_intvl": 100,
+     "mcast_membership_intvl": 26000,
+     "mcast_mld_version": 1,
+     "mcast_querier": 0,
+     "mcast_querier_intvl": 25500,
+     "mcast_query_intvl": 12500,
+     "mcast_query_response_intvl": 1000,
+     "mcast_query_use_ifaddr": 0,
+     "mcast_router": 1,
+     "mcast_snooping": 1,
+     "mcast_startup_query_cnt": 2,
+     "mcast_startup_query_intvl": 3125,
+     "mcast_stats_enabled": 0,
+     "nf_call_arptables": 0,
+     "nf_call_ip6tables": 0,
+     "nf_call_iptables": 0,
+     "priority": 32768,
+     "root_id": "8000.3e:21:b8:b7:ee:35",
+     "root_path_cost": 0,
+     "root_port": 0,
+     "stp_state": 0,
+     "tcn_timer": 0.0,
+     "topology_change": 0,
+     "topology_change_detected": 0,
+     "topology_change_timer": 0.0,
+     "vlan_default_pvid": 1,
+     "vlan_filtering": 0,
+     "vlan_protocol": "802.1Q",
+     "vlan_stats_enabled": 0,
+     "vlan_stats_per_port": 0
+    },
+    "info_kind": "bridge"
+   },
+   "linkmode": "DEFAULT",
+   "max_mtu": 65535,
+   "min_mtu": 68,
+   "mtu": 1500,
+   "num_rx_queues": 1,
+   "num_tx_queues": 1,
+   "operstate": "DOWN",
+   "promiscuity": 0,
+   "qdisc": "noqueue"
+  }
+ ],
+ "mounts": [
+  "/ ext4",
+  "/boot ext4",
+  "/boot/efi vfat",
+  "/dev devtmpfs",
+  "/dev/hugepages hugetlbfs",
+  "/dev/mqueue mqueue",
+  "/dev/pts devpts",
+  "/dev/shm tmpfs",
+  "/proc proc",
+  "/proc/sys/fs/binfmt_misc autofs",
+  "/proc/sys/fs/binfmt_misc binfmt_misc",
+  "/run tmpfs",
+  "/run/credentials/systemd-sysusers.service ramfs",
+  "/run/lock tmpfs",
+  "/run/netns tmpfs",
+  "/run/qemu tmpfs",
+  "/run/snapd/ns tmpfs",
+  "/run/snapd/ns/brave.mnt nsfs",
+  "/run/snapd/ns/snap-store.mnt nsfs",
+  "/run/snapd/ns/snapd-desktop-integration.mnt nsfs",
+  "/run/user/1000 tmpfs",
+  "/run/user/1000/doc fuse.portal",
+  "/run/user/1000/gvfs fuse.gvfsd-fuse",
+  "/snap/android-studio/244 squashfs",
+  "/snap/android-studio/247 squashfs",
+  "/snap/bare/5 squashfs",
+  "/snap/brave/688 squashfs",
+  "/snap/brave/690 squashfs",
+  "/snap/core20/2866 squashfs",
+  "/snap/core20/2922 squashfs",
+  "/snap/core22/2437 squashfs",
+  "/snap/core22/2955 squashfs",
+  "/snap/core24/1643 squashfs",
+  "/snap/core24/2124 squashfs",
+  "/snap/firefox/8763 squashfs",
+  "/snap/firefox/8995 squashfs",
+  "/snap/gnome-3-38-2004/143 squashfs",
+  "/snap/gnome-3-38-2004/99 squashfs",
+  "/snap/gnome-42-2204/247 squashfs",
+  "/snap/gnome-42-2204/263 squashfs",
+  "/snap/gnome-46-2404/164 squashfs",
+  "/snap/gnome-46-2404/168 squashfs",
+  "/snap/gtk-common-themes/1534 squashfs",
+  "/snap/gtk-common-themes/1535 squashfs",
+  "/snap/intellij-idea-community/812 squashfs",
+  "/snap/intellij-idea-community/822 squashfs",
+  "/snap/mesa-2404/1165 squashfs",
+  "/snap/mesa-2404/1839 squashfs",
+  "/snap/metasploit-framework/2395 squashfs",
+  "/snap/metasploit-framework/2435 squashfs",
+  "/snap/netbeans/145 squashfs",
+  "/snap/netbeans/149 squashfs",
+  "/snap/nvim/4847 squashfs",
+  "/snap/nvim/4866 squashfs",
+  "/snap/snap-store/1113 squashfs",
+  "/snap/snap-store/1216 squashfs",
+  "/snap/snapd-desktop-integration/387 squashfs",
+  "/snap/snapd-desktop-integration/391 squashfs",
+  "/snap/snapd/27738 squashfs",
+  "/snap/snapd/28254 squashfs",
+  "/sys sysfs",
+  "/sys/firmware/efi/efivars efivarfs",
+  "/sys/fs/bpf bpf",
+  "/sys/fs/cgroup cgroup2",
+  "/sys/fs/fuse/connections fusectl",
+  "/sys/fs/pstore pstore",
+  "/sys/kernel/config configfs",
+  "/sys/kernel/debug debugfs",
+  "/sys/kernel/debug/tracing tracefs",
+  "/sys/kernel/security securityfs",
+  "/sys/kernel/tracing tracefs",
+  "/var/snap/firefox/common/host-hunspell ext4"
+ ],
+ "netns": [],
+ "qdiscs": [
+  {
+   "dev": "lo",
+   "handle": "0:",
+   "kind": "noqueue",
+   "options": {},
+   "refcnt": 2,
+   "root": true
+  },
+  {
+   "dev": "enp0s31f6",
+   "handle": "0:",
+   "kind": "fq_codel",
+   "options": {
+    "drop_batch": 64,
+    "ecn": true,
+    "flows": 1024,
+    "interval": 99999,
+    "limit": 10240,
+    "memory_limit": 33554432,
+    "quantum": 1514,
+    "target": 4999
+   },
+   "refcnt": 2,
+   "root": true
+  },
+  {
+   "dev": "docker0",
+   "handle": "0:",
+   "kind": "noqueue",
+   "options": {},
+   "refcnt": 2,
+   "root": true
+  }
+ ],
+ "root": {
+  "cgroup.subtree_control": "cpuset cpu io memory hugetlb pids rdma misc",
+  "cpuset.cpus.effective": "0-23",
+  "cpuset.mems.effective": "0"
+ },
+ "routes4": [
+  {
+   "dev": "enp0s31f6",
+   "dst": "default",
+   "flags": [],
+   "gateway": "192.168.192.11",
+   "metric": 100,
+   "protocol": "dhcp"
+  },
+  {
+   "dev": "enp0s31f6",
+   "dst": "169.254.0.0/16",
+   "flags": [],
+   "metric": 1000,
+   "scope": "link"
+  },
+  {
+   "dev": "docker0",
+   "dst": "172.17.0.0/16",
+   "flags": [
+    "linkdown"
+   ],
+   "prefsrc": "172.17.0.1",
+   "protocol": "kernel",
+   "scope": "link"
+  },
+  {
+   "dev": "enp0s31f6",
+   "dst": "192.168.192.0/20",
+   "flags": [],
+   "metric": 100,
+   "prefsrc": "192.168.192.151",
+   "protocol": "kernel",
+   "scope": "link"
+  }
+ ],
+ "routes6": [
+  {
+   "dev": "lo",
+   "dst": "::1",
+   "flags": [],
+   "metric": 256,
+   "pref": "medium",
+   "protocol": "kernel"
+  },
+  {
+   "dev": "docker0",
+   "dst": "fe80::/64",
+   "flags": [
+    "linkdown"
+   ],
+   "metric": 256,
+   "pref": "medium",
+   "protocol": "kernel"
+  },
+  {
+   "dev": "enp0s31f6",
+   "dst": "fe80::/64",
+   "flags": [],
+   "metric": 1024,
+   "pref": "medium",
+   "protocol": "kernel"
+  }
+ ],
+ "run_netns": [],
+ "sysctls": "kernel/unprivileged_bpf_disabled=2\nkernel/perf_event_paranoid=4\nkernel/bpf_stats_enabled=0\nnet/core/bpf_jit_enable=1\nnet/core/default_qdisc=fq_codel\nnet/ipv4/ip_forward=1\nnet/ipv4/conf/all/forwarding=1\nnet/ipv4/conf/all/rp_filter=2\nnet/ipv6/conf/all/forwarding=0\nnet/ipv6/conf/all/disable_ipv6=0\nkernel/sched_schedstats=0\nkernel/sched_autogroup_enabled=1\nkernel/sched_rt_runtime_us=950000\nkernel/sched_rt_period_us=1000000"
+}

@@ -1,0 +1,141 @@
+{
+ "status_ok": true,
+ "runs": {
+  "C1-1": {
+   "verdict": "OK",
+   "aborts": [],
+   "throttling_established": null,
+   "throttling_absent_confirmed": true,
+   "m2": "cpu_contention",
+   "GR": true,
+   "host_ok": true
+  },
+  "C1-2": {
+   "verdict": "OK",
+   "aborts": [],
+   "throttling_established": null,
+   "throttling_absent_confirmed": true,
+   "m2": "cpu_contention",
+   "GR": true,
+   "host_ok": true
+  },
+  "E0-close": {
+   "verdict": "OK",
+   "aborts": [],
+   "throttling_established": null,
+   "throttling_absent_confirmed": true,
+   "m2": "INSUFFICIENT_EVIDENCE",
+   "GR": true,
+   "host_ok": true
+  },
+  "E0-open": {
+   "verdict": "OK",
+   "aborts": [],
+   "throttling_established": null,
+   "throttling_absent_confirmed": true,
+   "m2": "INSUFFICIENT_EVIDENCE",
+   "GR": true,
+   "host_ok": true
+  },
+  "Q0-1": {
+   "verdict": "OK",
+   "aborts": [],
+   "throttling_established": null,
+   "throttling_absent_confirmed": true,
+   "m2": "INSUFFICIENT_EVIDENCE",
+   "GR": true,
+   "host_ok": true
+  },
+  "Q0-2": {
+   "verdict": "OK",
+   "aborts": [],
+   "throttling_established": null,
+   "throttling_absent_confirmed": true,
+   "m2": "INSUFFICIENT_EVIDENCE",
+   "GR": true,
+   "host_ok": true
+  },
+  "T1-1": {
+   "verdict": "OK",
+   "aborts": [],
+   "throttling_established": true,
+   "throttling_absent_confirmed": null,
+   "m2": "cpu_throttling",
+   "GR": true,
+   "host_ok": true
+  },
+  "T1-2": {
+   "verdict": "OK",
+   "aborts": [],
+   "throttling_established": true,
+   "throttling_absent_confirmed": null,
+   "m2": "cpu_throttling",
+   "GR": true,
+   "host_ok": true
+  },
+  "T1-3": {
+   "verdict": "OK",
+   "aborts": [],
+   "throttling_established": true,
+   "throttling_absent_confirmed": null,
+   "m2": "cpu_throttling",
+   "GR": true,
+   "host_ok": true
+  },
+  "T2-1": {
+   "verdict": "OK",
+   "aborts": [],
+   "throttling_established": true,
+   "throttling_absent_confirmed": null,
+   "m2": "cpu_throttling",
+   "GR": true,
+   "host_ok": true
+  },
+  "T2-2": {
+   "verdict": "OK",
+   "aborts": [],
+   "throttling_established": true,
+   "throttling_absent_confirmed": null,
+   "m2": "cpu_throttling",
+   "GR": true,
+   "host_ok": true
+  },
+  "T2-3": {
+   "verdict": "OK",
+   "aborts": [],
+   "throttling_established": true,
+   "throttling_absent_confirmed": null,
+   "m2": "cpu_throttling",
+   "GR": true,
+   "host_ok": true
+  },
+  "TC-1": {
+   "verdict": "OK",
+   "aborts": [],
+   "throttling_established": true,
+   "throttling_absent_confirmed": null,
+   "m2": "cpu_throttling",
+   "GR": true,
+   "host_ok": true
+  },
+  "TC-2": {
+   "verdict": "OK",
+   "aborts": [],
+   "throttling_established": true,
+   "throttling_absent_confirmed": null,
+   "m2": "cpu_throttling",
+   "GR": true,
+   "host_ok": true
+  },
+  "TC-3": {
+   "verdict": "OK",
+   "aborts": [],
+   "throttling_established": true,
+   "throttling_absent_confirmed": null,
+   "m2": "cpu_throttling",
+   "GR": true,
+   "host_ok": true
+  }
+ },
+ "host_final_ok": true
+}

@@ -1,0 +1,4 @@
+{"op": ["kill", 1188941], "phase": "intent", "t": 386377.012461879}
+{"ok": true, "op": ["kill", 1188941], "phase": "result", "pid": null, "t": 386377.012488974}
+{"op": ["kill", 1189024], "phase": "intent", "t": 386377.012503447}
+{"ok": true, "op": ["kill", 1189024], "phase": "result", "pid": null, "t": 386377.012516264}

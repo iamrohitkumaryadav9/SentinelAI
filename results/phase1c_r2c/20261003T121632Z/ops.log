@@ -1,0 +1,4 @@
+[calibration]
+[E0-open] iters=5436 driver
+{"label": "E0-open", "verdict": "ABORT", "aborts": ["foreign busy time on CPU 18 (G6): B 0.2482306678379863 W 0.25726547682733797", "host state differs from the pre-run snapshot: ['bpf_maps_identical']"], "m2": "INSUFFICIENT_EVIDENCE", "iters": null}
+[E0-open] a check failed: stopping

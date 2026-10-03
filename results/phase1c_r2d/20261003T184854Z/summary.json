@@ -1,0 +1,62 @@
+{
+ "status_ok": false,
+ "runs": {
+  "C1-1": {
+   "verdict": "OK",
+   "aborts": [],
+   "throttling_established": null,
+   "throttling_absent_confirmed": true,
+   "m2": "cpu_contention",
+   "GR": true,
+   "host_ok": true
+  },
+  "C1-2": {
+   "verdict": "OK",
+   "aborts": [],
+   "throttling_established": null,
+   "throttling_absent_confirmed": true,
+   "m2": "cpu_contention",
+   "GR": true,
+   "host_ok": true
+  },
+  "E0-open": {
+   "verdict": "OK",
+   "aborts": [],
+   "throttling_established": null,
+   "throttling_absent_confirmed": true,
+   "m2": "INSUFFICIENT_EVIDENCE",
+   "GR": true,
+   "host_ok": true
+  },
+  "Q0-1": {
+   "verdict": "OK",
+   "aborts": [],
+   "throttling_established": null,
+   "throttling_absent_confirmed": true,
+   "m2": "INSUFFICIENT_EVIDENCE",
+   "GR": true,
+   "host_ok": true
+  },
+  "Q0-2": {
+   "verdict": "OK",
+   "aborts": [],
+   "throttling_established": null,
+   "throttling_absent_confirmed": true,
+   "m2": "INSUFFICIENT_EVIDENCE",
+   "GR": true,
+   "host_ok": true
+  },
+  "T1-1": {
+   "verdict": "ABORT",
+   "aborts": [
+    "throttle.quota_saturation [None] != predicted 0.640144575395321"
+   ],
+   "throttling_established": true,
+   "throttling_absent_confirmed": null,
+   "m2": "cpu_throttling",
+   "GR": true,
+   "host_ok": true
+  }
+ },
+ "host_final_ok": true
+}

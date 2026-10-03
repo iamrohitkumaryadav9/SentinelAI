@@ -1,0 +1,31 @@
+[calibration]
+[E0-open] iters=5196 driver
+{"label": "E0-open", "verdict": "OK", "aborts": [], "m2": "INSUFFICIENT_EVIDENCE", "iters": null}
+[Q0-1] iters=5196 driver
+{"label": "Q0-1", "verdict": "OK", "aborts": [], "m2": "INSUFFICIENT_EVIDENCE", "iters": null}
+[Q0-2] iters=5196 driver
+{"label": "Q0-2", "verdict": "OK", "aborts": [], "m2": "INSUFFICIENT_EVIDENCE", "iters": null}
+[C1-1] iters=5196 driver
+{"label": "C1-1", "verdict": "OK", "aborts": [], "m2": "cpu_contention", "iters": null}
+[C1-2] iters=5196 driver
+{"label": "C1-2", "verdict": "OK", "aborts": [], "m2": "cpu_contention", "iters": null}
+[T1-1] iters=5196 driver
+{"label": "T1-1", "verdict": "OK", "aborts": [], "m2": "cpu_throttling", "iters": null}
+[T1-2] iters=5196 driver
+{"label": "T1-2", "verdict": "OK", "aborts": [], "m2": "cpu_throttling", "iters": null}
+[T1-3] iters=5196 driver
+{"label": "T1-3", "verdict": "OK", "aborts": [], "m2": "cpu_throttling", "iters": null}
+[T2-1] iters=5196 driver
+{"label": "T2-1", "verdict": "OK", "aborts": [], "m2": "cpu_throttling", "iters": null}
+[T2-2] iters=5196 driver
+{"label": "T2-2", "verdict": "OK", "aborts": [], "m2": "cpu_throttling", "iters": null}
+[T2-3] iters=5196 driver
+{"label": "T2-3", "verdict": "OK", "aborts": [], "m2": "cpu_throttling", "iters": null}
+[TC-1] iters=5196 driver
+{"label": "TC-1", "verdict": "OK", "aborts": [], "m2": "cpu_throttling", "iters": null}
+[TC-2] iters=5196 driver
+{"label": "TC-2", "verdict": "OK", "aborts": [], "m2": "cpu_throttling", "iters": null}
+[TC-3] iters=5196 driver
+{"label": "TC-3", "verdict": "OK", "aborts": [], "m2": "cpu_throttling", "iters": null}
+[E0-close] iters=5196 driver
+{"label": "E0-close", "verdict": "OK", "aborts": [], "m2": "INSUFFICIENT_EVIDENCE", "iters": null}

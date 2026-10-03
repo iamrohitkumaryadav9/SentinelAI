@@ -1,0 +1,661 @@
+{
+ "aborts": [],
+ "calibration": {
+  "checksum": 1241550593,
+  "durations_ns": [
+   1822989,
+   1829794,
+   1824932,
+   1819801,
+   1811813,
+   1824435,
+   1817162,
+   1820656,
+   1818554,
+   1818723,
+   1818064,
+   1815582,
+   1816585,
+   1817999,
+   1815768,
+   1816188,
+   1817487,
+   1815707,
+   1817817,
+   1817667,
+   1817428,
+   1818092,
+   1816780,
+   1816391,
+   1819429,
+   1816516,
+   1818218,
+   1818606,
+   1816578,
+   1819910,
+   1818970,
+   1818217,
+   1818721,
+   1818194,
+   1818771,
+   1939259,
+   1948426,
+   1838315,
+   1840605,
+   1836368,
+   1834884,
+   1834871,
+   1835072,
+   1836601,
+   1838021,
+   1840207,
+   1839854,
+   1837918,
+   1840389,
+   1841406,
+   1838340,
+   1844966,
+   1841934,
+   1838048,
+   1843237,
+   1840264,
+   1846004,
+   1840335,
+   1838921,
+   1838205,
+   1840537,
+   1840866,
+   1840303,
+   1841731,
+   1840208,
+   1838360,
+   1839717,
+   1839902,
+   1840970,
+   1839564,
+   1839419,
+   1843633,
+   1837552,
+   1841440,
+   1842918,
+   1840086,
+   1839806,
+   1842448,
+   1838549,
+   1840905,
+   1840509,
+   1839875,
+   1840428,
+   1842521,
+   1837847,
+   1839376,
+   1841946,
+   1841733,
+   1839441,
+   1839645,
+   1839201,
+   1838771,
+   1840764,
+   1841283,
+   1839847,
+   1843924,
+   1840047,
+   1837708,
+   1840426,
+   1839690,
+   1841350,
+   1840722,
+   1839543,
+   1839765,
+   1838863,
+   1839271,
+   1844420,
+   1840197,
+   1840170,
+   1837925,
+   1839259,
+   1839814,
+   1839361,
+   1839351,
+   1840208,
+   1841006,
+   1838141,
+   1840216,
+   1839583,
+   1839868,
+   1840249,
+   1852339,
+   1836402,
+   1840019,
+   1840882,
+   1843462,
+   1842524,
+   1840610,
+   1838493,
+   1841085,
+   1840023,
+   1844572,
+   1839181,
+   1839208,
+   1837541,
+   1840999,
+   1838709,
+   1841057,
+   1843020,
+   1840157,
+   1840345,
+   1838544,
+   1840089,
+   1839387,
+   1839746,
+   1839764,
+   1841042,
+   1837330,
+   1840202,
+   1839922,
+   1839612,
+   1840531,
+   1839324,
+   1836222,
+   1838705,
+   1838140,
+   1838028,
+   1840311,
+   1839686,
+   1838223,
+   1839263,
+   1843431,
+   1838608,
+   1845589,
+   1838790,
+   1840030,
+   1837300,
+   1838989,
+   1838196,
+   1839265,
+   1839860,
+   1840406,
+   1837068,
+   1839337,
+   1841494,
+   1839832,
+   1842854,
+   1845867,
+   1840374,
+   1839424,
+   1839568,
+   1839032,
+   1839306,
+   1838199,
+   1837016,
+   1839165,
+   1837625,
+   1839238,
+   1839760,
+   1839522,
+   1837765,
+   1837124,
+   1838625,
+   1838709,
+   1844248,
+   1839744,
+   1840968,
+   1837698,
+   1838674,
+   1839977
+  ],
+  "iters": 5436,
+  "median_ns": 1839421.5,
+  "pid": 1118662,
+  "probe_iters": 20000,
+  "reps": 200,
+  "work_ns": 500000
+ },
+ "cleanup": {
+  "errors": [],
+  "ok": true,
+  "steps": [
+   "kill 1118661",
+   "cgroup.kill",
+   "rmdir /sys/fs/cgroup/sentinel-r2c/contender",
+   "rmdir /sys/fs/cgroup/sentinel-r2c/target",
+   "rmdir /sys/fs/cgroup/sentinel-r2c"
+  ],
+  "verify": {
+   "checks": {
+    "lab_cgroup_absent": true,
+    "no_lab_process": true,
+    "no_logged_pid_alive_in_lab": true,
+    "no_sentinel_cgroup": true,
+    "no_wrapper_alive": true
+   },
+   "ok": true
+  }
+ },
+ "commit": "7354f403c3feb88a3b109fb5f18abe58027d518c",
+ "criteria": {
+  "G4": {
+   "type": "EXPERIMENTAL HEURISTIC",
+   "value": "n_B,n_W >= 4000; med_W >= 1.5*med_B; med_W - med_B >= 50000 ns; psi_w > psi_b"
+  },
+  "G7": {
+   "type": "SAFETY THRESHOLD, repository-informed",
+   "value": "|f_W - f_B| <= 0.01"
+  },
+  "HOST_PSI": {
+   "type": "SAFETY THRESHOLD",
+   "value": "host avg10 > 5.0: abort if any of system.slice, user.slice, init.scope cpu.pressure some avg10 > 5.0 or unreadable"
+  },
+  "MEMORY_PSI": {
+   "type": "REPOSITORY-SUPPORTED",
+   "value": "abort if delta some_total_us(W) > 0"
+  },
+  "MEMORY_SWAP": {
+   "type": "SAFETY THRESHOLD, repository-informed",
+   "value": "abort if (pswpin + pswpout) / W_s > 25.0 pages/s"
+  },
+  "SLICE_PSI": {
+   "type": "SAFETY THRESHOLD",
+   "value": "abort if r_W - r_B > 0.01"
+  }
+ },
+ "design": {
+  "hard_timeout_s": 60,
+  "nb": 10,
+  "nw": 10,
+  "parent_cpus": [
+   18,
+   19,
+   23
+  ],
+  "recovery_s": 10,
+  "target_cpu": 18,
+  "warmup_s": 10
+ },
+ "driver_ok": true,
+ "events": [
+  {
+   "event": "setup_start",
+   "t_mono": 365544.242627557
+  },
+  {
+   "event": "lab_verified",
+   "t_mono": 365544.243354601
+  }
+ ],
+ "experiment": {
+  "contender_cpu": null,
+  "contender_weight": 100,
+  "kind": "E0"
+ },
+ "host_compare": {
+  "addresses_identical": true,
+  "bpf_compared": true,
+  "bpf_links_identical": true,
+  "bpf_maps_identical": true,
+  "bpf_progs_identical": true,
+  "cgroup_attrs_identical": true,
+  "cgroup_dirs_identical": true,
+  "cgroups_added": [],
+  "cgroups_differing": [],
+  "cgroups_removed": [],
+  "docker0_identical": true,
+  "enp0s31f6_identical": true,
+  "failed": [],
+  "interfaces_differing": [],
+  "interfaces_identical": true,
+  "irq_affinity_identical": true,
+  "irqs_differing": [],
+  "mounts_identical": true,
+  "netns_identical": true,
+  "network_state_captured": true,
+  "nic_irq_identical": true,
+  "no_lab_cgroup": true,
+  "no_lab_process": true,
+  "ok": true,
+  "protected_qdiscs_identical": true,
+  "qdiscs_identical": true,
+  "root_cpuset_0_23": true,
+  "root_identical": true,
+  "routes_identical": true,
+  "sn_programs_left": [],
+  "sysctls_identical": true
+ },
+ "iters": 5436,
+ "label": "calibration",
+ "observations": [
+  {
+   "leaves": {
+    "contender": {
+     "cpu_max": "max 100000",
+     "cpu_pressure": {
+      "full_avg10": 0.0,
+      "full_total": 0,
+      "some_avg10": 0.0,
+      "some_total": 0
+     },
+     "cpu_stat": {
+      "burst_usec": 0,
+      "core_sched.force_idle_usec": 0,
+      "nr_bursts": 0,
+      "nr_periods": 0,
+      "nr_throttled": 0,
+      "system_usec": 0,
+      "throttled_usec": 0,
+      "usage_usec": 0,
+      "user_usec": 0
+     },
+     "cpus_eff": "18-19,23",
+     "mem_events": {
+      "high": 0,
+      "low": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_group_kill": 0,
+      "oom_kill": 0
+     },
+     "procs": []
+    },
+    "parent": {
+     "cpu_max": "max 100000",
+     "cpu_pressure": null,
+     "cpu_stat": {
+      "burst_usec": 0,
+      "core_sched.force_idle_usec": 0,
+      "nr_bursts": 0,
+      "nr_periods": 0,
+      "nr_throttled": 0,
+      "system_usec": 5880,
+      "throttled_usec": 0,
+      "usage_usec": 10781,
+      "user_usec": 4900
+     },
+     "cpus_eff": null,
+     "mem_events": null,
+     "procs": []
+    },
+    "target": {
+     "cpu_max": "max 100000",
+     "cpu_pressure": {
+      "full_avg10": 0.0,
+      "full_total": 42,
+      "some_avg10": 0.0,
+      "some_total": 42
+     },
+     "cpu_stat": {
+      "burst_usec": 0,
+      "core_sched.force_idle_usec": 0,
+      "nr_bursts": 0,
+      "nr_periods": 0,
+      "nr_throttled": 0,
+      "system_usec": 5880,
+      "throttled_usec": 0,
+      "usage_usec": 10781,
+      "user_usec": 4900
+     },
+     "cpus_eff": "18",
+     "mem_events": {
+      "high": 0,
+      "low": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_group_kill": 0,
+      "oom_kill": 0
+     },
+     "procs": [
+      1118662
+     ]
+    }
+   },
+   "mono": 365544.263778763,
+   "netns": null,
+   "nic_irq_eff": "21",
+   "proc": {
+    "1118662": 18
+   },
+   "psi_cpu": {
+    "full_avg10": 0.0,
+    "full_total": 0,
+    "some_avg10": 0.0,
+    "some_total": 322803724
+   },
+   "psi_memory": {
+    "full_avg10": 0.0,
+    "full_total": 1709310,
+    "some_avg10": 0.0,
+    "some_total": 1731691
+   },
+   "slices": {
+    "init.scope": {
+     "full_avg10": 0.0,
+     "full_total": 3270951,
+     "some_avg10": 0.0,
+     "some_total": 3272379
+    },
+    "system.slice": {
+     "full_avg10": 0.0,
+     "full_total": 147375600,
+     "some_avg10": 0.0,
+     "some_total": 147862175
+    },
+    "user.slice": {
+     "full_avg10": 0.0,
+     "full_total": 216033096,
+     "some_avg10": 0.0,
+     "some_total": 218789946
+    }
+   },
+   "stat": {
+    "all": {
+     "busy": 20911491,
+     "idle": 855156653,
+     "softirq": 79332,
+     "total": 876068144
+    },
+    "cpu0": {
+     "busy": 1294094,
+     "idle": 35165190,
+     "softirq": 832,
+     "total": 36459284
+    },
+    "cpu1": {
+     "busy": 985301,
+     "idle": 35548898,
+     "softirq": 669,
+     "total": 36534199
+    },
+    "cpu10": {
+     "busy": 1221857,
+     "idle": 35262763,
+     "softirq": 1414,
+     "total": 36484620
+    },
+    "cpu11": {
+     "busy": 1412649,
+     "idle": 35106199,
+     "softirq": 51,
+     "total": 36518848
+    },
+    "cpu12": {
+     "busy": 1246245,
+     "idle": 35240139,
+     "softirq": 271,
+     "total": 36486384
+    },
+    "cpu13": {
+     "busy": 1133837,
+     "idle": 35416722,
+     "softirq": 1,
+     "total": 36550559
+    },
+    "cpu14": {
+     "busy": 991564,
+     "idle": 35503906,
+     "softirq": 136,
+     "total": 36495470
+    },
+    "cpu15": {
+     "busy": 1365983,
+     "idle": 35185960,
+     "softirq": 0,
+     "total": 36551943
+    },
+    "cpu16": {
+     "busy": 389038,
+     "idle": 36143240,
+     "softirq": 252,
+     "total": 36532278
+    },
+    "cpu17": {
+     "busy": 276955,
+     "idle": 36256056,
+     "softirq": 275,
+     "total": 36533011
+    },
+    "cpu18": {
+     "busy": 222835,
+     "idle": 36310338,
+     "softirq": 210,
+     "total": 36533173
+    },
+    "cpu19": {
+     "busy": 192055,
+     "idle": 36345605,
+     "softirq": 184,
+     "total": 36537660
+    },
+    "cpu2": {
+     "busy": 493288,
+     "idle": 35989895,
+     "softirq": 59,
+     "total": 36483183
+    },
+    "cpu20": {
+     "busy": 139434,
+     "idle": 36397372,
+     "softirq": 96,
+     "total": 36536806
+    },
+    "cpu21": {
+     "busy": 211153,
+     "idle": 35897698,
+     "softirq": 72984,
+     "total": 36108851
+    },
+    "cpu22": {
+     "busy": 112184,
+     "idle": 36418598,
+     "softirq": 94,
+     "total": 36530782
+    },
+    "cpu23": {
+     "busy": 97599,
+     "idle": 36440763,
+     "softirq": 86,
+     "total": 36538362
+    },
+    "cpu3": {
+     "busy": 1856486,
+     "idle": 34690170,
+     "softirq": 4,
+     "total": 36546656
+    },
+    "cpu4": {
+     "busy": 1029272,
+     "idle": 35462758,
+     "softirq": 52,
+     "total": 36492030
+    },
+    "cpu5": {
+     "busy": 1304472,
+     "idle": 35245836,
+     "softirq": 3,
+     "total": 36550308
+    },
+    "cpu6": {
+     "busy": 936378,
+     "idle": 35559135,
+     "softirq": 58,
+     "total": 36495513
+    },
+    "cpu7": {
+     "busy": 1381940,
+     "idle": 35168987,
+     "softirq": 2,
+     "total": 36550927
+    },
+    "cpu8": {
+     "busy": 1689161,
+     "idle": 34788274,
+     "softirq": 1493,
+     "total": 36477435
+    },
+    "cpu9": {
+     "busy": 927664,
+     "idle": 35612129,
+     "softirq": 95,
+     "total": 36539793
+    }
+   },
+   "tag": "calibration",
+   "vmstat": {
+    "pswpin": 160176,
+    "pswpout": 640059
+   }
+  }
+ ],
+ "preflight": {
+  "checks": {
+   "cgroup_kill_supported": true,
+   "experiment_cpus_no_smt": true,
+   "experiment_cpus_online": true,
+   "lab_uid_exists": true,
+   "n1_other_l2_cluster": true,
+   "n2_same_l2_cluster": true,
+   "nic_irq_is_enp0s31f6": true,
+   "nic_irq_off_experiment_cpus": true,
+   "no_lab_process": true,
+   "no_sentinel_cgroup": true,
+   "protected_interfaces_present": true,
+   "psi_available": true,
+   "root_cpuset_0_23": true,
+   "root_subtree_control": true,
+   "tool:/home/iiitd/sentinelai/ebpf/build/sentinel_loader": true,
+   "tool:/usr/bin/python3": true,
+   "tool:/usr/bin/setpriv": true,
+   "tool:/usr/bin/taskset": true,
+   "tool:/usr/bin/timeout": true,
+   "tool:/usr/bin/unshare": true,
+   "tool:/usr/lib/linux-hwe-6.8-tools-6.8.0-138/bpftool": true
+  },
+  "ok": true
+ },
+ "role": "runtime step 0: provenance only, excluded from experiment evidence and baselines; no collection, no snapshot, no M2",
+ "verdict": "OK",
+ "verify_lab": {
+  "checks": {
+   "contender_controllers": true,
+   "contender_cpus": true,
+   "contender_empty": true,
+   "contender_memory_max_unlimited": true,
+   "contender_mems": true,
+   "contender_no_quota": true,
+   "contender_pids_max": true,
+   "contender_weight": true,
+   "parent_cpus": true,
+   "parent_empty": true,
+   "parent_no_quota": true,
+   "parent_subtree_control": true,
+   "target_controllers": true,
+   "target_cpu_stat_has_throttle_fields": true,
+   "target_cpus": true,
+   "target_empty": true,
+   "target_memory_max_unlimited": true,
+   "target_mems": true,
+   "target_no_quota": true,
+   "target_pids_max": true,
+   "target_weight": true
+  },
+  "ok": true
+ }
+}

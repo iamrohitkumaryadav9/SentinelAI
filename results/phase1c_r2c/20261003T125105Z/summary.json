@@ -1,0 +1,92 @@
+{
+ "status_ok": false,
+ "runs": {
+  "E0-close": {
+   "verdict": "ABORT",
+   "aborts": [
+    "host state differs from the pre-run snapshot: ['cgroup_dirs_identical', 'bpf_progs_identical']"
+   ],
+   "established": false,
+   "m2": "INSUFFICIENT_EVIDENCE",
+   "host_ok": true
+  },
+  "E0-open": {
+   "verdict": "OK",
+   "aborts": [],
+   "established": false,
+   "m2": "INSUFFICIENT_EVIDENCE",
+   "host_ok": true
+  },
+  "E1-rep1": {
+   "verdict": "OK",
+   "aborts": [],
+   "established": false,
+   "m2": "cpu_contention",
+   "host_ok": true
+  },
+  "E1-rep2": {
+   "verdict": "OK",
+   "aborts": [],
+   "established": false,
+   "m2": "cpu_contention",
+   "host_ok": true
+  },
+  "E1-rep3": {
+   "verdict": "OK",
+   "aborts": [],
+   "established": false,
+   "m2": "cpu_contention",
+   "host_ok": true
+  },
+  "E2-rep1": {
+   "verdict": "OK",
+   "aborts": [],
+   "established": true,
+   "m2": "cpu_contention",
+   "host_ok": true
+  },
+  "E2-rep2": {
+   "verdict": "OK",
+   "aborts": [],
+   "established": true,
+   "m2": "cpu_contention",
+   "host_ok": true
+  },
+  "E2-rep3": {
+   "verdict": "OK",
+   "aborts": [],
+   "established": true,
+   "m2": "cpu_contention",
+   "host_ok": true
+  },
+  "N1-rep1": {
+   "verdict": "OK",
+   "aborts": [],
+   "established": false,
+   "m2": "INSUFFICIENT_EVIDENCE",
+   "host_ok": true
+  },
+  "N1-rep2": {
+   "verdict": "OK",
+   "aborts": [],
+   "established": false,
+   "m2": "INSUFFICIENT_EVIDENCE",
+   "host_ok": true
+  },
+  "N2-rep1": {
+   "verdict": "OK",
+   "aborts": [],
+   "established": false,
+   "m2": "INSUFFICIENT_EVIDENCE",
+   "host_ok": true
+  },
+  "N2-rep2": {
+   "verdict": "OK",
+   "aborts": [],
+   "established": false,
+   "m2": "INSUFFICIENT_EVIDENCE",
+   "host_ok": true
+  }
+ },
+ "host_final_ok": true
+}

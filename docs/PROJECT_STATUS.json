@@ -1,0 +1,139 @@
+{
+  "checkpoint": "R2-D closeout",
+  "date": "2026-10-04",
+  "head": "7354f403c3feb88a3b109fb5f18abe58027d518c",
+  "uncommitted": [
+    "experiments/faultlab/docker/ (pre-existing, unrelated to R2-C/R2-D; left untracked)"
+  ],
+  "current_status": "R2-D CLOSED — PASS WITH DOCUMENTED LIMITATION (quota_saturation not validated under binding throttling)",
+  "phases": [
+    {
+      "phase": "Phase 0",
+      "verdict": "PASS WITH CONSTRAINTS / GO",
+      "report": "docs/PHASE_0_EVALUATION.md"
+    },
+    {
+      "phase": "Phase 1A",
+      "verdict": "PASS",
+      "report": "docs/PHASE_1A_EVALUATION.md"
+    },
+    {
+      "phase": "Phase 1B",
+      "verdict": "complete: FAIL / NO-GO (no local model adequate as autonomous diagnostician)",
+      "report": "docs/PHASE_1B_CONFIRMATORY_EVALUATION.md"
+    },
+    {
+      "phase": "Phase 1C",
+      "verdict": "in progress: M1, M2, M3A, M3A-C1, M3B, R2-A, R2-B, R2-C, R2-D done; design milestones M4-M8 (FaultLab matrix, pilot, calibration, ML, PHASE_1C_EVALUATION) not done",
+      "report": "docs/PHASE_1C_DESIGN.md"
+    },
+    {
+      "phase": "M1 evidence contract",
+      "verdict": "PASS WITH CONDITIONS",
+      "report": "docs/PHASE_1C_M1_REPORT.md"
+    },
+    {
+      "phase": "M2 rule engine",
+      "verdict": "PASS WITH CONDITIONS",
+      "report": "docs/PHASE_1C_M2_REPORT.md"
+    },
+    {
+      "phase": "M3A collectors",
+      "verdict": "PASS WITH CONDITIONS; M3A-C1 GO",
+      "report": [
+        "docs/PHASE_1C_M3A_REPORT.md",
+        "docs/PHASE_1C_M3A_C1_REPORT.md"
+      ]
+    },
+    {
+      "phase": "M3B eBPF",
+      "verdict": "M3B gate NO-GO, resolved by M3B R1 runtime validation: GO",
+      "report": [
+        "docs/PHASE_1C_M3B_REPORT.md",
+        "docs/PHASE_1C_M3B_R1_RUNTIME_VALIDATION_REPORT.md"
+      ]
+    },
+    {
+      "phase": "R2-A FaultLab infrastructure",
+      "verdict": "GO / CLOSED",
+      "report": "docs/PHASE_1C_R2A_FAULTLAB_INFRASTRUCTURE_REPORT.md"
+    },
+    {
+      "phase": "R2-B network packet loss",
+      "verdict": "GO / CLOSED",
+      "report": "docs/PHASE_1C_R2B_NETWORK_FAULT_VALIDATION_REPORT.md"
+    },
+    {
+      "phase": "R2-C CPU contention",
+      "verdict": "PASS / CLOSED",
+      "report": "docs/PHASE_1C_R2C_CPU_CONTENTION_VALIDATION_REPORT.md",
+      "evidence": "results/phase1c_r2c/20261003T175532Z/"
+    },
+    {
+      "phase": "R2-D CPU throttling",
+      "verdict": "PASS WITH DOCUMENTED LIMITATION / CLOSED",
+      "steps": {
+        "design": "PASS",
+        "implementation": "PASS",
+        "pre-runtime": "GO",
+        "runtime_attempt_1": "FAIL (T1-1 ABORT, preserved: results/phase1c_r2d/20261003T184854Z/)",
+        "gate_revision": "PASS",
+        "runtime_validation": "PASS WITH DOCUMENTED LIMITATION",
+        "closeout": "PASS"
+      },
+      "limitation": "throttle.quota_saturation (supporting) was MISSING in all 9 throttled runs (coverage 0.5-0.7); validated only when the quota does not bind (Q0/C1, equal to the prediction); behaviour under binding throttling, including values > 1.0, unvalidated",
+      "report": "docs/PHASE_1C_R2D_CPU_THROTTLING_VALIDATION_REPORT.md",
+      "evidence": "results/phase1c_r2d/20261003T191737Z/"
+    }
+  ],
+  "experimentally_validated_fault_classes": [
+    "network_packet_loss",
+    "cpu_contention",
+    "cpu_throttling"
+  ],
+  "observed_m2_decisions_in_validation": {
+    "decisions": [
+      "network_packet_loss",
+      "cpu_contention",
+      "cpu_throttling",
+      "INSUFFICIENT_EVIDENCE"
+    ],
+    "contributing": [
+      "tcp_retransmissions (CONTRIBUTING under network_packet_loss, PR-1; R2-B)"
+    ],
+    "precedence": [
+      "PR-3 contention vs throttling: cpu_throttling 3/3 in R2-D TC (time_rate ~0.686 vs run_delay_excess ~0.151, DOM_RATIO 2.0)"
+    ]
+  },
+  "contract_labels_not_yet_validated": [
+    "softirq_overload",
+    "memory_pressure",
+    "application_bottleneck",
+    "tcp_retransmissions (as primary decision)"
+  ],
+  "known_limitations": [
+    "R2-D: throttle.quota_saturation not validated under binding throttling (MISSING in all 9 T1/T2/TC runs; M3A rejects per-interval values > 1.0); supporting metric only — not a failure of the mandatory R2-D evidence or ground truth",
+    "R2-C E1: strong tail/PSI/run-delay degradation, M2 cpu_contention 3/3, but the approved G4 median-lateness criterion stayed FALSE (ground truth: not established) — recorded disagreement",
+    "cpu.util.cpuset has a /proc/stat tick-accounting bias when CPU 18 is partially busy",
+    "M2 confidence limited to MEDIUM by IMPACT_NOT_MEASURED (no application metrics)",
+    "thresholds are engineering/safety values (validation parameter set), not statistically calibrated; parameters.json UNCALIBRATED",
+    "host must keep openvpn-server@server.service disabled (crash-loop host noise otherwise)",
+    "README.md 'Current phase' section is stale (still describes Phase 1B)"
+  ],
+  "next_phase": {
+    "named_in_repository": null,
+    "next_unvalidated_fault_class": "softirq_overload",
+    "basis": "contract label order (labels.json): cpu_throttling now validated; remaining labels listed in contract_labels_not_yet_validated; not authorised"
+  },
+  "deferred": [
+    {
+      "item": "Option 2: evaluate whether throttle.quota_saturation should support values above 1.0 during binding throttling",
+      "scope": "separate contract / M3A study; not part of R2-D; no contract, M3A, COV_MIN, SAT_MIN, THR_RATIO_MIN, DOM_RATIO, M2 or PR-3 change made"
+    }
+  ],
+  "committed_in_closeout": [
+    "R2-C tooling, tests, report and evidence (results/phase1c_r2c/, 4 run directories)",
+    "R2-D tooling, tests, report and evidence (results/phase1c_r2d/, 2 run directories)",
+    "docs/PROJECT_STATUS.json"
+  ]
+}

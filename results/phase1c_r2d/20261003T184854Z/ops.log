@@ -1,0 +1,14 @@
+[calibration]
+[E0-open] iters=5344 driver
+{"label": "E0-open", "verdict": "OK", "aborts": [], "m2": "INSUFFICIENT_EVIDENCE", "iters": null}
+[Q0-1] iters=5344 driver
+{"label": "Q0-1", "verdict": "OK", "aborts": [], "m2": "INSUFFICIENT_EVIDENCE", "iters": null}
+[Q0-2] iters=5344 driver
+{"label": "Q0-2", "verdict": "OK", "aborts": [], "m2": "INSUFFICIENT_EVIDENCE", "iters": null}
+[C1-1] iters=5344 driver
+{"label": "C1-1", "verdict": "OK", "aborts": [], "m2": "cpu_contention", "iters": null}
+[C1-2] iters=5344 driver
+{"label": "C1-2", "verdict": "OK", "aborts": [], "m2": "cpu_contention", "iters": null}
+[T1-1] iters=5344 driver
+{"label": "T1-1", "verdict": "ABORT", "aborts": ["throttle.quota_saturation [None] != predicted 0.640144575395321"], "m2": "cpu_throttling", "iters": null}
+[T1-1] a check failed: stopping

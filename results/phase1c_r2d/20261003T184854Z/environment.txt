@@ -1,0 +1,134 @@
+commit=7354f403c3feb88a3b109fb5f18abe58027d518c
+base=7354f40
+Linux iiitd-Precision-3660 6.8.0-138-generic #138~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  7 13:43:15 UTC  x86_64 x86_64 x86_64 GNU/Linux
+user=iiitd
+Sat Oct  3 06:48:54 PM UTC 2026
+{"producer":"sentinel_loader","version":"m3b-1.0.0","libbpf_compiled":"1.4","libbpf_linked":"1.4","libbpf_linked_string":"v1.4","match":true}
+{
+ "quota": {
+  "MAX": "max 100000",
+  "Q_B": "100000 100000",
+  "T1": "15000 100000",
+  "T2": "7500 100000"
+ },
+ "quota_path": "/sys/fs/cgroup/sentinel-r2c/target/cpu.max",
+ "r2c_criteria": {
+  "G4": {
+   "type": "EXPERIMENTAL HEURISTIC",
+   "value": "n_B,n_W >= 4000; med_W >= 1.5*med_B; med_W - med_B >= 50000 ns; psi_w > psi_b"
+  },
+  "G7": {
+   "type": "SAFETY THRESHOLD, repository-informed",
+   "value": "|f_W - f_B| <= 0.01"
+  },
+  "HOST_PSI": {
+   "type": "SAFETY THRESHOLD",
+   "value": "host avg10 > 5.0: abort if any of system.slice, user.slice, init.scope cpu.pressure some avg10 > 5.0 or unreadable"
+  },
+  "MEMORY_PSI": {
+   "type": "REPOSITORY-SUPPORTED",
+   "value": "abort if delta some_total_us(W) > 0"
+  },
+  "MEMORY_SWAP": {
+   "type": "SAFETY THRESHOLD, repository-informed",
+   "value": "abort if (pswpin + pswpout) / W_s > 25.0 pages/s"
+  },
+  "SLICE_PSI": {
+   "type": "SAFETY THRESHOLD",
+   "value": "abort if r_W - r_B > 0.01"
+  }
+ },
+ "schedules": {
+  "C1": [
+   [
+    "before_tick0",
+    "100000 100000",
+    "max 100000"
+   ],
+   [
+    "after_last_w_tick",
+    "max 100000",
+    "100000 100000"
+   ]
+  ],
+  "E0": [],
+  "Q0": [
+   [
+    "before_tick0",
+    "100000 100000",
+    "max 100000"
+   ],
+   [
+    "after_last_w_tick",
+    "max 100000",
+    "100000 100000"
+   ]
+  ],
+  "T1": [
+   [
+    "before_tick0",
+    "100000 100000",
+    "max 100000"
+   ],
+   [
+    "window_callback",
+    "15000 100000",
+    "100000 100000"
+   ],
+   [
+    "after_last_w_tick",
+    "max 100000",
+    "15000 100000"
+   ]
+  ],
+  "T2": [
+   [
+    "before_tick0",
+    "100000 100000",
+    "max 100000"
+   ],
+   [
+    "window_callback",
+    "7500 100000",
+    "100000 100000"
+   ],
+   [
+    "after_last_w_tick",
+    "max 100000",
+    "7500 100000"
+   ]
+  ],
+  "TC": [
+   [
+    "before_tick0",
+    "100000 100000",
+    "max 100000"
+   ],
+   [
+    "window_callback",
+    "15000 100000",
+    "100000 100000"
+   ],
+   [
+    "after_last_w_tick",
+    "max 100000",
+    "15000 100000"
+   ]
+  ]
+ }
+}
+matrix: E0-open
+matrix: Q0-1
+matrix: Q0-2
+matrix: C1-1
+matrix: C1-2
+matrix: T1-1
+matrix: T1-2
+matrix: T1-3
+matrix: T2-1
+matrix: T2-2
+matrix: T2-3
+matrix: TC-1
+matrix: TC-2
+matrix: TC-3
+matrix: E0-close

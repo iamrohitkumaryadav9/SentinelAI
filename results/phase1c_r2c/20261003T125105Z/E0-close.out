@@ -1,0 +1,1 @@
+{"label": "E0-close", "verdict": "ABORT", "aborts": ["host state differs from the pre-run snapshot: ['cgroup_dirs_identical', 'bpf_progs_identical']"], "m2": "INSUFFICIENT_EVIDENCE", "iters": null}

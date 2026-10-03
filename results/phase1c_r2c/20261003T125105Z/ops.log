@@ -1,0 +1,26 @@
+[calibration]
+[E0-open] iters=5341 driver
+{"label": "E0-open", "verdict": "OK", "aborts": [], "m2": "INSUFFICIENT_EVIDENCE", "iters": null}
+[N1-rep1] iters=5341 driver
+{"label": "N1-rep1", "verdict": "OK", "aborts": [], "m2": "INSUFFICIENT_EVIDENCE", "iters": null}
+[N1-rep2] iters=5341 driver
+{"label": "N1-rep2", "verdict": "OK", "aborts": [], "m2": "INSUFFICIENT_EVIDENCE", "iters": null}
+[N2-rep1] iters=5341 driver
+{"label": "N2-rep1", "verdict": "OK", "aborts": [], "m2": "INSUFFICIENT_EVIDENCE", "iters": null}
+[N2-rep2] iters=5341 driver
+{"label": "N2-rep2", "verdict": "OK", "aborts": [], "m2": "INSUFFICIENT_EVIDENCE", "iters": null}
+[E1-rep1] iters=5341 driver
+{"label": "E1-rep1", "verdict": "OK", "aborts": [], "m2": "cpu_contention", "iters": null}
+[E1-rep2] iters=5341 driver
+{"label": "E1-rep2", "verdict": "OK", "aborts": [], "m2": "cpu_contention", "iters": null}
+[E1-rep3] iters=5341 driver
+{"label": "E1-rep3", "verdict": "OK", "aborts": [], "m2": "cpu_contention", "iters": null}
+[E2-rep1] iters=5341 driver
+{"label": "E2-rep1", "verdict": "OK", "aborts": [], "m2": "cpu_contention", "iters": null}
+[E2-rep2] iters=5341 driver
+{"label": "E2-rep2", "verdict": "OK", "aborts": [], "m2": "cpu_contention", "iters": null}
+[E2-rep3] iters=5341 driver
+{"label": "E2-rep3", "verdict": "OK", "aborts": [], "m2": "cpu_contention", "iters": null}
+[E0-close] iters=5341 driver
+{"label": "E0-close", "verdict": "ABORT", "aborts": ["host state differs from the pre-run snapshot: ['cgroup_dirs_identical', 'bpf_progs_identical']"], "m2": "INSUFFICIENT_EVIDENCE", "iters": null}
+[E0-close] a check failed: stopping
