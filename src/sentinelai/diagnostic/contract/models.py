@@ -205,8 +205,10 @@ class Measurement(BaseModel):
             raise ValueError(f"source {pv.source} not a registered source of {self.feature_id}")
         if pv.privileged != spec.privileged:
             raise ValueError(f"provenance.privileged must be {spec.privileged} for {self.feature_id}")
-        if self.measurement_id != ids.measurement_id(self.feature_id, self.scope, self.window, self.qualifier):
-            raise ValueError("measurement_id is not the deterministic id of (feature_id, scope, window, qualifier)")
+        if self.measurement_id != ids.measurement_id(self.feature_id, self.scope, self.window, self.qualifier,
+                                                     self.aggregation):
+            raise ValueError("measurement_id is not the deterministic id of (feature_id, scope, window, qualifier"
+                             "[, aggregation when the feature registers several])")
         # missing / invalid semantics (contract §10.3, §10.8): never encode absence as a number
         if (self.value is None) != (self.quality in (Quality.MISSING, Quality.INVALID)):
             raise ValueError("value must be null exactly when quality is MISSING or INVALID")

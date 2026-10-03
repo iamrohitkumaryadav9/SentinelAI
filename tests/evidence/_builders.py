@@ -55,8 +55,9 @@ def meas(feature_id, scope, value=2.0, quality=Quality.OK, coverage=1.0, base="a
         d = deviation_for(value, b) if (value is not None and b is not None) else None
     else:
         d = dev
-    return Measurement(measurement_id=measurement_id(feature_id, scope, win, qualifier), feature_id=feature_id, scope=scope,
-                       window=win, aggregation=aggregation or spec.aggregations[0], unit=unit or spec.unit,
+    agg = aggregation or spec.aggregations[0]
+    return Measurement(measurement_id=measurement_id(feature_id, scope, win, qualifier, agg), feature_id=feature_id,
+                       scope=scope, window=win, aggregation=agg, unit=unit or spec.unit,
                        value=value, quality=quality, coverage=coverage, baseline=b, deviation=d,
                        provenance=provenance or prov(feature_id, samples=0 if value is None else 10), qualifier=qualifier)
 

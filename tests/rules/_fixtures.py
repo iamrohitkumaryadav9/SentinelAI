@@ -60,8 +60,9 @@ def m(feature, scope, value, median=None, mad=0.1, *, quality=Quality.OK, covera
                       privileged=spec.privileged, first_sample_at=min(INC.start, last or INC.end) - timedelta(seconds=1),
                       last_sample_at=last or INC.end, samples=0 if value is None else 10,
                       derived_from=tuple(derived_from))
-    return Measurement(measurement_id=measurement_id(feature, scope, INC, qualifier), feature_id=feature,
-                       scope=scope, window=INC, aggregation=agg or spec.aggregations[0], unit=spec.unit,
+    agg = agg or spec.aggregations[0]
+    return Measurement(measurement_id=measurement_id(feature, scope, INC, qualifier, agg), feature_id=feature,
+                       scope=scope, window=INC, aggregation=agg, unit=spec.unit,
                        value=None if quality in (Quality.MISSING, Quality.INVALID) else value, quality=quality,
                        coverage=coverage, baseline=b, deviation=d, provenance=prov, qualifier=qualifier)
 
@@ -117,7 +118,7 @@ def snapshot(measurements, gate=True):
     ms = tuple(measurements)
     missing = tuple(MissingMeasurement(feature_id=x.feature_id, scope=x.scope, reason="unavailable", qualifier=x.qualifier)
                     for x in ms if x.quality is Quality.MISSING)
-    return EvidenceSnapshot(schema_version="0.2.0", contract_version="0.4.0-draft", parameter_set_id=PSID,
+    return EvidenceSnapshot(schema_version="0.2.0", contract_version="0.5.0-draft", parameter_set_id=PSID,
                             snapshot_id=snapshot_id(TARGET, INC, ms), target=TARGET, window=INC, baseline_window=BASE,
                             measurements=ms, evidence_items=(), missing_measurements=missing, conflicts=(),
                             data_quality=DataQuality(overall_coverage=1.0, sources_unavailable=(),

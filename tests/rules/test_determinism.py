@@ -84,7 +84,7 @@ class TestPurity(unittest.TestCase):
 
     def test_engine_info(self):
         e = run(SCENARIOS["contention"]).result.engine
-        self.assertEqual((e.contract_version, e.parameter_set_id, e.code_commit), ("0.4.0-draft", "test-params-m2", COMMIT))
+        self.assertEqual((e.contract_version, e.parameter_set_id, e.code_commit), ("0.5.0-draft", "test-params-m2", COMMIT))
         self.assertTrue(e.rules_version)
 
 

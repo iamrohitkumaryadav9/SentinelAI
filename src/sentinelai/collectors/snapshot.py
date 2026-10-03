@@ -168,8 +168,9 @@ def _measurement(calc, ev, ticks, nB, nW, bwin, wwin, params) -> Tuple[Measureme
     prov = Provenance(source=calc.source, locator=calc.locator, collector=calc.collector,
                       collector_version=COLLECTOR_VERSION, privileged=spec.privileged,
                       first_sample_at=first, last_sample_at=last, samples=samples, derived_from=derived)
-    m = Measurement(measurement_id=measurement_id(calc.feature, calc.scope, wwin), feature_id=calc.feature,
-                    scope=calc.scope, window=wwin, aggregation=spec.aggregations[0], unit=spec.unit, value=value,
+    agg = spec.aggregations[0]
+    m = Measurement(measurement_id=measurement_id(calc.feature, calc.scope, wwin, aggregation=agg),
+                    feature_id=calc.feature, scope=calc.scope, window=wwin, aggregation=agg, unit=spec.unit, value=value,
                     quality=quality, coverage=cov, baseline=baseline, deviation=deviation, provenance=prov)
     return m, reason
 

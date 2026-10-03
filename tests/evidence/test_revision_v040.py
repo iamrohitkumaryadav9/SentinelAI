@@ -161,7 +161,8 @@ class TestPreservation(unittest.TestCase):
 
 class TestVersioningAndDeterminism(unittest.TestCase):
     def test_minor_bump(self):
-        self.assertEqual((CONTRACT_VERSION, SCHEMA_VERSION), ("0.4.0-draft", "0.2.0"))
+        # v0.5.0-draft (M3B-C1) keeps the v0.4.0 features tested here; it only changes multi-aggregation ids
+        self.assertEqual((CONTRACT_VERSION, SCHEMA_VERSION), ("0.5.0-draft", "0.2.0"))
         for name in ("registry.json", "labels.json", "predicates.json", "parameters.json"):
             self.assertEqual(_raw(name)["contract_version"], CONTRACT_VERSION)
         self.assertEqual(require_compatible("0.3.0-draft"), "0.3.0-draft")   # same major: older snapshots accepted

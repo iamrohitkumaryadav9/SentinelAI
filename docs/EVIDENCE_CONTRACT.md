@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Contract ID | `sentinelai.evidence-contract` |
-| Version | **0.4.0-draft** (M3B-C0: EBPF feature alignment, additive; see the revision history below) |
+| Version | **0.5.0-draft** (M3B-C1: measurement identity includes the aggregation for multi-aggregation features; see the revision history below) |
 | Date | 2026-10-03 |
 | Status | DESIGN; schema implemented in M1 (schema version `0.2.0`). Every numeric threshold is an **uncalibrated parameter** (§6). |
 | Consumers | Deterministic rule engine, ML classifier, tests, and (later) the LLM orchestrator |
@@ -20,6 +20,7 @@ This contract defines what SentinelAI may claim about a performance incident, an
 | **0.2.0-draft** | Pre-M2 correction approved from `PHASE_1C_PRE_M2_AUDIT.md`:<br>**R-1** unlimited CPU quota represented by the new feature `throttle.quota_limited` (Unit `boolean`); CT.R1 now reads it (§4.2, §8.2).<br>**R-2** `mem.reclaim.target` defined as Δ`pgscan` only (§4.6).<br>**R-3** `Measurement.qualifier` for registry-declared dimensions (`kfree_skb` reason, `app.events` code) (§4.3, §4.7, §10.3, §10.5).<br>**R-4** every parameter is typed (`number` / `reason_set`), numeric thresholds reference `number` only; `τ_DISAGREE` added (§6).<br>**R-5** `DiagnosticResult.flags` (`IMPACT_NOT_MEASURED`, `ML_DISAGREEMENT`) (§10.6, §10.7).<br>Version number decided by the reviewer (see §12). |
 | **0.3.0-draft** | C-1 resolution (found by M2, `docs/PHASE_1C_M2_REPORT.md` §15; resolved in `docs/PHASE_1C_C1_REPORT.md`):<br>**C-1** RT.R2 becomes a **Primary** clause (§8): it is required for `tcp_retransmissions` to be the *decision*, not for it to be *contributing*. When local loss is proven (RT.R2 FALSE), `tcp_retransmissions` with RT.R0 and RT.R1 TRUE is CONTRIBUTING under PR-1 when `network_packet_loss` is the decision (§8.5, §9, §10.7 I2/I4). The RT.R2 predicate itself is unchanged.<br>**C-3** `throttle.quota_limited` added to the AB.R3 feature list, so AB.R3 can cite the CT.R1 measurement (§8.7).<br>Schema version unchanged (`0.2.0`): no field of any evidence object changes. |
 | **0.4.0-draft** | M3B-C0 (gaps from the M3B audit, `docs/PHASE_1C_M3B_REPORT.md`; resolved in `docs/PHASE_1C_M3B_C0_REPORT.md`). **Additive only**: two new EBPF-sourced features; no existing feature, clause, predicate, parameter or precedence rule changes, and M2 consumes neither feature.<br>**G-2** `softirq.exec_time.percpu` (§4.5): softirq execution time from `irq:softirq_entry`/`softirq_exit`, per CPU and per `vector` qualifier, in cores (CPU-s/s).<br>**G-3** `tcp.retrans_skb_rate` (§4.4): `tcp:tcp_retransmit_skb` events per second (retransmitted skbs/s) in the target netns. It is distinct from `tcp.retrans_rate` (RetransSegs, segments/s), which is unchanged.<br>**G-1** accepted: `sched.latency_hist.target` keeps P50/P99 only.<br>Schema version unchanged (`0.2.0`). |
+| **0.5.0-draft** | M3B-C1 (contradiction found by the M3B build audit; resolved in `docs/PHASE_1C_M3B_C1_REPORT.md`). **Identity only**: `sched.latency_hist.target` registers P50 and P99, but `measurement_id` did not include the aggregation, so both percentiles of one scope and window had the same id and could not coexist in a snapshot (the same latent defect affected `app.latency_ms` P50/P99 and `tcp.srtt_ms` P50/P90).<br>**C1-1** §10.3: the aggregation is an identity input **exactly when the feature registers more than one aggregation**. Every single-aggregation id is byte-identical to 0.4.0. No feature, unit, source, qualifier, clause, predicate, parameter or precedence rule changes. Schema version unchanged (`0.2.0`); rules unchanged (`m2-1.1.0`). |
 
 ---
 
@@ -464,7 +465,7 @@ All models are strict (`ConfigDict(extra="forbid", frozen=True)`). Times are UTC
 ### 10.3 `Measurement`
 | Field | Type | Req. | Notes |
 |---|---|---|---|
-| `measurement_id` | str | ✓ | Deterministic: `sha1(feature_id, scope, window[, qualifier])` truncated to 16 hex. The qualifier is included only when present, so unqualified ids are unchanged from 0.1.0. |
+| `measurement_id` | str | ✓ | Deterministic: `sha1(feature_id, scope, window[, qualifier][, aggregation])` truncated to 16 hex. The qualifier is included only when present, so unqualified ids are unchanged from 0.1.0. The aggregation is included **only when the feature registers more than one aggregation** (0.5.0); for every single-aggregation feature it is omitted and the id is unchanged from 0.4.0. For a multi-aggregation feature the aggregation is required, so its percentiles (e.g. P50 and P99) are distinct measurements. |
 | `feature_id` | str (registry key) | ✓ | Must exist in the registry for `contract_version` |
 | `scope` | str | ✓ | §2 scope syntax |
 | `window` | `Window` | ✓ | |
@@ -570,6 +571,7 @@ FaultLab ground truth (`FAULTLAB_GROUND_TRUTH`) **MUST NOT** appear in a snapsho
 ## 12. Versioning
 
 - The contract uses semantic versioning.
+- **0.5.0-draft note.** M3B-C1 adds the aggregation to the identity of multi-aggregation measurements (§10.3). No feature, clause, predicate, parameter or precedence rule changes, and every single-aggregation id is unchanged, so it is released as a **minor** change: 0.4.0 → 0.5.0. Schema stays `0.2.0`; 0.2.0–0.4.0-draft snapshots (major 0) remain accepted. Limitation: a 0.4.0 snapshot that contains a multi-aggregation measurement carries the aggregation-free id and fails 0.5.0 identity validation. No such snapshot was ever produced (no collector emits `sched.latency_hist.target`, `app.latency_ms` or `tcp.srtt_ms`, and the defect prevented two percentiles from coexisting).
 - **0.4.0-draft note.** M3B-C0 adds two features and one qualifier dimension, and changes nothing existing. That is a **minor** change under this section: 0.3.0 → 0.4.0. Schema stays `0.2.0`, and 0.2.0/0.3.0-draft snapshots (major 0) remain accepted.
 - **0.3.0-draft governance note.** C-1 changes the role of the Required clause RT.R2, which this section classifies as a major change. Following the 0.2.0-draft precedent (pre-release draft, consumers M1 and M2 only), it is released as `0.3.0-draft`; the reviewer may decide otherwise. The evidence object schema is unchanged, so `schema_version` stays `0.2.0`, and snapshots recorded under `0.2.0-draft` (same major version 0) remain accepted.
 - **0.2.0-draft governance note.** R-1 changes the Required clause CT.R1, which this section classifies as a major change. Because the contract is a pre-release draft whose only consumer is M1, the reviewer decided to release the pre-M2 correction as `0.2.0-draft` (schema `0.2.0`). Snapshots with `schema_version` other than `0.2.0` are rejected; there is no migration.
