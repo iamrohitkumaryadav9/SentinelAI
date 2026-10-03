@@ -1,0 +1,16 @@
+{
+ "status_ok": true,
+ "cycles": {
+  "cycle1": {
+   "lab_checks": true,
+   "with_lab_compare": true,
+   "after_compare": true
+  },
+  "cycle2": {
+   "lab_checks": true,
+   "with_lab_compare": true,
+   "after_compare": true
+  }
+ },
+ "final_compare_ok": true
+}

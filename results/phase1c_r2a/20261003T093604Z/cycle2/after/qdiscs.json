@@ -1,0 +1,1 @@
+[{"kind":"noqueue","handle":"0:","dev":"lo","root":true,"refcnt":2,"options":{}},{"kind":"fq_codel","handle":"0:","dev":"enp0s31f6","root":true,"refcnt":2,"options":{"limit":10240,"flows":1024,"quantum":1514,"target":4999,"interval":99999,"memory_limit":33554432,"ecn":true,"drop_batch":64}},{"kind":"noqueue","handle":"0:","dev":"docker0","root":true,"refcnt":2,"options":{}}]

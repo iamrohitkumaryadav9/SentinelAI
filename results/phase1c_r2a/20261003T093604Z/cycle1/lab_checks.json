@@ -1,0 +1,32 @@
+{
+ "checks": {
+  "a_address": true,
+  "a_lo_up": true,
+  "a_loopback_ping": true,
+  "a_no_default_route": true,
+  "a_no_external_path": true,
+  "a_no_netem_qdisc": true,
+  "a_only_lo_and_veth": true,
+  "a_ping_peer": true,
+  "a_routes_lab_only": true,
+  "a_veth_peer_in_other_ns": true,
+  "a_veth_type": true,
+  "a_veth_up": true,
+  "b_address": true,
+  "b_lo_up": true,
+  "b_loopback_ping": true,
+  "b_no_default_route": true,
+  "b_no_external_path": true,
+  "b_no_netem_qdisc": true,
+  "b_only_lo_and_veth": true,
+  "b_ping_peer": true,
+  "b_routes_lab_only": true,
+  "b_veth_peer_in_other_ns": true,
+  "b_veth_type": true,
+  "b_veth_up": true,
+  "host_has_no_lab_interface": true,
+  "namespaces_exist": true,
+  "tcp_echo": true
+ },
+ "ok": true
+}

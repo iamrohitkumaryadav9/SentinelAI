@@ -1,0 +1,26 @@
+[cycle 1] create
+09:36:04.958 rc=0  ip netns add sentinel-lab-a
+09:36:04.959 rc=0  ip netns add sentinel-lab-b
+09:36:04.962 rc=0  ip link add sentlab-a0 netns sentinel-lab-a type veth peer name sentlab-b0 netns sentinel-lab-b
+09:36:04.964 rc=0  ip -n sentinel-lab-a addr add 10.199.0.1/24 dev sentlab-a0
+09:36:04.965 rc=0  ip -n sentinel-lab-b addr add 10.199.0.2/24 dev sentlab-b0
+09:36:04.967 rc=0  ip -n sentinel-lab-a link set lo up
+09:36:04.969 rc=0  ip -n sentinel-lab-b link set lo up
+09:36:04.970 rc=0  ip -n sentinel-lab-a link set sentlab-a0 up
+09:36:04.972 rc=0  ip -n sentinel-lab-b link set sentlab-b0 up
+[cycle 1] destroy
+09:36:13.416 rc=0  ip netns del sentinel-lab-a
+09:36:13.418 rc=0  ip netns del sentinel-lab-b
+[cycle 2] create
+09:36:14.466 rc=0  ip netns add sentinel-lab-a
+09:36:14.468 rc=0  ip netns add sentinel-lab-b
+09:36:14.470 rc=0  ip link add sentlab-a0 netns sentinel-lab-a type veth peer name sentlab-b0 netns sentinel-lab-b
+09:36:14.472 rc=0  ip -n sentinel-lab-a addr add 10.199.0.1/24 dev sentlab-a0
+09:36:14.473 rc=0  ip -n sentinel-lab-b addr add 10.199.0.2/24 dev sentlab-b0
+09:36:14.475 rc=0  ip -n sentinel-lab-a link set lo up
+09:36:14.477 rc=0  ip -n sentinel-lab-b link set lo up
+09:36:14.479 rc=0  ip -n sentinel-lab-a link set sentlab-a0 up
+09:36:14.481 rc=0  ip -n sentinel-lab-b link set sentlab-b0 up
+[cycle 2] destroy
+09:36:22.698 rc=0  ip netns del sentinel-lab-a
+09:36:22.699 rc=0  ip netns del sentinel-lab-b

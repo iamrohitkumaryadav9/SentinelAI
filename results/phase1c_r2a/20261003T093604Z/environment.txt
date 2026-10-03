@@ -1,0 +1,12 @@
+commit={
+ "base": "3f1eb40190e5c9e3e373f6242691b560be4f4248",
+ "head": "683d87af0f60d803f01c393b479b4b0b111029e2",
+ "ok": true
+}
+base=3f1eb40190e5c9e3e373f6242691b560be4f4248
+Linux iiitd-Precision-3660 6.8.0-138-generic #138~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  7 13:43:15 UTC  x86_64 x86_64 x86_64 GNU/Linux
+user=iiitd
+Sat Oct  3 09:36:04 AM UTC 2026
+ip utility, iproute2-5.15.0, libbpf 0.5.0
+tc utility, iproute2-5.15.0, libbpf 0.5.0
+lab: sentinel-lab-a/sentlab-a0 10.199.0.1/24 <-> sentinel-lab-b/sentlab-b0 10.199.0.2/24
