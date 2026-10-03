@@ -1,6 +1,6 @@
 {
  "registry_id": "sentinelai.feature-registry",
- "contract_version": "0.3.0-draft",
+ "contract_version": "0.4.0-draft",
  "features": [
   {
    "id": "cpu.util.host",
@@ -843,6 +843,29 @@
    "dimension": null
   },
   {
+   "id": "tcp.retrans_skb_rate",
+   "family": "network_tcp",
+   "scope_kinds": [
+    "netns"
+   ],
+   "unit": "events_per_second",
+   "contract_unit_text": "retransmitted skbs/s (one event per tcp:tcp_retransmit_skb)",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "EBPF"
+   ],
+   "availability": "P",
+   "privileged": true,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "eBPF tcp:tcp_retransmit_skb events whose socket belongs to the target netns",
+   "derived_from": [],
+   "description": "Rate of retransmission events observed through the tcp_retransmit_skb tracepoint in the target netns: one event per retransmitted skb. An skb can carry several segments (TSO/GSO), so this is NOT segments/s and NOT tcp.retrans_rate (/proc/net/snmp RetransSegs), which is unchanged. No per-socket or per-target attribution is promised.",
+   "dimension": null
+  },
+  {
    "id": "tcp.srtt_ms",
    "family": "network_tcp",
    "scope_kinds": [
@@ -959,6 +982,44 @@
    "derived_from": [],
    "description": "",
    "dimension": null
+  },
+  {
+   "id": "softirq.exec_time.percpu",
+   "family": "softirq",
+   "scope_kinds": [
+    "cpu"
+   ],
+   "unit": "cores",
+   "contract_unit_text": "softirq execution CPU-seconds per second (cores) per vector",
+   "aggregations": [
+    "RATE"
+   ],
+   "sources": [
+    "EBPF"
+   ],
+   "availability": "P",
+   "privileged": true,
+   "kind": "counter_rate",
+   "non_negative": true,
+   "locator": "eBPF irq:softirq_entry -> irq:softirq_exit on CPU N, per vector: sum(exit_ts - entry_ts) / dt",
+   "derived_from": [],
+   "description": "Observed softirq execution time from kernel entry/exit events (monotonic ns), per CPU and per vector, as a time rate over W. Not the /proc/stat jiffy fraction (softirq.frac.percpu), not the /proc/softirqs event counts (softirq.net_rx_rate.percpu, softirq.net_tx_rate.percpu), not CPU utilisation. Network softirq time is only the NET_RX and NET_TX vectors; total softirq time is the sum over all vectors.",
+   "dimension": {
+    "name": "vector",
+    "pattern": null,
+    "values": [
+     "HI",
+     "TIMER",
+     "NET_TX",
+     "NET_RX",
+     "BLOCK",
+     "IRQ_POLL",
+     "TASKLET",
+     "SCHED",
+     "HRTIMER",
+     "RCU"
+    ]
+   }
   },
   {
    "id": "softnet.time_squeeze.percpu",

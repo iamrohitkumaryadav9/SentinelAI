@@ -20,8 +20,8 @@ throttle.quota_limited throttle.quota_cores throttle.ratio throttle.time_rate th
 net.drop.qdisc net.drop.iface_rx net.drop.iface_tx net.err.iface net.drop.softnet net.drop.socket
 net.drop.netfilter net.drop.kfree_skb net.pkts.iface net.bytes.iface
 tcp.retrans_rate tcp.retrans_frac tcp.out_segs_rate tcp.timeouts_rate tcp.fast_retrans_rate tcp.syn_retrans_rate
-tcp.srtt_ms tcp.cwnd
-softirq.frac.percpu softirq.net_rx_rate.percpu softirq.net_tx_rate.percpu softnet.time_squeeze.percpu
+tcp.srtt_ms tcp.cwnd tcp.retrans_skb_rate
+softirq.frac.percpu softirq.net_rx_rate.percpu softirq.net_tx_rate.percpu softirq.exec_time.percpu softnet.time_squeeze.percpu
 softnet.processed.percpu softirq.imbalance softirq.relevant_cpu_max
 mem.util.target mem.available.host psi.mem.some.target psi.mem.full.target psi.mem.some.host mem.reclaim.target
 mem.reclaim_direct.host mem.refault.target mem.majfault.target mem.events.high mem.events.oom_kill mem.swap.target
@@ -45,7 +45,7 @@ class TestRegistry(unittest.TestCase):
     def test_ids_unique_and_versioned(self):
         ids = [f.id for f in C.registry.features]
         self.assertEqual(len(ids), len(set(ids)))
-        self.assertEqual(C.registry.contract_version, "0.3.0-draft")
+        self.assertEqual(C.registry.contract_version, "0.4.0-draft")
 
     def test_unknown_feature_rejected(self):
         with self.assertRaises(ContractViolation):
@@ -57,7 +57,8 @@ class TestRegistry(unittest.TestCase):
 
     def test_privileged_only_for_ebpf_availability(self):
         priv = sorted(f.id for f in C.registry.features if f.privileged)
-        self.assertEqual(priv, ["net.drop.kfree_skb", "sched.latency_hist.target"])
+        self.assertEqual(priv, ["net.drop.kfree_skb", "sched.latency_hist.target", "softirq.exec_time.percpu",
+                                "tcp.retrans_skb_rate"])                      # v0.4.0: the two EBPF additions
 
     def test_application_features_marked_lab_only(self):
         for f in C.registry.features:

@@ -117,7 +117,7 @@ def snapshot(measurements, gate=True):
     ms = tuple(measurements)
     missing = tuple(MissingMeasurement(feature_id=x.feature_id, scope=x.scope, reason="unavailable", qualifier=x.qualifier)
                     for x in ms if x.quality is Quality.MISSING)
-    return EvidenceSnapshot(schema_version="0.2.0", contract_version="0.3.0-draft", parameter_set_id=PSID,
+    return EvidenceSnapshot(schema_version="0.2.0", contract_version="0.4.0-draft", parameter_set_id=PSID,
                             snapshot_id=snapshot_id(TARGET, INC, ms), target=TARGET, window=INC, baseline_window=BASE,
                             measurements=ms, evidence_items=(), missing_measurements=missing, conflicts=(),
                             data_quality=DataQuality(overall_coverage=1.0, sources_unavailable=(),

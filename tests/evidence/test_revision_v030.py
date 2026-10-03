@@ -131,9 +131,10 @@ class TestC3AbR3Features(unittest.TestCase):
 
 class TestVersion(unittest.TestCase):
     def test_versions(self):
-        self.assertEqual((CONTRACT_VERSION, SCHEMA_VERSION), ("0.3.0-draft", "0.2.0"))
+        # v0.4.0-draft (M3B-C0) only adds features; the v0.3.0 C-1/C-3 content tested above is retained
+        self.assertEqual((CONTRACT_VERSION, SCHEMA_VERSION), ("0.4.0-draft", "0.2.0"))
         for part in (C.registry, C.labels):
-            self.assertEqual(part.contract_version, "0.3.0-draft")
+            self.assertEqual(part.contract_version, "0.4.0-draft")
 
     def test_v020_snapshots_still_accepted(self):
         self.assertEqual(require_compatible("0.2.0-draft"), "0.2.0-draft")

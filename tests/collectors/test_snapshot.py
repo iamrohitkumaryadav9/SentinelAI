@@ -62,7 +62,7 @@ class TestContract(unittest.TestCase):
 
     def test_snapshot_metadata(self):
         self.assertEqual((self.s.schema_version, self.s.contract_version, self.s.parameter_set_id),
-                         ("0.2.0", "0.3.0-draft", PSID))
+                         ("0.2.0", "0.4.0-draft", PSID))
         self.assertEqual(self.s.window.start, T0 + timedelta(seconds=NB))
         self.assertEqual(self.s.window.duration_s, float(NW))
         self.assertEqual(self.s.baseline_window.end, self.s.window.start)

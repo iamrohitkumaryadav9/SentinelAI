@@ -93,7 +93,7 @@ class TestR3Qualifier(unittest.TestCase):
 
     def test_registry_dimensions(self):
         dims = {f.id: f.dimension for f in C.registry.features if f.dimension}
-        self.assertEqual(set(dims), {"net.drop.kfree_skb", "app.events"})
+        self.assertEqual(set(dims), {"net.drop.kfree_skb", "app.events", "softirq.exec_time.percpu"})   # + v0.4.0
         self.assertEqual(dims["net.drop.kfree_skb"].name, "reason")
         self.assertEqual(dims["app.events"].name, "code")
         self.assertEqual(set(dims["app.events"].values),
