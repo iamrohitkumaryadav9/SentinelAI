@@ -1,0 +1,8 @@
+PING 10.199.0.1 (10.199.0.1) from 10.199.0.2 sentlab-b0: 56(84) bytes of data.
+64 bytes from 10.199.0.1: icmp_seq=1 ttl=64 time=0.025 ms
+64 bytes from 10.199.0.1: icmp_seq=2 ttl=64 time=0.041 ms
+64 bytes from 10.199.0.1: icmp_seq=3 ttl=64 time=0.050 ms
+
+--- 10.199.0.1 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2045ms
+rtt min/avg/max/mdev = 0.025/0.038/0.050/0.010 ms

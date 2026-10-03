@@ -1,0 +1,15 @@
+{
+ "status_ok": false,
+ "runs": {
+  "E0-baseline": {
+   "lab_clean_ok": true,
+   "driver_ok": null,
+   "qdisc_drops_w": 0,
+   "prediction": "INSUFFICIENT_EVIDENCE",
+   "m2": null,
+   "lab_restored": true,
+   "host_ok": true
+  }
+ },
+ "host_final_ok": true
+}

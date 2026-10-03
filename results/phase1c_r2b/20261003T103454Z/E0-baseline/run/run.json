@@ -1,0 +1,485 @@
+{
+ "attribution": {
+  "a_qdisc_drop_kfree": 0,
+  "checks": {
+   "a_events_seen_as_other_netns_by_b": true,
+   "a_no_qdisc_drops_at_baseline": true,
+   "a_no_retransmissions_at_baseline": true,
+   "a_qdisc_drop_kfree_matches_qdisc_counter": true,
+   "b_has_no_qdisc_drop_kfree": true,
+   "b_has_no_target_retransmissions": true
+  },
+  "ok": true,
+  "qdisc_drops": 0,
+  "tolerance": 2
+ },
+ "driver_ok": true,
+ "ebpf_window": {
+  "a": {
+   "kfree": {
+    "2": 1
+   },
+   "retrans": 0,
+   "stats": {
+    "kfree_other_netns": 404,
+    "kfree_unattributed": 344,
+    "lat_migrated": 10,
+    "lat_recorded": 88582,
+    "sirq_recorded": 111409,
+    "wake_cancelled_running": 9,
+    "wake_new": 10,
+    "wake_recorded": 88581,
+    "wake_repeat": 3
+   }
+  },
+  "b": {
+   "kfree": {
+    "2": 1
+   },
+   "retrans": 0,
+   "stats": {
+    "kfree_other_netns": 406,
+    "kfree_unattributed": 344,
+    "lat_migrated": 10,
+    "lat_recorded": 88581,
+    "sirq_recorded": 111410,
+    "wake_cancelled_running": 9,
+    "wake_new": 10,
+    "wake_recorded": 88580,
+    "wake_repeat": 3
+   }
+  },
+  "qdisc_drop_slot": 52,
+  "reason_names": {
+   "2": "NOT_SPECIFIED"
+  }
+ },
+ "events": [
+  {
+   "event": "collect_start",
+   "t_mono": 359457.174288684
+  },
+  {
+   "event": "no_fault_baseline_window",
+   "t_mono": 359467.181133953
+  },
+  {
+   "event": "collect_end",
+   "t_mono": 359477.18146199
+  }
+ ],
+ "kfree_reasons_loss": [
+  "QDISC_DROP",
+  "CPU_BACKLOG",
+  "NETFILTER_DROP"
+ ],
+ "label": "E0-baseline",
+ "loader_start": {
+  "a": null,
+  "b": null
+ },
+ "loss_pct": 0.0,
+ "m2": {
+  "abstained": true,
+  "abstention_reasons": [
+   "REQUIRED_EVIDENCE_MISSING"
+  ],
+  "candidates": [
+   {
+    "contradicting": [
+     "CC.R2"
+    ],
+    "label": "cpu_contention",
+    "required_met": [],
+    "required_missing": [
+     "CC.R1",
+     "CC.R2"
+    ],
+    "status": "NOT_SUPPORTED",
+    "supporting": []
+   },
+   {
+    "contradicting": [],
+    "label": "cpu_throttling",
+    "required_met": [],
+    "required_missing": [
+     "CT.R1",
+     "CT.R2"
+    ],
+    "status": "NOT_EVALUABLE",
+    "supporting": []
+   },
+   {
+    "contradicting": [
+     "SI.R1"
+    ],
+    "label": "softirq_overload",
+    "required_met": [],
+    "required_missing": [
+     "SI.R1",
+     "SI.R2"
+    ],
+    "status": "NOT_SUPPORTED",
+    "supporting": [
+     "DEV[softirq.net_rx_rate.percpu]",
+     "DEV[softirq.net_rx_rate.percpu]",
+     "DEV[softirq.net_rx_rate.percpu]",
+     "DEV[softirq.net_rx_rate.percpu]",
+     "DEV[softirq.net_rx_rate.percpu]"
+    ]
+   },
+   {
+    "contradicting": [
+     "RT.R2/LOSS.LOCAL"
+    ],
+    "label": "network_packet_loss",
+    "required_met": [],
+    "required_missing": [
+     "PL.R1"
+    ],
+    "status": "NOT_SUPPORTED",
+    "supporting": [
+     "DEV[net.drop.kfree_skb]"
+    ]
+   },
+   {
+    "contradicting": [
+     "RT.R1"
+    ],
+    "label": "tcp_retransmissions",
+    "required_met": [
+     "RT.R0",
+     "RT.R2"
+    ],
+    "required_missing": [
+     "RT.R1"
+    ],
+    "status": "NOT_SUPPORTED",
+    "supporting": [
+     "RT.R0",
+     "RT.R2/EVALUATED[min_local_drop_set]"
+    ]
+   },
+   {
+    "contradicting": [
+     "MP.R1"
+    ],
+    "label": "memory_pressure",
+    "required_met": [],
+    "required_missing": [
+     "MP.R1"
+    ],
+    "status": "NOT_SUPPORTED",
+    "supporting": []
+   },
+   {
+    "contradicting": [],
+    "label": "application_bottleneck",
+    "required_met": [],
+    "required_missing": [
+     "AB.R1",
+     "AB.R2",
+     "AB.R3"
+    ],
+    "status": "SUPPORTED_NOT_SUFFICIENT",
+    "supporting": [
+     "AB.R3/EVALUATED[family:cpu_sched]",
+     "AB.R3/EVALUATED[family:memory]",
+     "AB.R3/EVALUATED[family:network_drops]",
+     "AB.R3/EVALUATED[family:network_tcp]",
+     "AB.R3/EVALUATED[family:softirq]"
+    ]
+   }
+  ],
+  "confidence": "LOW",
+  "contributing": [],
+  "decision": "INSUFFICIENT_EVIDENCE",
+  "flags": [
+   "IMPACT_NOT_MEASURED"
+  ],
+  "network_items": [
+   [
+    "DEV[net.drop.kfree_skb]",
+    "POSITIVE",
+    null
+   ],
+   [
+    "DEV[tcp.retrans_frac]",
+    "NEGATIVE",
+    null
+   ],
+   [
+    "DEV[tcp.timeouts_rate]",
+    "NEGATIVE",
+    null
+   ],
+   [
+    "PL.R1/LOSS.LOCAL[net.drop.iface_rx]",
+    "NEGATIVE",
+    0.0
+   ],
+   [
+    "PL.R1/LOSS.LOCAL[net.drop.iface_tx]",
+    "NEGATIVE",
+    0.0
+   ],
+   [
+    "PL.R1/LOSS.LOCAL[net.drop.qdisc]",
+    "NEGATIVE",
+    0.0
+   ],
+   [
+    "PL.R1/LOSS.LOCAL[net.drop.socket]",
+    "NEGATIVE",
+    0.0
+   ],
+   [
+    "PL.R1/LOSS.LOCAL[net.drop.softnet]",
+    "NEGATIVE",
+    0.0
+   ],
+   [
+    "PL.R1/LOSS.LOCAL[net.err.iface]",
+    "NEGATIVE",
+    0.0
+   ],
+   [
+    "RT.R0",
+    "POSITIVE",
+    null
+   ],
+   [
+    "RT.R1",
+    "NEGATIVE",
+    null
+   ],
+   [
+    "RT.R2/EVALUATED[min_local_drop_set]",
+    "POSITIVE",
+    null
+   ],
+   [
+    "RT.R2/LOSS.LOCAL",
+    "NEGATIVE",
+    null
+   ]
+  ]
+ },
+ "m2_matches_prediction": true,
+ "measurements": [
+  {
+   "aggregation": "RATE",
+   "baseline_median": 0.0,
+   "coverage": 1.0,
+   "feature": "net.drop.qdisc",
+   "qualifier": null,
+   "quality": "OK",
+   "scope": "iface:laba/sentlab-a0",
+   "source": "TC",
+   "unit": "packets_per_second",
+   "value": 0.0
+  },
+  {
+   "aggregation": "RATE",
+   "baseline_median": 4000.0048920799595,
+   "coverage": 1.0,
+   "feature": "tcp.out_segs_rate",
+   "qualifier": null,
+   "quality": "OK",
+   "scope": "netns:laba",
+   "source": "PROC",
+   "unit": "segments_per_second",
+   "value": 3999.939024591667
+  },
+  {
+   "aggregation": "RATE",
+   "baseline_median": 0.0,
+   "coverage": 1.0,
+   "feature": "net.drop.kfree_skb",
+   "qualifier": "NOT_SPECIFIED",
+   "quality": "OK",
+   "scope": "netns:laba",
+   "source": "EBPF",
+   "unit": "packets_per_second",
+   "value": 0.10000097563918266
+  },
+  {
+   "aggregation": "RATE",
+   "baseline_median": 0.0,
+   "coverage": 1.0,
+   "feature": "net.drop.socket",
+   "qualifier": null,
+   "quality": "OK",
+   "scope": "netns:laba",
+   "source": "PROC",
+   "unit": "packets_per_second",
+   "value": 0.0
+  },
+  {
+   "aggregation": "RATE",
+   "baseline_median": 7999.4678906797335,
+   "coverage": 1.0,
+   "feature": "net.pkts.iface",
+   "qualifier": null,
+   "quality": "OK",
+   "scope": "iface:laba/sentlab-a0",
+   "source": "SYSFS",
+   "unit": "packets_per_second",
+   "value": 8000.078051134612
+  },
+  {
+   "aggregation": "RATE",
+   "baseline_median": 0.0,
+   "coverage": 1.0,
+   "feature": "net.drop.iface_rx",
+   "qualifier": null,
+   "quality": "OK",
+   "scope": "iface:laba/sentlab-a0",
+   "source": "SYSFS",
+   "unit": "packets_per_second",
+   "value": 0.0
+  },
+  {
+   "aggregation": "RATIO",
+   "baseline_median": 0.0,
+   "coverage": 1.0,
+   "feature": "tcp.retrans_frac",
+   "qualifier": null,
+   "quality": "OK",
+   "scope": "netns:laba",
+   "source": "PROC",
+   "unit": "fraction",
+   "value": 0.0
+  },
+  {
+   "aggregation": "RATE",
+   "baseline_median": 0.0,
+   "coverage": 1.0,
+   "feature": "tcp.retrans_skb_rate",
+   "qualifier": null,
+   "quality": "OK",
+   "scope": "netns:laba",
+   "source": "EBPF",
+   "unit": "events_per_second",
+   "value": 0.0
+  },
+  {
+   "aggregation": "RATE",
+   "baseline_median": 0.0,
+   "coverage": 1.0,
+   "feature": "tcp.retrans_rate",
+   "qualifier": null,
+   "quality": "OK",
+   "scope": "netns:laba",
+   "source": "PROC",
+   "unit": "segments_per_second",
+   "value": 0.0
+  },
+  {
+   "aggregation": "RATE",
+   "baseline_median": 0.0,
+   "coverage": 1.0,
+   "feature": "net.drop.iface_tx",
+   "qualifier": null,
+   "quality": "OK",
+   "scope": "iface:laba/sentlab-a0",
+   "source": "SYSFS",
+   "unit": "packets_per_second",
+   "value": 0.0
+  }
+ ],
+ "numbers": {
+  "B": 10.0,
+  "DROP_ABS_MIN": 10.0,
+  "DROP_FRAC_MIN": 0.001,
+  "RT_FRAC_MIN": 0.01,
+  "SEG_MIN": 100.0,
+  "W": 10.0
+ },
+ "prediction": {
+  "basis": "no fault in W",
+  "decision": "INSUFFICIENT_EVIDENCE"
+ },
+ "qdisc_after": [
+  {
+   "bytes": 0,
+   "drops": 0,
+   "handle": "0:",
+   "kind": "noqueue",
+   "options": {},
+   "overlimits": 0,
+   "packets": 0,
+   "requeues": 0,
+   "root": true
+  }
+ ],
+ "qdisc_before": [
+  {
+   "bytes": 0,
+   "drops": 0,
+   "handle": "0:",
+   "kind": "noqueue",
+   "options": {},
+   "overlimits": 0,
+   "packets": 0,
+   "requeues": 0,
+   "root": true
+  }
+ ],
+ "qdisc_restored_clean": true,
+ "snapshot": {
+  "ebpf_measurements": 244,
+  "gate_passed": true,
+  "id": "26e60f1a79f7a0d6",
+  "max_tick_read_s": 0.005615457019302994,
+  "measurements": 458,
+  "privileged_sources_unavailable": [],
+  "rebuild_identical": true,
+  "round_trip_identical": true
+ },
+ "snapshot_unchanged_by_m2": true,
+ "snmp_a_at_window_end": {
+  "InSegs": 88198,
+  "OutSegs": 88207,
+  "RetransSegs": 0
+ },
+ "snmp_a_at_window_start": {
+  "InSegs": 48200,
+  "OutSegs": 48205,
+  "RetransSegs": 0
+ },
+ "target": {
+  "cgroup_path": "/user.slice/user-1000.slice/session-136.scope",
+  "ebpf_a": {
+   "cgroup_id": 2129446,
+   "cgroup_level": 3,
+   "netns_inum": 4026532647
+  },
+  "ebpf_b": {
+   "cgroup_id": 2129446,
+   "cgroup_level": 3,
+   "netns_inum": 4026532828
+  },
+  "iface": "sentlab-a0",
+  "pid": 1086623
+ },
+ "tcp_info_retrans_at_window_end": 0,
+ "tcp_info_retrans_at_window_start": 0,
+ "window": {
+  "end_mono": 359477.176123558,
+  "end_wall": "2026-10-03 10:35:25.488000+00:00",
+  "start_mono": 359467.176221121,
+  "start_wall": "2026-10-03 10:35:15.488000+00:00"
+ },
+ "workload": {
+  "chunk_bytes": 1448,
+  "port": 5201,
+  "rate_per_s": 4000
+ },
+ "workload_result": {
+  "received_bytes": 128725752,
+  "receiver_stderr": "",
+  "sender_error": null,
+  "sent_bytes": 128725752
+ }
+}

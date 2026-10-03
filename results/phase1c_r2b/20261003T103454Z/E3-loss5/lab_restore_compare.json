@@ -1,0 +1,15 @@
+{
+ "a_addrs_identical": true,
+ "a_links_identical": true,
+ "a_no_netem": true,
+ "a_qdiscs_identical": true,
+ "a_routes4_identical": true,
+ "a_routes6_identical": true,
+ "b_addrs_identical": true,
+ "b_links_identical": true,
+ "b_no_netem": true,
+ "b_qdiscs_identical": true,
+ "b_routes4_identical": true,
+ "b_routes6_identical": true,
+ "ok": true
+}

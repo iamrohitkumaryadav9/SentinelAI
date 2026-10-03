@@ -1,0 +1,1 @@
+[{"dst":"fe80::/64","dev":"sentlab-a0","protocol":"kernel","metric":256,"flags":[],"pref":"medium"}]

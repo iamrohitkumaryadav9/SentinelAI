@@ -1,0 +1,60 @@
+{
+ "status_ok": true,
+ "runs": {
+  "E0-baseline": {
+   "lab_clean_ok": true,
+   "driver_ok": true,
+   "qdisc_drops_w": 0,
+   "prediction": "INSUFFICIENT_EVIDENCE",
+   "m2": "INSUFFICIENT_EVIDENCE",
+   "lab_restored": true,
+   "host_ok": true
+  },
+  "E1-loss1": {
+   "lab_clean_ok": true,
+   "driver_ok": true,
+   "qdisc_drops_w": 385.0,
+   "prediction": "network_packet_loss",
+   "m2": "network_packet_loss",
+   "lab_restored": true,
+   "host_ok": true
+  },
+  "E2-loss1-rep2": {
+   "lab_clean_ok": true,
+   "driver_ok": true,
+   "qdisc_drops_w": 388.0,
+   "prediction": "network_packet_loss",
+   "m2": "network_packet_loss",
+   "lab_restored": true,
+   "host_ok": true
+  },
+  "E2-loss1-rep3": {
+   "lab_clean_ok": true,
+   "driver_ok": true,
+   "qdisc_drops_w": 415.0,
+   "prediction": "network_packet_loss",
+   "m2": "network_packet_loss",
+   "lab_restored": true,
+   "host_ok": true
+  },
+  "E3-loss5": {
+   "lab_clean_ok": true,
+   "driver_ok": true,
+   "qdisc_drops_w": 953.0,
+   "prediction": "network_packet_loss",
+   "m2": "network_packet_loss",
+   "lab_restored": true,
+   "host_ok": true
+  },
+  "E3-loss5-rep2": {
+   "lab_clean_ok": true,
+   "driver_ok": true,
+   "qdisc_drops_w": 1441.0,
+   "prediction": "network_packet_loss",
+   "m2": "network_packet_loss",
+   "lab_restored": true,
+   "host_ok": true
+  }
+ },
+ "host_final_ok": true
+}

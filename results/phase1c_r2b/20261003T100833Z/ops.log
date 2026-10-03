@@ -1,0 +1,16 @@
+[E0-baseline] loss=0% create lab
+10:08:33.876 rc=0  ip netns add sentinel-lab-a
+10:08:33.878 rc=0  ip netns add sentinel-lab-b
+10:08:33.880 rc=0  ip link add sentlab-a0 netns sentinel-lab-a type veth peer name sentlab-b0 netns sentinel-lab-b
+10:08:33.882 rc=0  ip -n sentinel-lab-a addr add 10.199.0.1/24 dev sentlab-a0
+10:08:33.884 rc=0  ip -n sentinel-lab-b addr add 10.199.0.2/24 dev sentlab-b0
+10:08:33.885 rc=0  ip -n sentinel-lab-a link set lo up
+10:08:33.887 rc=0  ip -n sentinel-lab-b link set lo up
+10:08:33.889 rc=0  ip -n sentinel-lab-a link set sentlab-a0 up
+10:08:33.891 rc=0  ip -n sentinel-lab-b link set sentlab-b0 up
+[E0-baseline] driver
+10:09:10.280 rc=1  driver E0-baseline loss=0
+[E0-baseline] destroy lab
+10:09:10.316 rc=0  ip netns del sentinel-lab-a
+10:09:10.317 rc=0  ip netns del sentinel-lab-b
+[E0-baseline] a check failed: stopping

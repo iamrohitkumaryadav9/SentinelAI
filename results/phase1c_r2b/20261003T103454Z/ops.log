@@ -1,0 +1,96 @@
+[E0-baseline] loss=0% create lab
+10:34:54.633 rc=0  ip netns add sentinel-lab-a
+10:34:54.635 rc=0  ip netns add sentinel-lab-b
+10:34:54.637 rc=0  ip link add sentlab-a0 netns sentinel-lab-a type veth peer name sentlab-b0 netns sentinel-lab-b
+10:34:54.639 rc=0  ip -n sentinel-lab-a addr add 10.199.0.1/24 dev sentlab-a0
+10:34:54.641 rc=0  ip -n sentinel-lab-b addr add 10.199.0.2/24 dev sentlab-b0
+10:34:54.643 rc=0  ip -n sentinel-lab-a link set lo up
+10:34:54.644 rc=0  ip -n sentinel-lab-b link set lo up
+10:34:54.646 rc=0  ip -n sentinel-lab-a link set sentlab-a0 up
+10:34:54.648 rc=0  ip -n sentinel-lab-b link set sentlab-b0 up
+[E0-baseline] driver
+10:35:31.051 rc=0  driver E0-baseline loss=0
+[E0-baseline] destroy lab
+10:35:31.089 rc=0  ip netns del sentinel-lab-a
+10:35:31.091 rc=0  ip netns del sentinel-lab-b
+{"label": "E0-baseline", "driver_ok": true, "m2": "INSUFFICIENT_EVIDENCE", "prediction": "INSUFFICIENT_EVIDENCE", "qdisc_drops_w": 0}
+[E1-loss1] loss=1% create lab
+10:35:33.142 rc=0  ip netns add sentinel-lab-a
+10:35:33.144 rc=0  ip netns add sentinel-lab-b
+10:35:33.147 rc=0  ip link add sentlab-a0 netns sentinel-lab-a type veth peer name sentlab-b0 netns sentinel-lab-b
+10:35:33.148 rc=0  ip -n sentinel-lab-a addr add 10.199.0.1/24 dev sentlab-a0
+10:35:33.150 rc=0  ip -n sentinel-lab-b addr add 10.199.0.2/24 dev sentlab-b0
+10:35:33.152 rc=0  ip -n sentinel-lab-a link set lo up
+10:35:33.154 rc=0  ip -n sentinel-lab-b link set lo up
+10:35:33.155 rc=0  ip -n sentinel-lab-a link set sentlab-a0 up
+10:35:33.157 rc=0  ip -n sentinel-lab-b link set sentlab-b0 up
+[E1-loss1] driver
+10:36:09.586 rc=0  driver E1-loss1 loss=1
+[E1-loss1] destroy lab
+10:36:09.619 rc=0  ip netns del sentinel-lab-a
+10:36:09.621 rc=0  ip netns del sentinel-lab-b
+{"label": "E1-loss1", "driver_ok": true, "m2": "network_packet_loss", "prediction": "network_packet_loss", "qdisc_drops_w": 385.0}
+[E2-loss1-rep2] loss=1% create lab
+10:36:11.673 rc=0  ip netns add sentinel-lab-a
+10:36:11.675 rc=0  ip netns add sentinel-lab-b
+10:36:11.677 rc=0  ip link add sentlab-a0 netns sentinel-lab-a type veth peer name sentlab-b0 netns sentinel-lab-b
+10:36:11.679 rc=0  ip -n sentinel-lab-a addr add 10.199.0.1/24 dev sentlab-a0
+10:36:11.681 rc=0  ip -n sentinel-lab-b addr add 10.199.0.2/24 dev sentlab-b0
+10:36:11.682 rc=0  ip -n sentinel-lab-a link set lo up
+10:36:11.684 rc=0  ip -n sentinel-lab-b link set lo up
+10:36:11.686 rc=0  ip -n sentinel-lab-a link set sentlab-a0 up
+10:36:11.687 rc=0  ip -n sentinel-lab-b link set sentlab-b0 up
+[E2-loss1-rep2] driver
+10:36:48.128 rc=0  driver E2-loss1-rep2 loss=1
+[E2-loss1-rep2] destroy lab
+10:36:48.162 rc=0  ip netns del sentinel-lab-a
+10:36:48.164 rc=0  ip netns del sentinel-lab-b
+{"label": "E2-loss1-rep2", "driver_ok": true, "m2": "network_packet_loss", "prediction": "network_packet_loss", "qdisc_drops_w": 388.0}
+[E2-loss1-rep3] loss=1% create lab
+10:36:50.227 rc=0  ip netns add sentinel-lab-a
+10:36:50.229 rc=0  ip netns add sentinel-lab-b
+10:36:50.231 rc=0  ip link add sentlab-a0 netns sentinel-lab-a type veth peer name sentlab-b0 netns sentinel-lab-b
+10:36:50.233 rc=0  ip -n sentinel-lab-a addr add 10.199.0.1/24 dev sentlab-a0
+10:36:50.235 rc=0  ip -n sentinel-lab-b addr add 10.199.0.2/24 dev sentlab-b0
+10:36:50.237 rc=0  ip -n sentinel-lab-a link set lo up
+10:36:50.238 rc=0  ip -n sentinel-lab-b link set lo up
+10:36:50.240 rc=0  ip -n sentinel-lab-a link set sentlab-a0 up
+10:36:50.242 rc=0  ip -n sentinel-lab-b link set sentlab-b0 up
+[E2-loss1-rep3] driver
+10:37:26.647 rc=0  driver E2-loss1-rep3 loss=1
+[E2-loss1-rep3] destroy lab
+10:37:26.682 rc=0  ip netns del sentinel-lab-a
+10:37:26.683 rc=0  ip netns del sentinel-lab-b
+{"label": "E2-loss1-rep3", "driver_ok": true, "m2": "network_packet_loss", "prediction": "network_packet_loss", "qdisc_drops_w": 415.0}
+[E3-loss5] loss=5% create lab
+10:37:28.738 rc=0  ip netns add sentinel-lab-a
+10:37:28.740 rc=0  ip netns add sentinel-lab-b
+10:37:28.743 rc=0  ip link add sentlab-a0 netns sentinel-lab-a type veth peer name sentlab-b0 netns sentinel-lab-b
+10:37:28.744 rc=0  ip -n sentinel-lab-a addr add 10.199.0.1/24 dev sentlab-a0
+10:37:28.746 rc=0  ip -n sentinel-lab-b addr add 10.199.0.2/24 dev sentlab-b0
+10:37:28.748 rc=0  ip -n sentinel-lab-a link set lo up
+10:37:28.750 rc=0  ip -n sentinel-lab-b link set lo up
+10:37:28.752 rc=0  ip -n sentinel-lab-a link set sentlab-a0 up
+10:37:28.753 rc=0  ip -n sentinel-lab-b link set sentlab-b0 up
+[E3-loss5] driver
+10:38:05.164 rc=0  driver E3-loss5 loss=5
+[E3-loss5] destroy lab
+10:38:05.198 rc=0  ip netns del sentinel-lab-a
+10:38:05.199 rc=0  ip netns del sentinel-lab-b
+{"label": "E3-loss5", "driver_ok": true, "m2": "network_packet_loss", "prediction": "network_packet_loss", "qdisc_drops_w": 953.0}
+[E3-loss5-rep2] loss=5% create lab
+10:38:07.257 rc=0  ip netns add sentinel-lab-a
+10:38:07.259 rc=0  ip netns add sentinel-lab-b
+10:38:07.261 rc=0  ip link add sentlab-a0 netns sentinel-lab-a type veth peer name sentlab-b0 netns sentinel-lab-b
+10:38:07.263 rc=0  ip -n sentinel-lab-a addr add 10.199.0.1/24 dev sentlab-a0
+10:38:07.264 rc=0  ip -n sentinel-lab-b addr add 10.199.0.2/24 dev sentlab-b0
+10:38:07.266 rc=0  ip -n sentinel-lab-a link set lo up
+10:38:07.268 rc=0  ip -n sentinel-lab-b link set lo up
+10:38:07.270 rc=0  ip -n sentinel-lab-a link set sentlab-a0 up
+10:38:07.272 rc=0  ip -n sentinel-lab-b link set sentlab-b0 up
+[E3-loss5-rep2] driver
+10:38:43.685 rc=0  driver E3-loss5-rep2 loss=5
+[E3-loss5-rep2] destroy lab
+10:38:43.720 rc=0  ip netns del sentinel-lab-a
+10:38:43.721 rc=0  ip netns del sentinel-lab-b
+{"label": "E3-loss5-rep2", "driver_ok": true, "m2": "network_packet_loss", "prediction": "network_packet_loss", "qdisc_drops_w": 1441.0}
