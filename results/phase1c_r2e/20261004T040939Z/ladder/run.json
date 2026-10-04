@@ -1,0 +1,228 @@
+{
+ "GR": {
+  "checks": {
+   "cleanup_ok": true,
+   "host_identical": true,
+   "rps_reset_before_netns_deletion": true,
+   "rps_restored": true
+  },
+  "ok": true,
+  "rps_written": false,
+  "unsafe_incomplete": false
+ },
+ "aborts": [
+  "LabAbort: lab verification failed: ['b_veth']"
+ ],
+ "bpf_release": {
+  "elapsed_s": 0.001033263048157096,
+  "polls": 1,
+  "released": true,
+  "remaining": {
+   "maps": [],
+   "progs": []
+  },
+  "timed_out": false
+ },
+ "cleanup": {
+  "errors": [],
+  "ok": true,
+  "rps_restore": {
+   "attempted": true,
+   "noop": true,
+   "ok": true,
+   "post": "000000",
+   "prev": "000000",
+   "restored": true
+  },
+  "steps": [
+   "traffic cgroup.kill",
+   "stop eBPF loader",
+   "cgroup.kill",
+   "rmdir /sys/fs/cgroup/sentinel-r2c/contender",
+   "rmdir /sys/fs/cgroup/sentinel-r2c/target",
+   "rmdir /sys/fs/cgroup/sentinel-r2c/traffic",
+   "rmdir /sys/fs/cgroup/sentinel-r2c",
+   "netns del sentinel-lab-a",
+   "netns del sentinel-lab-b"
+  ],
+  "unsafe_incomplete": false,
+  "verify": {
+   "checks": {
+    "lab_cgroup_absent": true,
+    "no_lab_interface_in_host": true,
+    "no_lab_netns": true,
+    "no_lab_process": true,
+    "no_logged_pid_alive_in_lab": true,
+    "no_sentinel_cgroup": true,
+    "no_wrapper_alive": true,
+    "rps_restored": true
+   },
+   "ok": true
+  }
+ },
+ "commit": "d11e7550a3dd8618cdf15249b25e4cc438e36a48",
+ "criteria": {
+  "G6p": {
+   "type": "R2-C limit, reused",
+   "value": "(rq_cpu_time(18) - target - N1 contender - per-CPU-18 kthreads) / s <= 0.05 in B and W"
+  },
+  "GI": {
+   "type": "DESIGN (approved)",
+   "value": "target run_delay rate W - B >= RDX_MIN 0.05 and target cpu.pressure some W > B (S2/S3)"
+  },
+  "GS": {
+   "type": "DESIGN (approved)",
+   "value": "S2/S3: eBPF NET_RX(18) in W >= SI_ABS_MIN 0.5 and >= SI_RATIO_MIN 3.0 x max(B, floor 0.001); S1: rise >= SI_RATIO_MIN x max(B, floor) and < SI_ABS_MIN - delta; E0/N1/N2: NET_RX(18) in W < SI_RATIO_MIN x max(B, floor); processed(rps cpu) >= sentlab-b0 rx - netdev_max_backlog; NET_RX(18) <= precise non-idle(18) + 2 jiffies"
+  },
+  "GV": {
+   "type": "DESIGN (approved)",
+   "value": "NET_RX >= SI_SHARE_MIN 0.5 of all softirq time on CPU 18 in W (S1-S3)"
+  },
+  "LADDER": {
+   "type": "DESIGN (approved); provenance only",
+   "value": "10000..1280000 pps doubling, 5 s per step, stop at first loss; delta = max|frac - eBPF|; S1 = highest below SI_ABS_MIN - delta (both measures); S2 = lowest eBPF NET_RX >= SI_ABS_MIN + delta; S3 = highest loss-free above S2"
+  }
+ },
+ "design": {
+  "client_t": 11,
+  "nb": 10,
+  "nw": 10,
+  "parent_cpus": [
+   18,
+   20,
+   22,
+   23
+  ],
+  "receiver_cpu": 23,
+  "rps": "40000",
+  "sender_cpus": [
+   20,
+   22
+  ],
+  "target_cpu": 18,
+  "warmup_s": 10
+ },
+ "driver_ok": false,
+ "events": [
+  {
+   "event": "setup_start",
+   "t_mono": 422733.148431408
+  },
+  {
+   "event": "abort",
+   "reason": "LabAbort(\"lab verification failed: ['b_veth']\")",
+   "t_mono": 422733.162078059
+  }
+ ],
+ "expected": [],
+ "experiment": {
+  "contender": false,
+  "contender_weight": 100,
+  "kind": "LADDER",
+  "lab": true,
+  "rps": "40000",
+  "traffic": "LADDER"
+ },
+ "host_compare": {
+  "addresses_identical": true,
+  "bpf_compared": true,
+  "bpf_links_identical": true,
+  "bpf_maps_identical": true,
+  "bpf_progs_identical": true,
+  "cgroup_attrs_identical": true,
+  "cgroup_dirs_identical": true,
+  "cgroups_added": [],
+  "cgroups_differing": [],
+  "cgroups_removed": [],
+  "docker0_identical": true,
+  "enp0s31f6_identical": true,
+  "failed": [],
+  "host_rps_identical": true,
+  "interfaces_differing": [],
+  "interfaces_identical": true,
+  "irq_affinity_identical": true,
+  "irqs_differing": [],
+  "mounts_identical": true,
+  "netns_identical": true,
+  "network_state_captured": true,
+  "nic_irq_identical": true,
+  "no_lab_cgroup": true,
+  "no_lab_interface_in_host": true,
+  "no_lab_netns": true,
+  "no_lab_process": true,
+  "ok": true,
+  "protected_qdiscs_identical": true,
+  "qdiscs_identical": true,
+  "root_cpuset_0_23": true,
+  "root_identical": true,
+  "routes_identical": true,
+  "sn_programs_left": [],
+  "sysctls_identical": true
+ },
+ "hz": 100,
+ "in_w": [],
+ "label": "ladder",
+ "ladder": null,
+ "observations": [],
+ "pps": null,
+ "preflight": {
+  "checks": {
+   "cgroup_kill_supported": true,
+   "experiment_cpus_no_smt": true,
+   "experiment_cpus_online": true,
+   "host_rps_all_zero": true,
+   "lab_uid_exists": true,
+   "netdev_max_backlog_readable": true,
+   "nic_irq_is_enp0s31f6": true,
+   "nic_irq_off_experiment_cpus": true,
+   "no_lab_interface_in_host": true,
+   "no_lab_netns": true,
+   "no_lab_process": true,
+   "no_sentinel_cgroup": true,
+   "protected_interfaces_present": true,
+   "psi_available": true,
+   "root_cpuset_0_23": true,
+   "root_subtree_control": true,
+   "tool:/home/iiitd/sentinelai/ebpf/build/sentinel_loader": true,
+   "tool:/usr/bin/iperf3": true,
+   "tool:/usr/bin/python3": true,
+   "tool:/usr/bin/setpriv": true,
+   "tool:/usr/bin/taskset": true,
+   "tool:/usr/bin/timeout": true,
+   "tool:/usr/bin/unshare": true,
+   "tool:/usr/lib/linux-hwe-6.8-tools-6.8.0-138/bpftool": true,
+   "tool:/usr/sbin/ethtool": true,
+   "tool:/usr/sbin/ip": true
+  },
+  "ok": true
+ },
+ "rps_restored": true,
+ "unsafe_incomplete": false,
+ "verdict": "ABORT",
+ "verify_cgroups": {
+  "checks": {
+   "contender_controllers": true,
+   "contender_cpus": true,
+   "contender_empty": true,
+   "contender_memory_max_unlimited": true,
+   "contender_no_quota": true,
+   "contender_weight": true,
+   "parent_cpus": true,
+   "parent_empty": true,
+   "parent_no_quota": true,
+   "parent_subtree_control": true,
+   "target_controllers": true,
+   "target_cpus": true,
+   "target_empty": true,
+   "target_memory_max_unlimited": true,
+   "target_no_quota": true,
+   "traffic_controllers": true,
+   "traffic_cpus": true,
+   "traffic_empty": true,
+   "traffic_memory_max_unlimited": true,
+   "traffic_no_quota": true,
+   "traffic_pids_max": true
+  },
+  "ok": true
+ }
+}

@@ -1,0 +1,71 @@
+{"op": ["mkdir", "/sys/fs/cgroup/sentinel-r2c"], "phase": "intent", "t": 422756.719144312}
+{"ok": true, "op": ["mkdir", "/sys/fs/cgroup/sentinel-r2c"], "phase": "result", "pid": null, "t": 422756.719241191}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/cpuset.mems"], "phase": "intent", "t": 422756.719266883}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/cpuset.mems"], "phase": "result", "pid": null, "t": 422756.719291932}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/cpuset.cpus"], "phase": "intent", "t": 422756.719309073}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/cpuset.cpus"], "phase": "result", "pid": null, "t": 422756.719325493}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/cgroup.subtree_control"], "phase": "intent", "t": 422756.719340161}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/cgroup.subtree_control"], "phase": "result", "pid": null, "t": 422756.719356943}
+{"op": ["mkdir", "/sys/fs/cgroup/sentinel-r2c/target"], "phase": "intent", "t": 422756.719365704}
+{"ok": true, "op": ["mkdir", "/sys/fs/cgroup/sentinel-r2c/target"], "phase": "result", "pid": null, "t": 422756.719417172}
+{"op": ["mkdir", "/sys/fs/cgroup/sentinel-r2c/contender"], "phase": "intent", "t": 422756.719425838}
+{"ok": true, "op": ["mkdir", "/sys/fs/cgroup/sentinel-r2c/contender"], "phase": "result", "pid": null, "t": 422756.719470336}
+{"op": ["mkdir", "/sys/fs/cgroup/sentinel-r2c/traffic"], "phase": "intent", "t": 422756.719479113}
+{"ok": true, "op": ["mkdir", "/sys/fs/cgroup/sentinel-r2c/traffic"], "phase": "result", "pid": null, "t": 422756.719520414}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/target/cpuset.cpus"], "phase": "intent", "t": 422756.719534838}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/target/cpuset.cpus"], "phase": "result", "pid": null, "t": 422756.719550497}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/target/cpuset.mems"], "phase": "intent", "t": 422756.719564224}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/target/cpuset.mems"], "phase": "result", "pid": null, "t": 422756.719578486}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/target/cpu.weight"], "phase": "intent", "t": 422756.719596062}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/target/cpu.weight"], "phase": "result", "pid": null, "t": 422756.719609162}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/target/pids.max"], "phase": "intent", "t": 422756.719622233}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/target/pids.max"], "phase": "result", "pid": null, "t": 422756.719635792}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/contender/cpuset.cpus"], "phase": "intent", "t": 422756.719648917}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/contender/cpuset.cpus"], "phase": "result", "pid": null, "t": 422756.719663346}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/contender/cpuset.mems"], "phase": "intent", "t": 422756.719676545}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/contender/cpuset.mems"], "phase": "result", "pid": null, "t": 422756.719690172}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/contender/cpu.weight"], "phase": "intent", "t": 422756.719702665}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/contender/cpu.weight"], "phase": "result", "pid": null, "t": 422756.719715945}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/contender/pids.max"], "phase": "intent", "t": 422756.719728818}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/contender/pids.max"], "phase": "result", "pid": null, "t": 422756.719742082}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/traffic/cpuset.cpus"], "phase": "intent", "t": 422756.719755549}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/traffic/cpuset.cpus"], "phase": "result", "pid": null, "t": 422756.719769812}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/traffic/cpuset.mems"], "phase": "intent", "t": 422756.719782307}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/traffic/cpuset.mems"], "phase": "result", "pid": null, "t": 422756.719795194}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/traffic/pids.max"], "phase": "intent", "t": 422756.71980788}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/traffic/pids.max"], "phase": "result", "pid": null, "t": 422756.719823584}
+{"op": ["cmd", ["ip", "netns", "add", "sentinel-lab-a"]], "phase": "intent", "t": 422756.719839257}
+{"ok": true, "op": ["cmd", ["ip", "netns", "add", "sentinel-lab-a"]], "phase": "result", "pid": null, "t": 422756.720816385}
+{"op": ["cmd", ["ip", "netns", "add", "sentinel-lab-b"]], "phase": "intent", "t": 422756.720857398}
+{"ok": true, "op": ["cmd", ["ip", "netns", "add", "sentinel-lab-b"]], "phase": "result", "pid": null, "t": 422756.72193006}
+{"op": ["cmd", ["ip", "link", "add", "sentlab-a0", "numtxqueues", "1", "numrxqueues", "1", "netns", "sentinel-lab-a", "type", "veth", "peer", "name", "sentlab-b0", "numtxqueues", "1", "numrxqueues", "1", "netns", "sentinel-lab-b"]], "phase": "intent", "t": 422756.721975057}
+{"ok": true, "op": ["cmd", ["ip", "link", "add", "sentlab-a0", "numtxqueues", "1", "numrxqueues", "1", "netns", "sentinel-lab-a", "type", "veth", "peer", "name", "sentlab-b0", "numtxqueues", "1", "numrxqueues", "1", "netns", "sentinel-lab-b"]], "phase": "result", "pid": null, "t": 422756.722789423}
+{"op": ["cmd", ["ip", "-n", "sentinel-lab-a", "addr", "add", "10.199.0.1/24", "dev", "sentlab-a0"]], "phase": "intent", "t": 422756.722830419}
+{"ok": true, "op": ["cmd", ["ip", "-n", "sentinel-lab-a", "addr", "add", "10.199.0.1/24", "dev", "sentlab-a0"]], "phase": "result", "pid": null, "t": 422756.723599998}
+{"op": ["cmd", ["ip", "-n", "sentinel-lab-b", "addr", "add", "10.199.0.2/24", "dev", "sentlab-b0"]], "phase": "intent", "t": 422756.723639227}
+{"ok": true, "op": ["cmd", ["ip", "-n", "sentinel-lab-b", "addr", "add", "10.199.0.2/24", "dev", "sentlab-b0"]], "phase": "result", "pid": null, "t": 422756.724330281}
+{"op": ["cmd", ["ip", "-n", "sentinel-lab-a", "link", "set", "lo", "up"]], "phase": "intent", "t": 422756.724369562}
+{"ok": true, "op": ["cmd", ["ip", "-n", "sentinel-lab-a", "link", "set", "lo", "up"]], "phase": "result", "pid": null, "t": 422756.725089582}
+{"op": ["cmd", ["ip", "-n", "sentinel-lab-b", "link", "set", "lo", "up"]], "phase": "intent", "t": 422756.725130022}
+{"ok": true, "op": ["cmd", ["ip", "-n", "sentinel-lab-b", "link", "set", "lo", "up"]], "phase": "result", "pid": null, "t": 422756.725939617}
+{"op": ["cmd", ["ip", "-n", "sentinel-lab-a", "link", "set", "sentlab-a0", "up"]], "phase": "intent", "t": 422756.725974292}
+{"ok": true, "op": ["cmd", ["ip", "-n", "sentinel-lab-a", "link", "set", "sentlab-a0", "up"]], "phase": "result", "pid": null, "t": 422756.72680987}
+{"op": ["cmd", ["ip", "-n", "sentinel-lab-b", "link", "set", "sentlab-b0", "up"]], "phase": "intent", "t": 422756.726851015}
+{"ok": true, "op": ["cmd", ["ip", "-n", "sentinel-lab-b", "link", "set", "sentlab-b0", "up"]], "phase": "result", "pid": null, "t": 422756.727652899}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/traffic/cgroup.kill"], "phase": "intent", "t": 422756.73236074}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/traffic/cgroup.kill"], "phase": "result", "pid": null, "t": 422756.732393945}
+{"noop": true, "ok": true, "op": ["rps_restore", "/sys/class/net/sentlab-b0/queues/rx-0/rps_cpus"], "phase": "result", "post": "000000", "prev": "000000", "t": 422756.741525694, "value": "0"}
+{"op": ["write", "/sys/fs/cgroup/sentinel-r2c/cgroup.kill"], "phase": "intent", "t": 422756.742714643}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-r2c/cgroup.kill"], "phase": "result", "pid": null, "t": 422756.742745018}
+{"op": ["rmdir", "/sys/fs/cgroup/sentinel-r2c/contender"], "phase": "intent", "t": 422756.74494737}
+{"ok": true, "op": ["rmdir", "/sys/fs/cgroup/sentinel-r2c/contender"], "phase": "result", "pid": null, "t": 422756.744993756}
+{"op": ["rmdir", "/sys/fs/cgroup/sentinel-r2c/target"], "phase": "intent", "t": 422756.745010305}
+{"ok": true, "op": ["rmdir", "/sys/fs/cgroup/sentinel-r2c/target"], "phase": "result", "pid": null, "t": 422756.745038478}
+{"op": ["rmdir", "/sys/fs/cgroup/sentinel-r2c/traffic"], "phase": "intent", "t": 422756.745054181}
+{"ok": true, "op": ["rmdir", "/sys/fs/cgroup/sentinel-r2c/traffic"], "phase": "result", "pid": null, "t": 422756.745084923}
+{"op": ["rmdir", "/sys/fs/cgroup/sentinel-r2c"], "phase": "intent", "t": 422756.745095343}
+{"ok": true, "op": ["rmdir", "/sys/fs/cgroup/sentinel-r2c"], "phase": "result", "pid": null, "t": 422756.7451286}
+{"op": ["cmd", ["ip", "netns", "del", "sentinel-lab-a"]], "phase": "intent", "t": 422756.745148394}
+{"ok": true, "op": ["cmd", ["ip", "netns", "del", "sentinel-lab-a"]], "phase": "result", "pid": null, "t": 422756.746104469}
+{"op": ["cmd", ["ip", "netns", "del", "sentinel-lab-b"]], "phase": "intent", "t": 422756.746156407}
+{"ok": true, "op": ["cmd", ["ip", "netns", "del", "sentinel-lab-b"]], "phase": "result", "pid": null, "t": 422756.746782097}

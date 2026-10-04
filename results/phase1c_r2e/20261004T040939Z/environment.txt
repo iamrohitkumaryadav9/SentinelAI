@@ -1,0 +1,79 @@
+commit=d11e7550a3dd8618cdf15249b25e4cc438e36a48
+base=d11e755
+Linux iiitd-Precision-3660 6.8.0-138-generic #138~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  7 13:43:15 UTC  x86_64 x86_64 x86_64 GNU/Linux
+user=iiitd
+Sun Oct  4 04:09:39 AM UTC 2026
+{"producer":"sentinel_loader","version":"m3b-1.0.0","libbpf_compiled":"1.4","libbpf_linked":"1.4","libbpf_linked_string":"v1.4","match":true}
+iperf 3.9 (cJSON 1.7.13)
+{
+ "criteria": {
+  "G6p": {
+   "type": "R2-C limit, reused",
+   "value": "(rq_cpu_time(18) - target - N1 contender - per-CPU-18 kthreads) / s <= 0.05 in B and W"
+  },
+  "GI": {
+   "type": "DESIGN (approved)",
+   "value": "target run_delay rate W - B >= RDX_MIN 0.05 and target cpu.pressure some W > B (S2/S3)"
+  },
+  "GS": {
+   "type": "DESIGN (approved)",
+   "value": "S2/S3: eBPF NET_RX(18) in W >= SI_ABS_MIN 0.5 and >= SI_RATIO_MIN 3.0 x max(B, floor 0.001); S1: rise >= SI_RATIO_MIN x max(B, floor) and < SI_ABS_MIN - delta; E0/N1/N2: NET_RX(18) in W < SI_RATIO_MIN x max(B, floor); processed(rps cpu) >= sentlab-b0 rx - netdev_max_backlog; NET_RX(18) <= precise non-idle(18) + 2 jiffies"
+  },
+  "GV": {
+   "type": "DESIGN (approved)",
+   "value": "NET_RX >= SI_SHARE_MIN 0.5 of all softirq time on CPU 18 in W (S1-S3)"
+  },
+  "LADDER": {
+   "type": "DESIGN (approved); provenance only",
+   "value": "10000..1280000 pps doubling, 5 s per step, stop at first loss; delta = max|frac - eBPF|; S1 = highest below SI_ABS_MIN - delta (both measures); S2 = lowest eBPF NET_RX >= SI_ABS_MIN + delta; S3 = highest loss-free above S2"
+  }
+ },
+ "ladder_pps": [
+  10000,
+  20000,
+  40000,
+  80000,
+  160000,
+  320000,
+  640000,
+  1280000
+ ],
+ "matrix": [
+  "E0-open",
+  "S1-1",
+  "S1-2",
+  "S2-1",
+  "S2-2",
+  "S2-3",
+  "S3-1",
+  "S3-2",
+  "S3-3",
+  "N1-1",
+  "N1-2",
+  "N2-1",
+  "N2-2",
+  "E0-close"
+ ],
+ "rps": {
+  "path": "sentinel-lab-b:/sys/class/net/sentlab-b0/queues/rx-0/rps_cpus",
+  "values": {
+   "0": null,
+   "40000": 18,
+   "80000": 19
+  }
+ }
+}
+matrix: E0-open
+matrix: S1-1
+matrix: S1-2
+matrix: S2-1
+matrix: S2-2
+matrix: S2-3
+matrix: S3-1
+matrix: S3-2
+matrix: S3-3
+matrix: N1-1
+matrix: N1-2
+matrix: N2-1
+matrix: N2-2
+matrix: E0-close

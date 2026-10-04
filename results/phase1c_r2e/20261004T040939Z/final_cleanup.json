@@ -1,0 +1,69 @@
+{
+ "final": {
+  "checks": {
+   "lab_cgroup_absent": true,
+   "no_lab_interface_in_host": true,
+   "no_lab_netns": true,
+   "no_lab_process": true,
+   "no_logged_pid_alive_in_lab": true,
+   "no_sentinel_cgroup": true,
+   "no_wrapper_alive": true
+  },
+  "ok": true
+ },
+ "runs": {
+  "/home/iiitd/sentinelai/results/phase1c_r2e/20261004T040939Z/calibration/ops.jsonl": {
+   "errors": [],
+   "ok": true,
+   "rps_restore": {
+    "attempted": false,
+    "lab_b_absent": true,
+    "ok": true,
+    "restored": true
+   },
+   "steps": [
+    "kill 1246598"
+   ],
+   "unsafe_incomplete": false,
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_interface_in_host": true,
+     "no_lab_netns": true,
+     "no_lab_process": true,
+     "no_logged_pid_alive_in_lab": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true,
+     "rps_restored": true
+    },
+    "ok": true
+   }
+  },
+  "/home/iiitd/sentinelai/results/phase1c_r2e/20261004T040939Z/ladder/ops.jsonl": {
+   "errors": [],
+   "ok": true,
+   "rps_restore": {
+    "attempted": false,
+    "lab_b_absent": true,
+    "ok": true,
+    "restored": true
+   },
+   "steps": [],
+   "unsafe_incomplete": false,
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_interface_in_host": true,
+     "no_lab_netns": true,
+     "no_lab_process": true,
+     "no_logged_pid_alive_in_lab": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true,
+     "rps_restored": true
+    },
+    "ok": true
+   }
+  }
+ },
+ "unsafe_incomplete": []
+}

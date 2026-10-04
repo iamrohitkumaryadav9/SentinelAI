@@ -1,0 +1,5 @@
+[calibration]
+{"label": "calibration", "verdict": "OK", "aborts": [], "m2": null, "iters": 5365, "ladder": null, "rps_restored": true, "unsafe_incomplete": false}
+[ladder]
+{"label": "ladder", "verdict": "ABORT", "aborts": ["LabAbort: lab verification failed: ['b_veth']"], "m2": null, "iters": null, "ladder": {"feasible": null, "S1": null, "S2": null, "S3": null, "delta": null, "reason": null}, "rps_restored": true, "unsafe_incomplete": false}
+[ladder] failed: stopping

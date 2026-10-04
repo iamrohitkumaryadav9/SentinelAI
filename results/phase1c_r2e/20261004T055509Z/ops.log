@@ -1,0 +1,5 @@
+[calibration]
+{"label": "calibration", "verdict": "OK", "aborts": [], "m2": null, "iters": 5384, "ladder": null, "rps_restored": true, "unsafe_incomplete": false}
+[ladder]
+{"label": "ladder", "verdict": "OK", "aborts": [], "m2": null, "iters": null, "ladder": {"feasible": false, "S1": 320000, "S2": null, "S3": null, "delta": 0.16606392639651407, "reason": "S2 not reachable without loss: R2-E NOT FEASIBLE"}, "rps_restored": true, "unsafe_incomplete": false}
+[ladder] S2 not reachable without loss: R2-E NOT FEASIBLE: stopping (R2-E NOT FEASIBLE)

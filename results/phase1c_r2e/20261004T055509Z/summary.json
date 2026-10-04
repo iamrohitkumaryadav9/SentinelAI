@@ -1,0 +1,14 @@
+{
+ "status_ok": false,
+ "runs": {},
+ "ladder": {
+  "S1": 320000,
+  "S2": null,
+  "S3": null,
+  "delta": 0.16606392639651407,
+  "feasible": false,
+  "hz": 100,
+  "reason": "S2 not reachable without loss: R2-E NOT FEASIBLE"
+ },
+ "host_final_ok": true
+}

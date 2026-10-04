@@ -1,11 +1,15 @@
 {
-  "checkpoint": "R2-D closeout",
+  "checkpoint": "R2-E closeout",
   "date": "2026-10-04",
-  "head": "7354f403c3feb88a3b109fb5f18abe58027d518c",
+  "head": "d11e7550a3dd8618cdf15249b25e4cc438e36a48",
   "uncommitted": [
-    "experiments/faultlab/docker/ (pre-existing, unrelated to R2-C/R2-D; left untracked)"
+    "R2-E tooling (scripts/r2e_softirq.py, scripts/r2e_driver.py, scripts/r2e_validate.sh, tests/faultlab/test_r2e.py)",
+    "results/phase1c_r2e/ (3 run directories)",
+    "docs/PHASE_1C_R2E_SOFTIRQ_OVERLOAD_FEASIBILITY_REPORT.md",
+    "docs/PROJECT_STATUS.json",
+    "experiments/faultlab/docker/ (pre-existing, unrelated; left untracked)"
   ],
-  "current_status": "R2-D CLOSED — PASS WITH DOCUMENTED LIMITATION (quota_saturation not validated under binding throttling)",
+  "current_status": "R2-E CLOSED — NOT FEASIBLE UNDER THE REGISTERED EXPERIMENTAL DESIGN (feasibility study; not a softirq_overload validation)",
   "phases": [
     {
       "phase": "Phase 0",
@@ -24,7 +28,7 @@
     },
     {
       "phase": "Phase 1C",
-      "verdict": "in progress: M1, M2, M3A, M3A-C1, M3B, R2-A, R2-B, R2-C, R2-D done; design milestones M4-M8 (FaultLab matrix, pilot, calibration, ML, PHASE_1C_EVALUATION) not done",
+      "verdict": "in progress: M1, M2, M3A, M3A-C1, M3B, R2-A, R2-B, R2-C, R2-D done, R2-E closed not feasible; design milestones M4-M8 (FaultLab matrix, pilot, calibration, ML, PHASE_1C_EVALUATION) not done",
       "report": "docs/PHASE_1C_DESIGN.md"
     },
     {
@@ -84,6 +88,27 @@
       "limitation": "throttle.quota_saturation (supporting) was MISSING in all 9 throttled runs (coverage 0.5-0.7); validated only when the quota does not bind (Q0/C1, equal to the prediction); behaviour under binding throttling, including values > 1.0, unvalidated",
       "report": "docs/PHASE_1C_R2D_CPU_THROTTLING_VALIDATION_REPORT.md",
       "evidence": "results/phase1c_r2d/20261003T191737Z/"
+    },
+    {
+      "phase": "R2-E softirq overload",
+      "verdict": "NOT FEASIBLE UNDER THE REGISTERED EXPERIMENTAL DESIGN / CLOSED",
+      "steps": {
+        "design": "READY (D1-D6 approved; single-queue veth approved)",
+        "implementation": "PASS",
+        "pre-runtime_gate_1": "NO-GO (BPF-release wait after cgroup/netns removal)",
+        "cleanup_order_fix": "PASS",
+        "pre-runtime_gate_2": "GO",
+        "runtime_attempts_A_B": "safe aborts at lab check b_veth (results/phase1c_r2e/20261004T040939Z, 20261004T041003Z)",
+        "lab_settle_fix": "PASS",
+        "pre-runtime_gate_3": "GO",
+        "runtime": "NOT FEASIBLE: S2 not reachable without loss (results/phase1c_r2e/20261004T055509Z)",
+        "closeout": "PASS (pending review)"
+      },
+      "classification_note": "registered calibration stopping condition; neither PASS nor FAIL; no implementation or safety failure",
+      "finding": "max loss-free eBPF NET_RX on CPU 18 = 0.166 cores at 320k pps; S2 needs >= 0.666 (SI_ABS_MIN 0.5 + delta 0.166); 640k pps: 0.327 cores with ~22% receiver-socket loss (RcvbufErrors), softnet drops 0",
+      "report": "docs/PHASE_1C_R2E_SOFTIRQ_OVERLOAD_FEASIBILITY_REPORT.md",
+      "evidence": "results/phase1c_r2e/20261004T055509Z/",
+      "evidence_fingerprint": "d5fe88043ad31e4814e37bfd9fe6a178b07a2ac1f7c12902aa6e65c0ac9e1ddd"
     }
   ],
   "experimentally_validated_fault_classes": [
@@ -112,6 +137,8 @@
     "tcp_retransmissions (as primary decision)"
   ],
   "known_limitations": [
+    "R2-E: softirq_overload NOT validated — registered ladder could not reach S2 without loss (receiver/socket bottleneck before CPU 18 reached SI_ABS_MIN + delta)",
+    "R2-E: tick-sampled /proc/stat softirq fraction (SI.R1 input) read 0.0000 while eBPF measured up to 0.166 cores on an otherwise idle NO_HZ CPU; 0.53 vs 0.33 under load — measurement limitation, no M2/M3A change",
     "R2-D: throttle.quota_saturation not validated under binding throttling (MISSING in all 9 T1/T2/TC runs; M3A rejects per-interval values > 1.0); supporting metric only — not a failure of the mandatory R2-D evidence or ground truth",
     "R2-C E1: strong tail/PSI/run-delay degradation, M2 cpu_contention 3/3, but the approved G4 median-lateness criterion stayed FALSE (ground truth: not established) — recorded disagreement",
     "cpu.util.cpuset has a /proc/stat tick-accounting bias when CPU 18 is partially busy",
@@ -122,18 +149,24 @@
   ],
   "next_phase": {
     "named_in_repository": null,
-    "next_unvalidated_fault_class": "softirq_overload",
-    "basis": "contract label order (labels.json): cpu_throttling now validated; remaining labels listed in contract_labels_not_yet_validated; not authorised"
+    "next_unvalidated_fault_class": "memory_pressure",
+    "basis": "designated next by the project owner at R2-E closeout (2026-10-04); not authorised. Strict contract label order (labels.json) would put tcp_retransmissions (as primary decision; R2-B validated it only as CONTRIBUTING) before memory_pressure. softirq_overload remains unvalidated (R2-E NOT FEASIBLE)."
   },
   "deferred": [
     {
       "item": "Option 2: evaluate whether throttle.quota_saturation should support values above 1.0 during binding throttling",
       "scope": "separate contract / M3A study; not part of R2-D; no contract, M3A, COV_MIN, SAT_MIN, THR_RATIO_MIN, DOM_RATIO, M2 or PR-3 change made"
+    },
+    {
+      "item": "R2-E redesign (faster/multiple receivers or another traffic generator) to reach the softirq-overload threshold",
+      "scope": "a NEW experimental design requiring its own design review and gates; not started"
+    },
+    {
+      "item": "softirq time accounting: /proc/stat tick sampling vs eBPF softirq_entry/exit on this kernel",
+      "scope": "future work; no SI.R1 / M2 / M3A / threshold change made"
     }
   ],
-  "committed_in_closeout": [
-    "R2-C tooling, tests, report and evidence (results/phase1c_r2c/, 4 run directories)",
-    "R2-D tooling, tests, report and evidence (results/phase1c_r2d/, 2 run directories)",
-    "docs/PROJECT_STATUS.json"
+  "completed_feasibility_studies": [
+    "softirq_overload (R2-E): NOT FEASIBLE under the registered design"
   ]
 }

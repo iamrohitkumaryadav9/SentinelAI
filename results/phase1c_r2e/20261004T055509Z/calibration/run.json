@@ -1,0 +1,544 @@
+{
+ "GR": {
+  "checks": {
+   "cleanup_ok": true,
+   "host_identical": true,
+   "rps_reset_before_netns_deletion": true,
+   "rps_restored": true
+  },
+  "ok": true,
+  "rps_written": false,
+  "unsafe_incomplete": false
+ },
+ "aborts": [],
+ "bpf_release": {
+  "elapsed_s": 0.0018309979932382703,
+  "polls": 1,
+  "released": true,
+  "remaining": {
+   "maps": [],
+   "progs": []
+  },
+  "timed_out": false
+ },
+ "calibration": {
+  "checksum": 1241550593,
+  "durations_ns": [
+   1829621,
+   1831478,
+   1827113,
+   1829690,
+   1828509,
+   1830999,
+   1832026,
+   1838105,
+   1827562,
+   1828344,
+   1826952,
+   1832886,
+   1831403,
+   1833698,
+   1832254,
+   1831185,
+   1832492,
+   1831511,
+   1833176,
+   1832749,
+   1832589,
+   1830037,
+   1832934,
+   1832163,
+   1833807,
+   1833224,
+   1831897,
+   1831545,
+   1832137,
+   1831885,
+   1831988,
+   1831632,
+   1833033,
+   1832058,
+   1833723,
+   1881123,
+   1945021,
+   1864963,
+   1860551,
+   1858685,
+   1859157,
+   1859222,
+   1860855,
+   1859634,
+   1861311,
+   1860335,
+   1857230,
+   1854810,
+   1853763,
+   1857444,
+   1854810,
+   1855552,
+   1861560,
+   1859380,
+   1855436,
+   1853589,
+   1854114,
+   1855862,
+   1861802,
+   1860650,
+   1859991,
+   1860389,
+   1858885,
+   1860402,
+   1862294,
+   1862903,
+   1862208,
+   1861549,
+   1860969,
+   1860194,
+   1860697,
+   1859950,
+   1858419,
+   1862033,
+   1862049,
+   1860552,
+   1857444,
+   1860426,
+   1860036,
+   1860969,
+   1859443,
+   1859519,
+   1860807,
+   1859749,
+   1859857,
+   1861035,
+   1858380,
+   1861302,
+   1860204,
+   1863839,
+   1861249,
+   1859155,
+   1861131,
+   1862141,
+   1858533,
+   1859663,
+   1867771,
+   1861112,
+   1874703,
+   1864220,
+   1864705,
+   1866902,
+   1864394,
+   1864762,
+   1868174,
+   1862211,
+   1868208,
+   1873005,
+   1872720,
+   1869294,
+   1871107,
+   1868421,
+   1893181,
+   1953713,
+   1948810,
+   1951467,
+   1950715,
+   1956337,
+   2055511,
+   1945446,
+   1943188,
+   1952791,
+   1938797,
+   1915455,
+   1848586,
+   1850048,
+   1846832,
+   1851028,
+   1866056,
+   1861205,
+   1852898,
+   1852719,
+   1855711,
+   1851835,
+   1850042,
+   1853426,
+   1851897,
+   1855289,
+   1854015,
+   1857922,
+   1858401,
+   1857532,
+   1859354,
+   1863366,
+   1859200,
+   1857243,
+   1860140,
+   1858108,
+   1856471,
+   1858667,
+   1870762,
+   1858115,
+   1858214,
+   1858715,
+   1867963,
+   1857306,
+   1858279,
+   1859432,
+   1857822,
+   1859622,
+   1859582,
+   1859189,
+   1848324,
+   1846614,
+   1848579,
+   1850063,
+   1849521,
+   1849864,
+   1848387,
+   1848620,
+   1852331,
+   1848825,
+   1847172,
+   1848864,
+   1850536,
+   1847673,
+   1846193,
+   1847250,
+   1848048,
+   1851427,
+   1849516,
+   1847987,
+   1848522,
+   1845099,
+   1847110,
+   1847708,
+   1847278,
+   1847068,
+   1848967,
+   1845682,
+   1850353,
+   1848106,
+   1848086,
+   1849048,
+   1848393,
+   1848232,
+   1847131,
+   1847015,
+   1846611,
+   1848024
+  ],
+  "iters": 5384,
+  "median_ns": 1857488.0,
+  "pid": 1269007,
+  "probe_iters": 20000,
+  "reps": 200,
+  "work_ns": 500000
+ },
+ "cleanup": {
+  "errors": [],
+  "ok": true,
+  "rps_restore": {
+   "attempted": false,
+   "lab_b_absent": true,
+   "ok": true,
+   "restored": true
+  },
+  "steps": [
+   "traffic cgroup.kill",
+   "stop eBPF loader",
+   "kill 1269006",
+   "cgroup.kill",
+   "rmdir /sys/fs/cgroup/sentinel-r2c/contender",
+   "rmdir /sys/fs/cgroup/sentinel-r2c/target",
+   "rmdir /sys/fs/cgroup/sentinel-r2c/traffic",
+   "rmdir /sys/fs/cgroup/sentinel-r2c"
+  ],
+  "unsafe_incomplete": false,
+  "verify": {
+   "checks": {
+    "lab_cgroup_absent": true,
+    "no_lab_interface_in_host": true,
+    "no_lab_netns": true,
+    "no_lab_process": true,
+    "no_logged_pid_alive_in_lab": true,
+    "no_sentinel_cgroup": true,
+    "no_wrapper_alive": true,
+    "rps_restored": true
+   },
+   "ok": true
+  }
+ },
+ "commit": "d11e7550a3dd8618cdf15249b25e4cc438e36a48",
+ "criteria": {
+  "G6p": {
+   "type": "R2-C limit, reused",
+   "value": "(rq_cpu_time(18) - target - N1 contender - per-CPU-18 kthreads) / s <= 0.05 in B and W"
+  },
+  "GI": {
+   "type": "DESIGN (approved)",
+   "value": "target run_delay rate W - B >= RDX_MIN 0.05 and target cpu.pressure some W > B (S2/S3)"
+  },
+  "GS": {
+   "type": "DESIGN (approved)",
+   "value": "S2/S3: eBPF NET_RX(18) in W >= SI_ABS_MIN 0.5 and >= SI_RATIO_MIN 3.0 x max(B, floor 0.001); S1: rise >= SI_RATIO_MIN x max(B, floor) and < SI_ABS_MIN - delta; E0/N1/N2: NET_RX(18) in W < SI_RATIO_MIN x max(B, floor); processed(rps cpu) >= sentlab-b0 rx - netdev_max_backlog; NET_RX(18) <= precise non-idle(18) + 2 jiffies"
+  },
+  "GV": {
+   "type": "DESIGN (approved)",
+   "value": "NET_RX >= SI_SHARE_MIN 0.5 of all softirq time on CPU 18 in W (S1-S3)"
+  },
+  "LADDER": {
+   "type": "DESIGN (approved); provenance only",
+   "value": "10000..1280000 pps doubling, 5 s per step, stop at first loss; delta = max|frac - eBPF|; S1 = highest below SI_ABS_MIN - delta (both measures); S2 = lowest eBPF NET_RX >= SI_ABS_MIN + delta; S3 = highest loss-free above S2"
+  }
+ },
+ "design": {
+  "client_t": 11,
+  "nb": 10,
+  "nw": 10,
+  "parent_cpus": [
+   18,
+   20,
+   22,
+   23
+  ],
+  "receiver_cpu": 23,
+  "rps": null,
+  "sender_cpus": [
+   20,
+   22
+  ],
+  "target_cpu": 18,
+  "warmup_s": 10
+ },
+ "driver_ok": true,
+ "events": [
+  {
+   "event": "setup_start",
+   "t_mono": 429061.468260582
+  }
+ ],
+ "expected": [
+  {
+   "contender": [],
+   "cpu": {
+    "1269007": 18
+   },
+   "target": [
+    1269007
+   ],
+   "traffic": []
+  }
+ ],
+ "experiment": {
+  "contender": false,
+  "contender_weight": 100,
+  "kind": "CAL",
+  "lab": false,
+  "rps": null,
+  "traffic": null
+ },
+ "host_compare": {
+  "addresses_identical": true,
+  "bpf_compared": true,
+  "bpf_links_identical": true,
+  "bpf_maps_identical": true,
+  "bpf_progs_identical": true,
+  "cgroup_attrs_identical": true,
+  "cgroup_dirs_identical": true,
+  "cgroups_added": [],
+  "cgroups_differing": [],
+  "cgroups_removed": [],
+  "docker0_identical": true,
+  "enp0s31f6_identical": true,
+  "failed": [],
+  "host_rps_identical": true,
+  "interfaces_differing": [],
+  "interfaces_identical": true,
+  "irq_affinity_identical": true,
+  "irqs_differing": [],
+  "mounts_identical": true,
+  "netns_identical": true,
+  "network_state_captured": true,
+  "nic_irq_identical": true,
+  "no_lab_cgroup": true,
+  "no_lab_interface_in_host": true,
+  "no_lab_netns": true,
+  "no_lab_process": true,
+  "ok": true,
+  "protected_qdiscs_identical": true,
+  "qdiscs_identical": true,
+  "root_cpuset_0_23": true,
+  "root_identical": true,
+  "routes_identical": true,
+  "sn_programs_left": [],
+  "sysctls_identical": true
+ },
+ "hz": 100,
+ "in_w": [
+  false
+ ],
+ "iters": 5384,
+ "label": "calibration",
+ "ladder": null,
+ "observations": [
+  {
+   "ebpf_line": null,
+   "lab": null,
+   "lab_b_snmp": null,
+   "leaves": {
+    "contender": {
+     "cgroup.procs": "",
+     "cpu.max": "max 100000\n",
+     "cpu.pressure": "some avg10=0.00 avg60=0.00 avg300=0.00 total=0\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+     "cpu.stat": "usage_usec 0\nuser_usec 0\nsystem_usec 0\ncore_sched.force_idle_usec 0\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+     "cpuset.cpus.effective": "18\n",
+     "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n"
+    },
+    "parent": {
+     "cgroup.procs": "",
+     "cpu.max": "max 100000\n",
+     "cpu.pressure": "some avg10=0.00 avg60=0.00 avg300=0.00 total=99\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=99\n",
+     "cpu.stat": "usage_usec 2364\nuser_usec 0\nsystem_usec 2364\ncore_sched.force_idle_usec 0\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+     "cpuset.cpus.effective": "18,20,22-23\n",
+     "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n"
+    },
+    "target": {
+     "cgroup.procs": "1269007\n",
+     "cpu.max": "max 100000\n",
+     "cpu.pressure": "some avg10=0.00 avg60=0.00 avg300=0.00 total=99\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=99\n",
+     "cpu.stat": "usage_usec 3364\nuser_usec 841\nsystem_usec 2523\ncore_sched.force_idle_usec 0\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+     "cpuset.cpus.effective": "18\n",
+     "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n"
+    },
+    "traffic": {
+     "cgroup.procs": "",
+     "cpu.max": "max 100000\n",
+     "cpu.pressure": "some avg10=0.00 avg60=0.00 avg300=0.00 total=0\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+     "cpu.stat": "usage_usec 0\nuser_usec 0\nsystem_usec 0\ncore_sched.force_idle_usec 0\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+     "cpuset.cpus.effective": "20,22-23\n",
+     "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n"
+    }
+   },
+   "mono": 429061.489953583,
+   "raw": {
+    "nic_irq_eff": "21\n",
+    "psi_cpu": "some avg10=0.00 avg60=0.00 avg300=0.00 total=604422927\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+    "psi_memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=24185648\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=23305784\n",
+    "schedstat": "version 15\ntimestamp 4723728725\ncpu0 0 0 0 0 0 0 13219526697116 47264911834 24267070\ndomain0 000003 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ndomain1 ffffff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ncpu1 0 0 0 0 0 0 9904455114597 25855233347 4443870\ndomain0 000003 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ndomain1 ffffff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ncpu2 0 0 0 0 0 0 5692088181313 45946890460 39621575\ndomain0 00000c 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ndomain1 ffffff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ncpu3 0 0 0 0 0 0 18651826425431 6001845830 4500777\ndomain0 00000c 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ndomain1 ffffff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ncpu4 0 0 0 0 0 0 10951751533681 43693849112 40398412\ndomain0 000030 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ndomain1 ffffff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ncpu5 0 0 0 0 0 0 13093986009974 3773993463 2910268\ndomain0 000030 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ndomain1 ffffff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ncpu6 0 0 0 0 0 0 9970925378284 34917902784 41663348\ndomain0 0000c0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ndomain1 ffffff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ncpu7 0 0 0 0 0 0 13862733528192 3962144683 2315327\ndomain0 0000c0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ndomain1 ffffff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ncpu8 0 0 0 0 0 0 19670852915980 57457862899 58569008\ndomain0 000300 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ndomain1 ffffff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ncpu9 0 0 0 0 0 0 9610430464685 9023558937 12011817\ndomain0 000300 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ndomain1 ffffff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ncpu10 0 0 0 0 0 0 14685680179109 48336957480 63826091\ndomain0 000c00 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ndomain1 ffffff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ncpu11 0 0 0 0 0 0 14468877989278 7544899599 12803617\ndomain0 000c00 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ndomain1 ffffff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ncpu12 0 0 0 0 0 0 13204535933032 36805212625 53335257\ndomain0 003000 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ndomain1 ffffff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ncpu13 0 0 0 0 0 0 11391497960352 3864241201 3395620\ndomain0 003000 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ndomain1 ffffff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ncpu14 0 0 0 0 0 0 10570709345139 31813697603 46268168\ndomain0 00c000 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ndomain1 ffffff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ncpu15 0 0 0 0 0 0 13705046749224 3190091341 2415009\ndomain0 00c000 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ndomain1 ffffff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ncpu16 0 0 0 0 0 0 4096778301556 47019358337 37713982\ndomain0 0f0000 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ndomain1 ffffff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ncpu17 0 0 0 0 0 0 2960639565514 35962476611 33832176\ndomain0 0f0000 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ndomain1 ffffff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ncpu18 0 0 0 0 0 0 2964579955037 222628793395 30391301\ndomain0 0f0000 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ndomain1 ffffff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ncpu19 0 0 0 0 0 0 2080623940551 26187111635 25691628\ndomain0 0f0000 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ndomain1 ffffff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ncpu20 0 0 0 0 0 0 1520267077476 24173255006 15791241\ndomain0 f00000 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ndomain1 ffffff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ncpu21 0 0 0 0 0 0 1911023952545 38708005082 22107309\ndomain0 f00000 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ndomain1 ffffff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ncpu22 0 0 0 0 0 0 1308852582820 37436821703 17892446\ndomain0 f00000 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ndomain1 ffffff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ncpu23 0 0 0 0 0 0 1116053692337 23056988750 13495816\ndomain0 f00000 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\ndomain1 ffffff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n",
+    "softirqs": "                    CPU0       CPU1       CPU2       CPU3       CPU4       CPU5       CPU6       CPU7       CPU8       CPU9       CPU10      CPU11      CPU12      CPU13      CPU14      CPU15      CPU16      CPU17      CPU18      CPU19      CPU20      CPU21      CPU22      CPU23      \n          HI:          0          0          1          0          0          0          7          0          0          1          0       3597     202498          0          0          0          1          0          0          1          0          0          2          0\n       TIMER:    2802106    1057338    2387232     659861    2002568     312120    1996465     312900    2473072     530288    2467791     761843    1946003     297615    1647399     182148    1347141    1234104    1227100     902920    1616309   17195073    2755209    1398072\n      NET_TX:       2574        243       6147        225       4436        206       3262        171       6594        377       5598        351       2929        170       2274         81       6161       5042       4041       3350       2703       9263       5699       3170\n      NET_RX:     111564       8015     269508      55494     365222      56190     269680       4019   19140735    1353207   19020509    1041131    3158030       4902    1322395       2332     300846     292489     263795     244202     158806   28439871     212441     165313\n       BLOCK:       6130       3601      10341      10194      12482       8224      14916       3140      10092       4081      10697       4105      14594       2522      10229       3094      22412      27659      17571      16617       4999       5692       5544       3790\n    IRQ_POLL:          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0          0\n     TASKLET:          0          0         18          0         36          2         10          0         42         25         26          1      10242          0         16          0         51         15          1         23          1      14739          4          0\n       SCHED:   32248045   15444300    6728303    1226186    6776543     682045    6851966     725659   11347849    1427314   12455778    1896588    9267176     678648    7451747     574012    4205726    3578964    3377079    2595001    1803886   20818074    2905023    1945713\n     HRTIMER:         77         13        164          1        150          5        131          5        275         25        175          5         98          4         89          0          5          0          0          1        113     358002        374        164\n         RCU:    7053516    2816847    6512250    3216160    7453409    2150561    6973273    2179405   10754724    2522489   10599828    3480517    8225490    1690267    6942755    1761421    6031037    5443301    5098447    4222208    3435965   34715349    5631616    3761122\n",
+    "softnet": "0001e302 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000\n000020a4 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000001 00000000 00000000\n0004a8bf 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000002 00000000 00000000\n0000dabe 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000003 00000000 00000000\n000669c9 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000004 00000000 00000000\n0000dc49 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000005 00000000 00000000\n0004e409 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000006 00000000 00000000\n00001198 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000007 00000000 00000000\n0134bca8 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000008 00000000 00000000\n001632fe 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000009 00000000 00000000\n012cb89c 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 0000000a 00000000 00000000\n000ffd69 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 0000000b 00000000 00000000\n0030dee3 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 0000000c 00000000 00000000\n00001522 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 0000000d 00000000 00000000\n0014ba8f 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 0000000e 00000000 00000000\n00000a3b 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 0000000f 00000000 00000000\n000527a0 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000010 00000000 00000000\n0004ff1e 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000011 00000000 00000000\n000482e5 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000012 00000000 00000000\n00042bb6 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000013 00000000 00000000\n0002b0a2 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000014 00000000 00000000\n02306dda 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000015 00000000 00000000\n00038968 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000016 00000000 00000000\n0002bf46 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000017 00000000 00000000\n",
+    "stat": "cpu  20416441 19603 1171991 1006141805 392856 0 92190 0 0 0\ncpu0 1272814 196 27581 41475436 16929 0 944 0 0 0\ncpu1 969770 13 19446 41883035 11801 0 680 0 0 0\ncpu2 449565 320 64051 42282819 23351 0 70 0 0 0\ncpu3 1853298 11 6995 41023857 11908 0 6 0 0 0\ncpu4 987060 268 61846 41756588 22437 0 70 0 0 0\ncpu5 1302181 15 4888 41583405 10733 0 4 0 0 0\ncpu6 893228 196 62265 41854959 20962 0 79 0 0 0\ncpu7 1379754 6 4597 41507309 10368 0 3 0 0 0\ncpu8 1803470 6778 100832 40873548 21978 0 1679 0 0 0\ncpu9 925010 831 23277 41924692 8755 0 108 0 0 0\ncpu10 1308313 8357 102552 41372429 21873 0 1681 0 0 0\ncpu11 1413042 470 22302 41414918 12678 0 70 0 0 0\ncpu12 1199782 427 75184 41515722 25784 0 319 0 0 0\ncpu13 1131473 25 5583 41754375 10040 0 1 0 0 0\ncpu14 948116 238 68141 41787888 23449 0 161 0 0 0\ncpu15 1364163 14 4999 41524612 9249 0 2 0 0 0\ncpu16 287500 274 119699 42445915 19780 0 267 0 0 0\ncpu17 205117 234 87503 42564004 19099 0 287 0 0 0\ncpu18 234395 151 69837 42570000 16578 0 223 0 0 0\ncpu19 145397 215 60341 42664198 15141 0 193 0 0 0\ncpu20 99453 86 46233 42725656 14903 0 100 0 0 0\ncpu21 92619 283 56627 42127961 14725 0 85046 0 0 0\ncpu22 77818 117 43152 42742096 15232 0 97 0 0 0\ncpu23 73090 68 34049 42766368 15093 0 89 0 0 0\nintr 812568895 0 0 0 0 0 0 0 0 0 631970 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 6 202571 0 0 0 0 0 0 0 28801480 54 417107 232412 706623 264003 628416 252544 656745 223163 848952 201210 812677 284077 653076 196198 585721 178785 556989 510513 471083 398359 408825 394893 349693 368759 47 14938338 2524 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\nctxt 1204867279\nbtime 1790664248\nprocesses 1269021\nprocs_running 2\nprocs_blocked 0\nsoftirq 436355984 206108 49512677 75067 76260696 232726 0 25252 157011625 359876 152671957\n",
+    "vmstat": "nr_free_pages 3232965\nnr_zone_inactive_anon 218143\nnr_zone_active_anon 103437\nnr_zone_inactive_file 161098\nnr_zone_active_file 101827\nnr_zone_unevictable 2844\nnr_zone_write_pending 96\nnr_mlock 0\nnr_bounce 0\nnr_zspages 0\nnr_free_cma 0\nnr_unaccepted 0\nnuma_hit 737989539\nnuma_miss 0\nnuma_foreign 0\nnuma_interleave 104\nnuma_local 737988894\nnuma_other 0\nnr_inactive_anon 218143\nnr_active_anon 103437\nnr_inactive_file 161098\nnr_active_file 101827\nnr_unevictable 2844\nnr_slab_reclaimable 40925\nnr_slab_unreclaimable 79910\nnr_isolated_anon 0\nnr_isolated_file 0\nworkingset_nodes 33225\nworkingset_refault_anon 63321\nworkingset_refault_file 84207180\nworkingset_activate_anon 21814\nworkingset_activate_file 7095566\nworkingset_restore_anon 21740\nworkingset_restore_file 4147136\nworkingset_nodereclaim 261276\nnr_anon_pages 292316\nnr_mapped 64628\nnr_file_pages 295028\nnr_dirty 96\nnr_writeback 0\nnr_writeback_temp 0\nnr_shmem 26889\nnr_shmem_hugepages 39\nnr_shmem_pmdmapped 0\nnr_file_hugepages 0\nnr_file_pmdmapped 0\nnr_anon_transparent_hugepages 0\nnr_vmscan_write 1028564\nnr_vmscan_immediate_reclaim 1\nnr_dirtied 25448070\nnr_written 22797344\nnr_throttled_written 0\nnr_kernel_misc_reclaimable 0\nnr_foll_pin_acquired 72\nnr_foll_pin_released 72\nnr_kernel_stack 21256\nnr_page_table_pages 12716\nnr_sec_page_table_pages 0\nnr_swapcached 5210\npgpromote_success 0\npgpromote_candidate 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\nnr_dirty_threshold 690328\nnr_dirty_background_threshold 344742\npgpgin 377949683\npgpgout 96980511\npswpin 219009\npswpout 1028577\npgalloc_dma 512\npgalloc_dma32 20528293\npgalloc_normal 1053329591\npgalloc_movable 0\npgalloc_device 0\nallocstall_dma 0\nallocstall_dma32 0\nallocstall_normal 2228\nallocstall_movable 86771\nallocstall_device 0\npgskip_dma 0\npgskip_dma32 26\npgskip_normal 439\npgskip_movable 0\npgskip_device 0\npgfree 1082900354\npgactivate 43434398\npgdeactivate 3282\npglazyfree 147653\npgfault 662455603\npgmajfault 2660588\npglazyfreed 575\npgrefill 350986534\npgreuse 91442618\npgsteal_kswapd 101318228\npgsteal_direct 4595168\npgsteal_khugepaged 0\npgscan_kswapd 153070112\npgscan_direct 6505688\npgscan_khugepaged 0\npgscan_direct_throttle 0\npgscan_anon 2441972\npgscan_file 157133828\npgsteal_anon 1034715\npgsteal_file 104878681\nzone_reclaim_failed 0\npginodesteal 0\nslabs_scanned 3620061047\nkswapd_inodesteal 59897\nkswapd_low_wmark_hit_quickly 1728\nkswapd_high_wmark_hit_quickly 220082\npageoutrun 222324\npgrotated 1014071\ndrop_pagecache 0\ndrop_slab 0\noom_kill 0\nnuma_pte_updates 0\nnuma_huge_pte_updates 0\nnuma_hint_faults 0\nnuma_hint_faults_local 0\nnuma_pages_migrated 0\npgmigrate_success 5737517\npgmigrate_fail 1193810\nthp_migration_success 0\nthp_migration_fail 0\nthp_migration_split 0\ncompact_migrate_scanned 89073815\ncompact_free_scanned 287361024\ncompact_isolated 12819222\ncompact_stall 36\ncompact_fail 31\ncompact_success 5\ncompact_daemon_wake 3734\ncompact_daemon_migrate_scanned 89065165\ncompact_daemon_free_scanned 287360117\nhtlb_buddy_alloc_success 0\nhtlb_buddy_alloc_fail 0\nunevictable_pgs_culled 21687326\nunevictable_pgs_scanned 22165093\nunevictable_pgs_rescued 21620053\nunevictable_pgs_mlocked 1950\nunevictable_pgs_munlocked 1950\nunevictable_pgs_cleared 0\nunevictable_pgs_stranded 0\nthp_fault_alloc 0\nthp_fault_fallback 0\nthp_fault_fallback_charge 0\nthp_collapse_alloc 0\nthp_collapse_alloc_failed 0\nthp_file_alloc 16873\nthp_file_fallback 1892\nthp_file_fallback_charge 0\nthp_file_mapped 0\nthp_split_page 56\nthp_split_page_failed 0\nthp_deferred_split_page 0\nthp_split_pmd 0\nthp_scan_exceed_none_pte 0\nthp_scan_exceed_swap_pte 0\nthp_scan_exceed_share_pte 0\nthp_split_pud 0\nthp_zero_page_alloc 0\nthp_zero_page_alloc_failed 0\nthp_swpout 0\nthp_swpout_fallback 0\nballoon_inflate 0\nballoon_deflate 0\nballoon_migrate 0\nswap_ra 126508\nswap_ra_hit 101121\nksm_swpin_copy 1\ncow_ksm 0\nzswpin 0\nzswpout 0\nzswpwb 0\ndirect_map_level2_splits 195\ndirect_map_level3_splits 6\nnr_unstable 0\n"
+   },
+   "slices": {
+    "init.scope": "some avg10=0.00 avg60=0.00 avg300=0.00 total=3435564\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=3434136\n",
+    "system.slice": "some avg10=0.00 avg60=0.00 avg300=0.00 total=184247528\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=183659939\n",
+    "user.slice": "some avg10=0.00 avg60=0.00 avg300=0.00 total=307179938\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=304117078\n"
+   },
+   "tag": "calibration",
+   "target_netns": null,
+   "tasks": {
+    "1195218": {
+     "schedstat": "3682750832 538684698 44899\n",
+     "stat": "1195218 (kworker/18:1-events) I 2 0 0 0 -1 69238880 0 0 0 0 13 354 0 0 20 0 1 0 38862407 0 0 18446744073709551615 0 0 0 0 0 0 0 2147483647 0 1 0 0 17 18 0 0 0 0 0 0 0 0 0 0 0 0 0\n"
+    },
+    "1267579": {
+     "schedstat": "228750 7602 6\n",
+     "stat": "1267579 (kworker/18:2-events) I 2 0 0 0 -1 69238880 0 0 0 0 0 0 0 0 20 0 1 0 42840429 0 0 18446744073709551615 0 0 0 0 0 0 0 2147483647 0 1 0 0 17 18 0 0 0 0 0 0 0 0 0 0 0 0 0\n"
+    },
+    "1267762": {
+     "schedstat": "3721 120771 2\n",
+     "stat": "1267762 (kworker/18:0) I 2 0 0 0 -1 69238880 0 0 0 0 0 0 0 0 20 0 1 0 42886972 0 0 18446744073709551615 0 0 0 0 0 0 0 2147483647 0 1 0 0 17 18 0 0 0 0 0 0 0 0 0 0 0 0 0\n"
+    },
+    "1269007": {
+     "schedstat": "6637665 21220 10\n",
+     "stat": "1269007 (python3) R 1269006 1269006 1269006 0 -1 4194560 961 0 2 0 0 0 0 0 20 0 1 0 42906146 19243008 1872 18446744073709551615 102733519310848 102733522150925 140732326123008 0 0 0 0 16781312 2 0 0 0 17 18 0 0 0 0 0 102733524523056 102733524807128 102733684396032 140732326131610 140732326131799 140732326131799 140732326133735 0\n"
+    },
+    "288": {
+     "schedstat": "710412238 164302218 58395\n",
+     "stat": "288 (kworker/18:1H-kblockd) I 2 0 0 0 -1 69238880 0 0 0 0 0 71 0 0 0 -20 1 0 108 0 0 18446744073709551615 0 0 0 0 0 0 0 2147483647 0 1 0 0 17 18 0 0 0 0 0 0 0 0 0 0 0 0 0\n"
+    },
+    "75": {
+     "schedstat": "220909 369 25\n",
+     "stat": "75 (cpuhp/18) S 2 0 0 0 -1 69239104 0 0 0 0 0 0 0 0 20 0 1 0 6 0 0 18446744073709551615 0 0 0 0 0 0 0 2147483647 0 1 0 0 17 18 0 0 0 0 0 0 0 0 0 0 0 0 0\n"
+    },
+    "76": {
+     "schedstat": "731 287 3\n",
+     "stat": "76 (idle_inject/18) S 2 0 0 0 -1 69238848 0 0 0 0 0 0 0 0 -51 0 1 0 6 0 0 18446744073709551615 0 0 0 0 0 0 0 2147483647 0 1 0 0 17 18 50 1 0 0 0 0 0 0 0 0 0 0 0\n"
+    },
+    "77": {
+     "schedstat": "8881371438 1066501787 750392\n",
+     "stat": "77 (migration/18) S 2 0 0 0 -1 69238848 0 0 0 0 0 888 0 0 -100 0 1 0 6 0 0 18446744073709551615 0 0 0 0 0 0 0 2147483647 0 1 0 0 17 18 99 1 0 0 0 0 0 0 0 0 0 0 0\n"
+    },
+    "78": {
+     "schedstat": "570700131 796120427 40497\n",
+     "stat": "78 (ksoftirqd/18) S 2 0 0 0 -1 69238848 0 0 0 0 17 39 0 0 20 0 1 0 6 0 0 18446744073709551615 0 0 0 0 0 0 0 2147483647 0 1 0 0 17 18 0 0 0 0 0 0 0 0 0 0 0 0 0\n"
+    },
+    "80": {
+     "schedstat": "14043 236489 4\n",
+     "stat": "80 (kworker/18:0H-events_highpri) I 2 0 0 0 -1 69238880 0 0 0 0 0 0 0 0 0 -20 1 0 6 0 0 18446744073709551615 0 0 0 0 0 0 0 2147483647 0 1 0 0 17 18 0 0 0 0 0 0 0 0 0 0 0 0 0\n"
+    }
+   }
+  }
+ ],
+ "pps": null,
+ "preflight": {
+  "checks": {
+   "cgroup_kill_supported": true,
+   "experiment_cpus_no_smt": true,
+   "experiment_cpus_online": true,
+   "host_rps_all_zero": true,
+   "lab_uid_exists": true,
+   "netdev_max_backlog_readable": true,
+   "nic_irq_is_enp0s31f6": true,
+   "nic_irq_off_experiment_cpus": true,
+   "no_lab_interface_in_host": true,
+   "no_lab_netns": true,
+   "no_lab_process": true,
+   "no_sentinel_cgroup": true,
+   "protected_interfaces_present": true,
+   "psi_available": true,
+   "root_cpuset_0_23": true,
+   "root_subtree_control": true,
+   "tool:/home/iiitd/sentinelai/ebpf/build/sentinel_loader": true,
+   "tool:/usr/bin/iperf3": true,
+   "tool:/usr/bin/python3": true,
+   "tool:/usr/bin/setpriv": true,
+   "tool:/usr/bin/taskset": true,
+   "tool:/usr/bin/timeout": true,
+   "tool:/usr/bin/unshare": true,
+   "tool:/usr/lib/linux-hwe-6.8-tools-6.8.0-138/bpftool": true,
+   "tool:/usr/sbin/ethtool": true,
+   "tool:/usr/sbin/ip": true
+  },
+  "ok": true
+ },
+ "role": "runtime step 0a: provenance only, excluded from evidence",
+ "rps_restored": true,
+ "unsafe_incomplete": false,
+ "verdict": "OK",
+ "verify_cgroups": {
+  "checks": {
+   "contender_controllers": true,
+   "contender_cpus": true,
+   "contender_empty": true,
+   "contender_memory_max_unlimited": true,
+   "contender_no_quota": true,
+   "contender_weight": true,
+   "parent_cpus": true,
+   "parent_empty": true,
+   "parent_no_quota": true,
+   "parent_subtree_control": true,
+   "target_controllers": true,
+   "target_cpus": true,
+   "target_empty": true,
+   "target_memory_max_unlimited": true,
+   "target_no_quota": true,
+   "traffic_controllers": true,
+   "traffic_cpus": true,
+   "traffic_empty": true,
+   "traffic_memory_max_unlimited": true,
+   "traffic_no_quota": true,
+   "traffic_pids_max": true
+  },
+  "ok": true
+ }
+}
