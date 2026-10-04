@@ -1,0 +1,178 @@
+{
+ "status_ok": true,
+ "runs": {
+  "E0-close": {
+   "verdict": "OK",
+   "aborts": [],
+   "established": {
+    "cpu_contention_present": null,
+    "memory_pressure": null,
+    "memory_pressure_absent": true
+   },
+   "m2": "INSUFFICIENT_EVIDENCE",
+   "GR": true,
+   "host_oom": false,
+   "host_ok": true
+  },
+  "E0-open": {
+   "verdict": "OK",
+   "aborts": [],
+   "established": {
+    "cpu_contention_present": null,
+    "memory_pressure": null,
+    "memory_pressure_absent": true
+   },
+   "m2": "INSUFFICIENT_EVIDENCE",
+   "GR": true,
+   "host_oom": false,
+   "host_ok": true
+  },
+  "M1-1": {
+   "verdict": "OK",
+   "aborts": [],
+   "established": {
+    "cpu_contention_present": null,
+    "memory_pressure": true,
+    "memory_pressure_absent": null
+   },
+   "m2": "memory_pressure",
+   "GR": true,
+   "host_oom": false,
+   "host_ok": true
+  },
+  "M1-2": {
+   "verdict": "OK",
+   "aborts": [],
+   "established": {
+    "cpu_contention_present": null,
+    "memory_pressure": true,
+    "memory_pressure_absent": null
+   },
+   "m2": "memory_pressure",
+   "GR": true,
+   "host_oom": false,
+   "host_ok": true
+  },
+  "M1-3": {
+   "verdict": "OK",
+   "aborts": [],
+   "established": {
+    "cpu_contention_present": null,
+    "memory_pressure": true,
+    "memory_pressure_absent": null
+   },
+   "m2": "memory_pressure",
+   "GR": true,
+   "host_oom": false,
+   "host_ok": true
+  },
+  "M2-1": {
+   "verdict": "OK",
+   "aborts": [],
+   "established": {
+    "cpu_contention_present": null,
+    "memory_pressure": true,
+    "memory_pressure_absent": null
+   },
+   "m2": "memory_pressure",
+   "GR": true,
+   "host_oom": false,
+   "host_ok": true
+  },
+  "M2-2": {
+   "verdict": "OK",
+   "aborts": [],
+   "established": {
+    "cpu_contention_present": null,
+    "memory_pressure": true,
+    "memory_pressure_absent": null
+   },
+   "m2": "memory_pressure",
+   "GR": true,
+   "host_oom": false,
+   "host_ok": true
+  },
+  "M2-3": {
+   "verdict": "OK",
+   "aborts": [],
+   "established": {
+    "cpu_contention_present": null,
+    "memory_pressure": true,
+    "memory_pressure_absent": null
+   },
+   "m2": "memory_pressure",
+   "GR": true,
+   "host_oom": false,
+   "host_ok": true
+  },
+  "N1-1": {
+   "verdict": "OK",
+   "aborts": [],
+   "established": {
+    "cpu_contention_present": null,
+    "memory_pressure": null,
+    "memory_pressure_absent": true
+   },
+   "m2": "INSUFFICIENT_EVIDENCE",
+   "GR": true,
+   "host_oom": false,
+   "host_ok": true
+  },
+  "N1-2": {
+   "verdict": "OK",
+   "aborts": [],
+   "established": {
+    "cpu_contention_present": null,
+    "memory_pressure": null,
+    "memory_pressure_absent": true
+   },
+   "m2": "INSUFFICIENT_EVIDENCE",
+   "GR": true,
+   "host_oom": false,
+   "host_ok": true
+  },
+  "N2-1": {
+   "verdict": "OK",
+   "aborts": [],
+   "established": {
+    "cpu_contention_present": true,
+    "memory_pressure": null,
+    "memory_pressure_absent": true
+   },
+   "m2": "cpu_contention",
+   "GR": true,
+   "host_oom": false,
+   "host_ok": true
+  },
+  "N2-2": {
+   "verdict": "OK",
+   "aborts": [],
+   "established": {
+    "cpu_contention_present": true,
+    "memory_pressure": null,
+    "memory_pressure_absent": true
+   },
+   "m2": "cpu_contention",
+   "GR": true,
+   "host_oom": false,
+   "host_ok": true
+  }
+ },
+ "calibration": {
+  "create_to_ready_s": 1.110034619,
+  "cycle": {
+   "cycle_median_ns": 158190.0,
+   "lateness_median_ns": 289792.5,
+   "lateness_p99_ns": 425600,
+   "missed": 0,
+   "n": 3722
+  },
+  "feasible": true,
+  "mem_available_min": 13446410240,
+  "observations_after_ready": 39,
+  "ready": true,
+  "reason": null,
+  "refault_rate_steady": 0.0
+ },
+ "host_final_ok": true
+}

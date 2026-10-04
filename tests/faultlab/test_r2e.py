@@ -1614,7 +1614,8 @@ class TestStaticAndIntegrity(unittest.TestCase):
     @unittest.skipUnless(IN_GIT, "candidate check needs git")
     def test_candidate(self):
         """Live repository: at d11e755 (pre-runtime state) candidate() accepts. After the authorised R2-E closeout
-        commit it must refuse, and the refusal may name only the closeout artifacts on top of d11e755."""
+        commit it must refuse, and the refusal may name only the closeout artifacts on top of d11e755 (plus, after the
+        authorised R2-F closeout commit, exactly the R2-F tooling, report and evidence paths)."""
         git = lambda *a: subprocess.run(["git", "-C", str(ROOT), *a], capture_output=True, text=True)
         base = git("rev-parse", "d11e755^{commit}").stdout.strip()
         res = E.candidate(str(ROOT))
@@ -1624,9 +1625,14 @@ class TestStaticAndIntegrity(unittest.TestCase):
             self.assertEqual(git("merge-base", "--is-ancestor", base, "HEAD").returncode, 0)
             closeout = lambda p: (re.fullmatch(r"docs/PHASE_1C_R2E_[A-Z0-9_]+\.md", p) is not None
                                   or p == "docs/PROJECT_STATUS.json" or p.startswith("results/phase1c_r2e/"))
+            # the authorised R2-F closeout (a later phase) adds exactly these paths; nothing else is accepted
+            r2f = lambda p: (re.fullmatch(r"scripts/r2f_[a-z_]+\.(py|sh)", p) is not None
+                             or p == "tests/faultlab/test_r2f.py"
+                             or re.fullmatch(r"docs/PHASE_1C_R2F_[A-Z0-9_]+\.md", p) is not None
+                             or p.startswith("results/phase1c_r2f/"))
             changed = git("diff", "--name-only", base, "HEAD").stdout.split()
             others = sorted(p for p in changed if p not in E.TOOLING)
-            self.assertTrue(others and all(closeout(p) for p in others), others)
+            self.assertTrue(others and all(closeout(p) or r2f(p) for p in others), others)
             self.assertFalse(res["ok"])
             self.assertEqual(res["reason"], f"changed since {base[:7]} beyond R2-E tooling: {others}")
         with tempfile.TemporaryDirectory() as t:

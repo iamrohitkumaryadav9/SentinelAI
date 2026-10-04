@@ -1,0 +1,26 @@
+[calibration]
+{"label": "calibration", "verdict": "OK", "aborts": [], "m2": null, "host_oom": false, "calibration": {"feasible": true, "reason": null}}
+[E0-open]
+{"label": "E0-open", "verdict": "OK", "aborts": [], "m2": "INSUFFICIENT_EVIDENCE", "host_oom": false, "calibration": null}
+[M1-1]
+{"label": "M1-1", "verdict": "OK", "aborts": [], "m2": "memory_pressure", "host_oom": false, "calibration": null}
+[M1-2]
+{"label": "M1-2", "verdict": "OK", "aborts": [], "m2": "memory_pressure", "host_oom": false, "calibration": null}
+[M1-3]
+{"label": "M1-3", "verdict": "OK", "aborts": [], "m2": "memory_pressure", "host_oom": false, "calibration": null}
+[M2-1]
+{"label": "M2-1", "verdict": "OK", "aborts": [], "m2": "memory_pressure", "host_oom": false, "calibration": null}
+[M2-2]
+{"label": "M2-2", "verdict": "OK", "aborts": [], "m2": "memory_pressure", "host_oom": false, "calibration": null}
+[M2-3]
+{"label": "M2-3", "verdict": "OK", "aborts": [], "m2": "memory_pressure", "host_oom": false, "calibration": null}
+[N1-1]
+{"label": "N1-1", "verdict": "OK", "aborts": [], "m2": "INSUFFICIENT_EVIDENCE", "host_oom": false, "calibration": null}
+[N1-2]
+{"label": "N1-2", "verdict": "OK", "aborts": [], "m2": "INSUFFICIENT_EVIDENCE", "host_oom": false, "calibration": null}
+[N2-1]
+{"label": "N2-1", "verdict": "OK", "aborts": [], "m2": "cpu_contention", "host_oom": false, "calibration": null}
+[N2-2]
+{"label": "N2-2", "verdict": "OK", "aborts": [], "m2": "cpu_contention", "host_oom": false, "calibration": null}
+[E0-close]
+{"label": "E0-close", "verdict": "OK", "aborts": [], "m2": "INSUFFICIENT_EVIDENCE", "host_oom": false, "calibration": null}

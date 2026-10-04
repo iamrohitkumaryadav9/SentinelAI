@@ -1,15 +1,16 @@
 {
-  "checkpoint": "R2-E closeout",
+  "checkpoint": "R2-F closeout",
   "date": "2026-10-04",
-  "head": "d11e7550a3dd8618cdf15249b25e4cc438e36a48",
+  "head": "4aa23b89743b97436c56213fd31e974271e01b40",
   "uncommitted": [
-    "R2-E tooling (scripts/r2e_softirq.py, scripts/r2e_driver.py, scripts/r2e_validate.sh, tests/faultlab/test_r2e.py)",
-    "results/phase1c_r2e/ (3 run directories)",
-    "docs/PHASE_1C_R2E_SOFTIRQ_OVERLOAD_FEASIBILITY_REPORT.md",
+    "R2-F tooling (scripts/r2f_memory.py, scripts/r2f_driver.py, scripts/r2f_target.py, scripts/r2f_validate.sh, tests/faultlab/test_r2f.py)",
+    "tests/faultlab/test_r2e.py (authorised closeout integrity-test maintenance: test_candidate accepts exactly the R2-F closeout paths)",
+    "results/phase1c_r2f/20261004T100422Z/",
+    "docs/PHASE_1C_R2F_MEMORY_PRESSURE_VALIDATION_REPORT.md",
     "docs/PROJECT_STATUS.json",
     "experiments/faultlab/docker/ (pre-existing, unrelated; left untracked)"
   ],
-  "current_status": "R2-E CLOSED — NOT FEASIBLE UNDER THE REGISTERED EXPERIMENTAL DESIGN (feasibility study; not a softirq_overload validation)",
+  "current_status": "R2-F CLOSED — PASS: memory-pressure diagnosis validated under controlled FaultLab conditions for cgroup memory.high file-backed page-cache refault pressure (reclaim-and-refault path only)",
   "phases": [
     {
       "phase": "Phase 0",
@@ -28,7 +29,7 @@
     },
     {
       "phase": "Phase 1C",
-      "verdict": "in progress: M1, M2, M3A, M3A-C1, M3B, R2-A, R2-B, R2-C, R2-D done, R2-E closed not feasible; design milestones M4-M8 (FaultLab matrix, pilot, calibration, ML, PHASE_1C_EVALUATION) not done",
+      "verdict": "in progress: M1, M2, M3A, M3A-C1, M3B, R2-A, R2-B, R2-C, R2-D done, R2-E closed not feasible, R2-F done; design milestones M4-M8 (FaultLab matrix, pilot, calibration, ML, PHASE_1C_EVALUATION) not done",
       "report": "docs/PHASE_1C_DESIGN.md"
     },
     {
@@ -109,18 +110,43 @@
       "report": "docs/PHASE_1C_R2E_SOFTIRQ_OVERLOAD_FEASIBILITY_REPORT.md",
       "evidence": "results/phase1c_r2e/20261004T055509Z/",
       "evidence_fingerprint": "d5fe88043ad31e4814e37bfd9fe6a178b07a2ac1f7c12902aa6e65c0ac9e1ddd"
+    },
+    {
+      "phase": "R2-F memory pressure",
+      "verdict": "PASS / CLOSED",
+      "status": "CLOSED",
+      "steps": {
+        "design": "APPROVED WITH CONDITIONS 1-12",
+        "implementation": "PASS",
+        "pre-runtime_attempt": "NO-GO (post-reboot root controllers; R2-F preflight required R2-C's exact ROOT_SUBTREE)",
+        "preflight_correction": "PASS (REQUIRED_ROOT_CONTROLLERS {cpuset,cpu,memory,pids} subset; 63 tests; 84/84 mutants)",
+        "correction_verification": "PASS (verification regression 875/875, test_phase1a.py excluded; no host mutation)",
+        "pre-runtime_gate": "PASS (root BPF baseline /tmp/r2f_gate_20261004T095947Z)",
+        "runtime": "PASS",
+        "closeout": "PASS",
+        "integrity_test_maintenance": "PASS (authorised: test_r2e.py test_candidate accepts exactly the R2-F closeout paths; test_r2f.py test_protected_files_unchanged pins test_r2e.py to 4aa23b8 or 4aa23b8 + that exact patch, sha256 621f10e9...; no implementation/threshold/evidence change)"
+      },
+      "validated_scope": "cgroup memory.high file-backed page-cache refault pressure, diagnosed through the MP.R1 reclaim-and-refault path; not general Linux memory pressure",
+      "result": "calibration feasible; M1 x3 (H 768 MiB) and M2 x3 (H 512 MiB): ground truth established 6/6, M2 memory_pressure 6/6 (MEDIUM); N1 x2: no pressure, INSUFFICIENT_EVIDENCE 2/2; N2 x2: cpu_contention 2/2; E0 x2: INSUFFICIENT_EVIDENCE; 0 memory_pressure false positives; 0 disagreements; 12 evidence runs + 1 calibration = 13 executions",
+      "report": "docs/PHASE_1C_R2F_MEMORY_PRESSURE_VALIDATION_REPORT.md",
+      "evidence": "results/phase1c_r2f/20261004T100422Z/",
+      "evidence_fingerprint": "475f64dcbffeddfe8c32eff310f295798abc65b5cf4bb4f4c9278e6ca1d52b21",
+      "runtime_commit": "4aa23b8",
+      "loader": "libbpf 1.4"
     }
   ],
   "experimentally_validated_fault_classes": [
     "network_packet_loss",
     "cpu_contention",
-    "cpu_throttling"
+    "cpu_throttling",
+    "memory_pressure (scoped: cgroup memory.high file-backed page-cache refault pressure, reclaim-and-refault path; R2-F)"
   ],
   "observed_m2_decisions_in_validation": {
     "decisions": [
       "network_packet_loss",
       "cpu_contention",
       "cpu_throttling",
+      "memory_pressure",
       "INSUFFICIENT_EVIDENCE"
     ],
     "contributing": [
@@ -132,11 +158,18 @@
   },
   "contract_labels_not_yet_validated": [
     "softirq_overload",
-    "memory_pressure",
     "application_bottleneck",
     "tcp_retransmissions (as primary decision)"
   ],
   "known_limitations": [
+    "R2-F: no graded severity — M1 (H 768 MiB) and M2 (H 512 MiB) both ~46k refaults/s and ~45x cycle-time increase; M2 does not demonstrate greater observed severity than M1",
+    "R2-F: PSI path untested — memory_pressure asserted via MP.R1 reclaim-and-refault; psi.mem.some.target ~0.021 < registered 0.2 floor; PSI-based memory-pressure detection not validated",
+    "R2-F: OOM path untested (OOM prohibited by the registered safety design)",
+    "R2-F: validated mechanism is cgroup memory.high + file-backed page cache + reclaim/refault thrashing only; anonymous-memory, swap-driven and OOM pressure not validated",
+    "R2-F: single host, Ubuntu 22.04, kernel 6.8.0-138 (MGLRU), one registered campaign; no cross-host/kernel claim",
+    "R2-F: r2f_memory.py evaluate expects a ground-truth window and does not directly evaluate the calibration directory (tooling limitation, not a runtime failure; not fixed)",
+    "R2-F: host rebooted after R2-E; R2-F baseline = post-reboot state (swap 0 used; root controllers cpuset cpu io memory hugetlb pids rdma misc, restored by Docker); not normalised to the R2-E state",
+    "tests/test_phase1a.py mutates the host (docker run hello-world restores root cgroup controllers, docker0 IPv6 link-local); excluded (24 tests) from the R2-F verification regression; after a reboot, R2-C/R2-D live dry-run tests fail until Docker has run (R2-C exact ROOT_SUBTREE preflight)",
     "R2-E: softirq_overload NOT validated — registered ladder could not reach S2 without loss (receiver/socket bottleneck before CPU 18 reached SI_ABS_MIN + delta)",
     "R2-E: tick-sampled /proc/stat softirq fraction (SI.R1 input) read 0.0000 while eBPF measured up to 0.166 cores on an otherwise idle NO_HZ CPU; 0.53 vs 0.33 under load — measurement limitation, no M2/M3A change",
     "R2-D: throttle.quota_saturation not validated under binding throttling (MISSING in all 9 T1/T2/TC runs; M3A rejects per-interval values > 1.0); supporting metric only — not a failure of the mandatory R2-D evidence or ground truth",
@@ -149,8 +182,8 @@
   ],
   "next_phase": {
     "named_in_repository": null,
-    "next_unvalidated_fault_class": "memory_pressure",
-    "basis": "designated next by the project owner at R2-E closeout (2026-10-04); not authorised. Strict contract label order (labels.json) would put tcp_retransmissions (as primary decision; R2-B validated it only as CONTRIBUTING) before memory_pressure. softirq_overload remains unvalidated (R2-E NOT FEASIBLE)."
+    "next_unvalidated_fault_class": null,
+    "basis": "to be decided separately after the R2-F closeout. Unvalidated contract labels: softirq_overload (R2-E NOT FEASIBLE), application_bottleneck, tcp_retransmissions (as primary decision)."
   },
   "deferred": [
     {
@@ -164,6 +197,10 @@
     {
       "item": "softirq time accounting: /proc/stat tick sampling vs eBPF softirq_entry/exit on this kernel",
       "scope": "future work; no SI.R1 / M2 / M3A / threshold change made"
+    },
+    {
+      "item": "memory_pressure beyond the R2-F scope: PSI path, anonymous/swap pressure, graded severity",
+      "scope": "a NEW experimental design requiring its own design review and gates; not started"
     }
   ],
   "completed_feasibility_studies": [

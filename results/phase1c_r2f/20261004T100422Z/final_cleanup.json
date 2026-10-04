@@ -1,0 +1,432 @@
+{
+ "final": {
+  "checks": {
+   "lab_cgroup_absent": true,
+   "no_lab_process": true,
+   "no_scratch": true,
+   "no_sentinel_cgroup": true,
+   "no_wrapper_alive": true
+  },
+  "ok": true
+ },
+ "runs": {
+  "/home/iiitd/sentinelai/results/phase1c_r2f/20261004T100422Z/E0-close/ops.jsonl": {
+   "controls_at_cleanup": {
+    "lab_absent": true,
+    "ok": null
+   },
+   "errors": [],
+   "ok": true,
+   "order": [
+    "terminated",
+    "controls_verified",
+    "bpf_released",
+    "scratch_deleted",
+    "cgroups_removed"
+   ],
+   "steps": [
+    "kill 30336"
+   ],
+   "termination": {
+    "no_lab_process": true,
+    "no_wrapper": true
+   },
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_scratch": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  },
+  "/home/iiitd/sentinelai/results/phase1c_r2f/20261004T100422Z/E0-open/ops.jsonl": {
+   "controls_at_cleanup": {
+    "lab_absent": true,
+    "ok": null
+   },
+   "errors": [],
+   "ok": true,
+   "order": [
+    "terminated",
+    "controls_verified",
+    "bpf_released",
+    "scratch_deleted",
+    "cgroups_removed"
+   ],
+   "steps": [
+    "kill 28949"
+   ],
+   "termination": {
+    "no_lab_process": true,
+    "no_wrapper": true
+   },
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_scratch": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  },
+  "/home/iiitd/sentinelai/results/phase1c_r2f/20261004T100422Z/M1-1/ops.jsonl": {
+   "controls_at_cleanup": {
+    "lab_absent": true,
+    "ok": null
+   },
+   "errors": [],
+   "ok": true,
+   "order": [
+    "terminated",
+    "controls_verified",
+    "bpf_released",
+    "scratch_deleted",
+    "cgroups_removed"
+   ],
+   "steps": [
+    "kill 29072"
+   ],
+   "termination": {
+    "no_lab_process": true,
+    "no_wrapper": true
+   },
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_scratch": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  },
+  "/home/iiitd/sentinelai/results/phase1c_r2f/20261004T100422Z/M1-2/ops.jsonl": {
+   "controls_at_cleanup": {
+    "lab_absent": true,
+    "ok": null
+   },
+   "errors": [],
+   "ok": true,
+   "order": [
+    "terminated",
+    "controls_verified",
+    "bpf_released",
+    "scratch_deleted",
+    "cgroups_removed"
+   ],
+   "steps": [
+    "kill 29202"
+   ],
+   "termination": {
+    "no_lab_process": true,
+    "no_wrapper": true
+   },
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_scratch": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  },
+  "/home/iiitd/sentinelai/results/phase1c_r2f/20261004T100422Z/M1-3/ops.jsonl": {
+   "controls_at_cleanup": {
+    "lab_absent": true,
+    "ok": null
+   },
+   "errors": [],
+   "ok": true,
+   "order": [
+    "terminated",
+    "controls_verified",
+    "bpf_released",
+    "scratch_deleted",
+    "cgroups_removed"
+   ],
+   "steps": [
+    "kill 29324"
+   ],
+   "termination": {
+    "no_lab_process": true,
+    "no_wrapper": true
+   },
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_scratch": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  },
+  "/home/iiitd/sentinelai/results/phase1c_r2f/20261004T100422Z/M2-1/ops.jsonl": {
+   "controls_at_cleanup": {
+    "lab_absent": true,
+    "ok": null
+   },
+   "errors": [],
+   "ok": true,
+   "order": [
+    "terminated",
+    "controls_verified",
+    "bpf_released",
+    "scratch_deleted",
+    "cgroups_removed"
+   ],
+   "steps": [
+    "kill 29451"
+   ],
+   "termination": {
+    "no_lab_process": true,
+    "no_wrapper": true
+   },
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_scratch": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  },
+  "/home/iiitd/sentinelai/results/phase1c_r2f/20261004T100422Z/M2-2/ops.jsonl": {
+   "controls_at_cleanup": {
+    "lab_absent": true,
+    "ok": null
+   },
+   "errors": [],
+   "ok": true,
+   "order": [
+    "terminated",
+    "controls_verified",
+    "bpf_released",
+    "scratch_deleted",
+    "cgroups_removed"
+   ],
+   "steps": [
+    "kill 29576"
+   ],
+   "termination": {
+    "no_lab_process": true,
+    "no_wrapper": true
+   },
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_scratch": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  },
+  "/home/iiitd/sentinelai/results/phase1c_r2f/20261004T100422Z/M2-3/ops.jsonl": {
+   "controls_at_cleanup": {
+    "lab_absent": true,
+    "ok": null
+   },
+   "errors": [],
+   "ok": true,
+   "order": [
+    "terminated",
+    "controls_verified",
+    "bpf_released",
+    "scratch_deleted",
+    "cgroups_removed"
+   ],
+   "steps": [
+    "kill 29697"
+   ],
+   "termination": {
+    "no_lab_process": true,
+    "no_wrapper": true
+   },
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_scratch": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  },
+  "/home/iiitd/sentinelai/results/phase1c_r2f/20261004T100422Z/N1-1/ops.jsonl": {
+   "controls_at_cleanup": {
+    "lab_absent": true,
+    "ok": null
+   },
+   "errors": [],
+   "ok": true,
+   "order": [
+    "terminated",
+    "controls_verified",
+    "bpf_released",
+    "scratch_deleted",
+    "cgroups_removed"
+   ],
+   "steps": [
+    "kill 29828"
+   ],
+   "termination": {
+    "no_lab_process": true,
+    "no_wrapper": true
+   },
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_scratch": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  },
+  "/home/iiitd/sentinelai/results/phase1c_r2f/20261004T100422Z/N1-2/ops.jsonl": {
+   "controls_at_cleanup": {
+    "lab_absent": true,
+    "ok": null
+   },
+   "errors": [],
+   "ok": true,
+   "order": [
+    "terminated",
+    "controls_verified",
+    "bpf_released",
+    "scratch_deleted",
+    "cgroups_removed"
+   ],
+   "steps": [
+    "kill 29951"
+   ],
+   "termination": {
+    "no_lab_process": true,
+    "no_wrapper": true
+   },
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_scratch": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  },
+  "/home/iiitd/sentinelai/results/phase1c_r2f/20261004T100422Z/N2-1/ops.jsonl": {
+   "controls_at_cleanup": {
+    "lab_absent": true,
+    "ok": null
+   },
+   "errors": [],
+   "ok": true,
+   "order": [
+    "terminated",
+    "controls_verified",
+    "bpf_released",
+    "scratch_deleted",
+    "cgroups_removed"
+   ],
+   "steps": [
+    "kill 30080",
+    "kill 30152"
+   ],
+   "termination": {
+    "no_lab_process": true,
+    "no_wrapper": true
+   },
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_scratch": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  },
+  "/home/iiitd/sentinelai/results/phase1c_r2f/20261004T100422Z/N2-2/ops.jsonl": {
+   "controls_at_cleanup": {
+    "lab_absent": true,
+    "ok": null
+   },
+   "errors": [],
+   "ok": true,
+   "order": [
+    "terminated",
+    "controls_verified",
+    "bpf_released",
+    "scratch_deleted",
+    "cgroups_removed"
+   ],
+   "steps": [
+    "kill 30204",
+    "kill 30286"
+   ],
+   "termination": {
+    "no_lab_process": true,
+    "no_wrapper": true
+   },
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_scratch": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  },
+  "/home/iiitd/sentinelai/results/phase1c_r2f/20261004T100422Z/calibration/ops.jsonl": {
+   "controls_at_cleanup": {
+    "lab_absent": true,
+    "ok": null
+   },
+   "errors": [],
+   "ok": true,
+   "order": [
+    "terminated",
+    "controls_verified",
+    "bpf_released",
+    "scratch_deleted",
+    "cgroups_removed"
+   ],
+   "steps": [
+    "kill 28815"
+   ],
+   "termination": {
+    "no_lab_process": true,
+    "no_wrapper": true
+   },
+   "verify": {
+    "checks": {
+     "lab_cgroup_absent": true,
+     "no_lab_process": true,
+     "no_scratch": true,
+     "no_sentinel_cgroup": true,
+     "no_wrapper_alive": true
+    },
+    "ok": true
+   }
+  }
+ }
+}

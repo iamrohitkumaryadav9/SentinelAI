@@ -1,0 +1,2 @@
+{"op": ["kill", 29324], "phase": "intent", "t": 5489.770033331}
+{"ok": true, "op": ["kill", 29324], "phase": "result", "pid": null, "t": 5489.770064177}

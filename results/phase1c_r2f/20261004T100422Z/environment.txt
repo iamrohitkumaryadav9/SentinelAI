@@ -1,0 +1,105 @@
+commit=4aa23b89743b97436c56213fd31e974271e01b40
+base=4aa23b8
+Linux iiitd-Precision-3660 6.8.0-138-generic #138~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  7 13:43:15 UTC  x86_64 x86_64 x86_64 GNU/Linux
+user=iiitd
+Sun Oct  4 10:04:22 AM UTC 2026
+{"producer":"sentinel_loader","version":"m3b-1.0.0","libbpf_compiled":"1.4","libbpf_linked":"1.4","libbpf_linked_string":"v1.4","match":true}
+{
+ "experiments": {
+  "CAL": {
+   "contender": false,
+   "contender_weight": 400,
+   "expand": false,
+   "high": 1610612736,
+   "kind": "CAL"
+  },
+  "E0": {
+   "contender": false,
+   "contender_weight": 400,
+   "expand": false,
+   "high": 1610612736,
+   "kind": "E0"
+  },
+  "M1": {
+   "contender": false,
+   "contender_weight": 400,
+   "expand": true,
+   "high": 805306368,
+   "kind": "M1"
+  },
+  "M2": {
+   "contender": false,
+   "contender_weight": 400,
+   "expand": true,
+   "high": 536870912,
+   "kind": "M2"
+  },
+  "N1": {
+   "contender": false,
+   "contender_weight": 400,
+   "expand": true,
+   "high": 1610612736,
+   "kind": "N1"
+  },
+  "N2": {
+   "contender": true,
+   "contender_weight": 400,
+   "expand": false,
+   "high": 1610612736,
+   "kind": "N2"
+  }
+ },
+ "matrix": [
+  "E0-open",
+  "M1-1",
+  "M1-2",
+  "M1-3",
+  "M2-1",
+  "M2-2",
+  "M2-3",
+  "N1-1",
+  "N1-2",
+  "N2-1",
+  "N2-2",
+  "E0-close"
+ ],
+ "safety_thresholds": {
+  "host_MemAvailable_min": {
+   "class": "design-derived safety threshold",
+   "rationale": "the lab is hard-capped at 1792 MiB (parent memory.max) and never swaps; 4 GiB keeps >= 2.2 GiB above that cap (~25 % of the 16 GiB host), far above the kernel watermarks (min_free_kbytes 67584 KiB); the host had 13.0-13.9 GiB available at the R2-E gates; global reclaim is detected independently (host pgscan_kswapd delta = 0)",
+   "value": "4 GiB at every observation"
+  },
+  "host_swap_io": {
+   "class": "previously validated safety threshold",
+   "rationale": "R2-C MEMORY_SWAP criterion (SAFETY THRESHOLD, repository-informed), enforced in every R2-C and R2-D evidence run; the lab itself cannot swap (memory.swap.max = 0)",
+   "value": "(pswpin + pswpout) / W_s <= 25.0 pages/s"
+  },
+  "slice_io_psi_rise": {
+   "class": "design-derived safety threshold (repository analogue)",
+   "rationale": "as above, for io.pressure: refault reads hit the shared NVMe",
+   "value": "system.slice / user.slice / init.scope io.pressure some: r_W - r_B <= 0.01"
+  },
+  "slice_memory_psi_rise": {
+   "class": "design-derived safety threshold (repository analogue)",
+   "rationale": "same value and formula as the R2-C SLICE_PSI_RISE_MAX (cpu.pressure), approved in the R2-C parameter approval and passed in R2-C/R2-D runtime; applied to memory.pressure of the same non-lab top-level cgroups",
+   "value": "system.slice / user.slice / init.scope memory.pressure some: r_W - r_B <= 0.01"
+  }
+ }
+}
+matrix: E0-open
+matrix: M1-1
+matrix: M1-2
+matrix: M1-3
+matrix: M2-1
+matrix: M2-2
+matrix: M2-3
+matrix: N1-1
+matrix: N1-2
+matrix: N2-1
+matrix: N2-2
+matrix: E0-close
+               total        used        free      shared  buff/cache   available
+Mem:     16439410688  2408763392 10553372672   188080128  3477274624 13491630080
+Swap:     2147479552           0  2147479552
+Filename				Type		Size		Used		Priority
+/swapfile                               file		2097148		0		-2
