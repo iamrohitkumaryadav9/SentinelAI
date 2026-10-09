@@ -1,3 +1,5 @@
+Status: In progress (October 2026). Phases 0–1B done (infrastructure audit, safety gate, local LLM benchmark + confirmatory test). Next: eBPF telemetry collector and diagnosis agent. No application code yet; this repo currently holds the foundation and the evaluation evidence.
+
 # SentinelAI
 
 An agentic AI system for autonomous diagnosis and mitigation of distributed-system performance incidents.
