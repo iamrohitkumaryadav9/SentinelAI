@@ -1,0 +1,213 @@
+{
+  "execution": {
+    "authorisation": "single first live M3A acquisition, authorised by the project owner (Phase 2A.5 gate)",
+    "command": "PYTHONNOUSERSITE=1 PYTHONPATH=src .venv/bin/python -m sentinelai diagnose --incident-id first-live-cron --target-name cron --cgroup /system.slice/cron.service --out /home/iiitd/sentinel-runs --code-commit 5dad133 --ebpf disabled",
+    "ended_utc": "2026-10-10T14:53:11.324Z",
+    "exit_code": 11,
+    "result": {
+      "abstention_reasons": [
+        "REQUIRED_EVIDENCE_MISSING"
+      ],
+      "acquisition_status": "PARTIAL",
+      "bad_counts": {
+        "cg.cpu.max": {
+          "absent": 21
+        },
+        "cg.memory": {
+          "absent": 21
+        },
+        "netns": {
+          "unverified": 21
+        }
+      },
+      "confidence": "LOW",
+      "decision": "INSUFFICIENT_EVIDENCE",
+      "flags": [
+        "IMPACT_NOT_MEASURED"
+      ],
+      "validated_configuration": false
+    },
+    "started_utc": "2026-10-10T14:52:50.724Z",
+    "target": {
+      "cgroup": "/system.slice/cron.service",
+      "pid": 833,
+      "process": "/usr/sbin/cron -f -P (uid 0, 1 thread)"
+    },
+    "user": "iiitd (uid 1000), not under sudo"
+  },
+  "format": "sentinelai.phase2a.live-run-provenance.v1",
+  "run": {
+    "artifact_sha256": {
+      "acquisition.json": "0ef4fa9d232fda6ead9d54b3fe649da072c55a1190cac3b499b7f418a1cc8632",
+      "context.json": "aa92f983f9c1c04cd4c08c5d454095dd5b52ffc2c6a5d5858ccb4068dd38b515",
+      "diagnosis.json": "543fb30cd30e8c774c89d0dfca1ded50db0ddf36c29631176bbf37cb24620ff2",
+      "events.jsonl": "5e76f4218e29f8430135bd9af32cff7bc5924049d53c820a9c7b07b13978ba99",
+      "manifest.json": "dfdbbe2b4f0ff6652baf4327cf162612bc5e43c53323c5e9de4b7bbea57ccf35",
+      "parameter_set.json": "880d9af62f6e120c227cbc1abc50a8521d8cc62ff059c3bbd8f316dbd56807cb",
+      "snapshot.json": "ae175eba4d3d71afd834b39388f634e0191e712ab47d63aa78e50ca75e24b9b4",
+      "ticks.jsonl": "808713aaf21ef3c3bdbe0e365c0dd7b87aeea22bff8b6a5d9b4fea22e306de53"
+    },
+    "copy_method": "cp -a (byte-identical; modes and mtimes preserved); the original was not modified",
+    "diagnosis_id": "f23d2069418befa3",
+    "incident_id": "first-live-cron",
+    "original_path": "/home/iiitd/sentinel-runs/first-live-cron/20261010T145311197997Z-ce8b40286fb96bc5",
+    "repository_copy": "results/phase2a_live/first-live-cron/20261010T145311197997Z-ce8b40286fb96bc5",
+    "run_key": "20261010T145311197997Z-ce8b40286fb96bc5",
+    "snapshot_id": "ce8b40286fb96bc5"
+  },
+  "scope_limits": [
+    "M3A-only (ebpf disabled; interface/qdisc sources refused): outside the validated M3A + M3B eBPF configuration",
+    "idle service, no fault present: plumbing evidence, not diagnostic-accuracy evidence",
+    "PARTIAL largely structural (unlimited cpu.max / memory.max encode as Bad(ABSENT)) plus netns attribution denied for a root process"
+  ],
+  "source_provenance": {
+    "binding_evidence": [
+      "7 runtime files (__main__.py, runtime/live.py, acquisition.py, pipeline.py, replay.py, tests test_live.py, test_safety.py) were SHA-256-checked against the Phase 2A.4 closeout immediately before the run (2026-10-10 ~14:52Z) and matched",
+      "all 22 runtime source/test files have mtimes before the run start and none was modified at or after it",
+      "the hashes below were recorded on 2026-10-10 before any Phase 2A.6 change"
+    ],
+    "code_commit_meaning": "5dad133 is the committed base only. The runtime source that executed was uncommitted at run time; the code_commit in manifest.json and diagnosis.json does NOT identify it and is deliberately left unchanged. The runtime source is identified by the hashes below, which equal Phase 2A.6 commit 1's tree.",
+    "post_commit_check": "Phase 2A.6 is two commits. Commit 1 (runtime source and integrity tests, parent 5dad133) must contain every file below with exactly the recorded git blob id: that commit's tree is the exact runtime source of this run. Locate it from the blobs themselves, e.g. `git log --format=%H --find-object=<git_blob of src/sentinelai/runtime/live.py>`; any mismatch invalidates the binding.",
+    "post_run_changes": [
+      {
+        "changed_in": "Phase 2A.6 commit 2 (evidence and documentation)",
+        "executed_by_diagnose": false,
+        "path": "tests/runtime/test_corpus.py",
+        "reason": "classify results/phase2a_live/** snapshots as LIVE_RUN (each must verify and replay as MATCH from ticks and snapshot) instead of the M3A-smoke NOT_FAULTLAB rule; smoke-snapshot assertions unchanged",
+        "run_time_git_blob": "07261bf8674295114575758e3eba5990199cf329"
+      }
+    ],
+    "recorded_code_commit": "5dad133",
+    "runtime_files": {
+      "src/sentinelai/__main__.py": {
+        "bytes": 7442,
+        "git_blob": "e59e9f24fb951650d6c5f5b24db27b3555ca9900",
+        "sha256": "34ae092e4ee1d40ab126872af8d81a6796dc6355a58a518597aeae989ab2e586"
+      },
+      "src/sentinelai/runtime/__init__.py": {
+        "bytes": 1341,
+        "git_blob": "fd135f19350053731bbca57c8eff36c0f5fc902b",
+        "sha256": "091ed442a6db0ddc98c32301d32140ac55f7ff0b7b26e07e8349b299d189a2a6"
+      },
+      "src/sentinelai/runtime/acquisition.py": {
+        "bytes": 4251,
+        "git_blob": "d74cb4568e20a77e0adfe3d4344a4fb72e08c57b",
+        "sha256": "7a3e751409121674e98c3a66bea42d6eedfc98063758c739c4166b0af419fd51"
+      },
+      "src/sentinelai/runtime/context.py": {
+        "bytes": 2604,
+        "git_blob": "947755eb10e12a193f5425bab32b0f55ccf3718e",
+        "sha256": "e2937b8f0d941259a41aa6c90fe9d2ae923a23557bfd0738cb1195b63b5a8df1"
+      },
+      "src/sentinelai/runtime/events.py": {
+        "bytes": 2023,
+        "git_blob": "155c0ddcbca9dfb15f2cccd7c87b34af373d8891",
+        "sha256": "b6aefdbfe7ce3e95d8a0a3d940f218e89a8da1d2179e43e2431ae559454cf179"
+      },
+      "src/sentinelai/runtime/live.py": {
+        "bytes": 8621,
+        "git_blob": "2c2244053d26ce95f76e7a58cc75fe5cebaf9433",
+        "sha256": "67dba6b0b297fcfd652a951df7eaec44842e7fddffd81679e583d64e837c7ce5"
+      },
+      "src/sentinelai/runtime/pipeline.py": {
+        "bytes": 10090,
+        "git_blob": "af466d8f50c8996ba7a5e0f7e0a5a1e9a426483b",
+        "sha256": "9483e94b0d336e9d72538898504c19f0b72151b9605ad2667ddbc4d1319de14d"
+      },
+      "src/sentinelai/runtime/registry.py": {
+        "bytes": 4562,
+        "git_blob": "bf28cbcdd7a3c8642e566e6aa1bf7f6c35720e24",
+        "sha256": "55d07b1270de5e35df9bc1fbaf2c5601063172177a0d49844d78b353863ccde5"
+      },
+      "src/sentinelai/runtime/replay.py": {
+        "bytes": 14700,
+        "git_blob": "c05f784d1c55603301e67aeb45cc962c99513d45",
+        "sha256": "0eef4108c742433f2d2960e88be3c4f530ac70a1b382ffd90798c94d6d71e3ad"
+      },
+      "src/sentinelai/runtime/report.py": {
+        "bytes": 8807,
+        "git_blob": "4aedfab1b18e0d038b42e8eae3ace98a3bcb8cbd",
+        "sha256": "11b320cddd57c10c323968f27d568d47d524a8b066bfbde7b867f931e9f6c037"
+      },
+      "src/sentinelai/runtime/store.py": {
+        "bytes": 9402,
+        "git_blob": "c5bf80814ee1c9ed4137ead9961697e89c572b8a",
+        "sha256": "b04398eb928445f670309d692d1916916cd364ef808ea5efb03ce547b3ad9117"
+      },
+      "src/sentinelai/runtime/ticks.py": {
+        "bytes": 7323,
+        "git_blob": "88add8fc8dcb099148ca1064096be7b68f17316d",
+        "sha256": "94e4af26cd5383534e5dbc486048252848a6c0beddca7332b9dc150a55a6a1cf"
+      },
+      "tests/runtime/__init__.py": {
+        "bytes": 303,
+        "git_blob": "0e5f3863826c245487a7c0b9b95a90870673498c",
+        "sha256": "94f9a78e06099ad0b52d809163c53ed93c7a91bafe4116292806b582fa66426c"
+      },
+      "tests/runtime/test_contracts.py": {
+        "bytes": 5056,
+        "git_blob": "7bcd2b605d2487f605081af032f4c6c82e947ad5",
+        "sha256": "e3c8ef19b242dcf7dfb29ab2278e049ec7524734436624541def33a47d86db75"
+      },
+      "tests/runtime/test_corpus.py": {
+        "bytes": 6741,
+        "git_blob": "07261bf8674295114575758e3eba5990199cf329",
+        "sha256": "3a5f706a384cce4f057aa26f3a790ec3633390fec8614cd02e9bfd7e1fc09d45"
+      },
+      "tests/runtime/test_live.py": {
+        "bytes": 20925,
+        "git_blob": "1b3fb0211f457d30dc37e868fe60033719e53709",
+        "sha256": "4d734fe944e0288bf6a138020aa27714b05ef2b99b47c54d672e8f36b76461de"
+      },
+      "tests/runtime/test_raw_replay.py": {
+        "bytes": 22035,
+        "git_blob": "d9ba31c5563540ce1d9ec7cfc216d1cfbff2fe7e",
+        "sha256": "83ce927e63d967fe0ac81596f5053fdfc4161b4cc332e1b4707749c5bb7f1c2f"
+      },
+      "tests/runtime/test_record.py": {
+        "bytes": 15189,
+        "git_blob": "46417260d0c0122c6f92c42f8d15fc877fb5bb45",
+        "sha256": "c13839ee354b84621675129e1081f884603948b17d978e1e061bc9426675fc42"
+      },
+      "tests/runtime/test_replay.py": {
+        "bytes": 19379,
+        "git_blob": "51bca43b0aed249c43d0187ccaf0ab55524567a7",
+        "sha256": "95dc4465b8639eeeda847dd750cf8aee63ee25035232030edc355cc9f625b964"
+      },
+      "tests/runtime/test_safety.py": {
+        "bytes": 8317,
+        "git_blob": "b39ee07c2cf579b182421126f2650e32f1bbf698",
+        "sha256": "38c0f19df726d1f80a33a49f034bf6aec8c88dcd3a87884db69c8bf4827e140e"
+      },
+      "tests/runtime/test_store.py": {
+        "bytes": 8364,
+        "git_blob": "b693a0e3b1ddc9f4adef9d4b1f0143857e4e2a06",
+        "sha256": "050df2de6fa08a4b17764bbce2303a05fecf020a5e763d6e629853e200e8d96c"
+      },
+      "tests/runtime/test_ticks.py": {
+        "bytes": 7816,
+        "git_blob": "b868a79649b31bd2301065822648b23724f66867",
+        "sha256": "35011bd8142cd3fc54d11ab968ab8e74541f8fd4774d75802f5f483292877a86"
+      }
+    }
+  },
+  "verification": {
+    "host_comparison_at_run_time": "identical before/after in all checked dimensions (cgroup tree and controllers, cpu.max, sentinel cgroups/scratch, RPS/XPS, IRQ 134 affinity, vm.* sysctls, swap, vmstat counters, OpenVPN, tun, Docker, links and addresses); ebpf/build content hashes and mtimes identical",
+    "original_at_run_time": {
+      "artifact_fingerprint_unchanged_by_verify_and_replays": true,
+      "replay_snapshot": "MATCH",
+      "replay_ticks": "MATCH",
+      "verify_exit": 0
+    },
+    "repository_copy_2a6": {
+      "all_checks_true": true,
+      "replay_snapshot": "MATCH",
+      "replay_ticks": "MATCH",
+      "sha256_identical_to_original": true,
+      "verify_exit": 0
+    },
+    "unverified": [
+      "BPF program/attachment state (bpftool needs root; EPERM before and after)"
+    ]
+  }
+}

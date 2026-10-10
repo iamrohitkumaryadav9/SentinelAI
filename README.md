@@ -7,10 +7,11 @@ remain the long-term aim; they are **not** current capabilities.
 > **Status (October 2026).** Phase 1C's deterministic diagnostic core is implemented and committed: evidence
 > contract (M1), rule engine (M2), Linux and eBPF collectors (M3A, M3B), and the FaultLab validations R2-A to R2-F.
 > Four classes are experimentally validated (one scoped, one with a documented limitation); `softirq_overload` was
-> found **not feasible** to validate under its registered design. Runtime integration Phase 2A.1–2A.4 is
-> implemented and accepted, but **not yet committed** to this repository. The **first live acquisition through
-> the runtime has not been authorised or run.** No LLM is in the decision path; M2 is the only diagnostic
-> authority.
+> found **not feasible** to validate under its registered design. Phase 2A added a read-only runtime (snapshot and
+> raw-tick replay, verification, live M3A acquisition), committed in the Phase 2A.6 closeout. The **first live
+> acquisition** (one authorised, unprivileged, M3A-only run on an idle service) passed its bounded gate: PARTIAL,
+> `INSUFFICIENT_EVIDENCE`, and byte-identical offline replay. It is not evidence of live diagnostic accuracy. No LLM
+> is in the decision path; M2 is the only diagnostic authority.
 
 ## Why this exists
 
@@ -50,8 +51,8 @@ pressure. Each limitation is listed below. Softirq overload could not be produce
 | **Experimentally validated** | `network_packet_loss` (R2-B), `cpu_contention` (R2-C), `cpu_throttling` (R2-D, documented limitation) |
 | **Validated, scoped** | `memory_pressure` (R2-F): cgroup `memory.high` file-backed page-cache refault pressure, via the reclaim-and-refault path only |
 | **Not validated** | `tcp_retransmissions` as a primary decision (seen only as CONTRIBUTING in R2-B); `softirq_overload` (R2-E NOT FEASIBLE); `application_bottleneck` (application metrics not collected) |
-| **Implemented, accepted, not committed** | Runtime integration 2A.1–2A.4: pure runtime core, snapshot replay and verification, raw-tick replay, live read-only M3A acquisition |
-| **Not authorised or run** | The first live acquisition through the runtime |
+| **Implemented and committed (Phase 2A)** | Read-only runtime: pure core, write-once artifact store, snapshot replay and verification, raw-tick replay, live M3A acquisition (eBPF and interface sources refused) |
+| **Live-verified once (bounded)** | One live M3A-only run on an idle service (Phase 2A.5): PARTIAL, abstention, `verify` and both replays MATCH; outside the validated configuration |
 | **Future (not built)** | FaultLab matrix, pilot, calibration and ML (Phase 1C M4–M8); any LLM or agent layer, which must not bypass M2; mitigation and verification loop |
 
 ## Validated diagnoses and limitations
@@ -95,16 +96,19 @@ eBPF programs (root) ───► M3B loader + parser ────────�
 - **M3B eBPF layer** ([audit](docs/PHASE_1C_M3B_REPORT.md) NO-GO, resolved by the [R1 runtime validation](docs/PHASE_1C_M3B_R1_RUNTIME_VALIDATION_REPORT.md) GO): CO-RE BPF programs and a loader linked to libbpf 1.4; root only; observation only.
 - **FaultLab** ([R2-A infrastructure](docs/PHASE_1C_R2A_FAULTLAB_INFRASTRUCTURE_REPORT.md) GO): dedicated network namespaces, veth pairs and lab cgroups, with independent ground truth. Faults never touch protected interfaces or non-lab cgroups.
 
-**Runtime (Phase 2A, implemented and accepted, not committed).** One read-only workflow: incident context → M3A
+**Runtime (Phase 2A; [report](docs/PHASE_2A_RUNTIME_REPORT.md)).** One read-only workflow: incident context → M3A
 acquisition → `ticks.jsonl` → snapshot → M2 → `DiagnosisRecord` → write-once artifact store with manifest. It
-supports offline replay from snapshots or ticks, and verification. Accepted status per closeout:
+supports offline replay from snapshots or ticks, and verification.
 - **2A.1** pure core;
 - **2A.2** replay/verify: all 58 replayable committed R2-C/D/F snapshots reproduce their recorded M2 results;
 - **2A.3** raw-tick replay: no historical tick streams exist, so coverage is synthetic plus 70 committed eBPF streams;
-- **2A.4** live read-only M3A acquisition: eBPF and interface-backed sources refused; tested with injected readers only.
+- **2A.4** live read-only M3A acquisition: eBPF and interface-backed sources refused;
+- **2A.5** first live acquisition (`/system.slice/cron.service`): exit 11, PARTIAL (structural `Bad` states from
+  unlimited quotas and a denied namespace readlink), `INSUFFICIENT_EVIDENCE`; `verify` and both replay modes MATCH.
+  Evidence and source provenance: [`results/phase2a_live/first-live-cron/`](results/phase2a_live/first-live-cron/PROVENANCE.json).
 
-Live runs are M3A-only and therefore outside the validated (M3A + eBPF) configuration. **The first live run has
-not been authorised or executed.** This code becomes part of the repository only at the 2A.6 closeout commit.
+Live runs are M3A-only and therefore outside the validated (M3A + eBPF) configuration. Each live run requires its own
+authorisation; BPF state during the first run was not verified (it needs root).
 
 ## Phase history
 
@@ -124,18 +128,18 @@ not been authorised or executed.** This code becomes part of the repository only
 | 1C R2-D: CPU throttling | PASS WITH DOCUMENTED LIMITATION / CLOSED | [R2-D](docs/PHASE_1C_R2D_CPU_THROTTLING_VALIDATION_REPORT.md) |
 | 1C R2-E: Softirq overload | **NOT FEASIBLE** under the registered design / CLOSED | [R2-E](docs/PHASE_1C_R2E_SOFTIRQ_OVERLOAD_FEASIBILITY_REPORT.md) |
 | 1C R2-F: Memory pressure | PASS (scoped) / CLOSED | [R2-F](docs/PHASE_1C_R2F_MEMORY_PRESSURE_VALIDATION_REPORT.md) |
-| 2A: Runtime design | GO | — (not yet in the repository) |
-| 2A.1–2A.4: Runtime implementation | Accepted per closeout; **uncommitted** | — (closeout documentation is part of 2A.6) |
+| 2A: Runtime design | GO (review session; summarised in the 2A report) | [PHASE_2A_RUNTIME_REPORT.md](docs/PHASE_2A_RUNTIME_REPORT.md) |
+| 2A.1–2A.4: Runtime implementation | PASS (per closeout) | [PHASE_2A_RUNTIME_REPORT.md](docs/PHASE_2A_RUNTIME_REPORT.md) |
+| 2A.5: First live acquisition | PASS (bounded gate: M3A-only, idle target) | [report §6](docs/PHASE_2A_RUNTIME_REPORT.md), [provenance](results/phase2a_live/first-live-cron/PROVENANCE.json) |
+| 2A.6: Runtime closeout | Evidence preservation, source binding, integrity maintenance, commit | [report §8](docs/PHASE_2A_RUNTIME_REPORT.md) |
 
-Machine-readable status: [`docs/PROJECT_STATUS.json`](docs/PROJECT_STATUS.json). It currently records state up to
-the R2-F closeout; Phase 2A is added at 2A.6.
+Machine-readable status: [`docs/PROJECT_STATUS.json`](docs/PROJECT_STATUS.json).
 
 ## Roadmap
 
 | Step | Goal | Gate |
 |---|---|---|
-| 2A.5 | First live read-only M3A acquisition (preflight reviewed; needs explicit authorisation) | Run verifies and replays (ticks and snapshot) as MATCH; host unchanged |
-| 2A.6 | Runtime closeout: documentation, status, integrity-test maintenance, commit | Verification regression; integrity checks |
+| Next (undecided) | Live eBPF acquisition mode, or live interface/qdisc collection | Each needs its own design, privilege gate and approval |
 | 1C M4–M8 | FaultLab scenario matrix, pilot, parameter calibration, ML classifier, `PHASE_1C_EVALUATION` | Success criteria fixed in [PHASE_1C_DESIGN.md §7.5](docs/PHASE_1C_DESIGN.md) |
 | Future | Optional LLM/agent layer for explanation or orchestration; it must not bypass M2 or evidence validation | To be designed and gated |
 | Future | Mitigation and verification loop | To be designed and gated; not started |
@@ -159,19 +163,20 @@ src/sentinelai/
   diagnostic/rules/      M2 deterministic rule engine
   collectors/            M3A read-only collectors, parsers, normalisation, snapshot builder
   ebpf/                  M3B loader process boundary
+  runtime/               Phase 2A runtime: context, registry, ticks, store, events, report, pipeline, replay, live
+  __main__.py            CLI: python -m sentinelai diagnose | verify | replay
 ebpf/                    BPF programs, loader, replay harness, Makefile (build output ebpf/build/ is not committed)
 scripts/                 safety gate, smoke tests, M3B validation, FaultLab R2-A–R2-F drivers and validators
-tests/                   collectors, ebpf, evidence, rules, faultlab (+ test_phase1a.py, host-mutating; see below)
+tests/                   collectors, ebpf, evidence, rules, faultlab, runtime (+ test_phase1a.py, host-mutating; see below)
 docs/                    phase reports, evidence contract, PROJECT_STATUS.json
-results/                 committed evidence from validation runs
+results/                 committed evidence from validation runs (phase2a_live/: first live run + provenance)
 experiments/llm_benchmark/  Phase 1B benchmark and confirmatory test
 configs/                 (empty)
 requirements.in / requirements.lock
 ```
 
 Not in the committed repository: `.venv/`, `logs/*`, `ebpf/build/`, `experiments/faultlab/` (an intentionally
-untracked feasibility probe), and the uncommitted Phase 2A runtime (`src/sentinelai/runtime/`,
-`src/sentinelai/__main__.py`, `tests/runtime/`).
+untracked feasibility probe).
 
 ## Usage
 
@@ -183,10 +188,10 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.lock
 scripts/safety_check.sh
 
 # Verification test suite: every test package except the host-mutating tests/test_phase1a.py.
-# Expect 875 tests. tests/ebpf runs `make -C ebpf all` (it needs the BPF toolchain and rewrites
+# Expect 1,028 tests. tests/ebpf runs `make -C ebpf all` (it needs the BPF toolchain and rewrites
 # ebpf/build/min_core.btf with identical content); tests/collectors includes a short read-only live read of
 # its own cgroup.
-(cd tests && rc=0 && for p in collectors ebpf evidence rules faultlab; do
+(cd tests && rc=0 && for p in collectors ebpf evidence rules faultlab runtime; do
    PYTHONNOUSERSITE=1 ../.venv/bin/python -m unittest discover -s "$p" -t . || rc=1
  done; exit $rc)
 ```
@@ -195,15 +200,24 @@ scripts/safety_check.sh
 state (root cgroup controllers, a `docker0` address), so it is **not** part of routine verification. Run it only
 deliberately.
 
-**Known failing tests (3 of 875) at the time of writing (base `6d404c8`, reference host):**
+**Known failing tests (2 of 1,028) at the Phase 2A.6 closeout (reference host):**
 - `faultlab.test_r2c.TestDryRun.test_dry_run_mutates_nothing` and
   `faultlab.test_r2d.TestMatrixAndStatic.test_dry_run_mutates_nothing`: environmental. R2-C's preflight requires
-  the exact pre-reboot root cgroup controller set, which is restored only after Docker has run.
-- `faultlab.test_r2e.TestStaticAndIntegrity.test_candidate`: the post-R2-F README commits are outside its
-  allowlist. A narrow allowlist update is planned for the 2A.6 closeout.
+  the exact pre-reboot root cgroup controller set, which is restored only after Docker has run. They are kept
+  unchanged rather than weakened.
 
 FaultLab validation runs (`sudo bash scripts/r2*_validate.sh`) and the M3B privileged validation change lab
 state as root. Each requires its own reviewed, authorised gate. They are not part of routine usage.
 
-The runtime CLI (`python -m sentinelai verify | replay | diagnose`) is not in the committed repository yet. Its
-live `diagnose` command must not be run until the first live acquisition has been authorised.
+Runtime CLI (needs `PYTHONPATH=src`; stdout is one canonical JSON object; exit codes are documented in
+`src/sentinelai/__main__.py`):
+
+```bash
+PYTHONNOUSERSITE=1 PYTHONPATH=src .venv/bin/python -m sentinelai verify --run-dir ABSOLUTE_RUN_DIR
+PYTHONNOUSERSITE=1 PYTHONPATH=src .venv/bin/python -m sentinelai replay --run-dir ABSOLUTE_RUN_DIR --source ticks
+PYTHONNOUSERSITE=1 PYTHONPATH=src .venv/bin/python -m sentinelai replay --run-dir ABSOLUTE_RUN_DIR --source snapshot
+```
+
+`verify` and `replay` are offline and read-only. `diagnose` performs a live read-only M3A acquisition of a target
+cgroup; it requires `--ebpf disabled` (eBPF and `--iface` are refused) and an explicit `--code-commit`. Under this
+project's gate discipline, each live run needs its own preflight and authorisation.

@@ -1,16 +1,17 @@
 {
-  "checkpoint": "R2-F closeout",
-  "date": "2026-10-04",
-  "head": "4aa23b89743b97436c56213fd31e974271e01b40",
+  "checkpoint": "Phase 2A.6 closeout",
+  "date": "2026-10-10",
+  "head": "5dad1334b50a8e5a1390fc86895675f4057fc5bf",
   "uncommitted": [
-    "R2-F tooling (scripts/r2f_memory.py, scripts/r2f_driver.py, scripts/r2f_target.py, scripts/r2f_validate.sh, tests/faultlab/test_r2f.py)",
-    "tests/faultlab/test_r2e.py (authorised closeout integrity-test maintenance: test_candidate accepts exactly the R2-F closeout paths)",
-    "results/phase1c_r2f/20261004T100422Z/",
-    "docs/PHASE_1C_R2F_MEMORY_PRESSURE_VALIDATION_REPORT.md",
+    "Phase 2A runtime (src/sentinelai/__main__.py, src/sentinelai/runtime/*.py) and tests (tests/runtime/*.py)",
+    "results/phase2a_live/ (first live run copy + PROVENANCE.json)",
+    "docs/PHASE_2A_RUNTIME_REPORT.md",
     "docs/PROJECT_STATUS.json",
-    "experiments/faultlab/docker/ (pre-existing, unrelated; left untracked)"
+    "README.md",
+    "tests/faultlab/test_r2e.py, tests/faultlab/test_r2f.py (authorised Phase 2A.6 integrity maintenance)",
+    "experiments/faultlab/ (pre-existing, unrelated; left untracked)"
   ],
-  "current_status": "R2-F CLOSED — PASS: memory-pressure diagnosis validated under controlled FaultLab conditions for cgroup memory.high file-backed page-cache refault pressure (reclaim-and-refault path only)",
+  "current_status": "Phase 2A runtime integration closed out (2A.6): read-only runtime with offline snapshot and tick replay; first live M3A acquisition passed its bounded gate (M3A-only, idle target, PARTIAL, abstention, verify + replay MATCH). M2 remains the sole diagnostic authority; Phase 1B remains FAIL / NO-GO.",
   "phases": [
     {
       "phase": "Phase 0",
@@ -133,6 +134,23 @@
       "evidence_fingerprint": "475f64dcbffeddfe8c32eff310f295798abc65b5cf4bb4f4c9278e6ca1d52b21",
       "runtime_commit": "4aa23b8",
       "loader": "libbpf 1.4"
+    },
+    {
+      "phase": "Phase 2A runtime integration",
+      "verdict": "2A.1-2A.4 PASS; 2A.5 PASS (bounded live gate); 2A.6 closeout",
+      "steps": {
+        "design": "GO (review session; decisions Q1 ebpf default required, Q2 r2c-validation-uncalibrated, Q3 snapshot.incident_id None)",
+        "2A.1_pure_core": "PASS (67 tests; 65/65 mutants)",
+        "2A.2_snapshot_replay_verify": "PASS (58/58 replayable committed snapshots reproduce recorded M2; 32/32 mutants)",
+        "2A.3_raw_tick_replay": "PASS (no historical tick corpus; synthetic + 70 committed eBPF streams; 24/24 mutants)",
+        "2A.4_live_m3a_acquisition": "PASS (injected readers only; eBPF and interfaces refused; 22/22 mutants)",
+        "2A.5_first_live_acquisition": "PASS: /system.slice/cron.service, exit 11 PARTIAL, INSUFFICIENT_EVIDENCE, verify 0, replay ticks + snapshot MATCH; BPF state unverified (needs root)",
+        "2A.6_closeout": "evidence copy + provenance, integrity maintenance, report, commit"
+      },
+      "report": "docs/PHASE_2A_RUNTIME_REPORT.md",
+      "evidence": "results/phase2a_live/first-live-cron/20261010T145311197997Z-ce8b40286fb96bc5/",
+      "provenance": "results/phase2a_live/first-live-cron/PROVENANCE.json",
+      "runtime_tests": 153
     }
   ],
   "experimentally_validated_fault_classes": [
@@ -162,6 +180,11 @@
     "tcp_retransmissions (as primary decision)"
   ],
   "known_limitations": [
+    "Phase 2A: live acquisition is M3A-only (eBPF and interface/qdisc sources refused); live runs are outside the validated M3A + eBPF configuration",
+    "Phase 2A: one live run only (idle cron.service, no fault); no live diagnostic-accuracy claim",
+    "Phase 2A: unlimited cpu.max / memory.max encode as Bad(ABSENT), so such targets always yield PARTIAL acquisitions; read PARTIAL with bad_counts",
+    "Phase 2A: no historical tick corpus; registry holds only r2c-validation-uncalibrated (R2-B snapshots not replayable)",
+    "Phase 2A: BPF program/attachment state not verified for the live run (needs root)",
     "R2-F: no graded severity — M1 (H 768 MiB) and M2 (H 512 MiB) both ~46k refaults/s and ~45x cycle-time increase; M2 does not demonstrate greater observed severity than M1",
     "R2-F: PSI path untested — memory_pressure asserted via MP.R1 reclaim-and-refault; psi.mem.some.target ~0.021 < registered 0.2 floor; PSI-based memory-pressure detection not validated",
     "R2-F: OOM path untested (OOM prohibited by the registered safety design)",
@@ -177,13 +200,12 @@
     "cpu.util.cpuset has a /proc/stat tick-accounting bias when CPU 18 is partially busy",
     "M2 confidence limited to MEDIUM by IMPACT_NOT_MEASURED (no application metrics)",
     "thresholds are engineering/safety values (validation parameter set), not statistically calibrated; parameters.json UNCALIBRATED",
-    "host must keep openvpn-server@server.service disabled (crash-loop host noise otherwise)",
-    "README.md 'Current phase' section is stale (still describes Phase 1B)"
+    "host must keep openvpn-server@server.service disabled (crash-loop host noise otherwise)"
   ],
   "next_phase": {
     "named_in_repository": null,
     "next_unvalidated_fault_class": null,
-    "basis": "to be decided separately after the R2-F closeout. Unvalidated contract labels: softirq_overload (R2-E NOT FEASIBLE), application_bottleneck, tcp_retransmissions (as primary decision)."
+    "basis": "to be decided after the Phase 2A.6 closeout. Candidates (each needs its own design and approval): live eBPF acquisition mode; live interface/qdisc collection; Phase 1C M4-M8 (FaultLab matrix, pilot, calibration, ML)."
   },
   "deferred": [
     {
@@ -201,6 +223,10 @@
     {
       "item": "memory_pressure beyond the R2-F scope: PSI path, anonymous/swap pressure, graded severity",
       "scope": "a NEW experimental design requiring its own design review and gates; not started"
+    },
+    {
+      "item": "live eBPF acquisition mode and live interface/qdisc collection",
+      "scope": "out of scope for Phase 2A; each requires a separate design, root/privilege gate and approval"
     }
   ],
   "completed_feasibility_studies": [

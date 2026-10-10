@@ -5,6 +5,8 @@ hard-coded. Every snapshot gets exactly one classification:
   REPLAYABLE                    R2 FaultLab snapshot, registered parameter set, run.json with a recorded M2 result
   REPLAYABLE_NO_RECORD          registered parameter set but no recorded M2 result to compare against
   UNREGISTERED_PARAMETER_SET    parameter set not in the runtime registry (kept as a limitation, not registered here)
+  LIVE_RUN                      results/phase2a_live/**: persisted runtime runs from live acquisition (Phase 2A.5);
+                                each must verify and replay as MATCH from both ticks and snapshot
   NOT_FAULTLAB                  outside results/phase1c_r2*/ (M3A smoke snapshots; no run record)
 For REPLAYABLE snapshots the recomputed M2 output, projected with the same functions the FaultLab drivers used
 (m2_summary plus each driver's extra fields), must equal the recorded run.json "m2" exactly, the snapshot must
@@ -22,7 +24,7 @@ from sentinelai.diagnostic.contract import EvidenceSnapshot
 from sentinelai.diagnostic.contract.serialize import canonical_bytes
 from sentinelai.diagnostic.rules.engine import Diagnosis
 from sentinelai.runtime import ArtifactStore, IncidentContext, TargetSpec, diagnose_snapshot, registry, run_pure
-from sentinelai.runtime.replay import replay_run_dir
+from sentinelai.runtime.replay import replay_run_dir, verify_run_dir
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -47,6 +49,8 @@ def classify(rel):
     raw = (ROOT / rel).read_bytes()
     snap = EvidenceSnapshot.model_validate_json(raw, strict=False)
     run_json = ROOT / Path(rel).parent / "run.json"
+    if rel.startswith("results/phase2a_live/"):
+        return "LIVE_RUN", snap, raw, None
     if not rel.startswith("results/phase1c_r2"):
         return "NOT_FAULTLAB", snap, raw, None
     if snap.parameter_set_id not in registry.known():
@@ -77,7 +81,10 @@ class TestCorpus(unittest.TestCase):
     def test_every_snapshot_classified(self):
         self.assertTrue(self.files)
         kinds = {c for c, *_ in self.cls.values()}
-        self.assertTrue(kinds <= {"REPLAYABLE", "REPLAYABLE_NO_RECORD", "UNREGISTERED_PARAMETER_SET", "NOT_FAULTLAB"})
+        self.assertTrue(kinds <= {"REPLAYABLE", "REPLAYABLE_NO_RECORD", "UNREGISTERED_PARAMETER_SET", "NOT_FAULTLAB",
+                                  "LIVE_RUN"})
+        if (ROOT / "results" / "phase2a_live").is_dir():
+            self.assertIn("LIVE_RUN", kinds)
         replayable = [r for r, (c, *_) in self.cls.items() if c == "REPLAYABLE"]
         for phase in ("phase1c_r2c", "phase1c_r2d", "phase1c_r2f"):
             self.assertTrue([r for r in replayable if f"/{phase}/" in f"/{r}"], phase)
@@ -90,6 +97,14 @@ class TestCorpus(unittest.TestCase):
             if c == "NOT_FAULTLAB":
                 self.assertFalse((ROOT / Path(rel).parent / "run.json").exists(), rel)
                 self.assertNotIn(snap.parameter_set_id, registry.known(), rel)
+            if c == "LIVE_RUN":                   # not excluded: the persisted run must verify and replay exactly
+                run_dir = str(ROOT / Path(rel).parent)
+                self.assertTrue(verify_run_dir(run_dir)["ok"], rel)
+                for source in ("ticks", "snapshot"):
+                    r = replay_run_dir(run_dir, source)
+                    self.assertEqual(r.status, "MATCH", (rel, source, r.first_difference))
+                    self.assertTrue(r.checks and all(r.checks.values()), (rel, source, r.checks))
+                    self.assertEqual(r.snapshot_id, snap.snapshot_id, rel)
 
     def test_snapshots_round_trip_byte_identically(self):
         for rel, (c, snap, raw, run) in self.cls.items():
