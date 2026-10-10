@@ -8,7 +8,9 @@ remain the long-term aim; they are **not** current capabilities.
 > contract (M1), rule engine (M2), Linux and eBPF collectors (M3A, M3B), and the FaultLab validations R2-A to R2-F.
 > Four classes are experimentally validated (one scoped, one with a documented limitation); `softirq_overload` was
 > found **not feasible** to validate under its registered design. Phase 2A added a read-only runtime (snapshot and
-> raw-tick replay, verification, live M3A acquisition), committed in the Phase 2A.6 closeout. The **first live
+> raw-tick replay, verification, live M3A acquisition), closed out in two local commits (Phase 2A.6: `d119618`,
+> `d6b9333`; runtime tests 153/153, documented regression 1,026/1,028 with two known environmental failures, see
+> [`docs/PROJECT_STATUS.json`](docs/PROJECT_STATUS.json)). The **first live
 > acquisition** (one authorised, unprivileged, M3A-only run on an idle service) passed its bounded gate: PARTIAL,
 > `INSUFFICIENT_EVIDENCE`, and byte-identical offline replay. It is not evidence of live diagnostic accuracy. No LLM
 > is in the decision path; M2 is the only diagnostic authority.
@@ -131,15 +133,20 @@ authorisation; BPF state during the first run was not verified (it needs root).
 | 2A: Runtime design | GO (review session; summarised in the 2A report) | [PHASE_2A_RUNTIME_REPORT.md](docs/PHASE_2A_RUNTIME_REPORT.md) |
 | 2A.1–2A.4: Runtime implementation | PASS (per closeout) | [PHASE_2A_RUNTIME_REPORT.md](docs/PHASE_2A_RUNTIME_REPORT.md) |
 | 2A.5: First live acquisition | PASS (bounded gate: M3A-only, idle target) | [report §6](docs/PHASE_2A_RUNTIME_REPORT.md), [provenance](results/phase2a_live/first-live-cron/PROVENANCE.json) |
-| 2A.6: Runtime closeout | Evidence preservation, source binding, integrity maintenance, commit | [report §8](docs/PHASE_2A_RUNTIME_REPORT.md) |
+| 2A.6: Runtime closeout | CLOSED, committed locally: `d119618` (runtime source and tests, the exact live-run source) and `d6b9333` (evidence, provenance, documentation). Runtime tests 153/153; documented regression 1,026/1,028 (2 known environmental failures; not green); live-run BPF state unverified | [report §8](docs/PHASE_2A_RUNTIME_REPORT.md) |
 
 Machine-readable status: [`docs/PROJECT_STATUS.json`](docs/PROJECT_STATUS.json).
+
+Naming: "Phase 2A" is the runtime integration above. An earlier README roadmap (commit `6d404c8`) used "Phase 2" for an
+eBPF telemetry collector, which was built as Phase 1C M3B; the two are different milestones. No Phase 2B–2F is
+defined. R2-A to R2-F are Phase 1C FaultLab tracks, not Phase 2 subphases. How that earlier roadmap's Phase 1C exit
+gate and its LLM-agent Phase 3 relate to the current plan is unresolved and left for a separate design decision.
 
 ## Roadmap
 
 | Step | Goal | Gate |
 |---|---|---|
-| Next (undecided) | Live eBPF acquisition mode, or live interface/qdisc collection | Each needs its own design, privilege gate and approval |
+| Next (undecided, pending an explicit design decision) | Live eBPF acquisition mode, live interface/qdisc collection, or Phase 1C M4–M8 below | Each needs its own design, privilege gate and approval |
 | 1C M4–M8 | FaultLab scenario matrix, pilot, parameter calibration, ML classifier, `PHASE_1C_EVALUATION` | Success criteria fixed in [PHASE_1C_DESIGN.md §7.5](docs/PHASE_1C_DESIGN.md) |
 | Future | Optional LLM/agent layer for explanation or orchestration; it must not bypass M2 or evidence validation | To be designed and gated |
 | Future | Mitigation and verification loop | To be designed and gated; not started |

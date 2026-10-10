@@ -6,7 +6,7 @@
 | Base | `5dad133` (README commit; code identical to R2-F closeout `0bb1fc6`) |
 | Closeout | Phase 2A.6, two commits: (1) runtime source and tests, byte-identical to the source that ran the live acquisition, plus integrity-test maintenance; (2) live-run evidence and provenance, this report, status, README and the corpus-test correction |
 | Diagnostic authority | M2 only. No LLM, agent, remediation or new diagnostic rule was added |
-| Verdict | 2A.1–2A.4 PASS (accepted per closeout); 2A.5 first live acquisition PASS (bounded gate); 2A.6 closeout as recorded in §8 |
+| Verdict | **Phase 2A CLOSED.** 2A.1–2A.4 PASS (accepted per closeout); 2A.5 first live acquisition PASS (bounded gate); 2A.6 closeout committed locally in `d119618` and `d6b9333` (not pushed); runtime tests 153/153; documented regression 1,026/1,028 with two known environmental failures (§8) |
 
 ## 1. Design decisions
 
@@ -79,7 +79,7 @@ Evidence: `results/phase2a_live/first-live-cron/20261010T145311197997Z-ce8b40286
 the original run directory, which is kept unchanged outside the repository) and
 `results/phase2a_live/first-live-cron/PROVENANCE.json`. The run's `code_commit` (`5dad133`) is the committed base only:
 the runtime that executed was uncommitted. `PROVENANCE.json` binds the run to the exact runtime source by SHA-256 and
-git blob ID of all 22 runtime source and test files; the 2A.6 commit must contain exactly those blobs.
+git blob ID of all 22 runtime source and test files; commit `d119618` contains exactly those blobs (verified 22/22).
 
 This is evidence for the M3A-only plumbing on an idle target. It is not evidence of live diagnostic accuracy.
 
@@ -87,7 +87,8 @@ This is evidence for the M3A-only plumbing on an idle target. It is not evidence
 
 | Item | Result |
 |---|---|
-| Runtime tests (`tests/runtime`) | 153 tests |
+| Runtime tests (`tests/runtime`) | 153/153 passed (post-commit, at `d6b9333`) |
+| Documented regression (README "Usage"; `tests/test_phase1a.py` excluded) | Committed baseline `d6b9333`: 1,028 run, 1,026 passed, 2 known environmental failures (§8); not green. With the later status correction uncommitted: 1,025 passed, because `faultlab.test_r2e.TestStaticAndIntegrity.test_r2c_r2d_m2_m3a_m3b_contract_unchanged` rejects modified tracked files |
 | Mutation campaigns | 2A.1 65/65, 2A.2 32/32, 2A.3 24/24, 2A.4 22/22 real mutants killed (no-op controls survived); gaps found by first passes were closed with targeted tests and re-run |
 | Static safety | runtime modules: no subprocess, shell, signals, sockets, host writes, sysctl/cgroup/tc/swap strings; only `store.py` creates files; only `live.py` may import the M3A live entry points; eBPF entry points forbidden everywhere |
 
@@ -95,9 +96,14 @@ This is evidence for the M3A-only plumbing on an idle target. It is not evidence
 
 - Live-run evidence copied (all 8 files SHA-256-identical; the original's full fingerprint unchanged) and re-verified
   offline from the repository copy: `verify` exit 0; both replay modes MATCH.
+- Commits (local, not pushed), consecutive on `5dad133`:
+  - `d11961852854dfe68ad8f7ab930789264b75cef5` (commit 1, 24 paths): runtime source and tests, integrity-test
+    maintenance;
+  - `d6b93333d3041417aece915a3004274b0ca0bee5` (commit 2, 13 paths): live-run evidence copy, `PROVENANCE.json`, this
+    report, `PROJECT_STATUS.json`, README, corpus-test correction. No `src`, `ebpf`, `contract` or `scripts` change.
 - Source binding: commit 1 contains all 22 runtime source and test files with exactly the git blob IDs recorded in
-  `PROVENANCE.json`, so commit 1's tree is the exact source of the live run. Commit 2 changes one of them,
-  `tests/runtime/test_corpus.py` (test-only, never executed by `diagnose`); the change is recorded in
+  `PROVENANCE.json` (verified 22/22), so commit 1's tree is the exact source of the live run. Commit 2 changes one of
+  them, `tests/runtime/test_corpus.py` (test-only, never executed by `diagnose`); the change is recorded in
   `PROVENANCE.json` (`post_run_changes`).
 - Corpus-test correction (commit 2): snapshots under `results/phase2a_live/` are classified `LIVE_RUN` and must verify
   and replay as MATCH from both ticks and snapshot. Without it, the committed live-run snapshot fell under the
@@ -109,7 +115,15 @@ This is evidence for the M3A-only plumbing on an idle target. It is not evidence
   (`test_r2c_r2d_m2_m3a_m3b_contract_unchanged`, base `d11e755`) and `test_r2f.py` (`test_protected_files_unchanged`,
   base `4aa23b8`) accept exactly `src/sentinelai/__main__.py` and flat `src/sentinelai/runtime/<name>.py`; `ebpf/` and
   `contract/` stay fully pinned. The R2-F pin covers exactly three hunks of `test_r2e.py` (SHA-256 `305b525f…2dfe`).
-- Regression results and remaining failures: see the closeout record and the README "Known failing tests".
+- Post-commit verification: the committed evidence copy verifies (exit 0) and replays as MATCH from both ticks and
+  snapshot; all 8 artifacts match their `PROVENANCE.json` hashes; the original run directory is unchanged.
+- Test results after both commits: runtime suite 153/153 passed. Documented regression: 1,028 run, 1,026 passed, 2
+  failed. The two failures are the known environmental ones (R2-C's exact root-controller preflight against the
+  post-reboot controller set), kept unchanged rather than weakened:
+  - `faultlab.test_r2c.TestDryRun.test_dry_run_mutates_nothing`
+  - `faultlab.test_r2d.TestMatrixAndStatic.test_dry_run_mutates_nothing`
+- Scope boundaries unchanged by the closeout: live acquisition is M3A-only; the idle cron run establishes no live
+  diagnostic accuracy; BPF program/attachment state for the live run is unverified (needs root).
 
 ## 9. Incidents and external events during Phase 2A (disclosed)
 

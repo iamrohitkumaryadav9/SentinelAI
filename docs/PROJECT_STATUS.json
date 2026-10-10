@@ -1,17 +1,18 @@
 {
-  "checkpoint": "Phase 2A.6 closeout",
+  "checkpoint": "Phase 2A.6 closeout committed locally (not pushed)",
   "date": "2026-10-10",
-  "head": "5dad1334b50a8e5a1390fc86895675f4057fc5bf",
+  "status_describes_commit": "d6b93333d3041417aece915a3004274b0ca0bee5",
+  "status_describes_commit_note": "the baseline closeout commit being documented (the last verified Phase 2A.6 closeout commit), not the commit containing this file. This record was reconciled by a separate documentation-only correction committed after d6b9333 (pending when this record was written); its SHA is not predicted or recorded here",
+  "closeout_commits": {
+    "runtime": "d11961852854dfe68ad8f7ab930789264b75cef5",
+    "evidence_and_documentation": "d6b93333d3041417aece915a3004274b0ca0bee5",
+    "base": "5dad1334b50a8e5a1390fc86895675f4057fc5bf",
+    "pushed": false
+  },
   "uncommitted": [
-    "Phase 2A runtime (src/sentinelai/__main__.py, src/sentinelai/runtime/*.py) and tests (tests/runtime/*.py)",
-    "results/phase2a_live/ (first live run copy + PROVENANCE.json)",
-    "docs/PHASE_2A_RUNTIME_REPORT.md",
-    "docs/PROJECT_STATUS.json",
-    "README.md",
-    "tests/faultlab/test_r2e.py, tests/faultlab/test_r2f.py (authorised Phase 2A.6 integrity maintenance)",
-    "experiments/faultlab/ (pre-existing, unrelated; left untracked)"
+    "experiments/faultlab/ (pre-existing feasibility probe; untracked, intentionally not committed)"
   ],
-  "current_status": "Phase 2A runtime integration closed out (2A.6): read-only runtime with offline snapshot and tick replay; first live M3A acquisition passed its bounded gate (M3A-only, idle target, PARTIAL, abstention, verify + replay MATCH). M2 remains the sole diagnostic authority; Phase 1B remains FAIL / NO-GO.",
+  "current_status": "Phase 2A runtime integration CLOSED; the 2A.6 closeout is committed locally in two commits (d119618 runtime source and tests, d6b9333 live-run evidence, provenance and documentation; not pushed). Read-only runtime with offline snapshot and tick replay; first live M3A acquisition passed its bounded gate (M3A-only, idle target, PARTIAL, abstention, verify + replay MATCH). Runtime tests 153/153; documented regression 1,026/1,028 with two known environmental failures (not green). M2 remains the sole diagnostic authority; Phase 1B remains FAIL / NO-GO.",
   "phases": [
     {
       "phase": "Phase 0",
@@ -137,7 +138,7 @@
     },
     {
       "phase": "Phase 2A runtime integration",
-      "verdict": "2A.1-2A.4 PASS; 2A.5 PASS (bounded live gate); 2A.6 closeout",
+      "verdict": "CLOSED: 2A.1-2A.4 PASS; 2A.5 PASS (bounded live gate); 2A.6 closeout committed locally (d119618, d6b9333; not pushed)",
       "steps": {
         "design": "GO (review session; decisions Q1 ebpf default required, Q2 r2c-validation-uncalibrated, Q3 snapshot.incident_id None)",
         "2A.1_pure_core": "PASS (67 tests; 65/65 mutants)",
@@ -145,12 +146,42 @@
         "2A.3_raw_tick_replay": "PASS (no historical tick corpus; synthetic + 70 committed eBPF streams; 24/24 mutants)",
         "2A.4_live_m3a_acquisition": "PASS (injected readers only; eBPF and interfaces refused; 22/22 mutants)",
         "2A.5_first_live_acquisition": "PASS: /system.slice/cron.service, exit 11 PARTIAL, INSUFFICIENT_EVIDENCE, verify 0, replay ticks + snapshot MATCH; BPF state unverified (needs root)",
-        "2A.6_closeout": "evidence copy + provenance, integrity maintenance, report, commit"
+        "2A.6_closeout": "COMMITTED LOCALLY: d119618 (24 paths: runtime source and tests, byte-identical to the live-run source, 22/22 git blobs equal PROVENANCE.json; authorised integrity-test maintenance) and d6b9333 (13 paths: live-run evidence copy, PROVENANCE.json, report, status, README, corpus-test LIVE_RUN correction); post-commit: committed evidence verify 0, tick and snapshot replay MATCH, original run directory unchanged; runtime 153/153; documented regression 1,026/1,028 (2 known environmental failures); live-run BPF program/attachment state unverified (needs root)"
       },
       "report": "docs/PHASE_2A_RUNTIME_REPORT.md",
       "evidence": "results/phase2a_live/first-live-cron/20261010T145311197997Z-ce8b40286fb96bc5/",
       "provenance": "results/phase2a_live/first-live-cron/PROVENANCE.json",
-      "runtime_tests": 153
+      "commits": {
+        "runtime": "d11961852854dfe68ad8f7ab930789264b75cef5",
+        "evidence_and_documentation": "d6b93333d3041417aece915a3004274b0ca0bee5"
+      },
+      "verification": {
+        "runtime_tests": "153/153 passed (tests/runtime, at d6b9333)",
+        "regression_committed_baseline": {
+          "command": "README Usage verification suite (tests/test_phase1a.py excluded), at committed baseline d6b9333",
+          "run": 1028,
+          "passed": 1026,
+          "failed": [
+            "faultlab.test_r2c.TestDryRun.test_dry_run_mutates_nothing",
+            "faultlab.test_r2d.TestMatrixAndStatic.test_dry_run_mutates_nothing"
+          ],
+          "failure_cause": "environmental: R2-C exact ROOT_SUBTREE preflight vs the post-reboot root cgroup controller set; tests kept unchanged",
+          "green": false
+        },
+        "regression_uncommitted_working_tree": {
+          "context": "the same command with this status correction applied but not yet committed (README.md, docs/PROJECT_STATUS.json, docs/PHASE_2A_RUNTIME_REPORT.md modified)",
+          "run": 1028,
+          "passed": 1025,
+          "failed": [
+            "faultlab.test_r2c.TestDryRun.test_dry_run_mutates_nothing",
+            "faultlab.test_r2d.TestMatrixAndStatic.test_dry_run_mutates_nothing",
+            "faultlab.test_r2e.TestStaticAndIntegrity.test_r2c_r2d_m2_m3a_m3b_contract_unchanged"
+          ],
+          "failure_cause": "the two environmental failures above, plus the R2-E integrity test, which rejects modified tracked files (expected for an uncommitted tree; test unchanged)",
+          "green": false
+        },
+        "bpf_state": "live-run BPF program/attachment state unverified (needs root)"
+      }
     }
   ],
   "experimentally_validated_fault_classes": [
@@ -202,10 +233,16 @@
     "thresholds are engineering/safety values (validation parameter set), not statistically calibrated; parameters.json UNCALIBRATED",
     "host must keep openvpn-server@server.service disabled (crash-loop host noise otherwise)"
   ],
+  "naming_notes": [
+    "'Phase 2A' (runtime integration, subphases 2A.1-2A.6) was named in the Phase 2A design review session. The historical README roadmap (6d404c8, replaced in 5dad133) used 'Phase 2' for an eBPF telemetry collector; that work was carried out as Phase 1C M3B. The two uses of 'Phase 2' are not the same milestone.",
+    "No Phase 2B-2F is defined in the repository.",
+    "R2-A to R2-F are Phase 1C FaultLab experiment tracks (scripts/r2*, results/phase1c_r2*), not Phase 2 subphases.",
+    "Unresolved, left for a separate design decision: the historical roadmap's Phase 1C exit gate (re-run the 48-scenario confirmatory suite, >= 70% correct, correct abstention) versus the success criteria in PHASE_1C_DESIGN.md section 7.5; and its Phase 3 (LLM diagnosis agent) versus Phase 1B FAIL / NO-GO and PHASE_1C_DESIGN.md section 11 (the LLM cannot set the decision). No committed decision states which governs."
+  ],
   "next_phase": {
     "named_in_repository": null,
     "next_unvalidated_fault_class": null,
-    "basis": "to be decided after the Phase 2A.6 closeout. Candidates (each needs its own design and approval): live eBPF acquisition mode; live interface/qdisc collection; Phase 1C M4-M8 (FaultLab matrix, pilot, calibration, ML)."
+    "basis": "undecided, pending an explicit design decision. Candidates (each needs its own design and approval): live eBPF acquisition mode; live interface/qdisc collection; Phase 1C M4-M8 (FaultLab matrix, pilot, calibration, ML)."
   },
   "deferred": [
     {
