@@ -830,21 +830,29 @@ class TestStaticAndIntegrity(unittest.TestCase):
                   "scripts/r2c_target.py", "scripts/r2d_cpu.py", "scripts/r2d_driver.py", "scripts/r2e_softirq.py",
                   "scripts/r2e_driver.py", "scripts/r2e_validate.sh"):
             self.assertEqual((ROOT / p).read_bytes(), git("show", f"4aa23b8:{p}").stdout.encode(), p)
-        # test_r2e.py: byte-identical to 4aa23b8, or 4aa23b8 plus exactly the authorised R2-F-closeout maintenance patch
-        # of its test_candidate (two hunks below, nothing else); the patched file is also pinned by its sha256.
+        # test_r2e.py: byte-identical to 4aa23b8, or 4aa23b8 plus exactly the authorised maintenance patch (three
+        # hunks below, nothing else): R2-F closeout + Phase 2A.6 test_candidate paths, Phase 2A.6 runtime src exception.
+        # The patched file is also pinned by its sha256.
         base_e = git("show", "4aa23b8:tests/faultlab/test_r2e.py").stdout
         hunks = (('        commit it must refuse, and the refusal may name only the closeout artifacts on top of d11e755."""\n',
                   '        commit it must refuse, and the refusal may name only the closeout artifacts on top of d11e755 (plus, after the\n        authorised R2-F closeout commit, exactly the R2-F tooling, report and evidence paths)."""\n'),
                  ('            changed = git("diff", "--name-only", base, "HEAD").stdout.split()\n            others = sorted(p for p in changed if p not in E.TOOLING)\n            self.assertTrue(others and all(closeout(p) for p in others), others)\n',
-                  '            # the authorised R2-F closeout (a later phase) adds exactly these paths; nothing else is accepted\n            r2f = lambda p: (re.fullmatch(r"scripts/r2f_[a-z_]+\\.(py|sh)", p) is not None\n                             or p == "tests/faultlab/test_r2f.py"\n                             or re.fullmatch(r"docs/PHASE_1C_R2F_[A-Z0-9_]+\\.md", p) is not None\n                             or p.startswith("results/phase1c_r2f/"))\n            changed = git("diff", "--name-only", base, "HEAD").stdout.split()\n            others = sorted(p for p in changed if p not in E.TOOLING)\n            self.assertTrue(others and all(closeout(p) or r2f(p) for p in others), others)\n'))
+                  '            # the authorised R2-F closeout (a later phase) adds exactly these paths; nothing else is accepted\n            r2f = lambda p: (re.fullmatch(r"scripts/r2f_[a-z_]+\\.(py|sh)", p) is not None\n                             or p == "tests/faultlab/test_r2f.py"\n                             or re.fullmatch(r"docs/PHASE_1C_R2F_[A-Z0-9_]+\\.md", p) is not None\n                             or p.startswith("results/phase1c_r2f/"))\n            # the authorised Phase 2A.6 closeout adds exactly these paths; nothing else is accepted\n            p2a6 = lambda p: (p in ("README.md", "src/sentinelai/__main__.py")\n                              or re.fullmatch(r"src/sentinelai/runtime/[a-z_]+\\.py", p) is not None\n                              or re.fullmatch(r"tests/runtime/[a-z_]+\\.py", p) is not None\n                              or re.fullmatch(r"docs/PHASE_2A_[A-Z0-9_]+\\.md", p) is not None\n                              or p.startswith("results/phase2a_live/"))\n            changed = git("diff", "--name-only", base, "HEAD").stdout.split()\n            others = sorted(p for p in changed if p not in E.TOOLING)\n            self.assertTrue(others and all(closeout(p) or r2f(p) or p2a6(p) for p in others), others)\n'),
+                 ('        self.assertEqual(git("diff", "--name-only", "d11e755", "--", "src", "ebpf", "contract").stdout, "")\n',
+                  '        # Phase 2A.6: src/ may gain exactly the authorised flat runtime modules and the CLI; nothing else in src,\n        # ebpf or contract may differ from d11e755\n        changed = git("diff", "--name-only", "d11e755", "--", "src", "ebpf", "contract").stdout.split()\n        runtime = lambda p: (p == "src/sentinelai/__main__.py"\n                             or re.fullmatch(r"src/sentinelai/runtime/[a-z_]+\\.py", p) is not None)\n        self.assertEqual([p for p in changed if not runtime(p)], [])\n'))
         patched = base_e
         for old, new in hunks:
             self.assertEqual(patched.count(old), 1, old)
             patched = patched.replace(old, new)
         self.assertEqual(hashlib.sha256(patched.encode()).hexdigest(),
-                         '621f10e98d5e3dffaf734a7f55b43cc108be5bd743ab66317a64040240680de4')
+                         '305b525fc2981ac99c6af602dfcd747f03c7ccd881a32e45e0862d0eef0c2dfe')
         self.assertIn((ROOT / "tests/faultlab/test_r2e.py").read_text(), (base_e, patched))
-        self.assertEqual(git("diff", "--name-only", "4aa23b8", "--", "src", "ebpf", "contract").stdout, "")
+        # Phase 2A.6: src/ may gain exactly the authorised flat runtime modules and the CLI; nothing else in src,
+        # ebpf or contract may differ from 4aa23b8
+        changed = git("diff", "--name-only", "4aa23b8", "--", "src", "ebpf", "contract").stdout.split()
+        runtime = lambda p: (p == "src/sentinelai/__main__.py"
+                             or re.fullmatch(r"src/sentinelai/runtime/[a-z_]+\.py", p) is not None)
+        self.assertEqual([p for p in changed if not runtime(p)], [])
         hist = ("results/phase1c_r2b", "results/phase1c_r2c", "results/phase1c_r2d", "results/phase1c_r2e")
         self.assertEqual(git("diff", "--name-only", "4aa23b8", "--", *hist).stdout, "")      # historical evidence
         self.assertEqual(git("status", "--porcelain", "--", *hist).stdout, "")

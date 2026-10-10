@@ -1608,7 +1608,12 @@ class TestStaticAndIntegrity(unittest.TestCase):
                   "tests/faultlab/test_r2c.py", "scripts/r2d_cpu.py", "scripts/r2d_driver.py", "scripts/r2d_validate.sh",
                   "tests/faultlab/test_r2d.py", "scripts/r2a_lab.py", "scripts/r2b_driver.py"):
             self.assertEqual((ROOT / p).read_bytes(), git("show", f"d11e755:{p}").stdout.encode(), p)
-        self.assertEqual(git("diff", "--name-only", "d11e755", "--", "src", "ebpf", "contract").stdout, "")
+        # Phase 2A.6: src/ may gain exactly the authorised flat runtime modules and the CLI; nothing else in src,
+        # ebpf or contract may differ from d11e755
+        changed = git("diff", "--name-only", "d11e755", "--", "src", "ebpf", "contract").stdout.split()
+        runtime = lambda p: (p == "src/sentinelai/__main__.py"
+                             or re.fullmatch(r"src/sentinelai/runtime/[a-z_]+\.py", p) is not None)
+        self.assertEqual([p for p in changed if not runtime(p)], [])
         self.assertEqual(git("status", "--porcelain", "--untracked-files=no").stdout, "")
 
     @unittest.skipUnless(IN_GIT, "candidate check needs git")
@@ -1630,9 +1635,15 @@ class TestStaticAndIntegrity(unittest.TestCase):
                              or p == "tests/faultlab/test_r2f.py"
                              or re.fullmatch(r"docs/PHASE_1C_R2F_[A-Z0-9_]+\.md", p) is not None
                              or p.startswith("results/phase1c_r2f/"))
+            # the authorised Phase 2A.6 closeout adds exactly these paths; nothing else is accepted
+            p2a6 = lambda p: (p in ("README.md", "src/sentinelai/__main__.py")
+                              or re.fullmatch(r"src/sentinelai/runtime/[a-z_]+\.py", p) is not None
+                              or re.fullmatch(r"tests/runtime/[a-z_]+\.py", p) is not None
+                              or re.fullmatch(r"docs/PHASE_2A_[A-Z0-9_]+\.md", p) is not None
+                              or p.startswith("results/phase2a_live/"))
             changed = git("diff", "--name-only", base, "HEAD").stdout.split()
             others = sorted(p for p in changed if p not in E.TOOLING)
-            self.assertTrue(others and all(closeout(p) or r2f(p) for p in others), others)
+            self.assertTrue(others and all(closeout(p) or r2f(p) or p2a6(p) for p in others), others)
             self.assertFalse(res["ok"])
             self.assertEqual(res["reason"], f"changed since {base[:7]} beyond R2-E tooling: {others}")
         with tempfile.TemporaryDirectory() as t:
