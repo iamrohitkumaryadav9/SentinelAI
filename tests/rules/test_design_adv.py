@@ -3,8 +3,10 @@
 The historical tests in test_adversarial.py use the Phase 1C M2-prompt numbering, which differs from §7.3.
 This file adds only what §7.3 requires and those tests do not assert. Design ID -> classes here:
 ADV-1 TestDesignADV01, ADV-4 TestDesignADV04, ADV-5 TestDesignADV05, ADV-6 TestDesignADV06,
-ADV-7 TestDesignADV07 (including its missing-OOM subcase), ADV-8 TestDesignADV08, ADV-10 TestDesignADV10.
-ADV-2, ADV-3, ADV-3b, ADV-8b and ADV-9 are covered by existing tests (mapping in docs/PHASE_1C_G_R2_EVIDENCE.md).
+ADV-7 TestDesignADV07 (including its missing-OOM subcase), ADV-8 TestDesignADV08, ADV-9(a) TestDesignADV09,
+ADV-10 TestDesignADV10. ADV-2, ADV-3, ADV-3b, ADV-8b and ADV-9(b) are covered by existing tests (mapping in
+docs/PHASE_1C_G_R2_EVIDENCE.md). Tests named "literal" build the §7.3 fixture as written; the others are derived
+scenarios that set only the features the engine reads.
 Interpretations applied: MP.R1 NEGATIVE is ADV-7's NEGATIVE item (D-1, D-1b); reasons follow M2 report §7 (D-2).
 """
 
@@ -12,8 +14,14 @@ import unittest
 
 from sentinelai.diagnostic.contract import (CandidateStatus as S, DiagnosticFlag, EvidenceKind as K, Label as L)
 
-from ._fixtures import (APP, CG, Aggregation, Quality, derived, kfree_drops, m, reasons, run, scenario, softirq,
-                        status, throttling, world)
+from ._fixtures import (APP, CG, IF, NS, Aggregation, Quality, contention, derived, kfree_drops, m, reasons, run,
+                        scenario, softirq, status, throttling, world)
+
+# Every registered drop source of LOSS.LOCAL (labels.json PL.R1 features, net.pkts.iface excluded), and the
+# loss-qualifying kfree_skb reasons of the test parameter set (_fixtures.params: KFREE_REASONS_LOSS)
+DROP_SOURCES = ("net.drop.qdisc", "net.drop.iface_rx", "net.drop.iface_tx", "net.err.iface", "net.drop.softnet",
+                "net.drop.socket", "net.drop.netfilter", "net.drop.kfree_skb")
+LOSS_REASONS = ("QDISC_DROP", "CPU_BACKLOG", "NETFILTER_DROP")
 
 
 def item(d, predicate_id):
@@ -48,6 +56,31 @@ class TestDesignADV01KfreeNoiseAtBaseline(unittest.TestCase):
         self.assertFalse([i for i in d.snapshot.evidence_items
                           if i.predicate_id.startswith("PL.R1/LOSS.LOCAL[net.drop.kfree_skb]")])
 
+    def test_literal_fixture_all_other_drop_sources_zero(self):
+        """§7.3 fixture as written: every other registered drop source present and 0 (not absent)."""
+        zero = lambda f, scope: m(f, scope, 0.0, 0.0, 0.0)
+        ov = {"net.err.iface": zero("net.err.iface", IF),
+              "net.drop.softnet@2": zero("net.drop.softnet", "cpu:2"),
+              "net.drop.softnet@3": zero("net.drop.softnet", "cpu:3"),
+              "net.drop.socket": zero("net.drop.socket", NS), "net.drop.netfilter": zero("net.drop.netfilter", NS)}
+        for r in LOSS_REASONS:
+            ov.update(kfree_drops(r, 0.0))
+        noise = kfree_drops("NOT_SPECIFIED", 3.0, median=3.0)
+        d = run(scenario(noise, ov))      # world already has net.drop.qdisc / iface_rx / iface_tx at 0
+        self.assertIs(d.result.decision, L.INSUFFICIENT_EVIDENCE)
+        self.assertEqual(reasons(d), ["NO_CANDIDATE"])
+        self.assertIs(status(d, L.network_packet_loss), S.NOT_SUPPORTED)
+        loss = [i for i in d.snapshot.evidence_items if i.predicate_id.startswith("PL.R1/LOSS.LOCAL[")]
+        self.assertEqual({i.predicate_id for i in loss}, {f"PL.R1/LOSS.LOCAL[{f}]" for f in DROP_SOURCES})
+        self.assertEqual(len(loss), 3 + 1 + 2 + 1 + 1 + len(LOSS_REASONS))  # iface x3, err, softnet x2, sock, nf, kfree
+        self.assertTrue(all(i.kind is K.NEGATIVE for i in loss), [(i.predicate_id, i.kind) for i in loss])
+        noise_id = next(iter(noise.values())).measurement_id
+        self.assertFalse([i for i in loss if noise_id in i.measurement_ids])   # NOT_SPECIFIED is never a loss source
+        it = item(d, "DEV[net.drop.kfree_skb]")
+        self.assertEqual((it.kind, it.supports, it.measurement_ids), (K.NEGATIVE, (), (noise_id,)))
+        rt = item(d, "RT.R2/LOSS.LOCAL")
+        self.assertEqual((rt.kind, rt.contradicts), (K.NEGATIVE, (L.network_packet_loss,)))
+
 
 class TestDesignADV04PureThrottling(unittest.TestCase):
     """ADV-4: throttling with excess run delay at baseline -> cpu_throttling; cpu_contention NOT_SUPPORTED."""
@@ -81,6 +114,25 @@ class TestDesignADV05UtilisationAlone(unittest.TestCase):
         self.assertIs(status(d, L.cpu_throttling), S.NOT_SUPPORTED)
         self.assertIs(item(d, "CC.R2").kind, K.POSITIVE)    # utilisation is high ...
         self.assertIs(item(d, "CC.R1").kind, K.NEGATIVE)    # ... but no excess waiting: never contention
+        self.assertIs(item(d, "CT.R1").kind, K.NEGATIVE)
+
+    def test_literal_fixture_all_cpu_util_features(self):
+        """§7.3 fixture as written: every registered cpu.util.* feature at 0.95 (host, cpuset, each cpuset CPU)."""
+        util = lambda f, scope: m(f, scope, 0.95, 0.30, 0.05)
+        ov = {"cpu.util.host": util("cpu.util.host", "host"), "cpu.util.cpuset": util("cpu.util.cpuset", "cpuset"),
+              "cpu.util.percpu@2": util("cpu.util.percpu", "cpu:2"),
+              "cpu.util.percpu@3": util("cpu.util.percpu", "cpu:3")}
+        d = run(scenario(ov))
+        present = sorted((x.feature_id, x.scope, x.value) for x in d.snapshot.measurements
+                         if x.feature_id.startswith("cpu.util."))
+        self.assertEqual(present, [("cpu.util.cpuset", "cpuset", 0.95), ("cpu.util.host", "host", 0.95),
+                                   ("cpu.util.percpu", "cpu:2", 0.95), ("cpu.util.percpu", "cpu:3", 0.95)])
+        self.assertIs(d.result.decision, L.INSUFFICIENT_EVIDENCE)
+        self.assertEqual(reasons(d), ["NO_CANDIDATE"])
+        self.assertIs(status(d, L.cpu_contention), S.NOT_SUPPORTED)
+        self.assertIs(status(d, L.cpu_throttling), S.NOT_SUPPORTED)
+        self.assertIs(item(d, "CC.R2").kind, K.POSITIVE)
+        self.assertIs(item(d, "CC.R1").kind, K.NEGATIVE)
         self.assertIs(item(d, "CT.R1").kind, K.NEGATIVE)
 
 
@@ -156,6 +208,26 @@ class TestDesignADV08NoEliminationToApplication(unittest.TestCase):
         # AB.R3 "family evaluated" items are POSITIVE (cf. M3A report l.223), so the status is SUPPORTED_NOT_SUFFICIENT
         self.assertIs(status(d, L.application_bottleneck), S.SUPPORTED_NOT_SUFFICIENT)
         self.assertEqual(set(candidate(d, L.application_bottleneck).required_missing), {"AB.R1", "AB.R2"})
+
+
+class TestDesignADV09ConflictEqualMagnitude(unittest.TestCase):
+    """ADV-9(a), §7.3 fixture as written: throttling and excess run delay of equal magnitude -> INSUFFICIENT_EVIDENCE
+    (CONFLICT_UNRESOLVED), both candidates listed. ADV-9(b) is test_precedence.TestPR2.test_pr2b_non_softirq_drop."""
+
+    def test_literal_fixture_equal_magnitude(self):
+        d = run(scenario(contention(0.4), throttling(time_rate=0.4)))
+        vals = {x.feature_id: x.value for x in d.snapshot.measurements
+                if x.feature_id in ("throttle.time_rate", "sched.run_delay_excess.target")}
+        self.assertEqual(vals, {"throttle.time_rate": 0.4, "sched.run_delay_excess.target": 0.4})   # equal magnitude
+        self.assertIs(d.result.decision, L.INSUFFICIENT_EVIDENCE)
+        self.assertEqual(reasons(d), ["CONFLICT_UNRESOLVED"])
+        self.assertEqual(d.result.contributing, ())
+        (cf,) = d.snapshot.conflicts
+        self.assertEqual((cf.labels, cf.rule), ((L.cpu_contention, L.cpu_throttling), "PR-3"))
+        self.assertTrue(cf.item_ids)
+        for label in (L.cpu_contention, L.cpu_throttling):         # both listed, and both were assertable
+            self.assertIs(status(d, label), S.ASSERTED, label.value)
+            self.assertEqual(candidate(d, label).required_missing, (), label.value)
 
 
 class TestDesignADV10AllFamiliesMissing(unittest.TestCase):
