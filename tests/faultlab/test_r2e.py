@@ -1647,7 +1647,8 @@ class TestStaticAndIntegrity(unittest.TestCase):
             # the authorised Phase 1C M4/M5 design revision and G-R2 evidence add exactly these paths; nothing
             # else is accepted
             p1c = lambda p: p in ("docs/PHASE_1C_DESIGN.md", "docs/PHASE_1C_M4_M5_PILOT_DESIGN.md",
-                                  "tests/rules/test_design_adv.py", "docs/PHASE_1C_G_R2_EVIDENCE.md")
+                                  "tests/rules/test_design_adv.py", "docs/PHASE_1C_G_R2_EVIDENCE.md",
+                                  "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md")   # AMD-23 (proposed register)
             # the authorised Phase 1C M4 integrity amendment (AMD-18) adds exactly these paths, append-only FaultLab
             # raw files and the dataset manifest; tests/faultlab/test_integrity.py enforces modes, append-only
             # history and SHA-256 manifest coverage
