@@ -1648,7 +1648,8 @@ class TestStaticAndIntegrity(unittest.TestCase):
             # else is accepted
             p1c = lambda p: p in ("docs/PHASE_1C_DESIGN.md", "docs/PHASE_1C_M4_M5_PILOT_DESIGN.md",
                                   "tests/rules/test_design_adv.py", "docs/PHASE_1C_G_R2_EVIDENCE.md",
-                                  "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md")   # AMD-23 (proposed register)
+                                  "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md",   # AMD-23 (proposed register)
+                                  "docs/PHASE_1C_PREFLIGHT.md")   # AMD-24 (read-only pilot preflight)
             # the authorised Phase 1C M4 integrity amendment (AMD-18) adds exactly these paths, append-only FaultLab
             # raw files and the dataset manifest; tests/faultlab/test_integrity.py enforces modes, append-only
             # history and SHA-256 manifest coverage
@@ -1659,7 +1660,8 @@ class TestStaticAndIntegrity(unittest.TestCase):
                                   "experiments/faultlab/docker/workload.py", "datasets/faultlab/v1/manifest.json",
                                   "tests/collectors/test_safety.py", "tests/faultlab/test_workload.py",
                                   "experiments/faultlab/docker/loadgen.py", "tests/faultlab/test_loadgen.py",
-                                  "experiments/faultlab/rehearsal.py", "tests/faultlab/test_rehearsal.py")
+                                  "experiments/faultlab/rehearsal.py", "tests/faultlab/test_rehearsal.py",
+                                  "experiments/faultlab/preflight.py", "tests/faultlab/test_preflight.py")
                             or re.fullmatch(r"datasets/faultlab/v1/raw/[A-Z0-9]+(?:-[A-Z0-9]+)*-s[0-9]+/[a-z0-9_]+\.jsonl\.gz",
                                             p) is not None)
             changed = git("diff", "--name-only", base, "HEAD").stdout.split()
