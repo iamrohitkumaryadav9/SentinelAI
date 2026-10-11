@@ -289,6 +289,64 @@ class TestService(unittest.TestCase):
         self.assertEqual((m.counters["requests_rejected_total"], m.events["QUEUE_FULL"]), (1, 1))
         self.assertGreaterEqual(m.events["POOL_EXHAUSTED"], 1)
 
+    def test_rejection_when_the_request_arrives_after_accept(self):
+        """Race seen over TCP: the connection is rejected before its request bytes arrive. The client must still
+        receive the 503, not a reset or a broken pipe."""
+        gate = threading.Event()
+        svc = W.Service(dict(CFG, pool=1, queue=1), dependency=lambda timeout: gate.wait(5))
+        c1 = request(svc)
+        self.assertTrue(wait_until(lambda: svc.pool_state()[1] == 1))
+        c2 = request(svc)                                   # fills the queue
+        late, server = socket.socketpair()
+        svc.submit(server)                                  # rejected before any request byte has arrived
+        time.sleep(0.05)
+        late.sendall(b"GET /work HTTP/1.1\r\nHost: a\r\n\r\n")
+        self.assertEqual(response(late), b"HTTP/1.1 503 Service Unavailable")
+        gate.set()
+        response(c1), response(c2)
+        self.assertEqual(svc.metrics.counters["requests_rejected_total"], 1)
+
+    def test_rejection_with_bytes_arriving_after_the_503(self):
+        """Bytes sent after the 503 (here a late request body) must not turn the close into a reset or broken pipe,
+        and the client must see the end of the response promptly (half-close), not after the drain timeout."""
+        gate = threading.Event()
+        svc = W.Service(dict(CFG, pool=1, queue=1), dependency=lambda timeout: gate.wait(5))
+        c1 = request(svc)
+        self.assertTrue(wait_until(lambda: svc.pool_state()[1] == 1))
+        c2 = request(svc)
+        late, server = socket.socketpair()
+        late.sendall(b"POST /work HTTP/1.1\r\nContent-Length: 4\r\n\r\n")
+        svc.submit(server)
+        late.settimeout(5)
+        head = late.recv(4096)                              # the 503 arrives before the body is sent
+        t0 = time.monotonic()
+        late.sendall(b"body")                              # then read to the end, like a usual HTTP client
+        rest = b""
+        while True:
+            chunk = late.recv(4096)
+            if not chunk:
+                break
+            rest += chunk
+        late.close()
+        self.assertTrue((head + rest).startswith(b"HTTP/1.1 503 Service Unavailable"))
+        self.assertLess(time.monotonic() - t0, W.REJECT_WAIT_S / 2)
+        gate.set()
+        response(c1), response(c2)
+
+    def test_rejector_saturated_falls_back_to_an_immediate_503(self):
+        gate = threading.Event()
+        svc = W.Service(dict(CFG, pool=1, queue=1), dependency=lambda timeout: gate.wait(5))
+        svc.rejects = W.queue.Queue(maxsize=1)              # the rejector thread waits on the original queue
+        svc.rejects.put_nowait(object())                   # so this backlog stays full
+        c1 = request(svc)
+        self.assertTrue(wait_until(lambda: svc.pool_state()[1] == 1))
+        c2 = request(svc)
+        self.assertEqual(response(request(svc)), b"HTTP/1.1 503 Service Unavailable")
+        gate.set()
+        response(c1), response(c2)
+        m = svc.metrics
+        self.assertEqual((m.counters["requests_rejected_total"], m.events["QUEUE_FULL"]), (1, 1))
+
     def test_cpu_work_uses_the_thread_cpu_clock(self):
         svc = W.Service(dict(CFG, cpu_us=20000))
         t0 = time.monotonic()

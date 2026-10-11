@@ -48,6 +48,8 @@ COUNTERS = ("requests_completed_total", "requests_failed_total", "requests_rejec
 EVENT_CODES = ("DEPENDENCY_TIMEOUT", "LOCK_WAIT_EXCEEDED", "POOL_EXHAUSTED", "QUEUE_FULL")
 CONTROL_KEYS = {"pool": 1, "cpu_us": 0, "lock_hold_us": 0, "dependency_delay_ms": 0}   # key -> minimum value
 REQUEST_MAX = 8192
+REJECT_BACKLOG = 64          # rejected connections awaiting their 503 (beyond this, an immediate 503 and close)
+REJECT_WAIT_S = 0.5          # bounded wait for a rejected request's bytes, and for the client's end of stream
 _S_IFMT, _S_IFDIR, _S_IFREG = 0o170000, 0o040000, 0o100000
 
 
@@ -204,6 +206,8 @@ class Service:
         self.live = self.busy = 0
         self.stop = threading.Event()
         self.threads = []
+        self.rejects = queue.Queue(maxsize=REJECT_BACKLOG)
+        threading.Thread(target=self._rejector, daemon=True).start()
         self.resize(self.cfg["pool"])
 
     # pool ------------------------------------------------------------------------------------------------------
@@ -249,8 +253,11 @@ class Service:
             self.q.put_nowait((conn, t_admit))
         except queue.Full:
             self.metrics.count("requests_rejected_total", "QUEUE_FULL")
-            self._drain(conn)                               # unread request bytes would turn the close into a reset
-            self._reply(conn, 503, "Service Unavailable")
+            try:
+                self.rejects.put_nowait(conn)               # answered off the acceptor thread (see _reject)
+            except queue.Full:
+                self._drain(conn)                           # rejector saturated: immediate 503, a reset is possible
+                self._reply(conn, 503, "Service Unavailable")
             return False
         if no_idle:
             self.metrics.count(event="POOL_EXHAUSTED")
@@ -266,6 +273,42 @@ class Service:
             return True
         except OSError:
             return False
+        finally:
+            try:
+                conn.close()
+            except OSError:
+                pass
+
+    def _rejector(self) -> None:
+        while True:
+            self._reject(self.rejects.get())
+
+    @staticmethod
+    def _reject(conn) -> None:
+        """503 for a rejected connection without a reset: wait (bounded) for its request bytes, answer, half-close,
+        then wait (bounded) for the client's end of stream before closing. Closing with unread or still-arriving
+        request bytes would make the kernel reset the connection and discard the 503 before the client reads it."""
+        try:
+            conn.settimeout(REJECT_WAIT_S)
+            data = b""
+            try:
+                while b"\r\n\r\n" not in data and len(data) <= REQUEST_MAX:
+                    chunk = conn.recv(4096)
+                    if not chunk:
+                        break
+                    data += chunk
+            except OSError:
+                pass
+            body = b"Service Unavailable"
+            conn.sendall(b"HTTP/1.1 503 Service Unavailable\r\nContent-Length: %d\r\nConnection: close\r\n\r\n%s"
+                         % (len(body), body))
+            conn.shutdown(socket.SHUT_WR)
+            end = time.monotonic() + REJECT_WAIT_S
+            while time.monotonic() < end:
+                if not conn.recv(4096):
+                    break
+        except OSError:
+            pass
         finally:
             try:
                 conn.close()
