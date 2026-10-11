@@ -1662,7 +1662,9 @@ class TestStaticAndIntegrity(unittest.TestCase):
                                   "tests/collectors/test_safety.py", "tests/faultlab/test_workload.py",
                                   "experiments/faultlab/docker/loadgen.py", "tests/faultlab/test_loadgen.py",
                                   "experiments/faultlab/rehearsal.py", "tests/faultlab/test_rehearsal.py",
-                                  "experiments/faultlab/preflight.py", "tests/faultlab/test_preflight.py")
+                                  "experiments/faultlab/preflight.py", "tests/faultlab/test_preflight.py",
+                                  "experiments/faultlab/lab.py", "experiments/faultlab/pilot.py",
+                                  "tests/faultlab/test_pilot.py")
                             or re.fullmatch(r"datasets/faultlab/v1/raw/[A-Z0-9]+(?:-[A-Z0-9]+)*-s[0-9]+/[a-z0-9_]+\.jsonl\.gz",
                                             p) is not None)
             changed = git("diff", "--name-only", base, "HEAD").stdout.split()

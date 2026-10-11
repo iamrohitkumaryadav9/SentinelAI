@@ -37,10 +37,13 @@ M4_PATHS = frozenset({
     "tests/faultlab/test_rehearsal.py",      # AMD-22: its tests
     "experiments/faultlab/preflight.py",     # AMD-24: read-only, fail-closed pilot preflight (Gate 1.2)
     "tests/faultlab/test_preflight.py",      # AMD-24: its tests
+    "experiments/faultlab/lab.py",           # AMD-26: A–R–B lab plans, mutation guard, checks, cleanup
+    "experiments/faultlab/pilot.py",         # AMD-26: PI-0 / CTRL pilot driver (Gate 2)
+    "tests/faultlab/test_pilot.py",          # AMD-26: their tests (simulated host)
 })
 PINS = {
-    "tests/faultlab/test_r2e.py": "709c0f225556ecfc19287274b826c5e7f29d823ab4476470a7eb593d5df1d96e",
-    "tests/faultlab/test_r2f.py": "f9bd09a1bd0fb642fac740a8737bd87e159c4c2148136f350022fa18b49d65ac",
+    "tests/faultlab/test_r2e.py": "2c82d3136e13fdd1a95ce8acfa45b7c949eab4e2c7bcd06fc0610330b853e78c",
+    "tests/faultlab/test_r2f.py": "75edc7db8b28d87458013bed19f0efa8d5f7c6ebef4217ccefb8dedd6180c76f",
 }
 LIVE = I.Policy(anchor=ANCHOR, add_or_modify=M4_PATHS | CHECKER_FILES, pinned=PINS)   # checker: see test_r2f
 
