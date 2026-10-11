@@ -39,7 +39,19 @@ class TestStatic(unittest.TestCase):
 
     def test_files_only_opened_read_only(self):
         opens = [(n, m.group(0)) for n, c in CODE.items() for m in re.finditer(r"\bopen\([^)]*\)", c)]
-        self.assertEqual(opens, [("reader.py", 'open(path, "rb")')])
+        # AMD-19: app.py's single app-metrics read site (read-only, O_NOFOLLOW per component, non-blocking)
+        self.assertEqual(opens, [("app.py", "open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC "
+                                            "| extra, dir_fd=fd)"),
+                                 ("reader.py", 'open(path, "rb")')])
+
+    def test_app_metrics_read_site_is_confined(self):
+        from sentinelai.collectors import app
+        code = CODE["app.py"]
+        for flag in ("O_WRONLY", "O_RDWR", "O_CREAT", "O_TRUNC", "O_APPEND", "O_PATH", "O_TMPFILE"):
+            self.assertNotIn(flag, code)
+        self.assertEqual(len(re.findall(r"\b_component\(", code)), 4)   # definition + "/", path parts, metrics file
+        self.assertEqual((app.APP_ROOT, app.METRICS_FILE), ("/run/sentinelai-lab/app/", "metrics.json"))
+        self.assertEqual(app.MAX_BYTES, 256 * 1024)
 
     def test_no_mutating_commands_referenced(self):
         for name, code in CODE.items():

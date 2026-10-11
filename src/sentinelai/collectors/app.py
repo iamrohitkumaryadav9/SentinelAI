@@ -1,7 +1,10 @@
 """Application metrics (app.*): parse, validate and aggregate the workload's metrics document.
 
-Transport-independent: this module never opens files or connections. A reader hands it the document bytes (or a Bad
-observation); the reader itself is not part of this module.
+Transport (pilot design §5.5, Q-3 file option): read_metrics(run_id) reads APP_ROOT/<run_id>/metrics.json and nothing
+else. Every path component is opened relative to its parent with O_NOFOLLOW, so a symbolic link anywhere in the path
+is refused; the final file must be a regular file of at most MAX_BYTES, owned by LAB_UID (the lab workload's identity),
+and is opened non-blocking (a FIFO cannot stall the collector). Read-only by construction; no connection is ever made. A partially written document is returned as
+read and rejected by parse(), never repaired.
 
 Document schema v1 ("sentinelai-app-metrics/1", pilot design §5.5, proposed):
   {"schema": ..., "seq": int, "mono_ns": int, "pid": int, "config_sha256": 64 hex,
@@ -20,13 +23,15 @@ Bad(MALFORMED): the sample is INVALID. Nothing is ever substituted.
 Window values (window_values): percentiles are the upper bound of the bucket holding the nearest rank (conservative,
 no interpolation); a window with no requests, or a rank in the +Inf bucket, yields no value, never 0.
 """
+import errno
 import json
 import math
+import os
 import re
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
-from .errors import Bad, Status
+from .errors import Bad, CollectorError, Status
 
 SCHEMA = "sentinelai-app-metrics/1"
 MAX_BYTES = 256 * 1024
@@ -38,6 +43,13 @@ EVENT_CODES = ("DEPENDENCY_TIMEOUT", "LOCK_WAIT_EXCEEDED", "POOL_EXHAUSTED", "QU
 TOP_KEYS = frozenset({"schema", "seq", "mono_ns", "pid", "config_sha256", "counters", "events_total", "pool_size",
                       "pool_busy", "histograms"})
 _SHA256 = re.compile(r"[0-9a-f]{64}")
+APP_ROOT = "/run/sentinelai-lab/app/"
+METRICS_FILE = "metrics.json"
+RUN_ID = re.compile(r"[A-Z0-9]+(?:-[A-Z0-9]+)*-s[0-9]+")          # run_id = <scenario_id>-s<seed> (design §8)
+_S_IFMT, _S_IFREG = 0o170000, 0o100000                              # POSIX file-type mask and regular-file type
+# The lab workload runs as the lab uid (scripts/r2c_cpu.py LAB_UID, used by every R2 lab process via setpriv; pilot
+# design decision 2 runs the workload host-side, not in a container), so it owns the metrics file it writes.
+LAB_UID = 1000
 
 # (feature, aggregation or qualifier) -> histogram and quantile
 PERCENTILES = {("app.latency_ms", "P50"): ("latency", 0.50), ("app.latency_ms", "P99"): ("latency", 0.99),
@@ -118,6 +130,51 @@ def parse(data: bytes) -> Union[AppSample, Bad]:
                          pool_busy=pool_busy, histograms=hists)
     except (UnicodeDecodeError, ValueError, TypeError, KeyError, RecursionError) as exc:
         return _malformed(str(exc) or type(exc).__name__)
+
+
+def _component(name: str, fd, extra: int) -> int:
+    """The module's single read site: read-only, never follows a symbolic link, never blocks."""
+    return os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC | extra, dir_fd=fd)
+
+
+def read_metrics(run_id: str) -> Union[bytes, Bad]:
+    """Bytes of APP_ROOT/<run_id>/metrics.json, or the Bad observation that explains why there are none."""
+    if not isinstance(run_id, str) or not RUN_ID.fullmatch(run_id):
+        raise CollectorError(f"invalid run_id {run_id!r}")
+    fds: List[int] = []
+    try:
+        fds.append(_component("/", None, os.O_DIRECTORY))
+        for part in [p for p in APP_ROOT.split("/") if p] + [run_id]:
+            fds.append(_component(part, fds[-1], os.O_DIRECTORY))
+        fds.append(_component(METRICS_FILE, fds[-1], 0))
+        st = os.fstat(fds[-1])
+        if st.st_mode & _S_IFMT != _S_IFREG:
+            return Bad(Status.MALFORMED, "metrics path is not a regular file")
+        if st.st_uid != LAB_UID:
+            return Bad(Status.REFUSED, f"metrics file owned by uid {st.st_uid}, not the lab uid {LAB_UID}")
+        if st.st_size > MAX_BYTES:
+            return Bad(Status.MALFORMED, f"document larger than {MAX_BYTES} bytes")
+        chunks, n = [], 0
+        while n <= MAX_BYTES:                               # the file may grow between fstat and read
+            chunk = os.read(fds[-1], MAX_BYTES + 1 - n)
+            if not chunk:
+                break
+            chunks.append(chunk)
+            n += len(chunk)
+        if n > MAX_BYTES:
+            return Bad(Status.MALFORMED, f"document larger than {MAX_BYTES} bytes")
+        return b"".join(chunks)
+    except OSError as exc:
+        if exc.errno in (errno.ELOOP, errno.ENOTDIR):
+            return Bad(Status.REFUSED, "symbolic link or non-directory in the metrics path")
+        if exc.errno in (errno.EACCES, errno.EPERM):
+            return Bad(Status.DENIED, exc.strerror or "permission denied")
+        if exc.errno == errno.ENOENT:
+            return Bad(Status.ABSENT, exc.strerror or "not present")
+        return Bad(Status.MALFORMED, exc.strerror or "unreadable")
+    finally:
+        for fd in reversed(fds):
+            os.close(fd)
 
 
 def _monotone(prev: AppSample, cur: AppSample) -> Optional[str]:

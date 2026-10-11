@@ -2,10 +2,14 @@
 
 import json
 import math
+import os
+import tempfile
+import time
 import unittest
+from unittest import mock
 
 from sentinelai.collectors import app as A
-from sentinelai.collectors.errors import Bad, Status
+from sentinelai.collectors.errors import Bad, CollectorError, Status
 
 NB = len(A.BUCKETS_MS)
 
@@ -235,6 +239,169 @@ class TestWindowValues(unittest.TestCase):
             got = {k[1] for k in v if k[0] == fid}
             want = set(A.EVENT_CODES) if fid == "app.events" else {str(getattr(a, "value", a)) for a in spec.aggregations}
             self.assertEqual(got, want, fid)
+
+
+class TestReadMetrics(unittest.TestCase):
+    """read_metrics against a temporary APP_ROOT (real files; nothing outside the temporary directory is touched)."""
+    RUN = "PL-QDISC-I2-s1013"
+
+    def setUp(self):
+        self._t = tempfile.TemporaryDirectory()
+        self.root = os.path.join(self._t.name, "run", "sentinelai-lab", "app")
+        os.makedirs(os.path.join(self.root, self.RUN))
+        self.file = os.path.join(self.root, self.RUN, "metrics.json")
+        self._patch = mock.patch.object(A, "APP_ROOT", self.root + "/")
+        self._patch.start()
+        self._uid = mock.patch.object(A, "LAB_UID", os.geteuid())      # files below are created by this process
+        self._uid.start()
+
+    def tearDown(self):
+        self._uid.stop()
+        self._patch.stop()
+        for dirpath, dirnames, _ in os.walk(self._t.name):
+            for d in dirnames:
+                os.chmod(os.path.join(dirpath, d), 0o755)
+        self._t.cleanup()
+
+    def put(self, data: bytes, path=None):
+        with open(path or self.file, "wb") as fh:
+            fh.write(data)
+
+    def bad(self, status, needle=""):
+        r = A.read_metrics(self.RUN)
+        self.assertIsInstance(r, Bad, r)
+        self.assertIs(r.status, status, r)
+        self.assertIn(needle, r.detail)
+
+    def test_reads_document_bytes(self):
+        self.put(raw(doc()))
+        self.assertEqual(A.read_metrics(self.RUN), raw(doc()))
+
+    def test_end_to_end_valid_sample(self):
+        self.put(raw(doc(mono_ns=time.monotonic_ns() - 1)))
+        self.assertIsInstance(A.observe(A.read_metrics(self.RUN), None, time.monotonic_ns()), A.AppSample)
+
+    def test_partial_write_is_read_then_rejected(self):
+        self.put(raw(doc())[:-9])
+        r = A.observe(A.read_metrics(self.RUN), None, time.monotonic_ns())
+        self.assertIs(r.status, Status.MALFORMED)
+
+    def test_absent_file_and_run_directory(self):
+        self.bad(Status.ABSENT)
+        self.assertIs(A.read_metrics("CTRL-s9").status, Status.ABSENT)
+
+    def test_symlinked_file_refused(self):
+        target = os.path.join(self._t.name, "elsewhere.json")
+        self.put(raw(doc()), target)
+        os.symlink(target, self.file)
+        self.bad(Status.REFUSED, "symbolic link")
+
+    def test_symlinked_run_directory_refused(self):
+        real = os.path.join(self._t.name, "real-run")
+        os.makedirs(real)
+        self.put(raw(doc()), os.path.join(real, "metrics.json"))
+        os.symlink(real, os.path.join(self.root, "CTRL-s3"))
+        self.assertIs(A.read_metrics("CTRL-s3").status, Status.REFUSED)
+
+    def test_symlink_in_root_component_refused(self):
+        lab = os.path.join(self._t.name, "run", "sentinelai-lab")
+        os.rename(lab, lab + "-real")
+        os.symlink(lab + "-real", lab)
+        self.put(raw(doc()))
+        self.bad(Status.REFUSED)
+
+    def test_fifo_rejected_without_blocking(self):
+        os.mkfifo(self.file)
+        t0 = time.monotonic()
+        self.bad(Status.MALFORMED, "not a regular file")
+        self.assertLess(time.monotonic() - t0, 1.0)
+
+    def test_directory_rejected(self):
+        os.mkdir(self.file)
+        self.bad(Status.MALFORMED, "not a regular file")
+
+    def test_non_directory_component_refused(self):
+        os.rmdir(os.path.join(self.root, self.RUN))
+        self.put(b"x", os.path.join(self.root, self.RUN))
+        self.bad(Status.REFUSED)
+
+    def test_size_limit(self):
+        self.put(b" " * A.MAX_BYTES)
+        self.assertEqual(len(A.read_metrics(self.RUN)), A.MAX_BYTES)
+        self.put(b" " * (A.MAX_BYTES + 1))
+        self.bad(Status.MALFORMED, "larger than")
+
+    def test_oversized_rejected_before_any_read(self):
+        self.put(b" " * (A.MAX_BYTES + 1))
+        with mock.patch.object(A.os, "read", side_effect=AssertionError("read attempted")):
+            self.bad(Status.MALFORMED, "larger than")
+
+    def test_growth_after_fstat_still_bounded(self):
+        """fstat reports a small size (the file grew afterwards); the bounded read must still refuse it."""
+        self.put(b" " * (A.MAX_BYTES + 10))
+        real = os.fstat
+
+        def small(fd):
+            st = real(fd)
+            return os.stat_result((st.st_mode, st.st_ino, st.st_dev, st.st_nlink, st.st_uid, st.st_gid, 10,
+                                   st.st_atime, st.st_mtime, st.st_ctime))
+        with mock.patch.object(A.os, "fstat", side_effect=small):
+            self.bad(Status.MALFORMED, "larger than")
+
+    @unittest.skipIf(os.geteuid() == 0, "root bypasses file permissions")
+    def test_permission_denied(self):
+        self.put(raw(doc()))
+        os.chmod(self.file, 0)
+        self.bad(Status.DENIED)
+        os.chmod(self.file, 0o644)
+        os.chmod(os.path.join(self.root, self.RUN), 0)
+        self.bad(Status.DENIED)
+
+    def test_invalid_run_ids_are_usage_errors(self):
+        for rid in ("", "..", "../CTRL-s1", "CTRL-s1/..", "CTRL", "ctrl-s1", "CTRL-s1/x", "CTRL-s1\x00", None, 7):
+            with self.subTest(rid=rid), self.assertRaises(CollectorError):
+                A.read_metrics(rid)
+
+    def test_no_descriptor_leaks(self):
+        before = len(os.listdir("/proc/self/fd"))
+        self.put(raw(doc()))
+        for _ in range(50):
+            A.read_metrics(self.RUN)
+            A.read_metrics("CTRL-s9")
+        self.assertEqual(len(os.listdir("/proc/self/fd")), before)
+
+    def test_owned_by_lab_uid_accepted(self):
+        self.put(raw(doc()))
+        self.assertEqual(os.stat(self.file).st_uid, A.LAB_UID)
+        self.assertEqual(A.read_metrics(self.RUN), raw(doc()))
+
+    def test_other_owner_refused(self):
+        self.put(raw(doc()))
+        with mock.patch.object(A, "LAB_UID", os.geteuid() + 1):
+            self.bad(Status.REFUSED, "not the lab uid")
+
+    def test_owner_checked_before_any_read(self):
+        self.put(raw(doc()))
+        with mock.patch.object(A, "LAB_UID", os.geteuid() + 1), \
+                mock.patch.object(A.os, "read", side_effect=AssertionError("read attempted")):
+            self.bad(Status.REFUSED)
+
+    def test_lab_uid_matches_the_lab_tooling(self):
+        import re as _re
+        from pathlib import Path
+        text = (Path(__file__).resolve().parents[2] / "scripts" / "r2c_cpu.py").read_text()
+        self._uid.stop()
+        try:
+            self.assertEqual(A.LAB_UID, int(_re.search(r"^LAB_UID = LAB_GID = (\d+)$", text, _re.M).group(1)))
+        finally:
+            self._uid.start()
+
+    def test_production_root_is_fixed(self):
+        self._patch.stop()
+        try:
+            self.assertEqual(A.APP_ROOT, "/run/sentinelai-lab/app/")
+        finally:
+            self._patch.start()
 
 
 if __name__ == "__main__":
