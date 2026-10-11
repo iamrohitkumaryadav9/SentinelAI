@@ -1649,7 +1649,8 @@ class TestStaticAndIntegrity(unittest.TestCase):
             p1c = lambda p: p in ("docs/PHASE_1C_DESIGN.md", "docs/PHASE_1C_M4_M5_PILOT_DESIGN.md",
                                   "tests/rules/test_design_adv.py", "docs/PHASE_1C_G_R2_EVIDENCE.md",
                                   "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md",   # AMD-23 (proposed register)
-                                  "docs/PHASE_1C_PREFLIGHT.md")   # AMD-24 (read-only pilot preflight)
+                                  "docs/PHASE_1C_PREFLIGHT.md",   # AMD-24 (read-only pilot preflight)
+                                  "docs/PHASE_1C_FREEZE1_DECISIONS.json")   # AMD-25 (Freeze-1 record)
             # the authorised Phase 1C M4 integrity amendment (AMD-18) adds exactly these paths, append-only FaultLab
             # raw files and the dataset manifest; tests/faultlab/test_integrity.py enforces modes, append-only
             # history and SHA-256 manifest coverage

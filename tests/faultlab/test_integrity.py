@@ -39,8 +39,8 @@ M4_PATHS = frozenset({
     "tests/faultlab/test_preflight.py",      # AMD-24: its tests
 })
 PINS = {
-    "tests/faultlab/test_r2e.py": "28cabb8dd23b811db3d1f909b72ed0e0255b5baed012adab6d9b5e1784fa127f",
-    "tests/faultlab/test_r2f.py": "03366e4ffef11274feeb49c8f69721520d2d1fa0b3cc141030ff1d2475cb19ef",
+    "tests/faultlab/test_r2e.py": "709c0f225556ecfc19287274b826c5e7f29d823ab4476470a7eb593d5df1d96e",
+    "tests/faultlab/test_r2f.py": "f9bd09a1bd0fb642fac740a8737bd87e159c4c2148136f350022fa18b49d65ac",
 }
 LIVE = I.Policy(anchor=ANCHOR, add_or_modify=M4_PATHS | CHECKER_FILES, pinned=PINS)   # checker: see test_r2f
 
