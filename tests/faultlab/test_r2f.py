@@ -837,25 +837,50 @@ class TestStaticAndIntegrity(unittest.TestCase):
         hunks = (('        commit it must refuse, and the refusal may name only the closeout artifacts on top of d11e755."""\n',
                   '        commit it must refuse, and the refusal may name only the closeout artifacts on top of d11e755 (plus, after the\n        authorised R2-F closeout commit, exactly the R2-F tooling, report and evidence paths)."""\n'),
                  ('            changed = git("diff", "--name-only", base, "HEAD").stdout.split()\n            others = sorted(p for p in changed if p not in E.TOOLING)\n            self.assertTrue(others and all(closeout(p) for p in others), others)\n',
-                  '            # the authorised R2-F closeout (a later phase) adds exactly these paths; nothing else is accepted\n            r2f = lambda p: (re.fullmatch(r"scripts/r2f_[a-z_]+\\.(py|sh)", p) is not None\n                             or p == "tests/faultlab/test_r2f.py"\n                             or re.fullmatch(r"docs/PHASE_1C_R2F_[A-Z0-9_]+\\.md", p) is not None\n                             or p.startswith("results/phase1c_r2f/"))\n            # the authorised Phase 2A.6 closeout adds exactly these paths; nothing else is accepted\n            p2a6 = lambda p: (p in ("README.md", "src/sentinelai/__main__.py")\n                              or re.fullmatch(r"src/sentinelai/runtime/[a-z_]+\\.py", p) is not None\n                              or re.fullmatch(r"tests/runtime/[a-z_]+\\.py", p) is not None\n                              or re.fullmatch(r"docs/PHASE_2A_[A-Z0-9_]+\\.md", p) is not None\n                              or p.startswith("results/phase2a_live/"))\n            # the authorised Phase 1C M4/M5 design revision and G-R2 evidence add exactly these paths; nothing\n            # else is accepted\n            p1c = lambda p: p in ("docs/PHASE_1C_DESIGN.md", "docs/PHASE_1C_M4_M5_PILOT_DESIGN.md",\n                                  "tests/rules/test_design_adv.py", "docs/PHASE_1C_G_R2_EVIDENCE.md")\n            changed = git("diff", "--name-only", base, "HEAD").stdout.split()\n            others = sorted(p for p in changed if p not in E.TOOLING)\n            self.assertTrue(others and all(closeout(p) or r2f(p) or p2a6(p) or p1c(p) for p in others), others)\n'),
+                  '            # the authorised R2-F closeout (a later phase) adds exactly these paths; nothing else is accepted\n            r2f = lambda p: (re.fullmatch(r"scripts/r2f_[a-z_]+\\.(py|sh)", p) is not None\n                             or p == "tests/faultlab/test_r2f.py"\n                             or re.fullmatch(r"docs/PHASE_1C_R2F_[A-Z0-9_]+\\.md", p) is not None\n                             or p.startswith("results/phase1c_r2f/"))\n            # the authorised Phase 2A.6 closeout adds exactly these paths; nothing else is accepted\n            p2a6 = lambda p: (p in ("README.md", "src/sentinelai/__main__.py")\n                              or re.fullmatch(r"src/sentinelai/runtime/[a-z_]+\\.py", p) is not None\n                              or re.fullmatch(r"tests/runtime/[a-z_]+\\.py", p) is not None\n                              or re.fullmatch(r"docs/PHASE_2A_[A-Z0-9_]+\\.md", p) is not None\n                              or p.startswith("results/phase2a_live/"))\n            # the authorised Phase 1C M4/M5 design revision and G-R2 evidence add exactly these paths; nothing\n            # else is accepted\n            p1c = lambda p: p in ("docs/PHASE_1C_DESIGN.md", "docs/PHASE_1C_M4_M5_PILOT_DESIGN.md",\n                                  "tests/rules/test_design_adv.py", "docs/PHASE_1C_G_R2_EVIDENCE.md")\n            # the authorised Phase 1C M4 integrity amendment (AMD-18) adds exactly these paths, append-only FaultLab\n            # raw files and the dataset manifest; tests/faultlab/test_integrity.py enforces modes, append-only\n            # history and SHA-256 manifest coverage\n            m4 = lambda p: (p in ("tests/faultlab/_integrity.py", "tests/faultlab/test_integrity.py",\n                                  "src/sentinelai/collectors/app.py", "src/sentinelai/collectors/normalize.py",\n                                  "src/sentinelai/collectors/snapshot.py", "tests/collectors/test_app.py",\n                                  "docs/EVIDENCE_CONTRACT.md", "experiments/faultlab/docker/Dockerfile",\n                                  "experiments/faultlab/docker/workload.py", "datasets/faultlab/v1/manifest.json")\n                            or re.fullmatch(r"datasets/faultlab/v1/raw/[A-Z0-9]+(?:-[A-Z0-9]+)*-s[0-9]+/[a-z0-9_]+\\.jsonl\\.gz",\n                                            p) is not None)\n            changed = git("diff", "--name-only", base, "HEAD").stdout.split()\n            others = sorted(p for p in changed if p not in E.TOOLING)\n            self.assertTrue(others and all(closeout(p) or r2f(p) or p2a6(p) or p1c(p) or m4(p) for p in others),\n                            others)\n'),
                  ('        self.assertEqual(git("diff", "--name-only", "d11e755", "--", "src", "ebpf", "contract").stdout, "")\n',
-                  '        # Phase 2A.6: src/ may gain exactly the authorised flat runtime modules and the CLI; nothing else in src,\n        # ebpf or contract may differ from d11e755\n        changed = git("diff", "--name-only", "d11e755", "--", "src", "ebpf", "contract").stdout.split()\n        runtime = lambda p: (p == "src/sentinelai/__main__.py"\n                             or re.fullmatch(r"src/sentinelai/runtime/[a-z_]+\\.py", p) is not None)\n        self.assertEqual([p for p in changed if not runtime(p)], [])\n'))
+                  '        # Phase 2A.6: src/ may gain exactly the authorised flat runtime modules and the CLI; nothing else in src,\n        # ebpf or contract may differ from d11e755\n        changed = git("diff", "--name-only", "d11e755", "--", "src", "ebpf", "contract").stdout.split()\n        runtime = lambda p: (p == "src/sentinelai/__main__.py"\n                             or re.fullmatch(r"src/sentinelai/runtime/[a-z_]+\\.py", p) is not None\n                             # AMD-18: exactly the M4 collector files\n                             or p in ("src/sentinelai/collectors/app.py", "src/sentinelai/collectors/normalize.py",\n                                       "src/sentinelai/collectors/snapshot.py"))\n        self.assertEqual([p for p in changed if not runtime(p)], [])\n'))
         patched = base_e
         for old, new in hunks:
             self.assertEqual(patched.count(old), 1, old)
             patched = patched.replace(old, new)
         self.assertEqual(hashlib.sha256(patched.encode()).hexdigest(),
-                         '3ab31610a4daaa7a04c94566e41c55d34e8524cbd47e0a609382451bc060f003')
+                         '52ca761b5e617f6a4995fe971e6cb15c416c4488c4f566bd12d35986c746a867')
         self.assertIn((ROOT / "tests/faultlab/test_r2e.py").read_text(), (base_e, patched))
         # Phase 2A.6: src/ may gain exactly the authorised flat runtime modules and the CLI; nothing else in src,
         # ebpf or contract may differ from 4aa23b8
         changed = git("diff", "--name-only", "4aa23b8", "--", "src", "ebpf", "contract").stdout.split()
         runtime = lambda p: (p == "src/sentinelai/__main__.py"
-                             or re.fullmatch(r"src/sentinelai/runtime/[a-z_]+\.py", p) is not None)
+                             or re.fullmatch(r"src/sentinelai/runtime/[a-z_]+\.py", p) is not None
+                             # AMD-18: exactly the M4 collector files
+                             or p in ("src/sentinelai/collectors/app.py", "src/sentinelai/collectors/normalize.py",
+                                       "src/sentinelai/collectors/snapshot.py"))
         self.assertEqual([p for p in changed if not runtime(p)], [])
         hist = ("results/phase1c_r2b", "results/phase1c_r2c", "results/phase1c_r2d", "results/phase1c_r2e")
         self.assertEqual(git("diff", "--name-only", "4aa23b8", "--", *hist).stdout, "")      # historical evidence
         self.assertEqual(git("status", "--porcelain", "--", *hist).stdout, "")
+
+    @unittest.skipUnless(IN_GIT, "integrity checks need the git checkout")
+    def test_integrity_checker_changes_approved(self):
+        """AMD-18 trust chain: tests/faultlab/test_integrity.py pins this file and test_r2e.py by SHA-256, so this file
+        cannot pin it back. Instead every commit after 606754c that touches the checker files must be a non-merge
+        commit whose parent is in APPROVED_PARENTS, at most one such commit per approved parent, and the files must be
+        regular files at HEAD. A later reviewed amendment adds its own (already existing) parent to the set."""
+        approved_parents = {"606754c5bdb24e7108b56be2720479a6c1123165"}
+        files = ("tests/faultlab/_integrity.py", "tests/faultlab/test_integrity.py")
+        env = {**os.environ, "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1", "GIT_OPTIONAL_LOCKS": "0"}
+        run = lambda *a: subprocess.run(["git", "-C", str(ROOT), *a], capture_output=True, check=True, env=env).stdout
+        log = run("log", "--no-renames", "--format=%H %P", "606754c5bdb24e7108b56be2720479a6c1123165..HEAD", "--",
+                  *files).decode().split("\n")
+        commits = [line.split() for line in log if line.strip()]
+        self.assertTrue(commits, "checker files not committed")
+        for c in commits:
+            self.assertEqual(len(c), 2, f"merge or root commit touches the checker: {c}")
+            self.assertIn(c[1], approved_parents, f"checker changed in {c[0][:12]} on unapproved parent {c[1][:12]}")
+        parents = [c[1] for c in commits]
+        self.assertEqual(len(parents), len(set(parents)), "more than one checker commit on an approved parent")
+        modes = run("ls-tree", "-z", "HEAD", "--", *files)
+        self.assertEqual(sorted(x.decode().split()[0] for x in modes.split(b"\0") if x), ["100644", "100644"])
 
     @unittest.skipUnless(IN_GIT, "candidate check needs git")
     def test_candidate_logic(self):

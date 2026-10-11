@@ -1612,7 +1612,10 @@ class TestStaticAndIntegrity(unittest.TestCase):
         # ebpf or contract may differ from d11e755
         changed = git("diff", "--name-only", "d11e755", "--", "src", "ebpf", "contract").stdout.split()
         runtime = lambda p: (p == "src/sentinelai/__main__.py"
-                             or re.fullmatch(r"src/sentinelai/runtime/[a-z_]+\.py", p) is not None)
+                             or re.fullmatch(r"src/sentinelai/runtime/[a-z_]+\.py", p) is not None
+                             # AMD-18: exactly the M4 collector files
+                             or p in ("src/sentinelai/collectors/app.py", "src/sentinelai/collectors/normalize.py",
+                                       "src/sentinelai/collectors/snapshot.py"))
         self.assertEqual([p for p in changed if not runtime(p)], [])
         self.assertEqual(git("status", "--porcelain", "--untracked-files=no").stdout, "")
 
@@ -1645,9 +1648,20 @@ class TestStaticAndIntegrity(unittest.TestCase):
             # else is accepted
             p1c = lambda p: p in ("docs/PHASE_1C_DESIGN.md", "docs/PHASE_1C_M4_M5_PILOT_DESIGN.md",
                                   "tests/rules/test_design_adv.py", "docs/PHASE_1C_G_R2_EVIDENCE.md")
+            # the authorised Phase 1C M4 integrity amendment (AMD-18) adds exactly these paths, append-only FaultLab
+            # raw files and the dataset manifest; tests/faultlab/test_integrity.py enforces modes, append-only
+            # history and SHA-256 manifest coverage
+            m4 = lambda p: (p in ("tests/faultlab/_integrity.py", "tests/faultlab/test_integrity.py",
+                                  "src/sentinelai/collectors/app.py", "src/sentinelai/collectors/normalize.py",
+                                  "src/sentinelai/collectors/snapshot.py", "tests/collectors/test_app.py",
+                                  "docs/EVIDENCE_CONTRACT.md", "experiments/faultlab/docker/Dockerfile",
+                                  "experiments/faultlab/docker/workload.py", "datasets/faultlab/v1/manifest.json")
+                            or re.fullmatch(r"datasets/faultlab/v1/raw/[A-Z0-9]+(?:-[A-Z0-9]+)*-s[0-9]+/[a-z0-9_]+\.jsonl\.gz",
+                                            p) is not None)
             changed = git("diff", "--name-only", base, "HEAD").stdout.split()
             others = sorted(p for p in changed if p not in E.TOOLING)
-            self.assertTrue(others and all(closeout(p) or r2f(p) or p2a6(p) or p1c(p) for p in others), others)
+            self.assertTrue(others and all(closeout(p) or r2f(p) or p2a6(p) or p1c(p) or m4(p) for p in others),
+                            others)
             self.assertFalse(res["ok"])
             self.assertEqual(res["reason"], f"changed since {base[:7]} beyond R2-E tooling: {others}")
         with tempfile.TemporaryDirectory() as t:
