@@ -1656,7 +1656,8 @@ class TestStaticAndIntegrity(unittest.TestCase):
                                   "src/sentinelai/collectors/snapshot.py", "tests/collectors/test_app.py",
                                   "docs/EVIDENCE_CONTRACT.md", "experiments/faultlab/docker/Dockerfile",
                                   "experiments/faultlab/docker/workload.py", "datasets/faultlab/v1/manifest.json",
-                                  "tests/collectors/test_safety.py", "tests/faultlab/test_workload.py")
+                                  "tests/collectors/test_safety.py", "tests/faultlab/test_workload.py",
+                                  "experiments/faultlab/docker/loadgen.py", "tests/faultlab/test_loadgen.py")
                             or re.fullmatch(r"datasets/faultlab/v1/raw/[A-Z0-9]+(?:-[A-Z0-9]+)*-s[0-9]+/[a-z0-9_]+\.jsonl\.gz",
                                             p) is not None)
             changed = git("diff", "--name-only", base, "HEAD").stdout.split()

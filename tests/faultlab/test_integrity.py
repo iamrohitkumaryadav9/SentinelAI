@@ -31,10 +31,12 @@ M4_PATHS = frozenset({
     "experiments/faultlab/docker/workload.py",
     "tests/collectors/test_safety.py",       # AMD-19: the app-metrics read site (one exact new open)
     "tests/faultlab/test_workload.py",       # AMD-20: tests of the FaultLab workload
+    "experiments/faultlab/docker/loadgen.py",  # AMD-21: the FaultLab load generator (design §3 layout)
+    "tests/faultlab/test_loadgen.py",        # AMD-21: its tests
 })
 PINS = {
-    "tests/faultlab/test_r2e.py": "4caf7b621e7f03d14415672f0e1b29266dd048540ce5a173fdd17f7b2abd1504",
-    "tests/faultlab/test_r2f.py": "49f69f5a4b555e64e7d60558a4721e671e71f522dafe7e6c921e3f20db810faf",
+    "tests/faultlab/test_r2e.py": "87ab31db751865639df19f22d7f757b6f6648eb3403824403673daccf1c0bacc",
+    "tests/faultlab/test_r2f.py": "40b1329c22ca9cc7feb7086ba9111fe6f6219ad17af771678a245ab1da447bb3",
 }
 LIVE = I.Policy(anchor=ANCHOR, add_or_modify=M4_PATHS | CHECKER_FILES, pinned=PINS)   # checker: see test_r2f
 
