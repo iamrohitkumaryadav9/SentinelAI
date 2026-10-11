@@ -9,6 +9,10 @@ serve       HTTP/1.1 service (one request per connection) with a bounded worker 
             every applied configuration is echoed atomically to config.json (ground truth).
 dependency  TCP peer: answers each line after dependency_delay_ms (from the same control file); echo in
             dependency_config.json.
+distractor  (serve --distractor-kind) free-text log lines for OV-6 ("slow request") and OV-10 (generic) appended to
+            <run dir>/distractor.log at distractor_lines_per_s (control file; 0 until switched on). They are never
+            metrics and never closed-set events: no counter changes and the collector does not read the file
+            (contract §4.7, §8.7 "free-text logs ... never sufficient").
 
 Ownership: the workload must run as the lab uid/gid (LAB_UID/LAB_GID, as scripts/r2c_cpu.py), so the files it writes
 are owned by the identity the collector accepts; it refuses to start otherwise. The run directory must already exist,
@@ -27,6 +31,7 @@ import json
 import math
 import os
 import queue
+import random
 import re
 import signal
 import socket
@@ -46,7 +51,13 @@ BUCKETS_MS = tuple(0.05 * 2 ** k for k in range(18)) + (math.inf,)
 HISTOGRAMS = ("dependency_latency", "latency", "lock_wait", "queue_wait")
 COUNTERS = ("requests_completed_total", "requests_failed_total", "requests_rejected_total")
 EVENT_CODES = ("DEPENDENCY_TIMEOUT", "LOCK_WAIT_EXCEEDED", "POOL_EXHAUSTED", "QUEUE_FULL")
-CONTROL_KEYS = {"pool": 1, "cpu_us": 0, "lock_hold_us": 0, "dependency_delay_ms": 0}   # key -> minimum value
+CONTROL_KEYS = {"pool": 1, "cpu_us": 0, "lock_hold_us": 0, "dependency_delay_ms": 0,  # key -> minimum value
+                "distractor_lines_per_s": 0}
+SERVICE_CONTROL_KEYS = ("pool", "cpu_us", "lock_hold_us", "distractor_lines_per_s")
+DISTRACTOR_FILE = "distractor.log"
+DISTRACTOR_KINDS = ("generic", "slow_request")
+_GENERIC = ("INFO cache refresh completed", "INFO background job finished", "INFO configuration reloaded",
+            "DEBUG connection pool statistics collected", "INFO session cleanup ran", "INFO health check passed")
 REQUEST_MAX = 8192
 REJECT_BACKLOG = 64          # rejected connections awaiting their 503 (beyond this, an immediate 503 and close)
 REJECT_WAIT_S = 0.5          # bounded wait for a rejected request's bytes, and for the client's end of stream
@@ -395,6 +406,41 @@ class Service:
         return self.metrics.document(size, busy, config_sha256)
 
 
+# ------------------------------------------------------------------------------------------------ distractor
+class Distractor:
+    """Free-text log lines in <run dir>/distractor.log (O_APPEND, no symlink). Never metrics or closed-set events."""
+
+    def __init__(self, dir_fd: int, kind: str, seed: int):
+        if kind not in DISTRACTOR_KINDS:
+            raise WorkloadError(f"distractor kind must be one of {DISTRACTOR_KINDS}")
+        try:
+            self.fd = os.open(DISTRACTOR_FILE, os.O_WRONLY | os.O_APPEND | os.O_CREAT | os.O_NOFOLLOW | os.O_CLOEXEC,
+                              0o644, dir_fd=dir_fd)
+        except OSError as exc:
+            raise WorkloadError(f"distractor log unusable: {exc}") from None
+        os.fchmod(self.fd, 0o644)
+        self.kind, self.rng, self.n = kind, random.Random(seed), 0
+
+    def line(self) -> bytes:
+        self.n += 1
+        t = time.monotonic()
+        if self.kind == "slow_request":
+            return f"{t:.3f} WARN slow request {self.n}: took {self.rng.randint(200, 5000)} ms\n".encode()
+        return f"{t:.3f} {self.rng.choice(_GENERIC)}\n".encode()
+
+    def write(self) -> None:
+        os.write(self.fd, self.line())                      # one small O_APPEND write per line
+
+    def loop(self, svc: "Service", stop: threading.Event, poll_s: float) -> None:
+        while not stop.is_set():
+            rate = svc.cfg.get("distractor_lines_per_s", 0)
+            if rate > 0:
+                self.write()
+                stop.wait(1.0 / rate)
+            else:
+                stop.wait(poll_s)
+
+
 # ------------------------------------------------------------------------------------------------ runtime loops
 class Runner:
     """Control polling, config echo and metrics publication for one run directory."""
@@ -416,8 +462,10 @@ class Runner:
 
     def poll_control(self) -> None:
         changes, err = read_control(self.dir_fd)
-        changes = {k: v for k, v in changes.items() if k in ("pool", "cpu_us", "lock_hold_us")}
-        new = {k: v for k, v in changes.items() if self.svc.cfg[k] != v}
+        changes = {k: v for k, v in changes.items() if k in SERVICE_CONTROL_KEYS}
+        if "distractor_lines_per_s" in changes and "distractor_kind" not in self.svc.cfg:
+            changes, err = {}, "distractor_lines_per_s set but the service runs without --distractor-kind"
+        new = {k: v for k, v in changes.items() if self.svc.cfg.get(k) != v}
         if err != self.control_error or new:
             self.control_error = err
             if "pool" in new:
@@ -512,6 +560,8 @@ def main(argv=None) -> int:
     s.add_argument("--dependency-timeout-ms", type=float, required=True)
     s.add_argument("--publish-s", type=float, default=1.0)
     s.add_argument("--poll-s", type=float, required=True)
+    s.add_argument("--distractor-kind", choices=DISTRACTOR_KINDS, default=None, help="OV-6 slow_request, OV-10 generic")
+    s.add_argument("--distractor-seed", type=int, default=None)
     d = sub.add_parser("dependency")
     d.add_argument("--run-id", required=True)
     d.add_argument("--listen", required=True, help="host:port")
@@ -534,10 +584,18 @@ def main(argv=None) -> int:
         if a.dependency:
             dh, dp = a.dependency.rsplit(":", 1)
             dep = tcp_dependency(dh, int(dp))
-        svc = Service({"pool": a.pool, "queue": a.queue, "cpu_us": a.cpu_us, "lock_hold_us": a.lock_hold_us,
-                       "lock_wait_exceeded_ms": a.lock_wait_exceeded_ms,
-                       "dependency_timeout_ms": a.dependency_timeout_ms}, dependency=dep)
+        cfg = {"pool": a.pool, "queue": a.queue, "cpu_us": a.cpu_us, "lock_hold_us": a.lock_hold_us,
+               "lock_wait_exceeded_ms": a.lock_wait_exceeded_ms, "dependency_timeout_ms": a.dependency_timeout_ms}
+        distractor = None
+        if a.distractor_kind is not None:
+            if a.distractor_seed is None:
+                raise WorkloadError("--distractor-kind needs --distractor-seed")
+            distractor = Distractor(dir_fd, a.distractor_kind, a.distractor_seed)
+            cfg.update(distractor_kind=a.distractor_kind, distractor_lines_per_s=0)
+        svc = Service(cfg, dependency=dep)
         runner = Runner(svc, dir_fd, a.publish_s, a.poll_s)
+        if distractor is not None:
+            threading.Thread(target=distractor.loop, args=(svc, stop, a.poll_s), daemon=True).start()
         threading.Thread(target=accept_loop, args=(listener, svc, stop), daemon=True).start()
         runner.loop(stop)
         return 0

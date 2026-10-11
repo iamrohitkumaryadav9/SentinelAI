@@ -468,6 +468,87 @@ class TestControl(RunDir):
         self.assertIsNotNone(self.echo()["control_error"])
 
 
+class TestDistractor(RunDir):
+    """OV-6 / OV-10 free-text lines: never metrics, never closed-set events, never read by the collector."""
+
+    def lines(self):
+        return Path(self.path("distractor.log")).read_text().splitlines()
+
+    def test_free_text_only_never_closed_set_codes(self):
+        for kind in W.DISTRACTOR_KINDS:
+            with self.subTest(kind=kind):
+                d = W.Distractor(self.dir_fd, kind, seed=1)
+                text = b"".join(d.line() for _ in range(2000)).decode()
+                for code in A.EVENT_CODES:
+                    self.assertNotIn(code, text)
+                self.assertNotIn("{", text)                 # not a structured document
+        self.assertIn("slow request", W.Distractor(self.dir_fd, "slow_request", seed=1).line().decode())
+
+    def test_deterministic_per_seed(self):
+        strip = lambda b: b.split(b" ", 1)[1]                # drop the monotonic timestamp
+        x, y = W.Distractor(self.dir_fd, "generic", 5), W.Distractor(self.dir_fd, "generic", 5)
+        self.assertEqual([strip(x.line()) for _ in range(50)], [strip(y.line()) for _ in range(50)])
+        z = W.Distractor(self.dir_fd, "generic", 6)
+        self.assertNotEqual([strip(z.line()) for _ in range(50)], [strip(x.line()) for _ in range(50)])
+
+    def test_unknown_kind_and_symlinked_log_refused(self):
+        with self.assertRaises(W.WorkloadError):
+            W.Distractor(self.dir_fd, "panic", 1)
+        target = os.path.join(self._t.name, "elsewhere.log")
+        os.symlink(target, self.path("distractor.log"))
+        with self.assertRaises(W.WorkloadError):
+            W.Distractor(self.dir_fd, "generic", 1)
+        self.assertFalse(os.path.exists(target))
+
+    def test_lines_change_no_metric(self):
+        svc = W.Service(dict(CFG, distractor_kind="slow_request", distractor_lines_per_s=0))
+        r = W.Runner(svc, self.dir_fd, 1.0, 1.0)
+        d = W.Distractor(self.dir_fd, "slow_request", 2)
+        before = json.loads(svc.document(r.config_sha256))
+        for _ in range(100):
+            d.write()
+        after = json.loads(svc.document(r.config_sha256))
+        for key in ("counters", "events_total", "histograms", "pool_size", "pool_busy", "config_sha256"):
+            self.assertEqual(before[key], after[key], key)
+        self.assertEqual(len(self.lines()), 100)
+        self.assertEqual(os.stat(self.path("distractor.log")).st_mode & 0o777, 0o644)
+
+    def test_rate_switched_on_by_control_and_echoed(self):
+        svc = W.Service(dict(CFG, distractor_kind="generic", distractor_lines_per_s=0))
+        r = W.Runner(svc, self.dir_fd, 1.0, 1.0)
+        d, stop = W.Distractor(self.dir_fd, "generic", 3), threading.Event()
+        th = threading.Thread(target=d.loop, args=(svc, stop, 0.02))
+        th.start()
+        try:
+            time.sleep(0.2)
+            self.assertFalse(os.path.getsize(self.path("distractor.log")))   # 0 lines/s until switched on
+            sha0 = r.config_sha256
+            Path(self.path("control.json")).write_text(json.dumps({"distractor_lines_per_s": 50}))
+            r.poll_control()
+            echo = json.loads(Path(self.path("config.json")).read_bytes())
+            self.assertEqual(echo["config"]["distractor_lines_per_s"], 50)
+            self.assertNotEqual(echo["config_sha256"], sha0)
+            time.sleep(0.5)
+        finally:
+            stop.set()
+            th.join()
+        self.assertGreaterEqual(len(self.lines()), 10)
+
+    def test_control_refused_without_a_configured_distractor(self):
+        r = W.Runner(W.Service(CFG), self.dir_fd, 1.0, 1.0)
+        Path(self.path("control.json")).write_text(json.dumps({"distractor_lines_per_s": 5, "pool": 3}))
+        r.poll_control()
+        echo = json.loads(Path(self.path("config.json")).read_bytes())
+        self.assertNotIn("distractor_lines_per_s", echo["config"])
+        self.assertEqual(echo["config"]["pool"], CFG["pool"])
+        self.assertIn("--distractor-kind", echo["control_error"])
+
+    def test_collector_never_reads_the_distractor_log(self):
+        src = (ROOT / "src" / "sentinelai" / "collectors")
+        for f in src.rglob("*.py"):
+            self.assertNotIn("distractor", f.read_text().lower(), f)
+
+
 class TestDependencyPeer(RunDir):
     def test_answers_after_the_controlled_delay_and_echoes_it(self):
         path = os.path.join(self._t.name, "dep.sock")
