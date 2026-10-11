@@ -16,6 +16,7 @@ from ..diagnostic.contract import (BaselineMethod, BaselineStat, DataQuality, De
                                    Target, Window, load_contract, measurement_id, snapshot_id)
 from ..diagnostic.contract.version import CONTRACT_VERSION, SCHEMA_VERSION
 from ..diagnostic.rules.params import ParameterSet, UncalibratedParameters
+from .app import APP_FEATURES, app_calcs
 from .clock import Clock, SystemClock
 from .ebpf import EBPF_FEATURES, ebpf_calcs, observed_reasons, softirq_cpus
 from .errors import Bad, CollectorError
@@ -35,15 +36,15 @@ def window_counts(params: ParameterSet, period: float) -> Tuple[int, int]:
     return nB, nW
 
 
-def collected_features(ebpf: bool = False) -> Tuple[str, ...]:
-    """Every feature M3A (and, with ebpf, M3B) can emit (for parameter-set completeness checks)."""
+def collected_features(ebpf: bool = False, app: bool = False) -> Tuple[str, ...]:
+    """Every feature M3A (with ebpf, M3B; with app, the M4 app.* source) can emit (parameter-set completeness)."""
     t = Target(name="x", cgroup_path="/x", pids=(1,), cpuset="0", netns_ref="pid:1", ifaces=("x",))
     feats = {c.feature for c in build(t, (0,), (0,), (0,), True)}
-    return tuple(sorted(feats | (set(EBPF_FEATURES) if ebpf else set())))
+    return tuple(sorted(feats | (set(EBPF_FEATURES) if ebpf else set()) | (set(APP_FEATURES) if app else set())))
 
 
-def check_parameters(params: ParameterSet, ebpf: bool = False) -> None:
-    feats = collected_features(ebpf)
+def check_parameters(params: ParameterSet, ebpf: bool = False, app: bool = False) -> None:
+    feats = collected_features(ebpf, app)
     need = [n for n in ("W", "B", "COV_MIN", "N_BASE_MIN") if n not in params.numbers]
     need += [f"floor[{f}]" for f in feats if f"floor[{f}]" not in params.numbers]
     if need:
@@ -63,10 +64,11 @@ class CollectionStats:
 
 
 def collect(target: Target, params: ParameterSet, reader=None, clock: Optional[Clock] = None,
-            period: float = 1.0, ebpf=None) -> Tuple[List[Tick], CollectionStats]:
+            period: float = 1.0, ebpf=None, app=None) -> Tuple[List[Tick], CollectionStats]:
     """Sample every source at t0 + k*period for k = 0 .. nB+nW (baseline window, then W).
-    ebpf: an eBPF source (collectors.ebpf / sentinelai.ebpf) sampled at the same ticks, or None (M3A only)."""
-    check_parameters(params, ebpf is not None)
+    ebpf: an eBPF source (collectors.ebpf / sentinelai.ebpf) sampled at the same ticks, or None (M3A only).
+    app: an app.AppSource for the workload's metrics document, or None (app.* reported as not collected)."""
+    check_parameters(params, ebpf is not None, app is not None)
     reader, clock = reader or LiveReader(), clock or SystemClock()
     nB, nW = window_counts(params, period)
     r0, w0 = resource.getrusage(resource.RUSAGE_SELF), time.monotonic()
@@ -78,6 +80,8 @@ def collect(target: Target, params: ParameterSet, reader=None, clock: Optional[C
         obs = sample(reader, target)
         if ebpf is not None:
             obs.update(ebpf.sample())
+        if app is not None:
+            obs.update(app.sample())
         worst = max(worst, time.monotonic() - s)
         ticks.append(Tick(k, mono, wall, obs))
     r1 = resource.getrusage(resource.RUSAGE_SELF)
@@ -183,9 +187,10 @@ def _measurement(calc, ev, ticks, nB, nW, bwin, wwin, params) -> Tuple[Measureme
 
 
 def build_snapshot(ticks: List[Tick], target: Target, params: ParameterSet, period: float = 1.0,
-                   ebpf: bool = False) -> EvidenceSnapshot:
-    """ebpf: the ticks carry eBPF observations (M3B); the four eBPF features are then measured."""
-    check_parameters(params, ebpf)
+                   ebpf: bool = False, app: bool = False) -> EvidenceSnapshot:
+    """ebpf: the ticks carry eBPF observations (M3B); the four eBPF features are then measured.
+    app: the ticks carry app.* observations (AppSource); the nine app.* features are then measured."""
+    check_parameters(params, ebpf, app)
     nB, nW = window_counts(params, period)
     if len(ticks) != nB + nW + 1:
         raise CollectorError(f"expected {nB + nW + 1} ticks, got {len(ticks)}")
@@ -196,6 +201,8 @@ def build_snapshot(ticks: List[Tick], target: Target, params: ParameterSet, peri
     calcs = build(target, tuple(sorted(cpus | set(cpuset))), cpuset, _relevant(ticks, cpuset, nB), _emit_quota(ticks))
     if ebpf:   # softirq CPUs from the eBPF source itself; if it never answered, the host's CPUs (MISSING)
         calcs += ebpf_calcs(target, softirq_cpus(ticks) or tuple(sorted(cpus | set(cpuset))), observed_reasons(ticks))
+    if app:
+        calcs += app_calcs(target)
     reg = load_contract().registry
     measurements, missing, resets = [], {}, set()
     for calc in calcs:
@@ -214,7 +221,7 @@ def build_snapshot(ticks: List[Tick], target: Target, params: ParameterSet, peri
         for sc in scopes[f]:
             missing[(f, sc, None)] = reason
     for f in reg.features:
-        if f.family == "application":
+        if f.family == "application" and not app:
             if f.dimension is None:
                 missing[(f.id, APP, None)] = APP_REASON
             else:
@@ -224,7 +231,7 @@ def build_snapshot(ticks: List[Tick], target: Target, params: ParameterSet, peri
                                   qualifier=None if q is None else Qualifier(dimension=reg.get(f).dimension.name, value=q))
                for (f, s, q), r in sorted(missing.items(), key=lambda kv: (kv[0][0], kv[0][1], kv[0][2] or "")))
     measurements.sort(key=lambda m: m.measurement_id)
-    dq = _data_quality(measurements, resets, params, ebpf)
+    dq = _data_quality(measurements, resets, params, ebpf, app)
     return EvidenceSnapshot(schema_version=SCHEMA_VERSION, contract_version=CONTRACT_VERSION,
                             parameter_set_id=params.parameter_set_id,
                             snapshot_id=snapshot_id(target, wwin, measurements), target=target, window=wwin,
@@ -232,13 +239,14 @@ def build_snapshot(ticks: List[Tick], target: Target, params: ParameterSet, peri
                             missing_measurements=mm, conflicts=(), data_quality=dq)
 
 
-def _data_quality(ms, resets, params, ebpf=False) -> DataQuality:
+def _data_quality(ms, resets, params, ebpf=False, app=False) -> DataQuality:
     reg = load_contract().registry
     usable = (Quality.OK, Quality.PARTIAL)
     by_source = {}
     for m in ms:
         by_source.setdefault(m.provenance.source.value, []).append(m.quality in usable)
-    unavailable = set(NOT_COLLECTED_SOURCES) | {s for s, ok in by_source.items() if not any(ok)}
+    not_collected = set(NOT_COLLECTED_SOURCES) - ({"APP_METRICS", "APP_EVENTS"} if app else set())
+    unavailable = not_collected | {s for s, ok in by_source.items() if not any(ok)}
     families = {}
     for m in ms:
         families.setdefault(reg.get(m.feature_id).family, []).append(bool(m.baseline and m.baseline.adequate))
@@ -252,6 +260,7 @@ def _data_quality(ms, resets, params, ebpf=False) -> DataQuality:
                        counter_resets=len(resets), gate_passed=cov >= params.num("COV_MIN") and adequate)
 
 
-def collect_snapshot(target: Target, params: ParameterSet, reader=None, clock=None, period: float = 1.0, ebpf=None):
-    ticks, stats = collect(target, params, reader, clock, period, ebpf)
-    return build_snapshot(ticks, target, params, period, ebpf is not None), stats
+def collect_snapshot(target: Target, params: ParameterSet, reader=None, clock=None, period: float = 1.0, ebpf=None,
+                     app=None):
+    ticks, stats = collect(target, params, reader, clock, period, ebpf, app)
+    return build_snapshot(ticks, target, params, period, ebpf is not None, app is not None), stats

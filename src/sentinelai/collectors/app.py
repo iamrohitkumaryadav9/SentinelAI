@@ -28,10 +28,14 @@ import json
 import math
 import os
 import re
+import time
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
+from ..diagnostic.contract import Aggregation, SourceType, Target
 from .errors import Bad, CollectorError, Status
+from .features import C, Calc, G, H, ratio
+from .probes import get
 
 SCHEMA = "sentinelai-app-metrics/1"
 MAX_BYTES = 256 * 1024
@@ -260,3 +264,76 @@ def window_values(samples: Sequence[Union[AppSample, Bad]]) -> Dict[Tuple[str, s
     for c in EVENT_CODES:
         out[("app.events", c)] = ((b.events[c] - a.events[c]) / dt, None)
     return out
+
+
+# ------------------------------------------------------------------------------------------ snapshot integration
+APP_COLLECTOR_VERSION = "m4-app-1.0.0"
+APP_FEATURES = ("app.dependency_latency_ms", "app.error_rate", "app.events", "app.latency_ms", "app.lock_wait_ms",
+                "app.pool_rejections", "app.pool_utilization", "app.queue_wait_ms", "app.throughput")
+
+
+def _flatten(s: AppSample) -> dict:
+    d = {k: float(v) for k, v in s.counters.items()}
+    d.update({f"events.{c}": float(v) for c, v in s.events.items()})
+    d.update({f"hist.{h}": {i: float(c) for i, c in enumerate(s.histograms[h]) if c} for h in HISTOGRAMS})
+    d["mono_s"] = s.mono_ns / 1e9
+    d["pool_util"] = s.pool_busy / s.pool_size
+    return d
+
+
+class AppSource:
+    """Per-tick app.* source for collect(): obs["app"] is the flattened valid document of this tick, or the Bad
+    observation (absent, refused, stale, malformed, reset) that replaces it. prev is the last valid document."""
+
+    def __init__(self, run_id: str, clock_ns=time.monotonic_ns):
+        if not isinstance(run_id, str) or not RUN_ID.fullmatch(run_id):
+            raise CollectorError(f"invalid run_id {run_id!r}")
+        self.run_id, self.prev, self.clock_ns = run_id, None, clock_ns
+
+    def sample(self) -> dict:
+        s = observe(read_metrics(self.run_id), self.prev, self.clock_ns())
+        if isinstance(s, Bad):
+            return {"app": s}
+        self.prev = s
+        return {"app": _flatten(s)}
+
+
+def _quantile(q: float):
+    def f(d, dt):
+        counts = [d["h"].get(i, 0.0) for i in range(len(BUCKETS_MS))]
+        return percentile(counts, q)[0] if sum(counts) > 0 else None
+    return f
+
+
+def _per_doc_second(d, dt):
+    """Counter delta over the documents' own time (their mono_ns), not over the collector's tick interval."""
+    return d["x"] / d["t"] if d["t"] > 0 else None
+
+
+def app_calcs(target: Target) -> Tuple[Calc, ...]:
+    """The nine registry app.* features for the workload of target (scope app:<target name>)."""
+    M, EV, V, A = SourceType.APP_METRICS, SourceType.APP_EVENTS, APP_COLLECTOR_VERSION, f"app:{target.name}"
+    loc = "workload metrics.json (sentinelai-app-metrics/1)"
+    t = ("t", C((("app", "mono_s"),)))
+    no_req = "no requests in the window, or the rank is in the +Inf bucket"
+    out = []
+    for (feature, agg), (hist, q) in sorted(PERCENTILES.items()):
+        out.append(Calc(feature, A, (("h", H("app", f"hist.{hist}")),), _quantile(q), M,
+                        f"{loc} histogram {hist}: nearest-rank {agg}, bucket upper bound (ms)", "m4.app.metrics",
+                        aggregation=Aggregation(agg), version=V, undefined=no_req))
+    out += [Calc("app.throughput", A, (("x", C((("app", "requests_completed_total"),))), t), _per_doc_second, M,
+                 f"{loc} requests_completed_total per second", "m4.app.metrics", version=V),
+            Calc("app.pool_rejections", A, (("x", C((("app", "requests_rejected_total"),))), t), _per_doc_second, M,
+                 f"{loc} requests_rejected_total per second", "m4.app.metrics", version=V),
+            Calc("app.error_rate", A,
+                 (("n", C((("app", "requests_failed_total"),))),
+                  ("d", C((("app", "requests_completed_total"), ("app", "requests_failed_total"))))),
+                 ratio, M, f"{loc} failed / (completed + failed)", "m4.app.metrics", version=V,
+                 undefined="no completed or failed requests in the window"),
+            Calc("app.pool_utilization", A, (("g", G(lambda obs: get(obs, "app", "pool_util"), "app:pool_util")),),
+                 lambda d, dt: d["g"], M, f"{loc} pool_busy / pool_size, mean of ticks", "m4.app.metrics", version=V)]
+    for code in EVENT_CODES:
+        out.append(Calc("app.events", A, (("x", C((("app", f"events.{code}"),))), t), _per_doc_second, EV,
+                        f"{loc} events_total[{code}] per second", "m4.app.events", qualifier=("code", code),
+                        version=V))
+    return tuple(out)

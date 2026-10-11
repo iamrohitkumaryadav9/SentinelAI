@@ -6,6 +6,7 @@ import os
 import tempfile
 import time
 import unittest
+from pathlib import Path
 from unittest import mock
 
 from sentinelai.collectors import app as A
@@ -388,7 +389,6 @@ class TestReadMetrics(unittest.TestCase):
 
     def test_lab_uid_matches_the_lab_tooling(self):
         import re as _re
-        from pathlib import Path
         text = (Path(__file__).resolve().parents[2] / "scripts" / "r2c_cpu.py").read_text()
         self._uid.stop()
         try:
@@ -402,6 +402,184 @@ class TestReadMetrics(unittest.TestCase):
             self.assertEqual(A.APP_ROOT, "/run/sentinelai-lab/app/")
         finally:
             self._patch.start()
+
+
+class TestSnapshotIntegration(unittest.TestCase):
+    """Synthetic documents with known counters -> real reader -> AppSource -> build_snapshot(app=True)."""
+    RUN = "PL-QDISC-I2-s1013"
+    T0_NS = 50_000_000_000
+
+    def setUp(self):
+        from ._world import NB, NW, TARGET, World, params
+        self.NB, self.NW, self.TARGET = NB, NW, TARGET
+        self.n = NB + NW + 1
+        self.world_ticks = World().ticks(n=self.n)
+        self.params = params(**{f"floor[{f}]": 1e-3 for f in A.APP_FEATURES})
+        self._t = tempfile.TemporaryDirectory()
+        root = os.path.join(self._t.name, "app") + "/"
+        os.makedirs(root + self.RUN)
+        self.file = root + self.RUN + "/metrics.json"
+        self._patches = [mock.patch.object(A, "APP_ROOT", root), mock.patch.object(A, "LAB_UID", os.geteuid())]
+        for p in self._patches:
+            p.start()
+
+    def tearDown(self):
+        for p in self._patches:
+            p.stop()
+        self._t.cleanup()
+
+    def doc_at(self, k, **over):
+        """Tick k: 50 completed and 2 failed requests per second, 5 rejections, 3 QUEUE_FULL; 51 latencies per second
+        in bucket 6 and 1 in bucket 12 (a 10 s window: 510 + 10, so P50 is bucket 6 and P99, rank 515, bucket 12)."""
+        lat = [0] * NB
+        lat[6], lat[12] = 51 * k, 1 * k
+        d = doc(seq=k + 1, mono_ns=self.T0_NS + k * 1_000_000_000, completed=50 * k, failed=2 * k, rejected=5 * k,
+                busy=1 if k % 2 else 3, size=4, events={"QUEUE_FULL": 3 * k},
+                hist={"latency": lat, "queue_wait": lat, "lock_wait": [0] * NB, "dependency_latency": lat})
+        d.update(over)
+        return d
+
+    def ticks(self, docs):
+        src = A.AppSource(self.RUN)
+        out = []
+        for k, (tick, d) in enumerate(zip(self.world_ticks, docs)):
+            if d is not None:
+                Path(self.file).write_bytes(raw(d))
+            src.clock_ns = lambda k=k: self.T0_NS + k * 1_000_000_000 + 1000
+            obs = dict(tick.obs)
+            obs.update(src.sample())
+            out.append(type(tick)(tick.index, tick.mono, tick.wall, obs))
+        return out
+
+    def snapshot(self, docs):
+        from sentinelai.collectors import build_snapshot
+        return build_snapshot(self.ticks(docs), self.TARGET, self.params, app=True)
+
+    def app_measurements(self, snap):
+        return {(m.feature_id, m.aggregation.value, m.qualifier.value if m.qualifier else None): m
+                for m in snap.measurements if m.feature_id.startswith("app.")}
+
+    def test_exact_window_values(self):
+        snap = self.snapshot([self.doc_at(k) for k in range(self.n)])
+        ms = self.app_measurements(snap)
+        val = lambda f, a, q=None: ms[(f, a, q)].value
+        self.assertAlmostEqual(val("app.throughput", "RATE"), 50.0)
+        self.assertAlmostEqual(val("app.pool_rejections", "RATE"), 5.0)
+        self.assertAlmostEqual(val("app.error_rate", "RATIO"), 2 / 52)
+        self.assertAlmostEqual(val("app.events", "RATE", "QUEUE_FULL"), 3.0)
+        self.assertEqual(val("app.events", "RATE", "POOL_EXHAUSTED"), 0.0)
+        self.assertEqual(val("app.latency_ms", "P50"), A.BUCKETS_MS[6])
+        self.assertEqual(val("app.latency_ms", "P99"), A.BUCKETS_MS[12])     # 510 in bucket 6: rank 515 is in 12
+        self.assertAlmostEqual(val("app.pool_utilization", "MEAN"), 0.5)     # 0.25 and 0.75 alternate
+        self.assertIsNone(ms[("app.lock_wait_ms", "P99", None)].value)       # no lock waits: MISSING, never 0
+        for m in ms.values():
+            self.assertEqual(m.scope, f"app:{self.TARGET.name}")
+        self.assertTrue(all(ms[k].quality.value == "OK" for k in ms if k[0] != "app.lock_wait_ms"))
+        self.assertFalse([mm for mm in snap.missing_measurements if mm.feature_id.startswith("app.")
+                          and mm.feature_id != "app.lock_wait_ms"])
+        self.assertNotIn("APP_METRICS", snap.data_quality.sources_unavailable)
+        self.assertNotIn("APP_EVENTS", snap.data_quality.sources_unavailable)
+
+    def test_every_registry_app_measurement_is_present(self):
+        from sentinelai.diagnostic.contract import load_contract
+        snap = self.snapshot([self.doc_at(k) for k in range(self.n)])
+        missing = {(mm.feature_id, None, mm.qualifier.value if mm.qualifier else None)
+                   for mm in snap.missing_measurements if mm.feature_id.startswith("app.")}
+        got = set(self.app_measurements(snap)) | missing
+        want = set()
+        for f in load_contract().registry.features:
+            if f.family == "application":
+                for a in f.aggregations:
+                    for q in (sorted(f.dimension.values) if f.dimension else [None]):
+                        want.add((f.id, str(getattr(a, "value", a)), q))
+        self.assertEqual({(f, q) for f, _, q in got}, {(f, q) for f, _, q in want})
+
+    def test_stale_and_absent_documents_reduce_coverage(self):
+        docs = [self.doc_at(k) for k in range(self.n)]
+        docs[self.NB + 3] = None                             # the workload did not publish: seq not advanced
+        snap = self.snapshot(docs)
+        m = self.app_measurements(snap)[("app.throughput", "RATE", None)]
+        self.assertEqual(m.quality.value, "PARTIAL")
+        self.assertAlmostEqual(m.coverage, (self.NW - 2) / self.NW)
+        self.assertAlmostEqual(m.value, 50.0)
+
+    def test_counter_reset_is_invalid_not_a_value(self):
+        docs = [self.doc_at(k) for k in range(self.n)]
+        for k in range(self.NB + 1, self.n):                # the workload restarted: new pid, counters from zero
+            docs[k] = self.doc_at(k - self.NB, pid=999, seq=1000 + k, mono_ns=self.T0_NS + k * 1_000_000_000)
+        snap = self.snapshot(docs)
+        m = self.app_measurements(snap)[("app.throughput", "RATE", None)]
+        self.assertIsNone(m.value)
+        self.assertIn(m.quality.value, ("MISSING", "INVALID"))
+
+    def test_rates_use_the_documents_own_time(self):
+        """Documents 0.5 s apart while ticks are 1 s apart: 50 more completed per document is 100 per second of
+        workload time. Dividing by the collector's tick interval would report 50."""
+        docs = [self.doc_at(k, mono_ns=self.T0_NS + k * 500_000_000) for k in range(self.n)]
+        src_clock = lambda k: self.T0_NS + k * 500_000_000 + 1000
+        src = A.AppSource(self.RUN)
+        ticks = []
+        for k, (tick, d) in enumerate(zip(self.world_ticks, docs)):
+            Path(self.file).write_bytes(raw(d))
+            src.clock_ns = lambda k=k: src_clock(k)
+            obs = dict(tick.obs)
+            obs.update(src.sample())
+            ticks.append(type(tick)(tick.index, tick.mono, tick.wall, obs))
+        from sentinelai.collectors import build_snapshot
+        ms = self.app_measurements(build_snapshot(ticks, self.TARGET, self.params, app=True))
+        self.assertAlmostEqual(ms[("app.throughput", "RATE", None)].value, 100.0)
+        self.assertAlmostEqual(ms[("app.events", "RATE", "QUEUE_FULL")].value, 6.0)
+
+    def test_collect_samples_the_app_source_every_tick(self):
+        from sentinelai.collectors import ManualClock, collect_snapshot
+        from datetime import timedelta
+        from ._world import T0, World
+        w, docs, calls = World(), [self.doc_at(k) for k in range(self.n)], []
+
+        class Source:
+            def sample(src):
+                k = len(calls)
+                calls.append(k)
+                return {"app": A._flatten(A.parse(raw(docs[k])))}
+
+        clock = ManualClock([(float(k), T0 + timedelta(seconds=k)) for k in range(self.n)])
+
+        class StepReader:
+            def read(self, p): return w.reader(clock._i).read(p)
+            def listdir(self, p): return w.reader(clock._i).listdir(p)
+            def readlink(self, p): return w.reader(clock._i).readlink(p)
+            def tc_qdisc(self, i): return w.reader(clock._i).tc_qdisc(i)
+        snap, stats = collect_snapshot(self.TARGET, self.params, StepReader(), clock, app=Source())
+        self.assertEqual(calls, list(range(self.n)))
+        ms = self.app_measurements(snap)
+        self.assertAlmostEqual(ms[("app.throughput", "RATE", None)].value, 50.0)
+
+    def test_collect_without_app_floors_is_refused_before_sampling(self):
+        from sentinelai.collectors import ManualClock, collect
+        from sentinelai.diagnostic.rules import UncalibratedParameters
+        from ._world import params
+
+        class Source:
+            def sample(src):
+                raise AssertionError("sampled before the parameter check")
+        with self.assertRaises(UncalibratedParameters):
+            collect(self.TARGET, params(), object(), ManualClock([(0.0, None)]), app=Source())
+
+    def test_app_disabled_keeps_previous_behaviour(self):
+        from sentinelai.collectors import build_snapshot
+        from ._world import params
+        snap = build_snapshot(self.world_ticks, self.TARGET, params())
+        self.assertFalse([m for m in snap.measurements if m.feature_id.startswith("app.")])
+        self.assertIn("APP_METRICS", snap.data_quality.sources_unavailable)
+
+    def test_app_source_rejects_invalid_run_id(self):
+        with self.assertRaises(CollectorError):
+            A.AppSource("../x")
+
+    def test_snapshot_serialises_canonically_and_deterministically(self):
+        from sentinelai.diagnostic.contract import canonical_bytes
+        docs = [self.doc_at(k) for k in range(self.n)]
+        self.assertEqual(canonical_bytes(self.snapshot(docs)), canonical_bytes(self.snapshot(docs)))
 
 
 if __name__ == "__main__":
