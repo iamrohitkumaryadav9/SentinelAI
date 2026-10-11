@@ -52,7 +52,9 @@ class FakeHost:
     def __init__(self):
         self.root = FAKE_ROOT
         self.calls = []
-        self.sysname, self.release, self.uid = "Linux", RELEASE, 0
+        self.sysname, self.release, self.uid, self.sudo = "Linux", RELEASE, 0, "1000"
+        self.snap = {"root": {}, "links": [], "addrs": [], "routes4": [], "routes6": [], "qdiscs": [], "netns": [],
+                     "run_netns": [], "cgroup_dirs": [""], "bpf_available": True, "dynamic": {}}
         self.files = {
             "/proc/self/mounts": "cgroup2 /sys/fs/cgroup cgroup2 rw 0 0\n/dev/sda2 / ext4 rw 0 0\n"
                                  "/dev/sdb1 /data ext4 rw 0 0\ntmpfs /run tmpfs rw 0 0\n",
@@ -148,13 +150,17 @@ class FakeHost:
         self._log("read_repo_file", rel)
         return self.record if rel == REC else None
 
+    def sudo_uid(self):
+        return self.sudo
+
     def snapshot(self):
-        return {"root": {}, "links": [], "addrs": [], "routes4": [], "routes6": [], "qdiscs": [], "netns": [],
-                "run_netns": [], "cgroup_dirs": [""], "bpf_available": True, "dynamic": {}}
+        return dict(self.snap)
 
 
-def run(host=None, decisions=FAKE_ROOT + "/" + REC, integrity=lambda: []):
-    return P.Preflight(host or FakeHost(), decisions, integrity=integrity, clock=lambda: "T").run()
+def run(host=None, decisions=FAKE_ROOT + "/" + REC, integrity=lambda: [], stage="full",
+        verifier=lambda path: ["manifest unreadable: No such file or directory"]):
+    return P.Preflight(host or FakeHost(), decisions, integrity=integrity, clock=lambda: "T", stage=stage,
+                       manifest_verifier=verifier).run()
 
 
 def by_id(rep):
@@ -567,6 +573,108 @@ class TestFailClosed(Base):
         self.assertIn("caveat", rep["host_state"])
 
 
+class TestStagesAndPrivilege(Base):
+    def test_ctrl_stage_does_not_require_fault_class_decisions(self):
+        def pend(r):
+            for d in P.FULL_ONLY:
+                r["decisions"][d] = {"status": "pending", "reference": "unresolved"}
+        h = self.with_record(pend)
+        rep = run(h, stage="ctrl")
+        self.assertEqual(rep["overall"], "READY", not_pass(rep))
+        self.assertEqual(rep["stage"], "ctrl")
+        for d in P.FULL_ONLY:
+            c = by_id(rep)[f"APPR-{d}"]
+            self.assertEqual((c["status"], c["mandatory"]), ("BLOCKED", False))
+        rep = run(self.with_record(pend), stage="full")
+        self.assertEqual(rep["overall"], "NOT_READY")
+        self.assertEqual(sorted(not_pass(rep)), sorted(f"APPR-{d}" for d in P.FULL_ONLY))
+        with self.assertRaises(ValueError):
+            P.Preflight(FakeHost(), stage="partial")
+
+    def test_ctrl_stage_still_requires_every_other_decision(self):
+        for d in sorted(set(P.DECISIONS) - P.FULL_ONLY):
+            with self.subTest(d):
+                rep = run(self.with_record(lambda r: r["decisions"][d].update(status="proposed")), stage="ctrl")
+                self.assertStatus(rep, f"APPR-{d}", "BLOCKED")
+                self.assertTrue(by_id(rep)[f"APPR-{d}"]["mandatory"])
+
+    def test_root_must_come_from_sudo_by_the_lab_uid(self):
+        for sudo in (None, "0", "1001", ""):
+            with self.subTest(sudo=sudo):
+                h = FakeHost()
+                h.sudo = sudo
+                self.assertStatus(run(h), "ENV-PRIVILEGE", "FAIL")
+
+    def test_host_baseline_needs_network_and_bpf_state(self):
+        h = FakeHost()
+        h.snap["bpf_available"] = False
+        self.assertStatus(run(h), "LAB-HOST-BASELINE", "UNVERIFIED")
+        h = FakeHost()
+        h.snap["routes6"] = None
+        self.assertStatus(run(h), "LAB-HOST-BASELINE", "UNVERIFIED")
+        h = FakeHost()
+        h.snapshot = mock.Mock(side_effect=OSError("bpftool"))
+        self.assertStatus(run(h), "LAB-HOST-BASELINE", "UNVERIFIED")
+
+    def test_manifest_verifier_must_fail_closed(self):
+        self.assertStatus(run(verifier=lambda path: []), "INT-MANIFEST-VERIFIER", "FAIL")
+        self.assertStatus(run(verifier=mock.Mock(side_effect=ImportError("x"))), "INT-MANIFEST-VERIFIER",
+                          "UNVERIFIED")
+        self.assertEqual(by_id(run(verifier=P.default_manifest_verifier))["INT-MANIFEST-VERIFIER"]["status"], "PASS")
+
+    def test_root_git_runs_as_the_invoker(self):
+        host = P.ReadOnlyHost()
+        done = subprocess.CompletedProcess([], 0, "x\n", "")
+        with mock.patch.object(P.os, "geteuid", return_value=0), \
+                mock.patch.dict(P.os.environ, {"SUDO_UID": "1000", "SUDO_GID": "1000"}), \
+                mock.patch.object(P.subprocess, "run", return_value=done) as sp:
+            host.run(("git", "-C", str(ROOT), "rev-parse", "HEAD"))
+            host.run(("ip", "-V"))
+        self.assertEqual(sp.call_args_list[0].args[0][:5], ["setpriv", "--reuid=1000", "--regid=1000",
+                                                            "--init-groups", "--"])
+        self.assertEqual(sp.call_args_list[0].args[0][5:], ["git", "-C", str(ROOT), "rev-parse", "HEAD"])
+        self.assertEqual(sp.call_args_list[1].args[0], ["ip", "-V"])
+        for env in ({}, {"SUDO_UID": "0", "SUDO_GID": "0"}, {"SUDO_UID": "1000"}):
+            with self.subTest(env=env), mock.patch.object(P.os, "geteuid", return_value=0), \
+                    mock.patch.dict(P.os.environ, env, clear=True), \
+                    mock.patch.object(P.subprocess, "run", side_effect=AssertionError("executed")) as sp:
+                with self.assertRaises(P.PreflightRefused):
+                    host.run(("git", "-C", str(ROOT), "rev-parse", "HEAD"))
+                with self.assertRaises(P.PreflightRefused):
+                    P.default_integrity()
+                sp.assert_not_called()
+
+    def test_root_integrity_policy_runs_as_the_invoker(self):
+        done = subprocess.CompletedProcess([], 0, "[]\n", "")
+        with mock.patch.object(P.os, "geteuid", return_value=0), \
+                mock.patch.dict(P.os.environ, {"SUDO_UID": "1000", "SUDO_GID": "1000"}), \
+                mock.patch.object(P.subprocess, "run", return_value=done) as sp:
+            self.assertEqual(P.default_integrity(), [])
+        argv = sp.call_args.args[0]
+        self.assertEqual(argv[:5], ["setpriv", "--reuid=1000", "--regid=1000", "--init-groups", "--"])
+        self.assertEqual(argv[-1], str(ROOT))
+        bad = subprocess.CompletedProcess([], 1, "", "boom")
+        with mock.patch.object(P.os, "geteuid", return_value=0), \
+                mock.patch.dict(P.os.environ, {"SUDO_UID": "1000", "SUDO_GID": "1000"}), \
+                mock.patch.object(P.subprocess, "run", return_value=bad):
+            with self.assertRaises(RuntimeError):
+                P.default_integrity()
+
+    def test_committed_decisions_record_grants_only_what_it_states(self):
+        data = (ROOT / "docs/PHASE_1C_FREEZE1_DECISIONS.json").read_bytes()
+        dec, errs = P.parse_decisions(data)
+        self.assertEqual(errs, [])
+        self.assertEqual(set(dec), set(P.DECISIONS))
+        h = FakeHost()
+        h.record = data
+        rep = run(h)
+        for d, e in dec.items():
+            approved = e["status"] == "approved" and P.decision_state(d, e)[0]
+            self.assertEqual(by_id(rep)[f"APPR-{d}"]["status"], "PASS" if approved else "BLOCKED", d)
+            if e["status"] == "approved":
+                self.assertEqual(e["approved_by"], "Rohit Kumar")
+
+
 class TestReadOnlyHost(unittest.TestCase):
     UNSAFE = (["sudo", "-n", "true"], ["ip", "netns", "add", "sentinel-lab-a"], ["ip", "link", "add", "x", "type",
               "veth"], ["tc", "qdisc", "add", "dev", "lo", "root", "netem"], [C.BPFTOOL, "prog", "load", "x", "/y"],
@@ -620,8 +728,11 @@ class TestReadOnlyHost(unittest.TestCase):
             if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "open":
                 mode = ast.unparse(node.args[1]) if len(node.args) > 1 else "'r'"
                 self.assertEqual(mode, "'rb'", "only binary read opens")
-        self.assertEqual(sum(1 for n in ast.walk(tree) if isinstance(n, ast.Attribute) and n.attr == "run"
-                             and isinstance(n.value, ast.Name) and n.value.id == "subprocess"), 1)
+        runs = [n for n in ast.walk(tree) if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+                and n.func.attr == "run" and isinstance(n.func.value, ast.Name) and n.func.value.id == "subprocess"]
+        self.assertEqual(len(runs), 2)                                  # ReadOnlyHost.run and the root integrity
+        for n in runs:
+            self.assertNotIn("shell", [k.arg for k in n.keywords if ast.unparse(k.value) == "True"])
 
     def test_real_git_queries_on_a_disposable_repository(self):
         import tempfile

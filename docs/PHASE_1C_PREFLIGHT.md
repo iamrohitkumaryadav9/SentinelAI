@@ -11,15 +11,23 @@ Implementation: [`experiments/faultlab/preflight.py`](../experiments/faultlab/pr
 ## 1. Invocation
 
 ```
-.venv/bin/python experiments/faultlab/preflight.py [--decisions PATH] [--summary]
+.venv/bin/python experiments/faultlab/preflight.py [--decisions PATH] [--stage ctrl|full] [--summary]
+sudo .venv/bin/python experiments/faultlab/preflight.py --decisions docs/PHASE_1C_FREEZE1_DECISIONS.json --stage ctrl
 ```
 
 - The report (JSON, format `sentinelai.faultlab.preflight.v1`) goes to stdout. `--summary` adds one line per check
   on stderr. The preflight writes no file.
 - Exit status: 0 `READY`, 1 `NOT_READY`, 2 usage error.
 - `--decisions` names a committed Freeze-1 decisions record (§5). Without it, every decision is `BLOCKED`.
-- Run it as the invoking user. Run unprivileged, it is `NOT_READY` by construction: `ENV-PRIVILEGE` and
-  `LAB-NO-SENTINEL-BPF` cannot be established without root, and the preflight never invokes `sudo`.
+- `--stage full` (default) requires every Freeze-1 decision. `--stage ctrl` covers the lab lifecycle (PI-0) and
+  CTRL runs only. In that stage the fault-class decisions (`FZ-INTENSITY`, `FZ-PI5`, `FZ-PI8`, `FZ-TTRANS`) are still
+  reported but are not mandatory.
+- **Unprivileged** it is `NOT_READY` by construction: `ENV-PRIVILEGE`, `LAB-NO-SENTINEL-BPF` and `LAB-HOST-BASELINE`
+  need root, and the preflight never invokes `sudo` itself.
+- **Privileged (Gate 2)** it must be started through `sudo` from uid 1000; `ENV-PRIVILEGE` fails otherwise.
+  - Root makes the BPF inventory and the full host baseline readable. Everything else uses the same read-only
+    allowlist.
+  - Git queries and the integrity policy run as the invoking user (`setpriv`), never as root.
 
 ## 2. Status model
 
@@ -52,7 +60,7 @@ Overall `READY` only if every mandatory check is `PASS`. Otherwise `NOT_READY`.
 
 | Decision | Register item | Frozen value required |
 |---|---|---|
-| `FZ-WORKLOAD` | 1 | keys `rate_per_s, jitter, pool, pool_shrink, queue, cpu_us, lock_hold_us, dependency_delay_ms, poll_s, timeout_s, connection_model, publish_s` (numbers; `connection_model` text) |
+| `FZ-WORKLOAD` | 1 | keys `rate_per_s, jitter, pool, pool_shrink, queue, cpu_us, lock_hold_us, lock_wait_exceeded_ms, dependency_delay_ms, dependency_timeout_ms, poll_s, publish_s, timeout_s, max_inflight, connection_model` (numbers; `connection_model` text) |
 | `FZ-INTENSITY` | 2 | any value |
 | `FZ-PI5`, `FZ-PI7`, `FZ-PI8` | 3, 3b | any value |
 | `FZ-TTRANS` | 4 | keys `T_TRANS_rule, T_cap, T_fb` |
@@ -92,8 +100,14 @@ consumes are still mandatory, because the registered pilot procedure cannot run 
 directory), `STG-PERSISTENT` (not tmpfs/ramfs/devtmpfs), `STG-PERMISSIONS` (owned by the invoking uid or uid 1000, not
 world-writable), `STG-FREE-SPACE` (≥ 20 GiB, draft §9; also depends on `FZ-SAFETY-CHECKLIST`).
 
-**Integrity (mandatory):** `INT-REPO-CLEAN`, `INT-INTEGRITY-POLICY` (the live AMD-18 policy), `INT-M4-BASELINE`
-(depends on `FZ-M4-BASELINE`).
+**Integrity (mandatory):**
+- `INT-REPO-CLEAN`;
+- `INT-INTEGRITY-POLICY` (the live AMD-18 policy);
+- `INT-M4-BASELINE` (depends on `FZ-M4-BASELINE`);
+- `INT-MANIFEST-VERIFIER` (the rehearsal verifier is importable and reports problems for a missing run).
+
+**Host baseline (mandatory):** `LAB-HOST-BASELINE`. The R2-C host snapshot is captured with network state and the BPF
+inventory, which needs root.
 
 **Recorded only (not mandatory):** `ENV-OS-RELEASE`, `ENV-TOOL-VERSIONS`, `LAB-ROOT-SUBTREE-R2C` (shows why the two
 accepted R2-C/R2-D failures occur), `INT-HEAD`. No approved requirement exists for these.
@@ -102,8 +116,8 @@ accepted R2-C/R2-D failures occur), `INT-HEAD`. No approved requirement exists f
 
 | Item | Why | Where it must be established |
 |---|---|---|
-| Privileges for netns/veth, lab cgroup, `tc`, loader | needs `sudo`; never invoked | Gate 2, re-run with the approved privileges |
-| BPF programs, links, maps | `bpftool` needs root | Gate 2 |
+| Privileges for netns/veth, lab cgroup, `tc`, loader | needs root | Gate 2: the privileged preflight (sudo from uid 1000) |
+| BPF programs, links, maps; full host baseline | `bpftool` needs root | Gate 2: the privileged preflight |
 | `scripts/safety_check.sh` (incl. SSH recovery path) | writes `logs/` (not read-only) | immediately before the authorised run |
 | Lab connectivity (A↔R↔B) | needs the lab, i.e. mutation | the authorised run's per-run lab checks (draft §5.1) |
 | Authenticity of approvals | the record is trusted only as a committed, unmodified Git file | decision `FZ-ROOT-OF-TRUST` |
@@ -121,7 +135,10 @@ accepted R2-C/R2-D failures occur), `INT-HEAD`. No approved requirement exists f
   unapproved.
 - Status must be one of `approved`, `proposed`, `pending` or `rejected`; only `approved` with a complete value counts.
 - The record must be a regular file in this repository, tracked by Git and identical to HEAD.
-- No record exists yet. Committing one needs an owner decision and an exact-path integrity amendment.
+- The committed record is [`PHASE_1C_FREEZE1_DECISIONS.json`](PHASE_1C_FREEZE1_DECISIONS.json). Every entry is
+  `proposed` or `pending`, so nothing is approved.
+- An entry is approved only when Rohit Kumar sets `"status": "approved"`, `"approved_by": "Rohit Kumar"`, a date and a
+  reference, and commits the change.
 
 ## 6. Host-state invariants of the future run
 

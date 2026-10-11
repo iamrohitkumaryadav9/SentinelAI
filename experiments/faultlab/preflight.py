@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """SentinelAI Phase 1C FaultLab pilot preflight (Gate 1.2): read-only, fail-closed readiness report.
 
-    .venv/bin/python experiments/faultlab/preflight.py [--decisions PATH] [--summary]
+    .venv/bin/python experiments/faultlab/preflight.py [--decisions PATH] [--stage ctrl|full] [--summary]
+    sudo .venv/bin/python experiments/faultlab/preflight.py ...     (Gate 2 privileged mode, from uid 1000)
 
 Prints one JSON report (FORMAT) on stdout; --summary also prints one line per check on stderr.
 Exit status: 0 READY, 1 NOT_READY, 2 usage error.
@@ -22,6 +23,13 @@ takes metadata (lstat, statvfs) and runs only an exact list of read-only command
 `systemctl is-enabled` of one unit and five fixed git queries). It has no write, create, chmod or delete path and
 never invokes sudo. It never creates /run/sentinelai-lab or the staging path, never starts the workload, the load
 generator or the loader, and never runs scripts/safety_check.sh (which writes logs/).
+
+Stages: `full` (default) requires every Freeze-1 decision; `ctrl` (lab lifecycle PI-0 and CTRL runs only) does not
+require the fault-class decisions in FULL_ONLY, which are then reported as non-mandatory.
+
+Privileged mode (euid 0): only through sudo from uid 1000 (ENV-PRIVILEGE fails otherwise). Root makes the BPF inventory
+and the full host baseline readable; every other access is the same read-only allowlist. Git and the integrity policy
+run as the invoking user (setpriv), never as root, so the repository is never accessed with root's identity.
 
 Decisions record (format DECISIONS_FORMAT, PROPOSED by this preflight, not approved): a JSON file committed in this
 repository, passed with --decisions. Without it every Freeze-1 decision is BLOCKED. The record is trusted only if it is
@@ -80,7 +88,8 @@ SHA40 = re.compile(r"[0-9a-f]{40}")
 # ------------------------------------------------------------------------------------------ Freeze-1 decisions
 # id -> (title, provenance, required value keys: None = approval of text only, () = any non-null value)
 WORKLOAD_KEYS = ("rate_per_s", "jitter", "pool", "pool_shrink", "queue", "cpu_us", "lock_hold_us",
-                 "dependency_delay_ms", "poll_s", "timeout_s", "connection_model", "publish_s")
+                 "lock_wait_exceeded_ms", "dependency_delay_ms", "dependency_timeout_ms", "poll_s", "publish_s",
+                 "timeout_s", "max_inflight", "connection_model")
 DECISIONS: Dict[str, Tuple[str, str, Optional[Tuple[str, ...]]]] = {
     "FZ-WORKLOAD": ("Workload and load-generator parameters", f"{REGISTER} §1 item 1; draft §5.4", WORKLOAD_KEYS),
     "FZ-INTENSITY": ("I1-I3 levels, I3 ceilings and the selection rule", f"{REGISTER} §1 item 2; draft §6.9", ()),
@@ -110,6 +119,9 @@ DECISIONS: Dict[str, Tuple[str, str, Optional[Tuple[str, ...]]]] = {
                             "draft §9 (preflight prerequisite; not a register item)", None),
     "FZ-M4-BASELINE": ("Approved M4 baseline commit", "draft §9 preflight item 1 (not a register item)", ("commit",)),
 }
+# Decisions needed only by the fault classes (PI-2/3/5/8, OV-4/5): not mandatory for the `ctrl` stage.
+FULL_ONLY = frozenset({"FZ-INTENSITY", "FZ-PI5", "FZ-PI8", "FZ-TTRANS"})
+STAGES = ("ctrl", "full")
 # Why each decision is mandatory although no host check consumes its value.
 NOT_CONSUMED = ("Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed "
                 "without it (register §4: Freeze-1 requires it).")
@@ -234,6 +246,14 @@ def command_allowed(argv, root: str) -> bool:
                 and t[3] == "HEAD"))
 
 
+def invoker_prefix() -> List[str]:
+    """setpriv prefix that drops root back to the sudo invoker (uid 1000) for repository access. Refuses otherwise."""
+    uid, gid = os.environ.get("SUDO_UID", ""), os.environ.get("SUDO_GID", "")
+    if uid != str(C.LAB_UID) or not gid.isdigit():
+        raise PreflightRefused(f"root without sudo from uid {C.LAB_UID}: repository access refused")
+    return ["setpriv", f"--reuid={uid}", f"--regid={gid}", "--init-groups", "--"]
+
+
 class ReadOnlyHost:
     """The only host access of the preflight. Reads, metadata and allowlisted read-only commands; nothing else."""
 
@@ -306,8 +326,11 @@ class ReadOnlyHost:
         if not command_allowed(argv, self.root):
             raise PreflightRefused(f"command not in the read-only allowlist: {list(argv)}")
         env = {**os.environ, "GIT_OPTIONAL_LOCKS": "0", "LC_ALL": "C"}
+        exe = list(argv)
+        if exe[0] == "git" and os.geteuid() == 0:
+            exe = invoker_prefix() + exe                     # the repository is read as its owner, never as root
         try:
-            p = subprocess.run(list(argv), capture_output=True, text=True, timeout=15, shell=False, env=env,
+            p = subprocess.run(exe, capture_output=True, text=True, timeout=15, shell=False, env=env,
                                stdin=subprocess.DEVNULL)
         except (OSError, subprocess.TimeoutExpired):
             return None
@@ -331,13 +354,38 @@ class ReadOnlyHost:
         finally:
             os.close(fd)
 
+    def sudo_uid(self) -> Optional[str]:
+        return os.environ.get("SUDO_UID")
+
     def snapshot(self) -> dict:
         """R2-C's read-only host snapshot (BPF parts need root and are None when unprivileged)."""
         return C.host_snapshot(self.sys, require_bpf=False)
 
 
+_INTEGRITY_CODE = ("import json, sys; sys.path.insert(0, sys.argv[1] + '/tests'); "
+                   "from faultlab import _integrity as I, test_integrity as T; "
+                   "print(json.dumps(I.check(sys.argv[1], T.LIVE)))")
+
+
+def default_manifest_verifier(path: Path) -> List[str]:
+    """experiments/faultlab/rehearsal.py verify_manifest (the approved verifier candidate; read-only)."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("faultlab_rehearsal_for_preflight",
+                                                  ROOT / "experiments/faultlab/rehearsal.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.verify_manifest(path)
+
+
 def default_integrity() -> List[str]:
-    """The live integrity policy (tests/faultlab/test_integrity.py LIVE), read-only Git queries only."""
+    """The live integrity policy (tests/faultlab/test_integrity.py LIVE), read-only Git queries only. As root it runs
+    in a child process with the invoker's identity."""
+    if os.geteuid() == 0:
+        p = subprocess.run(invoker_prefix() + [sys.executable, "-I", "-c", _INTEGRITY_CODE, str(ROOT)],
+                           capture_output=True, text=True, timeout=120, stdin=subprocess.DEVNULL)
+        if p.returncode != 0:
+            raise RuntimeError(f"integrity check as the invoker failed (rc {p.returncode}): {p.stderr[-300:]}")
+        return json.loads(p.stdout)
     sys.path.insert(0, str(ROOT / "tests"))
     from faultlab import _integrity as I, test_integrity as T
     return I.check(ROOT, T.LIVE)
@@ -394,8 +442,12 @@ class Spec:
 
 class Preflight:
     def __init__(self, host, decisions_path: Optional[str] = None,
-                 integrity: Callable[[], List[str]] = default_integrity, clock=None):
-        self.host, self.decisions_path, self.integrity = host, decisions_path, integrity
+                 integrity: Callable[[], List[str]] = default_integrity, clock=None, stage: str = "full",
+                 manifest_verifier: Callable[[Path], List[str]] = default_manifest_verifier):
+        if stage not in STAGES:
+            raise ValueError(f"stage must be one of {STAGES}")
+        self.host, self.decisions_path, self.integrity, self.stage = host, decisions_path, integrity, stage
+        self.manifest_verifier = manifest_verifier
         self.clock = clock or (lambda: datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
         self.checks: List[Check] = []
         self.approved: Dict[str, Tuple[bool, str]] = {d: (False, "no decisions record") for d in DECISIONS}
@@ -487,7 +539,8 @@ class Preflight:
                     return ok(obs, consumed)
                 return Result("BLOCKED", obs, f"Not approved: {reason}. {consumed}",
                               f"Owner decision on {d} ({title}); record it in the committed decisions record")
-            self.add(Spec(f"APPR-{d}", title, "approval", req, prov), fn)
+            self.add(Spec(f"APPR-{d}", title, "approval", req, prov,
+                          mandatory=self.stage == "full" or d not in FULL_ONLY), fn)
 
     # -- environment
     def environment_checks(self):
@@ -560,14 +613,18 @@ class Preflight:
         def privilege():
             e = h.euid()
             if e == 0:
-                return ok(0)
+                su = h.sudo_uid()
+                return ok({"euid": 0, "sudo_uid": su}) if su == str(C.LAB_UID) else \
+                    bad({"euid": 0, "sudo_uid": su}, f"root, but not through sudo from uid {C.LAB_UID}",
+                        f"run as: sudo .venv/bin/python experiments/faultlab/preflight.py ... from uid {C.LAB_UID}")
             return unverified(e, "The future run needs root for netns/veth, lab cgroup, tc in lab netns and the "
                               "M3B loader (draft §5.1 Privileges). The preflight never invokes sudo, so whether "
                               "those privileges will be available cannot be established, and BPF state "
                               "(LAB-NO-SENTINEL-BPF) cannot be read.",
                               "At Gate 2 (separately authorised) re-run the preflight with the approved privileges")
         self.add(Spec("ENV-PRIVILEGE", "Privileges required by the future run", "environment",
-                      "effective uid 0 for the authorised run", "draft §5.1 Privileges; scripts/r2c_cpu.py Host"),
+                      f"effective uid 0 through sudo from uid {C.LAB_UID}",
+                      "draft §5.1 Privileges; scripts/r2c_cpu.py Host; scripts/r2e_validate.sh (sudo from uid 1000)"),
                  privilege)
 
     # -- lab prerequisites (read-only inspection only)
@@ -905,6 +962,35 @@ class Preflight:
                       "git merge-base --is-ancestor <approved commit> HEAD", "draft §9 preflight item 1",
                       ("FZ-M4-BASELINE",)), baseline)
 
+    def baseline_checks(self):
+        h = self.host
+
+        def baseline():
+            snap = h.snapshot()
+            net = {k: snap.get(k) is not None for k in ("links", "addrs", "routes4", "routes6", "qdiscs")}
+            obs = {"network_captured": net, "bpf_captured": bool(snap.get("bpf_available")),
+                   "cgroup_dirs": len(snap.get("cgroup_dirs") or [])}
+            if not all(net.values()):
+                return unverified(obs, "network state not fully captured", "re-run on the lab host")
+            if not snap.get("bpf_available"):
+                return unverified(obs, "BPF programs, links and maps not readable (needs root)",
+                                  "Gate 2: re-run through sudo from uid 1000")
+            return ok(obs)
+        self.add(Spec("LAB-HOST-BASELINE", "Host-state baseline capturable (incl. BPF)", "lab",
+                      "R2-C host_snapshot with network state and BPF inventory captured",
+                      "scripts/r2c_cpu.py host_snapshot/compare_host; register FZ-EXCLUSIONS"), baseline)
+
+        def verifier():
+            probe = Path("/nonexistent/sentinelai-preflight-manifest-probe")
+            problems = self.manifest_verifier(probe)
+            if not isinstance(problems, list) or not problems:
+                return bad(problems, "the manifest verifier accepted a run directory that does not exist",
+                           "fix the manifest verifier")
+            return ok(problems[:3])
+        self.add(Spec("INT-MANIFEST-VERIFIER", "Manifest verifier present and fail-closed", "integrity",
+                      "rehearsal.verify_manifest importable; it reports problems for a missing run (read-only probe)",
+                      "experiments/faultlab/rehearsal.py verify_manifest; register FZ-MANIFEST"), verifier)
+
     # -- report
     def run(self) -> dict:
         self.checks = []
@@ -915,6 +1001,7 @@ class Preflight:
         self.resource_checks()
         self.staging_checks()
         self.integrity_checks()
+        self.baseline_checks()
         try:
             snap = self.host.snapshot()
             observed = {"digest_sha256": hashlib.sha256(json.dumps({k: v for k, v in snap.items() if k != "dynamic"},
@@ -926,11 +1013,11 @@ class Preflight:
                         "cgroup_dirs": len(snap.get("cgroup_dirs") or [])}
         except Exception as exc:   # noqa: BLE001  (recorded state is informational; failure is reported, not hidden)
             observed = {"error": f"{type(exc).__name__}: {exc}"}
-        return report(self.checks, self.clock(), observed)
+        return report(self.checks, self.clock(), observed, self.stage)
 
 
-def expected_ids() -> List[str]:
-    ids = ["PROV-DECISIONS-RECORD"] + [f"APPR-{d}" for d in DECISIONS]
+def expected_ids(stage: str = "full") -> List[str]:
+    ids = ["PROV-DECISIONS-RECORD"] + [f"APPR-{d}" for d in DECISIONS if stage == "full" or d not in FULL_ONLY]
     ids += ["ENV-KERNEL", "ENV-KERNEL-TOOLING", "ENV-BTF", "ENV-CGROUP2"] + [t for t, _ in TOOLS + PATH_TOOLS]
     ids += ["ENV-PRIVILEGE", "LAB-NETNS-SUPPORT", "LAB-VETH-AVAILABLE", "LAB-NETEM-AVAILABLE", "LAB-ROOT-SUBTREE",
             "LAB-ROOT-CPUSET", "LAB-CPUS-ONLINE", "LAB-CPU18-NO-SMT", "LAB-NIC-IRQ", "LAB-PROTECTED-IFACES",
@@ -938,11 +1025,11 @@ def expected_ids() -> List[str]:
             "LAB-NO-SENTINEL-CGROUP", "LAB-NO-LAB-PROCESS", "LAB-RUN-DIR-ABSENT", "LAB-NO-SENTINEL-BPF",
             "LAB-LAB-UID", "LAB-OPENVPN-DISABLED", "RES-MEM-AVAILABLE", "RES-DISK-REPO", "STG-EXISTS",
             "STG-PERSISTENT", "STG-PERMISSIONS", "STG-FREE-SPACE", "INT-REPO-CLEAN", "INT-INTEGRITY-POLICY",
-            "INT-M4-BASELINE"]
+            "INT-M4-BASELINE", "LAB-HOST-BASELINE", "INT-MANIFEST-VERIFIER"]
     return ids
 
 
-MANDATORY_IDS = frozenset(expected_ids())
+MANDATORY_IDS = frozenset(expected_ids("full"))
 
 # Host-state invariants of the future run (documentation of what must be captured and compared; nothing here is
 # collected by the preflight except the 'preflight' category, which is observed now and guarantees nothing later).
@@ -964,17 +1051,18 @@ INVARIANTS = {
 }
 
 
-def report(checks: List[Check], generated: str, observed: dict) -> dict:
+def report(checks: List[Check], generated: str, observed: dict, stage: str = "full") -> dict:
+    mandatory_ids = frozenset(expected_ids(stage))
     ids = [c.id for c in checks]
     problems = []
     dup = sorted({i for i in ids if ids.count(i) > 1})
-    missing = sorted(MANDATORY_IDS - set(ids))
+    missing = sorted(mandatory_ids - set(ids))
     if dup or missing:
         problems.append(f"duplicated {dup}, missing {missing}")
     for c in checks:
         if c.status not in STATUSES:
             problems.append(f"{c.id}: invalid status {c.status!r}")
-        if c.id in MANDATORY_IDS and not c.mandatory:
+        if c.id in mandatory_ids and not c.mandatory:
             problems.append(f"{c.id}: mandatory check marked optional")
     if problems:
         checks = checks + [Check("PF-COMPLETENESS", "Every mandatory check present exactly once", "integrity", True,
@@ -991,7 +1079,7 @@ def report(checks: List[Check], generated: str, observed: dict) -> dict:
                   and c.status in ("FAIL", "UNVERIFIED"))
     counts = {s: sum(1 for c in mand if c.status == s) for s in STATUSES}
     return {
-        "format": FORMAT, "generated_utc": generated,
+        "format": FORMAT, "generated_utc": generated, "stage": stage,
         "overall": "READY" if ready else "NOT_READY",
         "authorises_run": False,
         "note": "READY is not authorisation: the privileged pilot needs a separate owner authorisation (Gate 2).",
@@ -1008,9 +1096,11 @@ def report(checks: List[Check], generated: str, observed: dict) -> dict:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--decisions", help="committed Freeze-1 decisions record (repository file)")
+    ap.add_argument("--stage", choices=STAGES, default="full",
+                    help="ctrl: lab lifecycle and CTRL runs only; full: every pilot class (default)")
     ap.add_argument("--summary", action="store_true", help="one line per check on stderr")
     a = ap.parse_args(argv)
-    rep = Preflight(ReadOnlyHost(), a.decisions).run()
+    rep = Preflight(ReadOnlyHost(), a.decisions, stage=a.stage).run()
     sys.stdout.write(json.dumps(rep, indent=1, sort_keys=True, default=str) + "\n")
     if a.summary:
         for c in rep["checks"]:
