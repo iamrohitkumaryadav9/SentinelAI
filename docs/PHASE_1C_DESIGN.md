@@ -7,6 +7,7 @@
 | Normative companion | [EVIDENCE_CONTRACT.md](EVIDENCE_CONTRACT.md) v0.1.0-draft |
 | Supersedes | The Phase 1C plan implied in `PHASE_1B_EVALUATION.md` (an LLM-centred design) |
 | Motivation | [PHASE_1B_CONFIRMATORY_EVALUATION.md](PHASE_1B_CONFIRMATORY_EVALUATION.md): no local LLM was adequate as the root-cause classifier |
+| Revisions | §13 (2026-10-10): gate decision and M4/M5 deviations, detailed in [PHASE_1C_M4_M5_PILOT_DESIGN.md](PHASE_1C_M4_M5_PILOT_DESIGN.md). Sections 1–12 are kept as originally written |
 
 ---
 
@@ -464,3 +465,65 @@ Each milestone is its own commit:
 - **M6:** matrix generation (splits fixed) and collection.
 - **M7:** calibration, then ML training (train only), then artefact lock.
 - **M8:** test evaluation and `PHASE_1C_EVALUATION.md`.
+
+## 13. Revision record
+
+### 2026-10-10 — gate decision and M4/M5 re-baseline (decided by Rohit Kumar)
+
+Sections 1–12 above are unchanged and keep their original rationale. Where this record differs from them, this
+record applies. Details, sources and the pilot protocol are in
+[PHASE_1C_M4_M5_PILOT_DESIGN.md](PHASE_1C_M4_M5_PILOT_DESIGN.md), which is a **draft for review**: recording these
+decisions does not approve that document, authorise M4, the pilot or the matrix, or establish that any gate has
+passed.
+
+**Decided:**
+
+1. **Gates.** §7.5 is the exit criterion set for the deterministic Phase 1C engine. The historical 48-scenario
+   benchmark (≥ 70 % correct, correct abstention; `experiments/llm_benchmark/confirm/`) is kept as a prospective
+   **entry gate for any future LLM-in-the-loop diagnostic role**. The two evaluate different systems (an LLM
+   diagnostician on simulated tool outputs versus the rule engine on FaultLab telemetry) and neither substitutes for
+   the other. Neither has passed: the benchmark failed in Phase 1B, and the FaultLab-level §7.5 gates have no data yet.
+2. **Lab (amends §3 "Access", §6.1, §6.3, §9 "Network"/"Cleanup").** FaultLab uses an A–R–B topology of three network
+   namespaces and a dedicated lab cgroup, with no Docker operations that mutate protected host state (`docker0`, root
+   cgroup controllers).
+3. **Collector configuration (amends §3 "Privileged eBPF").** The primary matrix configuration is M3A + M3B. An
+   M3A-only ablation is reported separately and never pooled, calibrated on or used for a gate.
+4. **Softirq (amends §6.3, §6.4 OV-11, §6.7, §10 PI-4).** A softirq feasibility waiver is pre-registered from the R2-E
+   NOT FEASIBLE finding and the PROC-only registered softirq feature, instead of from a pilot run. `softirq_overload`
+   remains in the contract and **unvalidated**. Its effect on G-Q1 is an open decision (U-1 in the pilot design);
+   until it is decided, G-Q1 as written in §7.5 cannot be gate-valid without softirq test runs.
+5. **Application metrics (amends §6.1).** An `app.*` collector and an instrumented workload are in M4 scope.
+   Application-metric gates (G-Q2 for `application_bottleneck`, the FaultLab half of ADV-8b, the impact gate) remain
+   unevaluable until the measurements exist. G-R3's FaultLab half (OV-9 with app metrics disabled, OV-10) needs the
+   workload, not the collector.
+6. **PI-3.** An offline re-analysis of committed R2-D evidence is permitted; its result is recorded in the pilot design
+   (PARTIAL: two quota levels only).
+7. **Pilot isolation (amends §10).** M2 is not run on pilot snapshots; pilot data never enters the train or test
+   splits.
+8. **Scope.** The historical roadmap's Phase 3 (LLM diagnosis agent) and Phase 4 (mitigation/verification loop) are
+   outside Phase 1C. No Phase 2B–2F milestone exists.
+
+**Not decided (pending):** G-Q1 outcome set (U-1); whether §10's "its gate is waived in advance" covers
+`softirq_overload`'s G-Q2 (U-1b); the run populations of G-Q1 and G-Q4 (U-7); the pilot's role for `W`, `B`,
+`N_BASE_MIN`, `COV_MIN`, `SEG_MIN` (U-2; contract §6 assigns them to the pilot, §10 says the pilot fits nothing);
+`T_TRANS` (U-3); raw-data storage (U-6); the proposals Q-1 … Q-10 in the pilot design. Until U-1, U-1b and U-7 are
+decided and recorded here, §7.5 stands as written.
+
+**Found during review (not a decision):** the unit tests in `tests/rules/test_adversarial.py` number ADV-1…ADV-10
+differently from §7.3, so G-R2's traceability is unconfirmed (U-8 in the pilot design). §9's "2 GiB (existing floor)"
+has no source in the repository; `scripts/safety_check.sh` has used 4 GiB since `1198040` (Q-6).
+
+### 2026-10-11 — G-R2 unit-level interpretations (decided by Rohit Kumar on 2026-10-10)
+
+These clarify how existing §7.3 rows are evidenced. They change no gate, threshold, contract clause or engine rule,
+and were recorded before any G-R2 verdict.
+
+- **D-1 (ADV-7).** The NEGATIVE MP.R1 item is the registered "NEGATIVE item" for high memory usage without pressure.
+  No separate contradictory clause is added. When the OOM observation is unmeasured, MP.R1 remains MISSING: absence of
+  observation is not evidence of no pressure (contract §3 E1).
+- **D-1b (ADV-7).** The POSITIVE `ABS[mem.util.target]` supporting item (contract §8.6, Supporting) is accepted and
+  asserted explicitly; with MP.R1 FALSE the `memory_pressure` candidate remains NOT_SUPPORTED and the decision is
+  `INSUFFICIENT_EVIDENCE`.
+- **D-2 (ADV-10).** Reason codes follow the order in `docs/PHASE_1C_M2_REPORT.md` §7, as implemented: with impact high
+  and every evidence family missing, the reason is `REQUIRED_EVIDENCE_MISSING` when the snapshot data-quality gate
+  passes and `DATA_QUALITY` when it fails.

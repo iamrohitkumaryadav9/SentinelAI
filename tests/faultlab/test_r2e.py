@@ -1641,9 +1641,13 @@ class TestStaticAndIntegrity(unittest.TestCase):
                               or re.fullmatch(r"tests/runtime/[a-z_]+\.py", p) is not None
                               or re.fullmatch(r"docs/PHASE_2A_[A-Z0-9_]+\.md", p) is not None
                               or p.startswith("results/phase2a_live/"))
+            # the authorised Phase 1C M4/M5 design revision and G-R2 evidence add exactly these paths; nothing
+            # else is accepted
+            p1c = lambda p: p in ("docs/PHASE_1C_DESIGN.md", "docs/PHASE_1C_M4_M5_PILOT_DESIGN.md",
+                                  "tests/rules/test_design_adv.py", "docs/PHASE_1C_G_R2_EVIDENCE.md")
             changed = git("diff", "--name-only", base, "HEAD").stdout.split()
             others = sorted(p for p in changed if p not in E.TOOLING)
-            self.assertTrue(others and all(closeout(p) or r2f(p) or p2a6(p) for p in others), others)
+            self.assertTrue(others and all(closeout(p) or r2f(p) or p2a6(p) or p1c(p) for p in others), others)
             self.assertFalse(res["ok"])
             self.assertEqual(res["reason"], f"changed since {base[:7]} beyond R2-E tooling: {others}")
         with tempfile.TemporaryDirectory() as t:
