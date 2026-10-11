@@ -2,8 +2,10 @@
  "format": "sentinelai.faultlab.freeze1-decisions.v0",
  "decisions": {
   "FZ-WORKLOAD": {
-   "status": "proposed",
-   "reference": "PROPOSED by the assistant, not approved. Register §3 FZ-WORKLOAD: CTRL workload contract (preregistered engineering choice, not validated)",
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §3 FZ-WORKLOAD: CTRL workload contract (preregistered engineering choice, not validated)",
    "value": {
     "rate_per_s": 100,
     "jitter": 0.5,
@@ -31,8 +33,10 @@
    "reference": "Register §3 FZ-PI5: criterion and mechanism proposed (memory.max, AMD-12/12b); UNRESOLVED: the M4 workload has no memory working set (WS_anon, WS_file, scan rate), so PI-5 cannot be run"
   },
   "FZ-PI7": {
-   "status": "proposed",
-   "reference": "PROPOSED, not approved. Register §3 FZ-PI7",
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §3 FZ-PI7",
    "value": {
     "ctrl": "every CTRL run: valid app ticks / collected ticks >= 0.99; app.latency_ms P99 measured with quality OK or PARTIAL in the run's snapshot",
     "fault": "every application-class rep: the injected mechanism's wait metric (W value) above the maximum of the same metric over the CTRL runs",
@@ -40,18 +44,26 @@
    }
   },
   "FZ-PI8": {
-   "status": "proposed",
-   "reference": "PROPOSED, not approved. Register §3 FZ-PI8; AMD-13",
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §3 FZ-PI8; AMD-13",
    "value": {
     "rule": "per class, 4 candidate magnitudes x 2 reps; I1 = lowest magnitude with effect ground truth established in 2/2 reps; I3 = highest within the frozen AMD-14 ceilings; I2 = geometric mean of I1 and I3 in injection units; I0 = a candidate below I1",
-    "i2_confirmation": {"n_I2": 2, "tie_break_direction": "toward I1", "N_att": 2},
+    "i2_confirmation": {
+     "n_I2": 2,
+     "tie_break_direction": "toward I1",
+     "N_att": 2
+    },
     "stop": "two consecutive verification failures in a class stop that class (reported as not reproducible)",
     "levels_chosen_from": "injection magnitude and ground truth only, never collector features or M2"
    }
   },
   "FZ-TTRANS": {
-   "status": "proposed",
-   "reference": "PROPOSED, not approved. Register §3 FZ-TTRANS; AMD-9. T_TRANS itself is computed after the pilot (F2)",
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §3 FZ-TTRANS; AMD-9. T_TRANS itself is computed after the pilot (F2)",
    "value": {
     "T_TRANS_rule": "AMD-9: ceil(max over evaluated classes of (R_hat_c + K_c)) s; R_hat_c = maximum read-back latency observed in the pilot runs of class c; a class without an accepted K_c contributes T_fb",
     "T_cap": 30,
@@ -59,8 +71,10 @@
    }
   },
   "FZ-DATA-QUALITY": {
-   "status": "proposed",
-   "reference": "PROPOSED, not approved. Register §3 FZ-DATA-QUALITY (U-2 = B)",
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §3 FZ-DATA-QUALITY (U-2 = B)",
    "value": {
     "U-2": "B",
     "COV_MIN": "set by M7 calibration on the train split only; the pilot records coverage and selects nothing",
@@ -69,46 +83,167 @@
    }
   },
   "FZ-CB-B": {
-   "status": "proposed",
-   "reference": "PROPOSED, not approved. Register §3 FZ-CB-B (AMD-7 withdraws c_B; b not applicable)",
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §3 FZ-CB-B (AMD-7 withdraws c_B; b not applicable)",
    "value": {
     "c_B": "withdrawn (AMD-7: B = 45 s, W = floor((90 - T_TRANS) / 3) s)",
     "b": "not applicable: the independent path-loss check against R's drops is recorded only, never gated"
    }
   },
   "FZ-STAGING": {
-   "status": "proposed",
-   "reference": "PROPOSED, not approved. Register §3 FZ-STAGING (draft §7 item 2; AMD-17 for M6)",
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §3 FZ-STAGING (draft §7 item 2; AMD-17 for M6)",
    "value": {
     "path": "/home/iiitd/sentinelai/results/phase1c_m5_pilot"
    }
   },
-  "FZ-AMD-01": {"status": "proposed", "reference": "PROPOSED for adoption, not approved. Register Appendix A AMD-1 (Stage 3H text, verbatim)"},
-  "FZ-AMD-02": {"status": "proposed", "reference": "PROPOSED for adoption. Register Appendix A AMD-2"},
-  "FZ-AMD-03": {"status": "proposed", "reference": "PROPOSED for adoption. Register Appendix A AMD-3"},
-  "FZ-AMD-04": {"status": "proposed", "reference": "PROPOSED for adoption. Register Appendix A AMD-4"},
-  "FZ-AMD-05": {"status": "proposed", "reference": "PROPOSED for adoption. Register Appendix A AMD-5"},
-  "FZ-AMD-06": {"status": "proposed", "reference": "PROPOSED for adoption. Register Appendix A AMD-6 (contract §5 text change not applied: EVIDENCE_CONTRACT.md is integrity-scoped)"},
-  "FZ-AMD-07": {"status": "proposed", "reference": "PROPOSED for adoption. Register Appendix A AMD-7"},
-  "FZ-AMD-08": {"status": "proposed", "reference": "PROPOSED for adoption. Register Appendix A AMD-8"},
-  "FZ-AMD-09": {"status": "proposed", "reference": "PROPOSED for adoption. Register Appendix A AMD-9"},
-  "FZ-AMD-10": {"status": "proposed", "reference": "PROPOSED for adoption. Register Appendix A AMD-10"},
-  "FZ-AMD-11": {"status": "proposed", "reference": "PROPOSED for adoption. Register Appendix A AMD-11"},
-  "FZ-AMD-12": {"status": "proposed", "reference": "PROPOSED for adoption. Register Appendix A AMD-12 and contingent AMD-12b"},
-  "FZ-AMD-13": {"status": "proposed", "reference": "PROPOSED for adoption. Register Appendix A AMD-13 (n_r, tau and the OV-4 level rule unresolved: OV-4 cannot run)"},
-  "FZ-AMD-14": {"status": "proposed", "reference": "PROPOSED for adoption. Register Appendix A AMD-14 (the requirement; its values: FZ-INTENSITY)"},
-  "FZ-AMD-15": {"status": "proposed", "reference": "PROPOSED for adoption. Register Appendix A AMD-15 (OV-5 thresholds unresolved: OV-5 cannot run)"},
-  "FZ-AMD-16": {"status": "proposed", "reference": "PROPOSED for adoption. Register Appendix A AMD-16"},
-  "FZ-AMD-17": {"status": "proposed", "reference": "PROPOSED for adoption. Register Appendix A AMD-17"},
-  "FZ-MANIFEST": {"status": "proposed", "reference": "PROPOSED, not approved. Register §3 FZ-MANIFEST"},
-  "FZ-ROOT-OF-TRUST": {"status": "proposed", "reference": "PROPOSED, not approved. Register §3 FZ-ROOT-OF-TRUST"},
-  "FZ-EXCLUSIONS": {"status": "proposed", "reference": "PROPOSED, not approved. Register §3 FZ-EXCLUSIONS"},
-  "FZ-R2CD-ENV": {"status": "proposed", "reference": "PROPOSED, not approved. Register §3 FZ-R2CD-ENV"},
-  "FZ-LAB-SPEC": {"status": "proposed", "reference": "PROPOSED, not approved. Register §3 FZ-LAB-SPEC"},
-  "FZ-SAFETY-CHECKLIST": {"status": "proposed", "reference": "PROPOSED, not approved. Register §3 FZ-SAFETY-CHECKLIST"},
+  "FZ-AMD-01": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-1 (Stage 3H text, verbatim)"
+  },
+  "FZ-AMD-02": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-2"
+  },
+  "FZ-AMD-03": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-3"
+  },
+  "FZ-AMD-04": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-4"
+  },
+  "FZ-AMD-05": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-5"
+  },
+  "FZ-AMD-06": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-6 (contract §5 text change not applied: EVIDENCE_CONTRACT.md is integrity-scoped)"
+  },
+  "FZ-AMD-07": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-7"
+  },
+  "FZ-AMD-08": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-8"
+  },
+  "FZ-AMD-09": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-9"
+  },
+  "FZ-AMD-10": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-10"
+  },
+  "FZ-AMD-11": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-11"
+  },
+  "FZ-AMD-12": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-12 and contingent AMD-12b"
+  },
+  "FZ-AMD-13": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-13 (n_r, tau and the OV-4 level rule unresolved: OV-4 cannot run)"
+  },
+  "FZ-AMD-14": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-14 (the requirement; its values: FZ-INTENSITY)"
+  },
+  "FZ-AMD-15": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-15 (OV-5 thresholds unresolved: OV-5 cannot run)"
+  },
+  "FZ-AMD-16": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-16"
+  },
+  "FZ-AMD-17": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-17"
+  },
+  "FZ-MANIFEST": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §3 FZ-MANIFEST"
+  },
+  "FZ-ROOT-OF-TRUST": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §3 FZ-ROOT-OF-TRUST"
+  },
+  "FZ-EXCLUSIONS": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §3 FZ-EXCLUSIONS"
+  },
+  "FZ-R2CD-ENV": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §3 FZ-R2CD-ENV"
+  },
+  "FZ-LAB-SPEC": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §3 FZ-LAB-SPEC"
+  },
+  "FZ-SAFETY-CHECKLIST": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §3 FZ-SAFETY-CHECKLIST"
+  },
   "FZ-M4-BASELINE": {
-   "status": "proposed",
-   "reference": "PROPOSED, not approved. Register §3 FZ-M4-BASELINE",
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-11",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §3 FZ-M4-BASELINE",
    "value": {
     "commit": "8cff3b8f6bf85ba9fcd6d416eda45c20b87e75e4"
    }
