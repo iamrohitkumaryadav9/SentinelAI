@@ -1,8 +1,10 @@
 # Phase 1C Freeze-1 Decision Register
 
-**Status: PROPOSED / PENDING OWNER APPROVAL.** Nothing in this register is approved or frozen. Every value is either
-registered in a committed document (cited) or a proposal awaiting a decision by Rohit Kumar. Approval is recorded
-only in [`PHASE_1C_FREEZE1_DECISIONS.json`](PHASE_1C_FREEZE1_DECISIONS.json) (§3). Revision 1 (Gate 1.1, at `8cff3b8`)
+**Status: PARTLY APPROVED.** Rohit Kumar approved 31 of the 33 Freeze-1 decisions on 2026-10-11 (commit `4b6041c`).
+`FZ-INTENSITY` and `FZ-PI5` remain **pending** (§4). Approval is recorded only in
+[`PHASE_1C_FREEZE1_DECISIONS.json`](PHASE_1C_FREEZE1_DECISIONS.json); this register holds the rationale (§3).
+**Owner approval of a design choice is not scientific validation:** every ENG value is still unvalidated until
+pilot evidence exists. Revision 1 (Gate 1.1, at `8cff3b8`)
 is §1–§2; revision 2 (finalized proposals, 2026-10-11) is §3–§4 and Appendix A.
 
 - No privileged pilot step may run until the decisions it needs are approved and the privileged preflight passes.
@@ -49,13 +51,12 @@ Status tags: **REG** registered in a committed document; **DEC** owner decision 
 8. **Rehearsal scope.** The rehearsal's target cgroup is the user session, not the lab cgroup; its evidence proves the
    pipeline only, not lab measurements.
 
-## 3. Finalized proposals (revision 2, 2026-10-11) — PROPOSED, NOT APPROVED
+## 3. Finalized proposals (revision 2, 2026-10-11) — approval state in the decisions record
 
-Revision 2 turns the §1 items into concrete proposals. It was prepared under the owner's execution request of
-2026-10-11. **The assistant cannot approve them.** Each needs Rohit Kumar's explicit approval, recorded in
-[`PHASE_1C_FREEZE1_DECISIONS.json`](PHASE_1C_FREEZE1_DECISIONS.json) as `"status": "approved"` with
-`"approved_by": "Rohit Kumar"`, a date and a reference. Until then the preflight (`experiments/faultlab/preflight.py
---decisions docs/PHASE_1C_FREEZE1_DECISIONS.json`) reports `NOT_READY`.
+Revision 2 turns the §1 items into concrete proposals, prepared under the owner's execution request of
+2026-10-11. Rohit Kumar recorded approval of 31 of them in
+[`PHASE_1C_FREEZE1_DECISIONS.json`](PHASE_1C_FREEZE1_DECISIONS.json) and committed it himself (`4b6041c`). Each approved
+entry has `"status": "approved"`, `"approved_by": "Rohit Kumar"`, a date and a reference.
 
 **Basis labels:**
 - **REG:** a registered requirement.
@@ -125,7 +126,7 @@ Revision 2 turns the §1 items into concrete proposals. It was prepared under th
 used 0.0177 and 0.0181 core at 1 Hz (two runs). That is close to PI-6's registered 0.02-core budget before M3B is
 added. PI-6 may fail. If it does, the result is reported and the budget is not changed.
 
-**Resolution of the §2 discrepancies (proposed):**
+**Resolution of the §2 discrepancies (revision 2; approval state in §4):**
 1. Use 4 GiB.
 2. Use `memory.max` (AMD-12).
 3. A–R–B namespaces (decision 2); Docker text superseded.
@@ -137,13 +138,24 @@ added. PI-6 may fail. If it does, the result is reported and the budget is not c
 
 ## 4. Approval boundary and execution blockers
 
-- **Nothing above is approved.** Approval is recorded by Rohit Kumar in `PHASE_1C_FREEZE1_DECISIONS.json`.
+- **Approved by Rohit Kumar on 2026-10-11 (31; commit `4b6041c`):**
+  - `FZ-WORKLOAD`, `FZ-PI7`, `FZ-PI8`, `FZ-TTRANS`, `FZ-DATA-QUALITY`, `FZ-CB-B`, `FZ-STAGING`;
+  - `FZ-AMD-01` … `FZ-AMD-17`;
+  - `FZ-MANIFEST`, `FZ-ROOT-OF-TRUST`, `FZ-EXCLUSIONS`, `FZ-R2CD-ENV`, `FZ-LAB-SPEC`, `FZ-SAFETY-CHECKLIST`,
+    `FZ-M4-BASELINE`.
+- **Pending (2):**
+  - `FZ-INTENSITY`: the ceilings without evidence are unresolved.
+  - `FZ-PI5`: the workload has no memory working set, so **PI-5 execution is not authorised**.
+- Approving AMD-13 and AMD-15 adopts their text only. n_r, τ, the OV-4 level rule and the OV-5 thresholds stay
+  unresolved, so OV-4 and OV-5 cannot run.
+- Approval is not validation. The workload, T_cap/T_fb and the other ENG values remain preregistered choices until
+  pilot evidence exists. PI-6's budget risk (§3) is unchanged.
 - **Unresolved; the affected classes cannot run:** application, congestion and memory ceilings; the workload memory
   working set (PI-5); OV-4 (n_r, τ, level rule); OV-5 thresholds.
 - **Gate 2 privileged steps need root.** `sudo` requires a password, so this session cannot run them. As in R2, the
   owner runs them with `sudo`.
 
-## Appendix A. AMD-1 … AMD-17 (Stage 3H text, verbatim, proposed for adoption)
+## Appendix A. AMD-1 … AMD-17 (Stage 3H text, verbatim; adopted by the owner's approval of `FZ-AMD-01` … `FZ-AMD-17`, `4b6041c`)
 
 Source: the Stage 3H design-amendment report of 2026-10-11, reproduced without change. Status in that report:
 "PROPOSED, not approved".
