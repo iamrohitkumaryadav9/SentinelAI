@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Project | SentinelAI. Owner and author: Rohit Kumar |
-| Status | **G-R2: PASS (unit-level gate only)**, decided by Rohit Kumar on 2026-10-11 (§6). This verdict covers only the registered unit-level adversarial gate; it does not mean Phase 1C or FaultLab is complete. §3 and §4 are fresh runs (2026-10-11) in an isolated scratch clone of `0152b9b`. §3a is the primary-repository run (2026-10-11) of the approved, uncommitted integration. §3b is the primary-repository run on commit `f11a1f4` (local, not pushed). §3c is the primary-repository run with the three literal-fixture tests added, before they were committed |
+| Status | **G-R2: PASS (unit-level gate only)**, decided by Rohit Kumar on 2026-10-11 (§6). This verdict covers only the registered unit-level adversarial gate; it does not mean Phase 1C or FaultLab is complete. §3 and §4 are fresh runs (2026-10-11) in an isolated scratch clone of `0152b9b`. §3a is the primary-repository run (2026-10-11) of the approved, uncommitted integration. §3b is the primary-repository run on commit `f11a1f4` (local, not pushed). §3c is the primary-repository run with the three literal-fixture tests added, before they were committed. §3d is the primary-repository run on commit `9c44c54` (local, not pushed); the §3d update itself is not yet committed |
 | Provenance | A first version of this record and its tests (2026-10-10) was lost when the host rebooted and `/tmp` was cleared. This record and `tests/rules/test_design_adv.py` were rebuilt and re-run; they are new artifacts, not byte-identical copies of the lost files |
 | Gate | G-R2 (PHASE_1C_DESIGN.md §7.5): "**All** adversarial tests ADV-1 … ADV-10 pass (unit level)". Critical: any failure fails Phase 1C |
 | Registered requirements | The 12 rows of PHASE_1C_DESIGN.md §7.3 (ADV-1 … ADV-10, plus ADV-3b and ADV-8b), unit level ("U": hand-built `EvidenceSnapshot` fixtures in `tests/rules/`) |
@@ -139,6 +139,29 @@ Per package: collectors 111 OK; ebpf 114 OK; evidence 228 OK; rules 112 OK; faul
    failures**; the same by-design condition as §3a item 3. It passed on the clean committed state in §3b; whether it
    passes after these changes are committed has not been verified.
 
+## 3d. Primary-repository results on commit `9c44c54` (2026-10-11, local, not pushed)
+
+Commit `9c44c54944c0568ca14352859d68c9d17a723269` (parent `f11a1f4`; author and committer Rohit Kumar) contains exactly
+`docs/PHASE_1C_G_R2_EVIDENCE.md` (the version recording the G-R2 verdict, without this §3d) and
+`tests/rules/test_design_adv.py` (15 tests, including the three literal-fixture tests). Before the run,
+`git status --porcelain --untracked-files=no` was empty.
+
+| Command (from `tests/`, `PYTHONNOUSERSITE=1 ../.venv/bin/python`) | Result | Exit |
+|---|---|---|
+| Documented regression (README "Usage", `tests/test_phase1a.py` excluded) | **1,043 run: 1,041 passed, 2 failed, 0 errors; not green** | 1 |
+
+Per package: collectors 111 OK; ebpf 114 OK; evidence 228 OK; rules 112 OK (including the 15 design-ID tests);
+faultlab 325 with 2 failures; runtime 153 OK. Failures, compared individually with §3c:
+
+1. `faultlab.test_r2c.TestDryRun.test_dry_run_mutates_nothing` (`test_r2c.py:1155`): False checks
+   `preflight.checks.root_subtree_control`, `preflight.ok`, `structural_ok`, `zero_mutation.bpf_compared`;
+   `zero_mutation.ok` True with no failed items. **Same as §3c item 1 and the known environmental failure.**
+2. `faultlab.test_r2d.TestMatrixAndStatic.test_dry_run_mutates_nothing` (`test_r2d.py:886`): identical False checks.
+   **Same as §3c item 2 and the known environmental failure.**
+
+§3c item 3 (`test_r2c_r2d_m2_m3a_m3b_contract_unchanged`, the clean-tree requirement) **did not recur** on the
+committed state: verified by this run.
+
 ## 4. Mutation evidence (fresh run, scratch clone)
 
 Each mutant changes `src/sentinelai/diagnostic/rules/engine.py` in the clone only, and is restored with `git checkout`;
@@ -183,7 +206,7 @@ M6, M7′, M8, M9, M10) are not detected by the existing tests.
 
 - §3/§4 evidence is from a scratch clone. §3a is from the primary repository with the changes uncommitted; §3b is
   from the primary repository on commit `f11a1f4`; §3c is from the primary repository with the literal-fixture tests
-  uncommitted. No full regression has yet run on a committed state that includes the literal-fixture tests.
+  uncommitted; §3d is from the primary repository on commit `9c44c54`, which includes the literal-fixture tests.
 - Fixture fidelity: ADV-1, ADV-5 and ADV-9(a) now each have a test that builds the §7.3 fixture as written (§2,
   "literal"). The earlier tests for these rows, which set only the features the engine reads (ADV-1: softnet, socket,
   netfilter and loss-qualifying kfree sources absent rather than 0; ADV-5: only `cpu.util.cpuset`; ADV-9(a): 0.4 vs
@@ -222,10 +245,10 @@ other threshold is registered. Assessment against the §3c run (rules 112/112):
 
 Limitations of this verdict (in addition to §5):
 
-- The full documented regression is **not green**. The latest run before this record was committed (§3c) was
-  1,043 run, 1,040 passed, 3 failed, exit 1: the known R2-C and R2-D dry-run failures, and the clean-tree integrity
-  test triggered by the then-uncommitted evidence and test changes. None of the three is a G-R2 test. Whether the
-  clean-tree failure clears once these changes are committed must be verified by a post-commit run, not assumed.
+- The full documented regression is **not green**. Before this record was committed (§3c): 1,043 run, 1,040 passed,
+  3 failed, exit 1 (the known R2-C and R2-D dry-run failures, plus the clean-tree integrity test triggered by the
+  then-uncommitted changes). After the commit (§3d, `9c44c54`): 1,043 run, 1,041 passed, 2 failed, exit 1; the
+  clean-tree failure did not recur and the two known R2-C/R2-D dry-run failures remain. Neither is a G-R2 test.
 - The mutation evidence (§4) comes from the scratch clone, not from a primary-repository mutation run.
 - G-R2 PASS does not mean Phase 1C or FaultLab is complete. G-R3 (its FaultLab half) and G-Q1–G-Q4 remain separate,
   unevaluated gates (no M6 data); the FaultLab ("F") halves of §7.3 remain open.
