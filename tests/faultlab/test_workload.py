@@ -254,6 +254,26 @@ class TestService(unittest.TestCase):
         self.assertEqual(response(request(svc, b"garbage\r\n\r\n")), b"HTTP/1.1 400 Bad Request")
         self.assertTrue(wait_until(lambda: svc.metrics.counters["requests_failed_total"] == 1))
 
+    def test_empty_connection_is_not_a_request(self):
+        svc = W.Service(CFG)
+        client, server = socket.socketpair()
+        client.close()                                      # readiness probe: connect, send nothing, close
+        svc.submit(server)
+        self.assertEqual(response(request(svc)), b"HTTP/1.1 200 OK")   # a real request after it
+        self.assertTrue(wait_until(lambda: svc.metrics.counters["requests_completed_total"] == 1))
+        m = svc.metrics
+        self.assertEqual(m.counters["requests_failed_total"], 0)
+        self.assertEqual((sum(m.hist["latency"]), sum(m.hist["queue_wait"])), (1, 1))
+
+    def test_partial_request_still_failed(self):
+        svc = W.Service(CFG)
+        client, server = socket.socketpair()
+        client.sendall(b"GET /work HT")                     # half a request line, then end of stream
+        client.shutdown(socket.SHUT_WR)
+        svc.submit(server)
+        self.assertEqual(response(client), b"HTTP/1.1 400 Bad Request")
+        self.assertTrue(wait_until(lambda: svc.metrics.counters["requests_failed_total"] == 1))
+
     def test_queue_full_rejected_and_pool_exhausted(self):
         gate = threading.Event()
         svc = W.Service(dict(CFG, pool=1, queue=1), dependency=lambda timeout: gate.wait(5))

@@ -16,9 +16,10 @@ be a real directory (no symbolic link on the path) and be owned by the lab uid.
 
 Accounting: a request rejected because the queue is full is counted in requests_rejected_total (QUEUE_FULL); an
 admitted request is either completed (200) or failed (400 bad request, 504 dependency timeout/error, or a lost
-client); latency (admission to response) is recorded for every admitted request. POOL_EXHAUSTED counts admissions
-that found no idle worker. Python threads share one interpreter lock, so CPU work from different workers does not
-run in parallel: the service's CPU capacity is about one core.
+client); latency (admission to response) is recorded for every admitted request. A connection closed without sending
+a single byte (for example a readiness probe) is not a request: it is closed and counted nowhere. POOL_EXHAUSTED
+counts admissions that found no idle worker. Python threads share one interpreter lock, so CPU work from different
+workers does not run in parallel: the service's CPU capacity is about one core.
 """
 import argparse
 import hashlib
@@ -291,14 +292,15 @@ class Service:
                 pass
 
     @staticmethod
-    def _read_request(conn) -> bool:
+    def _read_request(conn):
+        """True: a well-formed request; False: malformed or incomplete; None: closed before sending any byte."""
         conn.settimeout(2.0)
         data = b""
         try:
             while b"\r\n\r\n" not in data:
                 chunk = conn.recv(1024)
                 if not chunk:
-                    return False
+                    return None if not data else False
                 data += chunk
                 if len(data) > REQUEST_MAX:
                     return False
@@ -308,8 +310,15 @@ class Service:
 
     def _handle(self, conn, t_admit: int) -> None:
         m, cfg = self.metrics, self.cfg
-        m.observe("queue_wait", (time.monotonic_ns() - t_admit) / 1e6)
+        t_start = time.monotonic_ns()
         ok, code, reason = self._read_request(conn), 200, "OK"
+        if ok is None:                                      # not a request: nothing to answer or count
+            try:
+                conn.close()
+            except OSError:
+                pass
+            return
+        m.observe("queue_wait", (t_start - t_admit) / 1e6)
         if not ok:
             code, reason = 400, "Bad Request"
         else:
