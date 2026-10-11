@@ -1,11 +1,11 @@
-# Phase 1C Gate 1.1 — Freeze-1 Decision Register
+# Phase 1C Freeze-1 Decision Register
 
-**Status: PROPOSED / PENDING OWNER APPROVAL.** Nothing in this register is approved or frozen. Every value here is
-either already registered in a committed document (cited) or a proposal awaiting a decision by Rohit Kumar. No value
-in this file may be used by a privileged run until it is approved and frozen in `pilot_decisions.json` (draft §6.10).
+**Status: PROPOSED / PENDING OWNER APPROVAL.** Nothing in this register is approved or frozen. Every value is either
+registered in a committed document (cited) or a proposal awaiting a decision by Rohit Kumar. Approval is recorded
+only in [`PHASE_1C_FREEZE1_DECISIONS.json`](PHASE_1C_FREEZE1_DECISIONS.json) (§3). Revision 1 (Gate 1.1, at `8cff3b8`)
+is §1–§2; revision 2 (finalized proposals, 2026-10-11) is §3–§4 and Appendix A.
 
-- Repository state inspected: `8cff3b8` (main, local), read-only.
-- The privileged lab pilot is **not authorised**.
+- No privileged pilot step may run until the decisions it needs are approved and the privileged preflight passes.
 - Draft referenced (not modified, untracked, owner-owned): [`PHASE_1C_M4_M5_PILOT_DESIGN.md`](PHASE_1C_M4_M5_PILOT_DESIGN.md)
   (SHA-256 `10e48c7b…`). Line numbers below refer to that file as inspected.
 
@@ -49,19 +49,194 @@ Status tags: **REG** registered in a committed document; **DEC** owner decision 
 8. **Rehearsal scope.** The rehearsal's target cgroup is the user session, not the lab cgroup; its evidence proves the
    pipeline only, not lab measurements.
 
-## 3. Recommendations (P — not approved)
+## 3. Finalized proposals (revision 2, 2026-10-11) — PROPOSED, NOT APPROVED
 
-- Items 1, 2, 4, 5, 6: keep OPEN; decide U-2 first (recommend **A**, with rules registered before the pilot), then set
-  `c_B`, `T_cap`, `T_fb` and the workload contract numerically; choose the AMD-9 T_TRANS form and retire `b` if so.
-- Item 3: adopt the draft quantification with `memory.max` as primary mechanism.
-- Item 7: U-6 **B** for pilot raw data (external archive under a persistent non-`/tmp` path, committed manifest);
-  revisit A for M6.
-- Items 9–10: approve the implemented manifest format and the unsigned Git + SHA-256 root of trust.
-- Item 8: write the approved AMD texts into the design before any privileged run.
+Revision 2 turns the §1 items into concrete proposals. It was prepared under the owner's execution request of
+2026-10-11. **The assistant cannot approve them.** Each needs Rohit Kumar's explicit approval, recorded in
+[`PHASE_1C_FREEZE1_DECISIONS.json`](PHASE_1C_FREEZE1_DECISIONS.json) as `"status": "approved"` with
+`"approved_by": "Rohit Kumar"`, a date and a reference. Until then the preflight (`experiments/faultlab/preflight.py
+--decisions docs/PHASE_1C_FREEZE1_DECISIONS.json`) reports `NOT_READY`.
 
-## 4. Approval boundary
+**Basis labels:**
+- **REG:** a registered requirement.
+- **MEAS:** a measured fact (evidence cited).
+- **ENG:** a new preregistered engineering choice. It is not experimentally validated.
+- **UNRES:** cannot be responsibly derived from existing evidence.
 
-This register freezes nothing. Freeze-1 requires, at minimum, owner decisions on: U-1, U-1b, U-2, U-3 (T_TRANS,
-`T_cap`, `T_fb`, `b`/`c_B`), U-6, U-7, Q-1…Q-10, AMD-1…AMD-17, items 1–3b and 9–12 above. Committing this file
-also requires an exact-path integrity amendment, because `tests/faultlab/test_r2e.py::test_candidate` accepts no
-new `docs/` path of this name.
+| Decision | Proposal | Basis and rationale |
+|---|---|---|
+| `FZ-WORKLOAD` | Covered in full in the next table. | ENG. The values follow from the measured rehearsal and the R2 quota levels, as the next table explains. |
+| `FZ-INTENSITY` | **Rule:** draft PI-8 rule plus AMD-13 I2 confirmation (n_I2 = 2, tie-break toward I1, N_att = 2).<br>**Ceilings with R2 evidence:** netem loss p ≤ 5 % (R2-B); CPU quota ≥ 0.075 core (R2-D T2); contender weight ≤ 400 (R2-C E2).<br>**UNRES:** application P′/lock-hold/dependency-delay, congestion and police rates, memory M floor, OV-4 pps, OV-5 lab cap. | REG rule, MEAS ceilings. The unresolved classes have no evidence, so those classes cannot run. Status `pending`. |
+| `FZ-PI5` | **Mechanism:** `memory.max` (design §6.3, AMD-12), with AMD-12b `memory.high` as a contingent fallback.<br>**Criterion:** PSI memory some (W) > CTRL maximum, `oom_kill` delta 0, swap ≤ 25 pages/s in every rep.<br>**UNRES:** the M4 workload has no memory working set (WS_anon, WS_file, scan rate). | REG plus the R2-C swap criterion. **PI-5 cannot run until the workload has a working set.** Status `pending`. |
+| `FZ-PI7` | **CTRL:** valid app ticks ≥ 0.99, and `app.latency_ms` P99 with quality OK/PARTIAL.<br>**Application reps:** the injected mechanism's wait metric above the CTRL maximum.<br>**On failure:** decision 5 applies. | Draft §6.8. MEAS: rehearsal app coverage 1.00 in 5/5 runs. |
+| `FZ-PI8` | Rule as `FZ-INTENSITY`. 4 candidates × 2 reps per class. Two consecutive verification failures stop a class. | Draft §6.9, AMD-13. |
+| `FZ-TTRANS` | **Rule:** AMD-9 (T_TRANS computed after the pilot from read-back latencies).<br>**T_cap = 30 s, T_fb = 15 s.** | ENG, within AMD-9's constraint T_cap ≤ 90 − 3·W_min = 87 s. T_cap = 30 keeps W = ⌊(90 − T_TRANS)/3⌋ ≥ 20 samples; above it the run stops for review. T_fb = 15 is half of T_cap for classes whose K_c is inference only (contention, memory, application). Neither is a physical guarantee (AMD-9). |
+| `FZ-DATA-QUALITY` | **U-2 = B:** COV_MIN, N_BASE_MIN and SEG_MIN are set by M7 calibration on the train split. The pilot records coverage and selects nothing. | REG: design §10 "fits nothing" and decision 7. Option B needs no new numeric rule constants, whereas option A needs a rule to round the CTRL coverage minimum. Revision 1 recommended A; this revision changes the recommendation for that reason. Contract §6's "Pilot" source column is revised accordingly. |
+| `FZ-CB-B` | **c_B:** withdrawn (AMD-7: B = 45 s, W = ⌊(90 − T_TRANS)/3⌋).<br>**b:** not applicable, because R's drop counters are recorded but not gated. | AMD-7, AMD-9. |
+| `FZ-STAGING` | **Pilot evidence:** `/home/iiitd/sentinelai/results/phase1c_m5_pilot/<UTC>/` (ext4, persistent; R2 convention).<br>**Live app-metrics transport:** `/run/sentinelai-lab/app/<run_id>/` (tmpfs, **volatile**; copied into the evidence and removed at cleanup).<br>**M6 raw data:** a persistent path outside the repository (AMD-17), decided before M6. | Draft §7 item 2; AMD-17. `/run` is tmpfs and cannot be the persistent store. |
+| `FZ-AMD-01`…`17` | Adopt the Stage 3H texts verbatim (Appendix A). | REG intent: the texts encode the owner's ten decisions of 2026-10-10/11. AMD-6's contract text is not applied to `EVIDENCE_CONTRACT.md`, which is integrity-scoped. |
+| `FZ-MANIFEST` | `manifest.json` = `{"files": {"evidence/<path>": "<sha256>"}}`; regular files only; no symlinks; every evidence file listed. Verified by `rehearsal.verify_manifest`. | MEAS (implemented, tested, rehearsal 5/5). Same format as `_integrity.py:61`. |
+| `FZ-ROOT-OF-TRUST` | An unsigned Git commit plus the committed SHA-256 manifests. | **What it guarantees:** any change to a committed file, or to evidence relative to its manifest, is detected, *given a trusted copy of the commit ID*.<br>**What it does not guarantee:** it does not authenticate who made a commit; anyone with write access can commit a new manifest; an integrity amendment can admit new paths. The commit ID must be recorded outside the repository (AMD-18 note). |
+| `FZ-EXCLUSIONS` | **Outcomes:** `verified` / `failed_injection` / `aborted`. Excluded runs are **counted, never replaced** (AMD-5, AMD-10).<br>**Host-state equivalence:** `compare_host` must-list with BPF compared, plus no lab netns or interface (R2-E additions). | REG design §6.5; MEAS: the R2 harnesses use exactly this. |
+| `FZ-R2CD-ENV` | The pilot uses the R2-F required-subset rule ({cpuset, cpu, memory, pids}). The two `test_dry_run_mutates_nothing` failures stay documented environment failures and are not exempted. The pilot needs no `hugetlb`, `rdma` or `misc`. | MEAS: root currently `cpuset cpu io memory pids` (preflight `LAB-ROOT-SUBTREE-R2C`). |
+| `FZ-LAB-SPEC` | Covered in full in the lab specification table below. | Draft §5.1, decision 2, Q-4. |
+| `FZ-SAFETY-CHECKLIST` | Draft §9 preflight list, protected-state list and abort conditions, plus the proposed additions (`oom_kill` delta, `MemAvailable` < 4 GiB during a run, any host-comparison failure). **Memory floor 4 GiB** (not design §9's stale 2 GiB). | REG/MEAS: `safety_check.sh`, R2-F. |
+| `FZ-M4-BASELINE` | `8cff3b8` (M4 rehearsal driver). | MEAS: the last M4 build commit. |
+
+**FZ-WORKLOAD values.** The CTRL workload contract below is a preregistered engineering choice (ENG), not validated.
+
+| Parameter | Value | Rationale |
+|---|---|---|
+| Arrival rate λ | 100 /s | Demand λ × `cpu_us` = 0.2 core. That is above the highest R2 quota level (0.15 core), so quota faults bite, and well below one core, so CTRL is not saturated. Not yet measured in the lab. |
+| Jitter | 0.5 | Rehearsal value; MEAS: arrivals reconciled exactly. |
+| Pool P | 4 | Rehearsal value. |
+| Pool shrink P′ | 1 | The value used for the `app_pool` fault. |
+| Queue Q | 32 | Rehearsal value. |
+| `cpu_us` | 2000 | Gives 0.2 core at λ = 100 /s (see λ). |
+| Lock hold | 0 µs | No lock contention in CTRL. |
+| Lock-wait threshold | 5 ms | Rehearsal value. |
+| Dependency delay | 2 ms | Rehearsal value. |
+| Dependency timeout | 1000 ms | Rehearsal value. |
+| Control-file poll | 0.05 s | Rehearsal value. |
+| Publish period | **0.25 s** | Measured: app coverage 1.00 at 1 Hz in 5/5 rehearsal runs. This resolves discrepancy 7 (it must be below the 1 s sample period). |
+| Client timeout | 5 s | Rehearsal value. |
+| Maximum in-flight requests | 64 | Rehearsal value. |
+| Connection model | HTTP/1.1, one request per connection, open loop | Load runs B → R → A; the workload calls its dependency A → R → B. |
+
+**FZ-LAB-SPEC values.**
+
+| Element | Value |
+|---|---|
+| Namespaces | `sentinel-lab-a`, `sentinel-lab-r`, `sentinel-lab-b` |
+| A–R link | veth `sentlab-a0` (A, 10.199.1.1/24) ↔ `sentlab-ra` (R, 10.199.1.254/24) |
+| R–B link | veth `sentlab-rb` (R, 10.199.2.254/24) ↔ `sentlab-b0` (B, 10.199.2.2/24) |
+| veth queues | single queue |
+| Routes | A: 10.199.2.0/24 via 10.199.1.254. B: 10.199.1.0/24 via 10.199.2.254. No default route anywhere. |
+| Forwarding | `net.ipv4.ip_forward=1` inside R only; the host value is unchanged |
+| Lab cgroup | `/sys/fs/cgroup/sentinel-fl/{target, contender, support}` with `cpuset cpu memory pids` |
+| CPU placement | parent CPUs 18, 19, 20, 22, 23; target 18; contender 18; support 19, 20, 22, 23; CPU 21 excluded (NIC IRQ 134) |
+| Lab memory | parent `memory.max` 2560 MiB (design §9 budget); `memory.swap.max` 0 on every leaf |
+| Process limits | `pids.max` 64 for target; 256 for support |
+| CPU quota | `cpu.max` = `max` |
+| Placement | workload in A and the target leaf; dependency peer and load generator in B and the support leaf (Q-4 option A); all lab processes run as uid 1000; driver, collectors and loader on CPUs 0–15 |
+| Ports | workload 8080; dependency 9000 |
+
+**Measured risk to record before the pilot (MEAS).** In the unprivileged rehearsal, the collector (M3A + app, no M3B)
+used 0.0177 and 0.0181 core at 1 Hz (two runs). That is close to PI-6's registered 0.02-core budget before M3B is
+added. PI-6 may fail. If it does, the result is reported and the budget is not changed.
+
+**Resolution of the §2 discrepancies (proposed):**
+1. Use 4 GiB.
+2. Use `memory.max` (AMD-12).
+3. A–R–B namespaces (decision 2); Docker text superseded.
+4. PI-7 and PI-8 as above.
+5. U-2 = B.
+6. AMD-9.
+7. Publish period 0.25 s.
+8. Rehearsal evidence is pipeline evidence only. Lab measurements come only from the privileged pilot.
+
+## 4. Approval boundary and execution blockers
+
+- **Nothing above is approved.** Approval is recorded by Rohit Kumar in `PHASE_1C_FREEZE1_DECISIONS.json`.
+- **Unresolved; the affected classes cannot run:** application, congestion and memory ceilings; the workload memory
+  working set (PI-5); OV-4 (n_r, τ, level rule); OV-5 thresholds.
+- **Gate 2 privileged steps need root.** `sudo` requires a password, so this session cannot run them. As in R2, the
+  owner runs them with `sudo`.
+
+## Appendix A. AMD-1 … AMD-17 (Stage 3H text, verbatim, proposed for adoption)
+
+Source: the Stage 3H design-amendment report of 2026-10-11, reproduced without change. Status in that report:
+"PROPOSED, not approved".
+
+**AMD-1: register the softirq waiver.** Prerequisite of AMD-2 to AMD-5.
+> "`softirq_overload` test, train, SENS and OOD runs, and OV-11, are removed from the matrix on the basis of R2-E (NOT FEASIBLE). Softirq remains in the contract and the rules, and is disclosed as not validated in FaultLab."
+
+Source: draft decision 4.
+
+**AMD-2: G-Q1′.**
+> "Run-level macro F1 ≥ 0.80 over 7 outcomes (6 evaluated fault classes + INS), test split. Valid only if each of the 7 has ≥ 10 verified test runs. A `softirq_overload` prediction counts as an error against the run's true class, and the number of such predictions is reported. The registered 8-outcome G-Q1 is reported and marked not gate-valid."
+
+**AMD-3: G-Q2′.**
+> "Recall ≥ 0.70 for each of the 6 evaluated fault classes, with the Wilson lower bound reported alongside (not a pass condition). `softirq_overload` recall: NOT EVALUABLE. It is never scored as 0 and never as passed."
+
+**AMD-4: population B′ (U-7).**
+> "G-Q1′, G-Q2′ and G-Q4 use all verified test-split runs except OV-7. OV-7, whose ground truth is an acceptable set, is scored only under §7.2 robustness. G-Q3 uses all verified INS-expected test runs (unchanged)."
+
+**AMD-5: Q-5 provisioning.**
+> "Single-fault test seeds per evaluated class: I1 4, I2 4, I3 4. CTRL test 14. Train unchanged. Seeds come from the matrix master seed and are disjoint from train and from the pilot range 900000–909999. Failed runs are excluded and counted, **never replaced**."
+
+**AMD-6: FaultLab baseline placement** (`EVIDENCE_CONTRACT.md` §5).
+> "In FaultLab, the within-run baseline is [fault_start − B, fault_start). Incident windows start at fault_start + T_TRANS. The default outside FaultLab is unchanged."
+
+The schema already permits the gap (`models.py:237, 404` **V**).
+
+**AMD-7: W and B** (contract §6 W/B row).
+> "B = 45 s (the registered baseline phase). W = ⌊(90 − T_TRANS)/3⌋ s. This replaces 'Pilot: shortest windows giving a stable baseline MAD'."
+
+`c_B` is withdrawn.
+
+**AMD-8: window rule** (design §4.3, §6.5).
+> "Three tumbling windows [fault_start + T_TRANS + jW, fault_start + T_TRANS + (j+1)W), j = 0, 1, 2. The leftover L = (90 − T_TRANS) − 3W s at the end of the fault phase is labelled but forms no window and is not scored. Every window is scored; missing data is handled only by the existing COV_MIN / PARTIAL / MISSING / DATA_QUALITY rules. CTRL runs follow the identical schedule with no injection, and their windows are labelled INS. The run-level decision is the mode over the three windows; ties go to INS (as registered)."
+
+**AMD-9: T_TRANS as a mechanism-only operational estimate.**
+> "T_TRANS covers only the **fault mechanism**: injection → read-back (R) plus kernel/mechanism response (K). It does **not** cover workload queue response or the completion of in-flight requests.
+>
+> T_TRANS = ⌈max over evaluated classes c of (R̂_c + K_c)⌉ seconds, where:
+> - **R̂_c** is the maximum read-back latency observed in pilot runs of class c (all intensities, I2 confirmation runs included), measured from the scheduled fault-start tick. **R̂_c is an observed estimate, not a physical bound**; tail events larger than R̂_c are possible. Runs whose read-back misses the first window start are excluded and counted (AMD-10).
+> - **K_c** is the mechanism response from §1.1 below. A class without an accepted K_c contributes **T_fb**.
+> - **T_cap** is a stop ceiling: if T_TRANS > T_cap, stop and request an owner decision. T_fb ≤ T_cap.
+> - **T_TRANS, T_cap and T_fb are preregistered operational values. None of them guarantees that the mechanism, or the impact, has settled.**
+>
+> Report-only sensitivity: every run-level metric is recomputed from windows 2–3 only (ties → INS) and reported beside the primary result. It never replaces it."
+
+### 1.1 Status of each K_c term
+
+| Class | K_c | Status |
+|---|---|---|
+| Throttling | ≤ one CFS period, read back from `cpu.max`; requires `cpu.max.burst` = 0 by read-back | INF from kernel semantics; value comes from read-back |
+| Contention | Sharing begins once all k workers are runnable (activation read-back) | **INF only.** There is no measured bound on scheduler latency |
+| Local / path loss | netem acts on the next packet (sub-tick) | INF from netem semantics |
+| Congestion | Queue at R fills in limit / (input rate − rate) | Depends on declared parameters (OPEN) |
+| Memory | One working-set cycle = WS_file / scan rate | Depends on the workload (OPEN); otherwise T_fb |
+| Application | Workload control-file poll period + one request | Depends on the workload (OPEN); otherwise T_fb |
+
+**AMD-10: injection timing and exclusion.**
+> "All fault and distractor actions are issued without blocking, in a fixed declared order (faults, then distractors), after tick 60 is collected and before tick 61 is sampled. The issue and read-back timestamps are recorded on one host monotonic clock. An action timestamp earlier than tick 60, an issue error, a partial injection, or a read-back after fault_start + T_TRANS ⇒ `failed_injection`: excluded, counted, no retry."
+
+The fixed issue slot follows the R2-D `WindowClock` precedent **V**.
+
+**AMD-11: per-family OV timing** (§6.4). Faults and distractors run from 60 s to 150 s, issued per AMD-10. Exceptions:
+- **OV-8 and OV-9:** collectors / app metrics are disabled for the **whole run**, from tick 0.
+- **OV-5:** generator per AMD-15.
+- **OV-7:** quota action first, then competitor.
+- **The competitor is activated at 60 s and is not pre-staged.** CTRL construction is unchanged.
+
+**AMD-12: memory (PI-5).** §6.3 is unchanged (`memory.max`).
+- **Draft PI-5 rewritten:**
+  > "Independent variable: `memory.max` at the preregistered candidate M levels. Criterion (registered): PSI memory > CTRL range without `oom_kill`, plus the draft's quantified form."
+- **The draft's effect-verification row (l.389)** reads back `memory.max`.
+- **AMD-12b (contingent fallback, approved in advance):**
+  > "If no candidate M meets PI-5, the memory class switches to `memory.high = H`, `memory.max = H + headroom`, and PI-5 is re-run once within a preregistered run budget. Memory intensity levels are frozen only after the final PI-5 verdict. Evidence under one mechanism is never cited as validating the other."
+
+**AMD-13: PI-8, OV-4 and I2.**
+> "**OV-4 is producible if,** in each of n_r reps at the preregistered OV-4 level: (a) iperf3 sender- and receiver-reported pps are within τ of the target; (b) receiver-reported loss = 0; (c) the flood processes are alive throughout [60, 150) by read-back; (d) the flood CPUs are disjoint from A's cpuset by read-back; (e) the host-safety gates hold.
+>
+> **I2 confirmation:** after I1 and I3 are frozen, I2 (the geometric mean in injection units) is run in n_I2 preregistered reps. If I2 fails injection verification, the preregistered tie-break selects the next candidate magnitude toward a declared direction, for at most N_att attempts. After that the class follows the PI-8 stop rule."
+
+**AMD-14: I3 safety ceilings** (draft l.546: "within the safety limits").
+> "Preregistered ceilings: loss p (local and path), police rate floor, congestion rate floor and limit ceiling, contention k, quota floor, memory M floor (> WS_anon) and the lab cap, application P′ / lock-hold / delay ceilings, OV-4 pps."
+
+**ρ band (INF):** no longer needed for T_TRANS under AMD-9. Retain it only if you want I1–I3 kept away from saturation for other reasons.
+
+**AMD-15: contingent removals and OV-5 (F1).**
+> "**OV-5 generator:** A `memory.max` = M, `memory.high` unset, swap 0. A fresh file is written and `fsync`ed in A's cgroup after tick 60. `mincore` residency of that file is recorded continuously at 1 Hz. The file is deleted at teardown and the absence of scratch is verified.
+>
+> **Feasibility (F1, judged after T_TRANS and W are frozen):** fill complete by fault_start + T_TRANS; residency ≥ r* at the end of every scored window; `memory.events` high = max = oom_kill deltas 0; refault, reclaim and PSI within the CTRL range (labelled non-independent); MemAvailable ≥ 4 GiB throughout.
+>
+> **Removal:** OV-5 is removed if any F1 criterion fails; OV-4 is removed if any AMD-13 OV-4 criterion fails. Removal is applied before matrix generation, and the gate counts are recomputed (§3)."
+
+**AMD-16: G-C1 observation rule.**
+> "A calibration observation is a scored window from a verified, non-SENS, non-OOD test run that has finite raw and calibrated probability vectors summing to 1 over the trained classes and one reference label in that set. Gated, DATA_QUALITY and near-empty-vector windows are included, and their counts are reported. OV-7, aborted runs and windows with no snapshot are excluded and counted. The threshold of 200 is unchanged."
+
+**AMD-17: raw data.**
+> "Raw data is staged at a persistent path outside the repository (**not `/tmp`**). It is committed to `datasets/faultlab/v1/raw/<run_id>/` only with manifest verification. Raw files are append-only, and the manifest is a superset of every earlier version. The dataset version is the manifest hash, which is also recorded outside the repository."
