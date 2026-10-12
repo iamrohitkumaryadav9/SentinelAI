@@ -125,7 +125,8 @@ class FakeSys(L.Sys):
             return f"0::{self.procs[pid]}\n" if pid in self.procs else None
         if path.endswith("/net/snmp"):
             o, i, r = self.tcp
-            return ("Tcp: RtoAlgorithm OutSegs InSegs RetransSegs\nTcp: 1 %d %d %d\n" % (o, i, r))
+            return ("Ip: Forwarding InReceives OutRequests\nIp: 2 %d %d\n" % (i, o + r) +   # packets: segs + retrans
+                    "Tcp: RtoAlgorithm OutSegs InSegs RetransSegs\nTcp: 1 %d %d %d\n" % (o, i, r))
         if path == f"{L.CG_ROOT}/cpuset.cpus.effective":
             return "0-23\n"
         if path == L.MOUNTINFO:
@@ -2306,6 +2307,76 @@ class TestFaultAwareReconciliation(unittest.TestCase):
         self.assertIn("a_out_entered_r", P.reconcile_r(old, "netem_loss_a_egress")[1])   # PI8-900116 stays failed
         summary = P.reconcile_r(self.counters(a_root=672), "netem_loss_a_egress")[0]
         self.assertEqual((summary["declared_drop_hop"], summary["allowance"]), ("a_root", {"a_root": 672, "r_root": 0}))
+
+
+class TestPacketUnitReconciliation(unittest.TestCase):
+    """PI8-900200 (0.5 % loss on A egress), W window, measured: A's IP sent 92,926 packets, its netem qdisc dropped
+    471, A's interface (and so R's ingress) carried 92,456; TCP counted 92,737 segments plus 285 retransmissions."""
+
+    def counters(self, ip_out, ra_rx, a_root, retrans=285, segs=92737, ip=True):
+        z = {"rx_packets": 0, "tx_packets": 0, "rx_dropped": 0, "tx_dropped": 0, "rx_errors": 0, "tx_errors": 0}
+        side = lambda tcp, ipc, ra, rb, qd: {"r": {L.IF_RA: dict(z, **ra), L.IF_RB: dict(z, **rb)}, "tcp": tcp,
+                                             "qdisc": {"a_root": qd, "a_ingress": 0, "r_root": 0},
+                                             **({"ip": ipc} if ip else {})}
+        start = side({"OutSegs": 0, "InSegs": 0, "RetransSegs": 0}, {"OutRequests": 0, "InReceives": 0}, {}, {}, 0)
+        end = side({"OutSegs": segs, "InSegs": 90000, "RetransSegs": retrans},
+                   {"OutRequests": ip_out, "InReceives": 90000},
+                   {"rx_packets": ra_rx, "tx_packets": 90001}, {"rx_packets": 90001, "tx_packets": ra_rx}, a_root)
+        return {"start": start, "end": end}
+
+    def test_packets_balance_where_segments_cannot(self):
+        summary, failed = P.reconcile_r(self.counters(92926, 92456, 471), "netem_loss_a_egress")
+        self.assertEqual((failed, summary["unit"]), ([], "ip_packets"))
+        failed = P.reconcile_r(self.counters(92926, 92456, 471, ip=False), "netem_loss_a_egress")[1]
+        self.assertEqual(failed, ["a_out_entered_r", "a_out_left_r"])          # 93,022 segments vs 92,927 packets
+        self.assertEqual(P.reconcile_r(self.counters(92926, 92456, 400), "netem_loss_a_egress")[1],
+                         ["a_out_entered_r", "a_out_left_r"])                   # 71 packets unexplained
+        self.assertEqual(P.reconcile_r(self.counters(92926, 92456, 471), None)[1],
+                         ["a_out_entered_r", "a_out_left_r"])                   # CTRL: no allowance
+
+    def test_ctrl_numbers_balance_exactly(self):                              # CTRL-900150, W: 92,370 vs 92,371
+        self.assertEqual(P.reconcile_r(self.counters(92370, 92371, 0, retrans=0, segs=92370), None)[1], [])
+
+    def test_ip_counters_parser(self):
+        text = "Ip: Forwarding DefaultTTL InReceives OutRequests\nIp: 2 64 90806 92371\nTcp: X\nTcp: 1\n"
+        self.assertEqual(L.ip_counters(text), {"OutRequests": 92371, "InReceives": 90806})
+        for bad in ("", None, "Ip: InReceives\nIp: x\n", "Tcp: OutSegs\nTcp: 1\n"):
+            with self.subTest(bad):
+                self.assertIsNone(L.ip_counters(bad))
+
+
+class TestClientAccountingUnderNetworkFaults(unittest.TestCase):
+    def check(self, fault, outcomes, server):
+        recs, k = [], 0
+        for o, c in outcomes.items():
+            for _ in range(c):
+                recs.append({"k": k, "outcome": o, "sent_ns": 2_000_000_000 + k,
+                             "latency_ms": 1.0 if o in ("200", "503", "504") else None})
+                k += 1
+        run = {"load": {"arrivals": k}, "fault": {"type": fault} if fault else None}
+        a = {"mono_s": 1.0, "pool_util": 0.0, "requests_completed_total": 0, "requests_rejected_total": 0,
+             "requests_failed_total": 0}
+        b = dict(a, mono_s=1e6, **dict(zip(("requests_completed_total", "requests_rejected_total",
+                                            "requests_failed_total"), server)))
+        return P.reconcile_clients(run, recs, a, b)[1]
+
+    def test_network_failures_are_accounted_not_excused(self):
+        out = {"200": 100, "504": 2, "TimeoutError": 5, "ConnectionResetError": 1}
+        for fault in sorted(P.NETWORK_FAULTS):
+            with self.subTest(fault):
+                self.assertEqual(self.check(fault, out, (100, 0, 2)), [])        # none reached the server
+                self.assertEqual(self.check(fault, out, (106, 0, 2)), [])        # 6 answered, answers lost
+                self.assertTrue(self.check(fault, out, (107, 0, 2)))             # 7 > 6 failures: unexplained
+                self.assertTrue(self.check(fault, out, (99, 0, 2)))              # client got more than served
+                self.assertTrue(self.check(fault, dict(out, malformed_response=1), (100, 0, 2)))
+
+    def test_without_a_network_fault_everything_stays_exact(self):
+        out = {"200": 100, "TimeoutError": 1}
+        for fault in (None, "cpu_quota", "cpu_contender", "app_lock"):
+            with self.subTest(fault):
+                self.assertTrue(any("without a server counterpart" in p for p in self.check(fault, out, (100, 0, 0))))
+                self.assertTrue(self.check(fault, {"200": 100}, (101, 0, 0)))
+                self.assertEqual(self.check(fault, {"200": 100, "503": 3}, (100, 3, 0)), [])
 
 
 class TestReplaceControl(unittest.TestCase):

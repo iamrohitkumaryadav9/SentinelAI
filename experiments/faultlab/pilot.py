@@ -745,10 +745,12 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
                 raise L.LabAbort(f"eBPF loader unavailable: {err}")
             evt("loader_started", pid=loader.proc.pid)
         read_snmp = lambda: L.tcp_counters(sysr.read(f"/proc/{tpids[0]}/net/snmp"))
-        state["start"] = {"app": read_app(), "r": L.r_counters(sysr), "tcp": read_snmp(), "qdisc": qdisc_drops(sysr),
-                          "mono_ns": time.monotonic_ns()}
+        read_ip = lambda: L.ip_counters(sysr.read(f"/proc/{tpids[0]}/net/snmp"))
+        state["start"] = {"app": read_app(), "r": L.r_counters(sysr), "tcp": read_snmp(), "ip": read_ip(),
+                          "qdisc": qdisc_drops(sysr), "mono_ns": time.monotonic_ns()}
         if (writer and not isinstance(state["start"]["app"], bytes)) or None in (state["start"]["r"],
                                                                                   state["start"]["tcp"],
+                                                                                  state["start"]["ip"],
                                                                                   state["start"]["qdisc"]):
             raise L.LabAbort("start counters unavailable")
         procs["loadgen"] = host.apply(("spawn", "loadgen", argv["loadgen"]),
@@ -810,9 +812,10 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
         else:                                                     # no server document: the client records decide
             R["drain"] = "not observable (metrics writer off); client records checked in client_records"
         sleep(2 * float(w["publish_s"]))                          # one more document after the last completion
-        state["end"] = {"app": read_app(), "r": L.r_counters(sysr), "tcp": read_snmp(), "qdisc": qdisc_drops(sysr),
-                        "mono_ns": time.monotonic_ns()}
+        state["end"] = {"app": read_app(), "r": L.r_counters(sysr), "tcp": read_snmp(), "ip": read_ip(),
+                        "qdisc": qdisc_drops(sysr), "mono_ns": time.monotonic_ns()}
         if (writer and not isinstance(state["end"]["app"], bytes)) or None in (state["end"]["r"], state["end"]["tcp"],
+                                                                               state["end"]["ip"],
                                                                                state["end"]["qdisc"]):
             raise L.LabAbort("end counters unavailable")
         for name in ("config.json", "dependency_config.json", "control.json"):
@@ -825,8 +828,9 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
                 write_new(ev / f"app_{k}.json", b)
         for k, g in (hook.gt.items() if hook is not None else ()):    # W-window kernel sources (ground truth)
             write_new(ev / f"gt_{k}.json", dump(g))
-        write_new(ev / "counters.json", dump({k: {"r": state[k]["r"], "tcp": state[k]["tcp"], "qdisc": state[k]["qdisc"],
-                                                  "mono_ns": state[k]["mono_ns"]} for k in ("start", "end")}))
+        write_new(ev / "counters.json", dump({k: {"r": state[k]["r"], "tcp": state[k]["tcp"], "ip": state[k]["ip"],
+                                                  "qdisc": state[k]["qdisc"], "mono_ns": state[k]["mono_ns"]}
+                                              for k in ("start", "end")}))
         write_new(ev / "client.jsonl", read_regular(client_tmp))
         R["load"] = {"arrivals": scheduled_arrivals(w, load_s, seed, arr), "duration_s": load_s, "seed": seed,
                      "process": arr["process"]}
@@ -909,15 +913,25 @@ def app_flat(data: bytes) -> dict:
     return appmod._flatten(s)
 
 
+NETWORK_FAULTS = frozenset({"netem_loss_a_egress", "police_a_ingress", "netem_loss_r_egress", "netem_rate_r"})
+NET_FAILURE = re.compile(r"[A-Za-z]*(?:Error|timeout)")          # loadgen: the OSError class name of a failure
+
+
 def reconcile_clients(run, recs, a, b):
-    """Exact client/server reconciliation over [app_start, app_end] (load wholly inside, end document drained)."""
+    """Exact client/server reconciliation over [app_start, app_end] (load wholly inside, end document drained).
+    Under a declared network fault only, a client-side network failure (an OSError class name: timeout, reset,
+    refused) is accounted for, not excused: its request either never reached the server or was answered and the
+    answer lost. So each server count must be at least the client's, and the server's total excess at most the number
+    of client network failures. Everything else stays exact; a malformed response is never accounted for."""
     problems, outcomes = [], {}
     n = run["load"]["arrivals"]
     if [r["k"] for r in recs] != list(range(n)):
         problems.append(f"client records do not cover the {n} scheduled arrivals exactly once")
     for r in recs:
         outcomes[r["outcome"]] = outcomes.get(r["outcome"], 0) + 1
-    unexplained = set(outcomes) - {"200", "503", "504", "client_saturated"}
+    network = (run.get("fault") or {}).get("type") in NETWORK_FAULTS
+    net_fail = {k: v for k, v in outcomes.items() if network and NET_FAILURE.fullmatch(k)}
+    unexplained = set(outcomes) - {"200", "503", "504", "client_saturated"} - set(net_fail)
     if unexplained:
         problems.append(f"client outcomes without a server counterpart: { {k: outcomes[k] for k in unexplained} }")
     sent = [r["sent_ns"] for r in recs if r["sent_ns"] is not None]
@@ -934,8 +948,17 @@ def reconcile_clients(run, recs, a, b):
     keys = ("requests_completed_total", "requests_rejected_total", "requests_failed_total")
     delta = {k: b[k] - a[k] for k in keys}
     expect = dict(zip(keys, (outcomes.get("200", 0), outcomes.get("503", 0), outcomes.get("504", 0))))
-    problems += [f"{k}: server delta {delta[k]:g} != client {expect[k]}" for k in keys if delta[k] != expect[k]]
-    return {"client_outcomes": dict(sorted(outcomes.items())), "server_delta": delta, "scheduled": n}, problems
+    failures = sum(net_fail.values())
+    if not network:
+        problems += [f"{k}: server delta {delta[k]:g} != client {expect[k]}" for k in keys if delta[k] != expect[k]]
+    else:
+        problems += [f"{k}: server delta {delta[k]:g} < client {expect[k]}" for k in keys if delta[k] < expect[k]]
+        excess = sum(delta[k] - expect[k] for k in keys)
+        if excess > failures:
+            problems.append(f"server answered {excess:g} requests the client did not receive, but only {failures} "
+                            f"client network failures exist")
+    return {"client_outcomes": dict(sorted(outcomes.items())), "server_delta": delta, "scheduled": n,
+            "network_fault": network, "client_network_failures": failures}, problems
 
 
 def client_records(run, recs):
@@ -965,11 +988,20 @@ def reconcile_r(counters, fault: Optional[str] = None):
     entered R on sentlab-rb and left it on sentlab-ra (packet counts include ARP, so >=); R's interfaces dropped
     nothing. A run whose recorded fault drops on that path by design (DROP_HOP) may lose segments only at that hop,
     and only as many as that hop's qdisc drop counter shows over the load; every other hop keeps the exact check, and
-    without such a fault (CTRL) no drop excuses anything. Police on A's ingress drops after R, so it needs none."""
+    without such a fault (CTRL) no drop excuses anything. Police on A's ingress drops after R, so it needs none.
+    Units: A's IP packets sent / received (Ip: OutRequests, InReceives) when recorded, the same packet units as R's
+    interface and the qdisc counters; older records have only TCP segments (OutSegs + RetransSegs, InSegs), which
+    match packets only without retransmissions (PI8-900200)."""
     s, e = counters["start"], counters["end"]
     d = lambda ifn, k: e["r"][ifn][k] - s["r"][ifn][k]
-    out_a = e["tcp"]["OutSegs"] - s["tcp"]["OutSegs"] + e["tcp"]["RetransSegs"] - s["tcp"]["RetransSegs"]
-    in_a = e["tcp"]["InSegs"] - s["tcp"]["InSegs"]
+    seg_out = e["tcp"]["OutSegs"] - s["tcp"]["OutSegs"]
+    seg_in = e["tcp"]["InSegs"] - s["tcp"]["InSegs"]
+    if s.get("ip") and e.get("ip"):
+        unit = "ip_packets"
+        out_a, in_a = (e["ip"][k] - s["ip"][k] for k in ("OutRequests", "InReceives"))
+    else:
+        unit = "tcp_segments"
+        out_a, in_a = seg_out + e["tcp"]["RetransSegs"] - s["tcp"]["RetransSegs"], seg_in
     hop = DROP_HOP.get(fault)
     qd = {k: (e.get("qdisc") or {}).get(k, 0) - (s.get("qdisc") or {}).get(k, 0)
           for k in ("a_root", "a_ingress", "r_root")}
@@ -978,11 +1010,12 @@ def reconcile_r(counters, fault: Optional[str] = None):
     c = {"a_out_entered_r": d(L.IF_RA, "rx_packets") + a_drop >= out_a,
          "a_out_left_r": d(L.IF_RB, "tx_packets") + a_drop + r_drop >= out_a,
          "a_in_entered_r": d(L.IF_RB, "rx_packets") >= in_a, "a_in_left_r": d(L.IF_RA, "tx_packets") >= in_a,
-         "traffic_present": out_a > 0 and in_a > 0}
+         "traffic_present": seg_out > 0 and seg_in > 0}
     for ifn in (L.IF_RA, L.IF_RB):
         for k in ("rx_dropped", "tx_dropped", "rx_errors", "tx_errors"):
             c[f"{ifn}_{k}_0"] = d(ifn, k) == 0
-    summary = {"a_tcp_out_incl_retrans": out_a, "a_tcp_in": in_a, "qdisc_drops": qd,
+    summary = {"unit": unit, "a_out": out_a, "a_in": in_a, "a_tcp_out_segs": seg_out, "a_tcp_in_segs": seg_in,
+               "qdisc_drops": qd,
                "declared_drop_hop": hop, "allowance": {"a_root": a_drop, "r_root": r_drop},
                "r": {ifn: {k: d(ifn, k) for k in s["r"][ifn]} for ifn in (L.IF_RA, L.IF_RB)}}
     return summary, sorted(k for k, v in c.items() if not v)

@@ -591,6 +591,19 @@ def tcp_counters(snmp_text) -> Optional[Dict[str, int]]:
         return None
 
 
+def ip_counters(snmp_text) -> Optional[Dict[str, int]]:
+    """OutRequests and InReceives from a /proc/<pid>/net/snmp text: A's IP packets sent and received, in the same
+    packet units as the interface and qdisc counters (TCP segment counters are not: retransmissions)."""
+    lines = [l.split() for l in (snmp_text or "").splitlines() if l.startswith("Ip:")]
+    if len(lines) != 2:
+        return None
+    try:
+        d = dict(zip(lines[0][1:], (int(x) for x in lines[1][1:])))
+        return {k: d[k] for k in ("OutRequests", "InReceives")}
+    except (ValueError, KeyError):
+        return None
+
+
 def verify_cgroups(sysr) -> Dict[str, bool]:
     r = lambda d, f: (sysr.read(f"{d}/{f}") or "").strip()
     c = {"parent_subtree_control": set(r(LAB_DIR, "cgroup.subtree_control").split()) == set(C.CONTROLLERS),
