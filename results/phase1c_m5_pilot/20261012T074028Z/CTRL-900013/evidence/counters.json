@@ -1,0 +1,62 @@
+{
+ "end": {
+  "mono_ns": 104552804062005,
+  "r": {
+   "sentlab-ra": {
+    "rx_bytes": 13619176,
+    "rx_dropped": 0,
+    "rx_errors": 0,
+    "rx_packets": 185998,
+    "tx_bytes": 12475404,
+    "tx_dropped": 0,
+    "tx_errors": 0,
+    "tx_packets": 169956
+   },
+   "sentlab-rb": {
+    "rx_bytes": 12475404,
+    "rx_dropped": 0,
+    "rx_errors": 0,
+    "rx_packets": 169956,
+    "tx_bytes": 13619176,
+    "tx_dropped": 0,
+    "tx_errors": 0,
+    "tx_packets": 185998
+   }
+  },
+  "tcp": {
+   "InSegs": 169938,
+   "OutSegs": 185980,
+   "RetransSegs": 0
+  }
+ },
+ "start": {
+  "mono_ns": 104382103049394,
+  "r": {
+   "sentlab-ra": {
+    "rx_bytes": 1146,
+    "rx_dropped": 0,
+    "rx_errors": 0,
+    "rx_packets": 13,
+    "tx_bytes": 1056,
+    "tx_dropped": 0,
+    "tx_errors": 0,
+    "tx_packets": 12
+   },
+   "sentlab-rb": {
+    "rx_bytes": 1056,
+    "rx_dropped": 0,
+    "rx_errors": 0,
+    "rx_packets": 12,
+    "tx_bytes": 1146,
+    "tx_dropped": 0,
+    "tx_errors": 0,
+    "tx_packets": 13
+   }
+  },
+  "tcp": {
+   "InSegs": 0,
+   "OutSegs": 0,
+   "RetransSegs": 0
+  }
+ }
+}

@@ -1,0 +1,16 @@
+{
+ "files": {
+  "evidence/app_end.json": "b810038355297b9d8d75a3baa954f575ca0460de41d4a296e74b4ef489ba4aa7",
+  "evidence/app_start.json": "edaab1716f273023114d05c0f6bc913a78e8bd0b8a62b5cc83698fe0e1344f19",
+  "evidence/client.jsonl": "2947525bdd40ef05fa3cdedadc2706bb80d4f96cbaf0fd1da665e757a333ede5",
+  "evidence/collector_stats.json": "584b3354d4ba273524ddcf81082ca2eeb5d8f820efbcd1c691c755a1a6f94bb7",
+  "evidence/config.json": "f6248fecb0f471e8ce4a42d2455cdd4bbc8117ff695291acc5777123d6ed0cf9",
+  "evidence/control.json": "1e6baba73b7a27310b775f16724e04193f0660f29fbb0c604eb3d8b8e4883632",
+  "evidence/counters.json": "8012649f05f9c365fb32c3bb2a6a1abdec58b38331b11e3fd14d92c2aefb63e8",
+  "evidence/dependency_config.json": "0c56cd96735d8d21f3edee2a1319d7e81a921bdb390bc6cfee87a9bd5bd4830a",
+  "evidence/host_after.json": "4b0c70e033dd765ce1abfec57fc0205be725f4b2a352d5a7462917e7cf8d8fc6",
+  "evidence/host_before.json": "a63932c8dad1083a1c85e580aa0abb649aa62f683fdffcc30cc7b84133110178",
+  "evidence/run.json": "a8540f2b022faba0324f8f3fd53e657de0c8108223f8f8b11520666ae49ca22c",
+  "evidence/ticks.jsonl": "df448e42f68795838161635efdbb562dbede820dcedb6c797b4e5624120a08a3"
+ }
+}

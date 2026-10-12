@@ -1,0 +1,297 @@
+{
+ "checks": {
+  "across_r_reconciliation": {
+   "a_tcp_in": 169946,
+   "a_tcp_out_incl_retrans": 186604,
+   "failed": [],
+   "ok": true,
+   "r": {
+    "sentlab-ra": {
+     "rx_bytes": 13659304,
+     "rx_dropped": 0,
+     "rx_errors": 0,
+     "rx_packets": 186610,
+     "tx_bytes": 12474876,
+     "tx_dropped": 0,
+     "tx_errors": 0,
+     "tx_packets": 169952
+    },
+    "sentlab-rb": {
+     "rx_bytes": 12474876,
+     "rx_dropped": 0,
+     "rx_errors": 0,
+     "rx_packets": 169952,
+     "tx_bytes": 13659304,
+     "tx_dropped": 0,
+     "tx_errors": 0,
+     "tx_packets": 186610
+    }
+   }
+  },
+  "app_features": {
+   "ok": true,
+   "problems": [],
+   "rows": [
+    {
+     "aggregation": "P99",
+     "coverage": 1.0,
+     "feature": "app.dependency_latency_ms",
+     "qualifier": null,
+     "quality": "OK",
+     "scope": "app:faultlab-ctrl",
+     "value": 3.2
+    },
+    {
+     "aggregation": "RATIO",
+     "coverage": 1.0,
+     "feature": "app.error_rate",
+     "qualifier": null,
+     "quality": "OK",
+     "scope": "app:faultlab-ctrl",
+     "value": 0.0
+    },
+    {
+     "aggregation": "RATE",
+     "coverage": 1.0,
+     "feature": "app.events",
+     "qualifier": "DEPENDENCY_TIMEOUT",
+     "quality": "OK",
+     "scope": "app:faultlab-ctrl",
+     "value": 0.0
+    },
+    {
+     "aggregation": "RATE",
+     "coverage": 1.0,
+     "feature": "app.events",
+     "qualifier": "LOCK_WAIT_EXCEEDED",
+     "quality": "OK",
+     "scope": "app:faultlab-ctrl",
+     "value": 0.0
+    },
+    {
+     "aggregation": "RATE",
+     "coverage": 1.0,
+     "feature": "app.events",
+     "qualifier": "POOL_EXHAUSTED",
+     "quality": "OK",
+     "scope": "app:faultlab-ctrl",
+     "value": 0.0
+    },
+    {
+     "aggregation": "RATE",
+     "coverage": 1.0,
+     "feature": "app.events",
+     "qualifier": "QUEUE_FULL",
+     "quality": "OK",
+     "scope": "app:faultlab-ctrl",
+     "value": 0.0
+    },
+    {
+     "aggregation": "P50",
+     "coverage": 1.0,
+     "feature": "app.latency_ms",
+     "qualifier": null,
+     "quality": "OK",
+     "scope": "app:faultlab-ctrl",
+     "value": 6.4
+    },
+    {
+     "aggregation": "P99",
+     "coverage": 1.0,
+     "feature": "app.latency_ms",
+     "qualifier": null,
+     "quality": "OK",
+     "scope": "app:faultlab-ctrl",
+     "value": 6.4
+    },
+    {
+     "aggregation": "P99",
+     "coverage": 1.0,
+     "feature": "app.lock_wait_ms",
+     "qualifier": null,
+     "quality": "MISSING",
+     "scope": "app:faultlab-ctrl",
+     "structurally_unavailable": "structurally unavailable: the approved CTRL workload (FZ-WORKLOAD) has lock_hold_us 0, and the workload records lock waits only while holding the lock; zero lock-wait observations confirmed in the evidence",
+     "value": null
+    },
+    {
+     "aggregation": "RATE",
+     "coverage": 1.0,
+     "feature": "app.pool_rejections",
+     "qualifier": null,
+     "quality": "OK",
+     "scope": "app:faultlab-ctrl",
+     "value": 0.0
+    },
+    {
+     "aggregation": "MEAN",
+     "coverage": 1.0,
+     "feature": "app.pool_utilization",
+     "qualifier": null,
+     "quality": "OK",
+     "scope": "app:faultlab-ctrl",
+     "value": 0.05555555555555555
+    },
+    {
+     "aggregation": "P99",
+     "coverage": 1.0,
+     "feature": "app.queue_wait_ms",
+     "qualifier": null,
+     "quality": "OK",
+     "scope": "app:faultlab-ctrl",
+     "value": 0.05
+    },
+    {
+     "aggregation": "RATE",
+     "coverage": 1.0,
+     "feature": "app.throughput",
+     "qualifier": null,
+     "quality": "OK",
+     "scope": "app:faultlab-ctrl",
+     "value": 100.00000081112375
+    }
+   ],
+   "structurally_unavailable": {
+    "applied": true,
+    "feature": "app.lock_wait_ms",
+    "lock_hold_us": {
+     "config_json": 0,
+     "run_json": 0
+    },
+    "not_applied_because": [],
+    "reason": "structurally unavailable: the approved CTRL workload (FZ-WORKLOAD) has lock_hold_us 0, and the workload records lock waits only while holding the lock; zero lock-wait observations confirmed in the evidence"
+   }
+  },
+  "bpf_released": {
+   "ok": true
+  },
+  "cleanup": {
+   "detail": {
+    "errors": [],
+    "ok": true,
+    "steps": [
+     "cgroup.kill",
+     "after_procs",
+     "unlink config.json",
+     "unlink control.json",
+     "unlink dependency_config.json",
+     "unlink metrics.json",
+     "unlink ws.bin",
+     "rmdir /run/sentinelai-lab/app/CTRL-s900010",
+     "rmdir /run/sentinelai-lab/app",
+     "rmdir /run/sentinelai-lab",
+     "rmdir /var/tmp/sentinelai-lab/CTRL-s900010",
+     "rmdir /var/tmp/sentinelai-lab",
+     "rmdir /sys/fs/cgroup/sentinel-fl/support",
+     "rmdir /sys/fs/cgroup/sentinel-fl/contender",
+     "rmdir /sys/fs/cgroup/sentinel-fl/target",
+     "rmdir /sys/fs/cgroup/sentinel-fl",
+     "netns del sentinel-lab-b",
+     "netns del sentinel-lab-r",
+     "netns del sentinel-lab-a",
+     "umount /run/netns"
+    ],
+    "verify": {
+     "checks": {
+      "lab_cgroup_absent": true,
+      "netns_dir_mounts_as_before": true,
+      "no_lab_interface_in_host": true,
+      "no_lab_netns": true,
+      "no_lab_process": true,
+      "no_logged_pid_alive_in_lab": true,
+      "no_sentinel_cgroup": true,
+      "run_lab_absent": true,
+      "ws_scratch_absent": true
+     },
+     "ok": true
+    }
+   },
+   "ok": true
+  },
+  "client_server_reconciliation": {
+   "client_outcomes": {
+    "200": 17000
+   },
+   "ok": true,
+   "problems": [],
+   "scheduled": 17000,
+   "server_delta": {
+    "requests_completed_total": 17000.0,
+    "requests_failed_total": 0.0,
+    "requests_rejected_total": 0.0
+   }
+  },
+  "host_compare": {
+   "failed": [],
+   "ok": true
+  },
+  "manifest": {
+   "ok": true,
+   "problems": []
+  },
+  "replay_byte_identical": {
+   "ok": true,
+   "sha256": "fc80aa0b4672c2f3eef99771515f14a97c09e314a1df36dd0749a784132b57d6"
+  },
+  "run_completed": {
+   "aborts": [],
+   "ok": true
+  }
+ },
+ "fault": null,
+ "format": "sentinelai.faultlab.pilot.ctrl.v1.report",
+ "note": "PI verdicts are measurements against the proposed criteria; a pipeline pass is not a scientific validation.",
+ "ok": true,
+ "pi": {
+  "PI-1": {
+   "measurements": 34,
+   "min_coverage": 1.0,
+   "mode": "driver-root",
+   "ok": true
+  },
+  "PI-6": {
+   "budget_core": 0.02,
+   "collector_cpu_core": 0.002100261829494061,
+   "features_below_coverage": [],
+   "not_collected": [
+    "app.lock_wait_ms",
+    "net.drop.netfilter",
+    "tcp.cwnd",
+    "tcp.srtt_ms",
+    "throttle.ratio"
+   ],
+   "note": "coverage over collected measurements; structurally unavailable sources listed, not scored",
+   "ok": true
+  },
+  "PI-7_ctrl": {
+   "latency_p99_measured": true,
+   "ok": true,
+   "ticks": 136,
+   "valid_app_ticks": 136
+  }
+ },
+ "pipeline_ok": true,
+ "variant": "ctrl",
+ "w_effects": {
+  "dependency_latency": {
+   "count": 9000,
+   "missing": null,
+   "p99_ms": 3.2
+  },
+  "latency": {
+   "count": 9000,
+   "missing": null,
+   "p99_ms": 6.4
+  },
+  "lock_wait": {
+   "count": 0,
+   "missing": "no requests in the window",
+   "p99_ms": null
+  },
+  "queue_wait": {
+   "count": 9000,
+   "missing": null,
+   "p99_ms": 0.05
+  }
+ }
+}

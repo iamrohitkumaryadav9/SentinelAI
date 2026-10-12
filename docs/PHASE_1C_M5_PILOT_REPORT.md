@@ -1,8 +1,12 @@
 # Phase 1C M5 pilot report
 
-Status: **in progress.** Every pilot stage that needs no pending decision is complete: PI-0, CTRL, PI-1 in both
-privilege modes, the PI-6 collectors-on/off pairs and the workload instrumentation on/off pairs. No fault class has been
-run; the fault-class stages are blocked on owner decisions (§6).
+Status: **in progress.**
+
+- **Complete:** PI-0, CTRL, PI-1 in both privilege modes, the PI-6 collectors-on/off pairs and the workload
+  instrumentation on/off pairs. All were repeated under the approved working set (§3b).
+- **Application fault class (PI-8, §3c):** dependency delay has levels. Pool shrink and lock hold produced no effect
+  under the approved workload, which needs an owner decision (§6).
+- **Not yet built or run:** the CPU, network and memory fault classes and OV-4/OV-5.
 
 What this report shows: the A–R–B lab, the collection pipeline and the CTRL-stage pilot criteria work on this host. It
 does **not** validate any fault class, and it does not support any diagnostic claim. M2 was never run on pilot data
@@ -20,6 +24,7 @@ Evidence lives in `results/phase1c_m5_pilot/<campaign>/<run>/` and is committed 
 | `20261012T030504Z` | `7f6eac7` | PI0-1…5, CTRL-900001 | PI-0 5/5 passed. CTRL-900001 **FAILED** (`app_features`, §3). |
 | `20261012T040045Z` | `af2a4e7` | PI0-1…5, CTRL-900002…900005 | PI-0 5/5 passed. CTRL 4/4 passed. |
 | `20261012T045417Z` | `29d652f` | PI0-1…5; CTRL, PI6OFF, INSTOFF at seeds 900006 and 900007; PI1U-900008, PI1U-900009 | PI-0 5/5 passed. All 8 runs passed (§3a). |
+| `20261012T074028Z` | `82ff593` | PI0-1…5; re-baseline with the FZ-WORKSET working set: CTRL-900010…900013, PI6OFF and INSTOFF at 900010 and 900011, PI1U-900014, PI1U-900015; PI8-900020…900041 (application faults) | PI-0 5/5 passed. All 10 re-baseline runs passed (§3b). All 22 fault runs passed their pipeline checks (§3c): dependency delay has levels; pool shrink and lock hold produced no effect. |
 
 Every privileged invocation ran its own privileged preflight (`preflight.json` in each run directory). Each preflight
 was READY and recorded the run's commit.
@@ -33,6 +38,7 @@ Criterion: 5/5 cycles with all lab checks passing, cleanup verified, and the hos
 | `20261012T030504Z` | 5/5 | pass | pass | verified | ok | yes |
 | `20261012T040045Z` | 5/5 | pass | pass | verified | ok | yes |
 | `20261012T045417Z` | 5/5 | pass | pass | verified | ok | yes |
+| `20261012T074028Z` | 5/5 | pass | pass | verified, working-set directory removed | ok | yes |
 
 Lab setup plus teardown (op-log span): 1.3–1.4 s per cycle.
 
@@ -114,6 +120,74 @@ Bytes the collectors wrote per run (ticks + snapshot + raw eBPF): CTRL 6.3–6.5
 - The design sets no threshold on these differences (§5.5, §6.7); they are reported, not scored. Two pairs per kind
   cannot bound a small effect.
 
+## 3b. Re-baseline with the working set (campaign `20261012T074028Z`, `82ff593`)
+
+From this campaign on, every run's workload carries the approved FZ-WORKSET working set:
+- a 1 GiB file on ext4, scanned one byte per page once per second in 10 slices;
+- a 16 MiB anonymous buffer.
+
+As approved in D4, CTRL, PI-1 and PI-6 were repeated under it. All 10 runs passed every check. In every run:
+- the working set was configured with the approved values (recorded in the workload's config echo);
+- it was removed at cleanup, with the scratch root verified absent;
+- the host comparison stayed clean.
+
+| Measurement (4 CTRL runs) | Value |
+|---|---|
+| Target memory utilisation (`mem.util.target`) | 0.069 of host memory ≈ 1.06 GiB: the file is fully resident |
+| Refault, reclaim, major-fault rates; PSI memory some/full; OOM kills | all 0: no memory pressure in CTRL, as intended |
+| Client latency p50 / p99 | 4.36–4.42 / 4.60–4.62 ms (before the working set: 4.38–4.43 / 4.58–4.62 ms) |
+| PI-1 coverage; PI-6 collector CPU | 1.0; 0.0020–0.0022 core (PI1U: 0.0016) |
+| W-window P99 (raw documents): queue wait / dependency latency / lock wait | 0.05 ms / 3.2 ms / no observations (the CTRL maxima for PI-8) |
+| Bit rate through R (byte counters, D3) | A→B ≈ 638 kbit/s, B→A ≈ 585 kbit/s, so the approved congestion/police floors (0.5×) are ≈ 319 and ≈ 292 kbit/s |
+
+Pairs (report-only):
+- **Collectors on/off:** Δp50 −0.04 to −0.01 ms, Δp99 +0.02 to +0.04 ms.
+- **Metrics writer on/off:** Δp50 −0.04 to +0.03 ms, Δp99 +0.02 to +0.03 ms.
+
+Both stay within the variation seen before the working set.
+
+## 3c. PI-8 application faults (campaign `20261012T074028Z`, `82ff593`)
+
+**Setup.**
+- 22 `pi8` runs, 2 reps per approved candidate (FZ-INTENSITY-APP): pool P′ 3, 2, 1; lock hold 500, 1,000, 2,000,
+  5,000 µs; dependency delay 4, 7, 10, 15 ms.
+- Every run passed every pipeline check, including `injection_verified`:
+  - each fault was issued right after tick 45 (run time 60 s, AMD-10);
+  - the workload's echo read it back within 10–51 ms, which is the R̂ input to the FZ-TTRANS rule.
+- All 17,000 requests were answered with 200 in every run. Cleanup, the host comparison and BPF release were ok.
+
+**Effect ground truth.** W-window P99 of the injected mechanism's wait metric, from the raw metrics documents,
+compared with the CTRL maximum of the 4 CTRL runs (FZ-PI7) or, for lock hold, with FZ-PI7-LOCK's 0.05 ms:
+
+| Fault | Candidates (weakest → strongest) | W P99 (both reps) | Bar | Ground truth 2/2 | Client p50 (ms) |
+|---|---|---|---|---|---|
+| Dependency delay | 4 / 7 / 10 / 15 ms | 6.4 / 12.8 / 12.8 / 25.6 ms | 3.2 ms | **all four** | 6.3 / 9.4 / 12.4 / 17.4 |
+| Pool shrink | P′ 3 / 2 / 1 | 0.05 ms at every level | 0.05 ms | **none** | 4.4 at every level |
+| Lock hold | 500 / 1,000 / 2,000 / 5,000 µs | 0.05 ms at every level | > 0.05 ms | **none** | 4.9 / 5.4 / 6.4 / 9.5 |
+
+`pilot.py levels` (report-only, nothing frozen):
+- **Dependency delay:** I1 = 4 ms, I3 = 15 ms, I2 = 7 ms (geometric mean 7.7, rounded toward I1). I2 is itself a
+  candidate with 2/2 reps; whether those reps count as AMD-13's I2 confirmation is for the M5 review. No candidate is
+  below I1, so I0 (SENS) has no candidate.
+- **Pool shrink and lock hold:** no level can be selected.
+
+**Why pool and lock show nothing.** The approved load is open-loop with bounded jitter (FZ-WORKLOAD: λ = 100 /s,
+jitter 0.5). Arrival k is placed at (k + U(−0.25, 0.25)) / λ, so consecutive arrivals are never closer than 5.0 ms;
+measured, the minimum gap is 5.03 ms and the median 10.0 ms.
+
+- **Pool shrink.** The pool did shrink (`pool_size` 4 → 1 in the W-end document), but a request occupies a worker
+  for about 4.4 ms. That is less than the minimum gap, so requests never overlap: 8,992 of 8,993 W-window queue waits
+  are in the first bucket.
+- **Lock hold.** Even a 5,000 µs hold ends before the next arrival, so the lock is never contended: all 8,976
+  acquisitions are in the first bucket. The hold still adds its own duration to every request's latency.
+- **The D2 arithmetic.** The ceilings were set at utilisation ≤ 0.5, computed as if arrivals were random. Under this
+  arrival process, utilisation below 1 with occupancy below the minimum gap means zero queueing. That premise was
+  wrong; this result corrects it. These rows are a property of the approved workload, not a collector or pipeline
+  failure.
+
+The FZ-PI7-LOCK rule did what it was approved for: uncontended acquisitions, about 8,990 per run, all at 0.05 ms, did
+not count as an effect.
+
 ## 4. PI verdicts so far
 
 | PI | Status | Basis |
@@ -122,8 +196,9 @@ Bytes the collectors wrote per run (ticks + snapshot + raw eBPF): CTRL 6.3–6.5
 | PI-1 | **pass in both modes.** Driver-root: coverage 1.0 in all 6 CTRL runs at `af2a4e7` and `29d652f`. Unprivileged: coverage 1.0 and netns verified in PI1U-900008 and PI1U-900009. The choice of mode (Q-2) is the owner's. | Design §6.2: 2 runs per mode |
 | PI-6 | **pass.** Collector CPU 0.0015–0.0021 core (budget 0.02) and coverage ≥ 0.99 in every collected run. 2 collectors-off pairs complete (§3a, report-only differences). | Design §6.7 |
 | Instrumentation | 2 on/off pairs complete; report-only (§3a) | Design §5.5 |
-| PI-7 | CTRL part: 136/136 valid app ticks, `app.latency_ms` P99 measured, in every run. The fault part needs FZ-INTENSITY and FZ-PI7 (§6). | FZ-PI7 `ctrl` |
-| PI-2, PI-3, PI-5, PI-8, OV-4 | not run | §6 |
+| PI-7 | CTRL part: 136/136 valid app ticks, `app.latency_ms` P99 measured, in every run. Fault part: dependency delay above the CTRL maximum in every rep; pool shrink and lock hold not (§3c). An owner decision is pending. | FZ-PI7, FZ-PI7-LOCK |
+| PI-8 (application) | Dependency delay: levels found (I1 4, I2 7, I3 15 ms; not frozen). Pool shrink and lock hold: no level under the approved workload and ceilings (§3c). | FZ-PI8 |
+| PI-2, PI-3, PI-5, PI-8 (other classes), OV-4, OV-5 | not run | §6 |
 
 ## 5. Evidence and integrity (AMD-27)
 
@@ -150,6 +225,13 @@ Re-check from a clean checkout:
     .venv/bin/python experiments/faultlab/pilot.py evaluate results/phase1c_m5_pilot/<campaign>/CTRL-<seed>
 
 ## 6. Blockers (owner decisions)
+
+- **Application pool shrink and lock hold (new, §3c).** With the approved bounded-jitter arrivals (minimum gap 5 ms)
+  and the approved ceilings, neither mechanism can produce waiting. Options:
+  - change the arrival process (an FZ-WORKLOAD amendment, then a new CTRL baseline);
+  - raise the ceilings beyond the approved utilisation rule;
+  - accept `application_bottleneck` through dependency delay only, recording pool and lock as not reproducible under
+    this design.
 
 - **FZ-INTENSITY (pending).** Ceilings for application (P′, lock hold, dependency delay), congestion, police, memory,
   OV-4 and OV-5 have no evidence, so those classes cannot run.

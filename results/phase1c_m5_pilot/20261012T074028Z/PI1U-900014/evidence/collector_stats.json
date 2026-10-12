@@ -1,0 +1,24 @@
+{
+ "cap_eff": "0000000000000000",
+ "cpu_s": 0.21564499999999998,
+ "egid": 1000,
+ "euid": 1000,
+ "gid": 1000,
+ "groups": [],
+ "max_rss_kb": 43392,
+ "max_tick_read_s": 0.0016840199969010428,
+ "netns_link": "net:[4026532762]",
+ "target_doc": {
+  "cgroup_path": "/sentinel-fl/target",
+  "cpuset": "18",
+  "ifaces": [],
+  "name": "faultlab-ctrl",
+  "netns_ref": "pid:1146897",
+  "pids": [
+   1146897
+  ]
+ },
+ "ticks": 136,
+ "uid": 1000,
+ "wall_s": 135.00258942200162
+}

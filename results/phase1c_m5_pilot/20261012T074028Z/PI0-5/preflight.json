@@ -1,0 +1,1739 @@
+{
+ "authorises_run": false,
+ "blockers": {
+  "environment": [],
+  "owner_approval": [],
+  "technical": []
+ },
+ "checks": [
+  {
+   "blocked_by": [],
+   "category": "provenance",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "PROV-DECISIONS-RECORD",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "entries": 41,
+    "path": "docs/PHASE_1C_FREEZE1_DECISIONS.json",
+    "sha256": "de063011580b08b9155ea89f1c63af6b3d77a456ca1546db7ae5d07579a06c95"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a74; design \u00a78 (Git + SHA-256 provenance)",
+   "required": "--decisions names a repository file that is tracked by Git, identical to HEAD, and valid sentinelai.faultlab.freeze1-decisions.v0 (strict)",
+   "status": "PASS",
+   "title": "Freeze-1 decisions record is committed, unmodified and well-formed"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-WORKLOAD",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register \u00a73 FZ-WORKLOAD: CTRL workload contract (preregistered engineering choice, not validated)",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 1; draft \u00a75.4",
+   "required": "status 'approved' by Rohit Kumar with date and reference and a frozen value with keys ['rate_per_s', 'jitter', 'pool', 'pool_shrink', 'queue', 'cpu_us', 'lock_hold_us', 'lock_wait_exceeded_ms', 'dependency_delay_ms', 'dependency_timeout_ms', 'poll_s', 'publish_s', 'timeout_s', 'max_inflight', 'connection_model']",
+   "status": "PASS",
+   "title": "Workload and load-generator parameters"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not approved: status is 'pending'. Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-INTENSITY",
+   "mandatory": false,
+   "next_action": "Owner decision on FZ-INTENSITY (I1-I3 levels, I3 ceilings and the selection rule); record it in the committed decisions record",
+   "observed": {
+    "date": null,
+    "reference": "Register \u00a73 FZ-INTENSITY and \u00a75: the R2-evidenced ceilings (FZ-INTENSITY-R2), the application ceilings (FZ-INTENSITY-APP), the network rule (FZ-INTENSITY-NET) and the OV-4 level (FZ-OV) are approved separately on 2026-10-12; still UNRESOLVED: memory M floor (needs the FZ-WORKSET working set) and the OV-5 lab cap and sizes",
+    "status": "pending"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 2; draft \u00a76.9",
+   "required": "status 'approved' by Rohit Kumar with date and reference and a frozen value",
+   "status": "BLOCKED",
+   "title": "I1-I3 levels, I3 ceilings and the selection rule"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not approved: status is 'pending'. Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-PI5",
+   "mandatory": false,
+   "next_action": "Owner decision on FZ-PI5 (PI-5 quantified acceptance criterion and mechanism); record it in the committed decisions record",
+   "observed": {
+    "date": null,
+    "reference": "Register \u00a73 FZ-PI5: criterion and mechanism proposed (memory.max, AMD-12/12b); UNRESOLVED: the M4 workload has no memory working set (WS_anon, WS_file, scan rate), so PI-5 cannot be run",
+    "status": "pending"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 3; design \u00a710; draft \u00a76.6",
+   "required": "status 'approved' by Rohit Kumar with date and reference and a frozen value",
+   "status": "BLOCKED",
+   "title": "PI-5 quantified acceptance criterion and mechanism"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-PI7",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register \u00a73 FZ-PI7",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 3b, \u00a72 item 4; draft \u00a76.8",
+   "required": "status 'approved' by Rohit Kumar with date and reference and a frozen value",
+   "status": "PASS",
+   "title": "PI-7 registration and acceptance criterion"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-PI8",
+   "mandatory": false,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register \u00a73 FZ-PI8; AMD-13",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 3b, \u00a72 item 4; draft \u00a76.9",
+   "required": "status 'approved' by Rohit Kumar with date and reference and a frozen value",
+   "status": "PASS",
+   "title": "PI-8 registration and acceptance criterion"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-TTRANS",
+   "mandatory": false,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register \u00a73 FZ-TTRANS; AMD-9. T_TRANS itself is computed after the pilot (F2)",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 4; draft \u00a76.11; AMD-9/AMD-10 (not in repo)",
+   "required": "status 'approved' by Rohit Kumar with date and reference and a frozen value with keys ['T_TRANS_rule', 'T_cap', 'T_fb']",
+   "status": "PASS",
+   "title": "T_TRANS rule, T_cap and T_fb"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-DATA-QUALITY",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register \u00a73 FZ-DATA-QUALITY (U-2 = B)",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 5; contract \u00a76; draft \u00a76.10",
+   "required": "status 'approved' by Rohit Kumar with date and reference and a frozen value with keys ['U-2', 'COV_MIN', 'N_BASE_MIN', 'SEG_MIN']",
+   "status": "PASS",
+   "title": "U-2 and COV_MIN, N_BASE_MIN, SEG_MIN"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-CB-B",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register \u00a73 FZ-CB-B (AMD-7 withdraws c_B; b not applicable)",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 6; draft \u00a76.10, \u00a76.11",
+   "required": "status 'approved' by Rohit Kumar with date and reference and a frozen value with keys ['c_B', 'b']",
+   "status": "PASS",
+   "title": "c_B and b"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Consumed by the STG-* checks.",
+   "id": "APPR-FZ-STAGING",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register \u00a73 FZ-STAGING (draft \u00a77 item 2; AMD-17 for M6)",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 7; design \u00a78; draft U-6",
+   "required": "status 'approved' by Rohit Kumar with date and reference and a frozen value with keys ['path']",
+   "status": "PASS",
+   "title": "Persistent raw-data staging path (U-6)"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-AMD-01",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-1 (Stage 3H text, verbatim)",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 8 (Stage 3H reports; not in repo)",
+   "required": "status 'approved' by Rohit Kumar with date and reference",
+   "status": "PASS",
+   "title": "AMD-1 design text"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-AMD-02",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-2",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 8 (Stage 3H reports; not in repo)",
+   "required": "status 'approved' by Rohit Kumar with date and reference",
+   "status": "PASS",
+   "title": "AMD-2 design text"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-AMD-03",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-3",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 8 (Stage 3H reports; not in repo)",
+   "required": "status 'approved' by Rohit Kumar with date and reference",
+   "status": "PASS",
+   "title": "AMD-3 design text"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-AMD-04",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-4",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 8 (Stage 3H reports; not in repo)",
+   "required": "status 'approved' by Rohit Kumar with date and reference",
+   "status": "PASS",
+   "title": "AMD-4 design text"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-AMD-05",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-5",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 8 (Stage 3H reports; not in repo)",
+   "required": "status 'approved' by Rohit Kumar with date and reference",
+   "status": "PASS",
+   "title": "AMD-5 design text"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-AMD-06",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-6 (contract \u00a75 text change not applied: EVIDENCE_CONTRACT.md is integrity-scoped)",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 8 (Stage 3H reports; not in repo)",
+   "required": "status 'approved' by Rohit Kumar with date and reference",
+   "status": "PASS",
+   "title": "AMD-6 design text"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-AMD-07",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-7",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 8 (Stage 3H reports; not in repo)",
+   "required": "status 'approved' by Rohit Kumar with date and reference",
+   "status": "PASS",
+   "title": "AMD-7 design text"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-AMD-08",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-8",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 8 (Stage 3H reports; not in repo)",
+   "required": "status 'approved' by Rohit Kumar with date and reference",
+   "status": "PASS",
+   "title": "AMD-8 design text"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-AMD-09",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-9",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 8 (Stage 3H reports; not in repo)",
+   "required": "status 'approved' by Rohit Kumar with date and reference",
+   "status": "PASS",
+   "title": "AMD-9 design text"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-AMD-10",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-10",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 8 (Stage 3H reports; not in repo)",
+   "required": "status 'approved' by Rohit Kumar with date and reference",
+   "status": "PASS",
+   "title": "AMD-10 design text"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-AMD-11",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-11",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 8 (Stage 3H reports; not in repo)",
+   "required": "status 'approved' by Rohit Kumar with date and reference",
+   "status": "PASS",
+   "title": "AMD-11 design text"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-AMD-12",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-12 and contingent AMD-12b",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 8 (Stage 3H reports; not in repo)",
+   "required": "status 'approved' by Rohit Kumar with date and reference",
+   "status": "PASS",
+   "title": "AMD-12 design text"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-AMD-13",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-13 (n_r, tau and the OV-4 level rule unresolved: OV-4 cannot run)",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 8 (Stage 3H reports; not in repo)",
+   "required": "status 'approved' by Rohit Kumar with date and reference",
+   "status": "PASS",
+   "title": "AMD-13 design text"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-AMD-14",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-14 (the requirement; its values: FZ-INTENSITY)",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 8 (Stage 3H reports; not in repo)",
+   "required": "status 'approved' by Rohit Kumar with date and reference",
+   "status": "PASS",
+   "title": "AMD-14 design text"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-AMD-15",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-15 (OV-5 thresholds unresolved: OV-5 cannot run)",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 8 (Stage 3H reports; not in repo)",
+   "required": "status 'approved' by Rohit Kumar with date and reference",
+   "status": "PASS",
+   "title": "AMD-15 design text"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-AMD-16",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-16",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 8 (Stage 3H reports; not in repo)",
+   "required": "status 'approved' by Rohit Kumar with date and reference",
+   "status": "PASS",
+   "title": "AMD-16 design text"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-AMD-17",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register Appendix A AMD-17",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 8 (Stage 3H reports; not in repo)",
+   "required": "status 'approved' by Rohit Kumar with date and reference",
+   "status": "PASS",
+   "title": "AMD-17 design text"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-MANIFEST",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register \u00a73 FZ-MANIFEST",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 9; tests/faultlab/_integrity.py:61",
+   "required": "status 'approved' by Rohit Kumar with date and reference",
+   "status": "PASS",
+   "title": "Manifest format for pilot/M6 raw data"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-ROOT-OF-TRUST",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register \u00a73 FZ-ROOT-OF-TRUST",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 10; design \u00a78",
+   "required": "status 'approved' by Rohit Kumar with date and reference",
+   "status": "PASS",
+   "title": "Root of trust (unsigned Git commit + SHA-256 manifests, or other)"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-EXCLUSIONS",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register \u00a73 FZ-EXCLUSIONS",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 11; design \u00a76.5; draft \u00a79",
+   "required": "status 'approved' by Rohit Kumar with date and reference",
+   "status": "PASS",
+   "title": "failed_injection, exclusion list and host-state equivalence set"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Consumed by LAB-ROOT-SUBTREE.",
+   "id": "APPR-FZ-R2CD-ENV",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register \u00a73 FZ-R2CD-ENV",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a71 item 12",
+   "required": "status 'approved' by Rohit Kumar with date and reference",
+   "status": "PASS",
+   "title": "Disposition of the two accepted R2-C/R2-D environment failures for pilot validity"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Consumed by the LAB-* placement and ip_forward checks.",
+   "id": "APPR-FZ-LAB-SPEC",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register \u00a73 FZ-LAB-SPEC",
+    "status": "approved"
+   },
+   "provenance": "draft \u00a75.1 (preflight prerequisite; not a register item)",
+   "required": "status 'approved' by Rohit Kumar with date and reference",
+   "status": "PASS",
+   "title": "Lab specification: names, lab cgroup, CPU placement, host ip_forward"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Consumed by STG-FREE-SPACE.",
+   "id": "APPR-FZ-SAFETY-CHECKLIST",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register \u00a73 FZ-SAFETY-CHECKLIST",
+    "status": "approved"
+   },
+   "provenance": "draft \u00a79 (preflight prerequisite; not a register item)",
+   "required": "status 'approved' by Rohit Kumar with date and reference",
+   "status": "PASS",
+   "title": "Pilot safety checklist (preflight, protected state, abort conditions)"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Consumed by INT-M4-BASELINE.",
+   "id": "APPR-FZ-M4-BASELINE",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-11",
+    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register \u00a73 FZ-M4-BASELINE",
+    "status": "approved"
+   },
+   "provenance": "draft \u00a79 preflight item 1 (not a register item)",
+   "required": "status 'approved' by Rohit Kumar with date and reference and a frozen value with keys ['commit']",
+   "status": "PASS",
+   "title": "Approved M4 baseline commit"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-INTENSITY-R2",
+   "mandatory": false,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-12",
+    "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply to the pilot decision package, option A of D0; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register \u00a75 D0",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a75 D0",
+   "required": "status 'approved' by Rohit Kumar with date and reference and a frozen value with keys ['loss_a_egress_max_pct', 'cpu_quota_min_core', 'contender_weight_max']",
+   "status": "PASS",
+   "title": "I3 ceilings with R2 evidence (D0)"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-INTENSITY-APP",
+   "mandatory": false,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-12",
+    "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply to the pilot decision package, option A of D2; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register \u00a75 D2",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a75 D2",
+   "required": "status 'approved' by Rohit Kumar with date and reference and a frozen value with keys ['utilisation_max', 'pool_min', 'pool_candidates', 'lock_hold_us_max', 'lock_hold_us_candidates', 'dependency_delay_ms_max', 'dependency_delay_ms_candidates']",
+   "status": "PASS",
+   "title": "Application I3 ceilings and PI-8 candidates (D2)"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-INTENSITY-NET",
+   "mandatory": false,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-12",
+    "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply to the pilot decision package, option A of D3; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register \u00a75 D3",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a75 D3",
+   "required": "status 'approved' by Rohit Kumar with date and reference and a frozen value with keys ['loss_r_egress_max_pct', 'rate_floor_fraction', 'rate_floor_basis', 'netem_limit_max_packets', 'byte_counters_required']",
+   "status": "PASS",
+   "title": "Path-loss ceiling and the congestion / police rate rule (D3)"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-PI7-LOCK",
+   "mandatory": false,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-12",
+    "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply to the pilot decision package, option A of D1; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register \u00a75 D1",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a75 D1",
+   "required": "status 'approved' by Rohit Kumar with date and reference and a frozen value with keys ['ctrl_max_lock_wait_ms', 'rep_lock_wait_p99_min_ms', 'rep_quality']",
+   "status": "PASS",
+   "title": "PI-7 fault criterion for lock-hold reps (D1)"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-WORKSET",
+   "mandatory": false,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-12",
+    "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply to the pilot decision package, option A of D4; working-set values approved by the owner the same day; recorded in these commits). Owner approval of a design choice, not scientific validation. Basis: Register \u00a75 D4",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a75 D4",
+   "required": "status 'approved' by Rohit Kumar with date and reference and a frozen value with keys ['approach', 'values', 'ctrl_rebaseline']",
+   "status": "PASS",
+   "title": "Workload memory working set: approach (D4)"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-OV",
+   "mandatory": false,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-12",
+    "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply to the pilot decision package, option A of D5; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register \u00a75 D5",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a75 D5",
+   "required": "status 'approved' by Rohit Kumar with date and reference and a frozen value with keys ['ov4_n_r', 'ov4_tau', 'ov4_level_pps', 'ov5_r_star', 'ov5_sizes']",
+   "status": "PASS",
+   "title": "OV-4 (AMD-13) and OV-5 (AMD-15) parameters (D5)"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-Q5",
+   "mandatory": false,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-12",
+    "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply to the pilot decision package, option A of D5 (Q-5); recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register \u00a75 D5 (Q-5)",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a75 D5",
+   "required": "status 'approved' by Rohit Kumar with date and reference and a frozen value with keys ['ctrl_test_runs']",
+   "status": "PASS",
+   "title": "Test-seed provisioning, CTRL test runs (Q-5)"
+  },
+  {
+   "blocked_by": [],
+   "category": "approval",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed without it (register \u00a74: Freeze-1 requires it).",
+   "id": "APPR-FZ-Q2",
+   "mandatory": false,
+   "next_action": null,
+   "observed": {
+    "date": "2026-10-12",
+    "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply to the pilot decision package, option A of Q-2; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register \u00a75 Q-2",
+    "status": "approved"
+   },
+   "provenance": "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md \u00a75 Q-2",
+   "required": "status 'approved' by Rohit Kumar with date and reference and a frozen value with keys ['collector_mode_m6']",
+   "status": "PASS",
+   "title": "Collector privilege mode for M6 (Q-2)"
+  },
+  {
+   "blocked_by": [],
+   "category": "environment",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "ENV-KERNEL",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "release": "6.8.0-138-generic",
+    "sysname": "Linux"
+   },
+   "provenance": "design \u00a73 (Linux host, cgroup v2, eBPF)",
+   "required": "Linux",
+   "status": "PASS",
+   "title": "Operating system kernel"
+  },
+  {
+   "blocked_by": [],
+   "category": "environment",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "ENV-KERNEL-TOOLING",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "6.8.0-138-generic",
+   "provenance": "scripts/r2c_cpu.py:63 (BPFTOOL); M3B loader built against it",
+   "required": "kernel release prefix equal to the version in scripts/r2c_cpu.py BPFTOOL",
+   "status": "PASS",
+   "title": "Kernel matches the committed bpftool/loader build"
+  },
+  {
+   "blocked_by": [],
+   "category": "environment",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "ENV-BTF",
+   "mandatory": true,
+   "next_action": null,
+   "observed": true,
+   "provenance": "ebpf/bpf/sentinel.bpf.c (CO-RE), ebpf/Makefile",
+   "required": "/sys/kernel/btf/vmlinux exists",
+   "status": "PASS",
+   "title": "Kernel BTF for the CO-RE eBPF loader"
+  },
+  {
+   "blocked_by": [],
+   "category": "environment",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "ENV-CGROUP2",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "cpuset cpu io memory hugetlb pids rdma misc",
+   "provenance": "design \u00a713 decision 2 (dedicated lab cgroup); scripts/r2c_cpu.py:40",
+   "required": "cgroup2 mounted at /sys/fs/cgroup with a readable cgroup.controllers",
+   "status": "PASS",
+   "title": "Unified cgroup v2 hierarchy"
+  },
+  {
+   "blocked_by": [],
+   "category": "environment",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Recorded only: no approved distribution requirement exists.",
+   "id": "ENV-OS-RELEASE",
+   "mandatory": false,
+   "next_action": null,
+   "observed": "Ubuntu 22.04.5 LTS",
+   "provenance": "no registered requirement",
+   "required": "none (record only)",
+   "status": "PASS",
+   "title": "Distribution (recorded)"
+  },
+  {
+   "blocked_by": [],
+   "category": "environment",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "TOOL-UNSHARE",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "/usr/bin/unshare",
+   "provenance": "scripts/r2f_memory.py preflight tool list (verified, R2-F); draft \u00a79 tool list",
+   "required": "/usr/bin/unshare is an executable file",
+   "status": "PASS",
+   "title": "Tool /usr/bin/unshare"
+  },
+  {
+   "blocked_by": [],
+   "category": "environment",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "TOOL-SETPRIV",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "/usr/bin/setpriv",
+   "provenance": "scripts/r2f_memory.py preflight tool list (verified, R2-F); draft \u00a79 tool list",
+   "required": "/usr/bin/setpriv is an executable file",
+   "status": "PASS",
+   "title": "Tool /usr/bin/setpriv"
+  },
+  {
+   "blocked_by": [],
+   "category": "environment",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "TOOL-TIMEOUT",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "/usr/bin/timeout",
+   "provenance": "scripts/r2f_memory.py preflight tool list (verified, R2-F); draft \u00a79 tool list",
+   "required": "/usr/bin/timeout is an executable file",
+   "status": "PASS",
+   "title": "Tool /usr/bin/timeout"
+  },
+  {
+   "blocked_by": [],
+   "category": "environment",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "TOOL-TASKSET",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "/usr/bin/taskset",
+   "provenance": "scripts/r2f_memory.py preflight tool list (verified, R2-F); draft \u00a79 tool list",
+   "required": "/usr/bin/taskset is an executable file",
+   "status": "PASS",
+   "title": "Tool /usr/bin/taskset"
+  },
+  {
+   "blocked_by": [],
+   "category": "environment",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "TOOL-PYTHON3",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "/usr/bin/python3",
+   "provenance": "scripts/r2f_memory.py preflight tool list (verified, R2-F); draft \u00a79 tool list",
+   "required": "/usr/bin/python3 is an executable file",
+   "status": "PASS",
+   "title": "Tool /usr/bin/python3"
+  },
+  {
+   "blocked_by": [],
+   "category": "environment",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "TOOL-BPFTOOL",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "/usr/lib/linux-hwe-6.8-tools-6.8.0-138/bpftool",
+   "provenance": "scripts/r2f_memory.py preflight tool list (verified, R2-F); draft \u00a79 tool list",
+   "required": "/usr/lib/linux-hwe-6.8-tools-6.8.0-138/bpftool is an executable file",
+   "status": "PASS",
+   "title": "Tool /usr/lib/linux-hwe-6.8-tools-6.8.0-138/bpftool"
+  },
+  {
+   "blocked_by": [],
+   "category": "environment",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "TOOL-LOADER",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "/home/iiitd/sentinelai/ebpf/build/sentinel_loader",
+   "provenance": "scripts/r2f_memory.py preflight tool list (verified, R2-F); draft \u00a79 tool list",
+   "required": "/home/iiitd/sentinelai/ebpf/build/sentinel_loader is an executable file",
+   "status": "PASS",
+   "title": "Tool /home/iiitd/sentinelai/ebpf/build/sentinel_loader"
+  },
+  {
+   "blocked_by": [],
+   "category": "environment",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "TOOL-IP",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "/usr/sbin/ip",
+   "provenance": "scripts/r2c_cpu.py READ_ONLY_COMMANDS / host snapshot; draft \u00a79 tool list",
+   "required": "ip resolves on PATH",
+   "status": "PASS",
+   "title": "Tool ip on PATH"
+  },
+  {
+   "blocked_by": [],
+   "category": "environment",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "TOOL-TC",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "/usr/sbin/tc",
+   "provenance": "scripts/r2c_cpu.py READ_ONLY_COMMANDS / host snapshot; draft \u00a79 tool list",
+   "required": "tc resolves on PATH",
+   "status": "PASS",
+   "title": "Tool tc on PATH"
+  },
+  {
+   "blocked_by": [],
+   "category": "environment",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "TOOL-FINDMNT",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "/usr/bin/findmnt",
+   "provenance": "scripts/r2c_cpu.py READ_ONLY_COMMANDS / host snapshot; draft \u00a79 tool list",
+   "required": "findmnt resolves on PATH",
+   "status": "PASS",
+   "title": "Tool findmnt on PATH"
+  },
+  {
+   "blocked_by": [],
+   "category": "environment",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "TOOL-GIT",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "/usr/bin/git",
+   "provenance": "scripts/r2c_cpu.py READ_ONLY_COMMANDS / host snapshot; draft \u00a79 tool list",
+   "required": "git resolves on PATH",
+   "status": "PASS",
+   "title": "Tool git on PATH"
+  },
+  {
+   "blocked_by": [],
+   "category": "environment",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "TOOL-SYSTEMCTL",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "/usr/bin/systemctl",
+   "provenance": "scripts/r2c_cpu.py READ_ONLY_COMMANDS / host snapshot; draft \u00a79 tool list",
+   "required": "systemctl resolves on PATH",
+   "status": "PASS",
+   "title": "Tool systemctl on PATH"
+  },
+  {
+   "blocked_by": [],
+   "category": "environment",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Recorded only: no approved version requirement exists beyond the kernel/tooling match.",
+   "id": "ENV-TOOL-VERSIONS",
+   "mandatory": false,
+   "next_action": null,
+   "observed": {
+    "bpftool version": "bpftool v7.4.0\nusing libbpf v1.4\nfeatures:",
+    "ip -V": "ip utility, iproute2-5.15.0, libbpf 0.5.0",
+    "sentinel_loader --version": "{\"producer\":\"sentinel_loader\",\"version\":\"m3b-1.0.0\",\"libbpf_compiled\":\"1.4\",\"libbpf_linked\":\"1.4\",\"libbpf_linked_string\":\"v1.4\",\"match\":true}",
+    "tc -V": "tc utility, iproute2-5.15.0, libbpf 0.5.0"
+   },
+   "provenance": "no registered requirement",
+   "required": "none (record only)",
+   "status": "PASS",
+   "title": "Tool versions (recorded)"
+  },
+  {
+   "blocked_by": [],
+   "category": "environment",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "ENV-PRIVILEGE",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "euid": 0,
+    "sudo_uid": "1000"
+   },
+   "provenance": "draft \u00a75.1 Privileges; scripts/r2c_cpu.py Host; scripts/r2e_validate.sh (sudo from uid 1000)",
+   "required": "effective uid 0 through sudo from uid 1000",
+   "status": "PASS",
+   "title": "Privileges required by the future run"
+  },
+  {
+   "blocked_by": [],
+   "category": "lab",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "LAB-NETNS-SUPPORT",
+   "mandatory": true,
+   "next_action": null,
+   "observed": true,
+   "provenance": "design \u00a713 decision 2 (three network namespaces)",
+   "required": "/proc/self/ns/net exists",
+   "status": "PASS",
+   "title": "Network namespace support"
+  },
+  {
+   "blocked_by": [],
+   "category": "lab",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "LAB-VETH-AVAILABLE",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "loaded",
+   "provenance": "design \u00a713 decision 2; draft \u00a75.1 Links",
+   "required": "veth loaded, built in or installed",
+   "status": "PASS",
+   "title": "veth driver available"
+  },
+  {
+   "blocked_by": [],
+   "category": "lab",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Loading it at run time changes kernel module state (see invariants).",
+   "id": "LAB-NETEM-AVAILABLE",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "available, not loaded",
+   "provenance": "design \u00a76.3 network faults; draft \u00a75.2 fault types",
+   "required": "sch_netem loaded, built in or installed",
+   "status": "PASS",
+   "title": "netem qdisc available"
+  },
+  {
+   "blocked_by": [],
+   "category": "lab",
+   "depends_on": [
+    "FZ-R2CD-ENV"
+   ],
+   "evaluation": null,
+   "explanation": "",
+   "id": "LAB-ROOT-SUBTREE",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "cpuset cpu io memory hugetlb pids rdma misc",
+   "provenance": "scripts/r2f_memory.py:54,501-508; draft \u00a79",
+   "required": "required subset {cpuset,cpu,memory,pids} of root cgroup.subtree_control (strict parse)",
+   "status": "PASS",
+   "title": "Root delegates cpuset cpu memory pids"
+  },
+  {
+   "blocked_by": [],
+   "category": "lab",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "Recorded only: R2-C's exact set; a difference explains the two accepted R2-C/R2-D test_dry_run_mutates_nothing failures (register item 12).",
+   "id": "LAB-ROOT-SUBTREE-R2C",
+   "mandatory": false,
+   "next_action": null,
+   "observed": {
+    "missing_vs_r2c": [],
+    "observed": [
+     "cpu",
+     "cpuset",
+     "hugetlb",
+     "io",
+     "memory",
+     "misc",
+     "pids",
+     "rdma"
+    ]
+   },
+   "provenance": "scripts/r2c_cpu.py:48 ROOT_SUBTREE",
+   "required": "none (record only)",
+   "status": "PASS",
+   "title": "Root controllers vs R2-C exact set (recorded)"
+  },
+  {
+   "blocked_by": [],
+   "category": "lab",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "LAB-ROOT-CPUSET",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
+   "provenance": "scripts/r2c_cpu.py:47 HOST_CPUS; compare_host root_cpuset_0_23",
+   "required": "0-23",
+   "status": "PASS",
+   "title": "Root cpuset.cpus.effective is 0-23"
+  },
+  {
+   "blocked_by": [],
+   "category": "lab",
+   "depends_on": [
+    "FZ-LAB-SPEC"
+   ],
+   "evaluation": null,
+   "explanation": "",
+   "id": "LAB-CPUS-ONLINE",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
+   "provenance": "draft \u00a75.1 CPU placement",
+   "required": "CPUs 0-15, 18, 19, 20, 22, 23 online",
+   "status": "PASS",
+   "title": "Lab and driver CPUs online"
+  },
+  {
+   "blocked_by": [],
+   "category": "lab",
+   "depends_on": [
+    "FZ-LAB-SPEC"
+   ],
+   "evaluation": null,
+   "explanation": "",
+   "id": "LAB-CPU18-NO-SMT",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "18",
+   "provenance": "draft \u00a79; scripts/r2f_memory.py preflight cpu18_no_smt",
+   "required": "thread_siblings_list = 18",
+   "status": "PASS",
+   "title": "Target CPU 18 has no SMT sibling"
+  },
+  {
+   "blocked_by": [],
+   "category": "lab",
+   "depends_on": [
+    "FZ-LAB-SPEC"
+   ],
+   "evaluation": null,
+   "explanation": "",
+   "id": "LAB-NIC-IRQ",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "21",
+   "provenance": "draft \u00a75.1, \u00a79; scripts/r2c_cpu.py:53 NIC_IRQ",
+   "required": "effective affinity disjoint from {18,19,20,22,23}",
+   "status": "PASS",
+   "title": "NIC IRQ 134 not on lab CPUs"
+  },
+  {
+   "blocked_by": [],
+   "category": "lab",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "LAB-PROTECTED-IFACES",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "docker0": true,
+    "enp0s31f6": true
+   },
+   "provenance": "scripts/r2a_lab.py:25 PROTECTED; draft \u00a79 protected state",
+   "required": "['enp0s31f6', 'docker0'] exist",
+   "status": "PASS",
+   "title": "Protected interfaces present"
+  },
+  {
+   "blocked_by": [],
+   "category": "lab",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "LAB-DEFAULT-ROUTE",
+   "mandatory": true,
+   "next_action": null,
+   "observed": [
+    "enp0s31f6"
+   ],
+   "provenance": "scripts/safety_check.sh \u00a74 default_route",
+   "required": "default dev enp0s31f6",
+   "status": "PASS",
+   "title": "Default route via the protected NIC"
+  },
+  {
+   "blocked_by": [],
+   "category": "lab",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "LAB-NO-NETEM",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "netem_on": [],
+    "nic_kinds": [
+     "fq_codel"
+    ]
+   },
+   "provenance": "scripts/safety_check.sh \u00a74 nic_qdisc, netem_global",
+   "required": "no netem qdisc; enp0s31f6 kinds within ['fq', 'fq_codel', 'mq', 'noqueue', 'pfifo_fast']",
+   "status": "PASS",
+   "title": "No netem anywhere; default qdiscs on the NIC"
+  },
+  {
+   "blocked_by": [],
+   "category": "lab",
+   "depends_on": [
+    "FZ-LAB-SPEC"
+   ],
+   "evaluation": null,
+   "explanation": "",
+   "id": "LAB-IP-FORWARD",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "1",
+   "provenance": "draft \u00a75.1 Routing (R2-A report \u00a73)",
+   "required": "net.ipv4.ip_forward = 1, to stay identical",
+   "status": "PASS",
+   "title": "Host ip_forward as the lab spec assumes"
+  },
+  {
+   "blocked_by": [],
+   "category": "lab",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "LAB-NO-SENTINEL-NETNS",
+   "mandatory": true,
+   "next_action": null,
+   "observed": [],
+   "provenance": "draft \u00a79 preflight; draft \u00a75.1 names sentinel-lab-{a,r,b}",
+   "required": "none in /run/netns",
+   "status": "PASS",
+   "title": "No sentinel* named network namespace"
+  },
+  {
+   "blocked_by": [],
+   "category": "lab",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "LAB-NO-LAB-INTERFACES",
+   "mandatory": true,
+   "next_action": null,
+   "observed": 3,
+   "provenance": "draft \u00a75.1 Links, Lab checks",
+   "required": "no sentlab*/sentinel* interface",
+   "status": "PASS",
+   "title": "No lab interface in the host namespace"
+  },
+  {
+   "blocked_by": [],
+   "category": "lab",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "LAB-NO-SENTINEL-CGROUP",
+   "mandatory": true,
+   "next_action": null,
+   "observed": [],
+   "provenance": "draft \u00a79; scripts/r2c_cpu.py sentinel_cgroups",
+   "required": "no cgroup path component sentinel*",
+   "status": "PASS",
+   "title": "No sentinel* cgroup"
+  },
+  {
+   "blocked_by": [],
+   "category": "lab",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "LAB-NO-LAB-PROCESS",
+   "mandatory": true,
+   "next_action": null,
+   "observed": [],
+   "provenance": "draft \u00a79; scripts/r2c_cpu.py lab_pids",
+   "required": "none",
+   "status": "PASS",
+   "title": "No process in a sentinel* cgroup"
+  },
+  {
+   "blocked_by": [],
+   "category": "lab",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "LAB-RUN-DIR-ABSENT",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "absent",
+   "provenance": "draft \u00a79 preflight; app metrics root (src/sentinelai/collectors/app.py APP_ROOT)",
+   "required": "absent",
+   "status": "PASS",
+   "title": "No /run/sentinelai-lab leftover"
+  },
+  {
+   "blocked_by": [],
+   "category": "lab",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "LAB-WS-SCRATCH-ABSENT",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "absent",
+   "provenance": "draft \u00a79 preflight; FZ-WORKSET working-set scratch (register \u00a75 D4)",
+   "required": "absent",
+   "status": "PASS",
+   "title": "No /var/tmp/sentinelai-lab leftover"
+  },
+  {
+   "blocked_by": [],
+   "category": "lab",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "LAB-NO-SENTINEL-BPF",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "maps": [],
+    "progs": []
+   },
+   "provenance": "draft \u00a79; scripts/r2c_cpu.py:121-123",
+   "required": "no prog sn_*, no map sentinel.*",
+   "status": "PASS",
+   "title": "No SentinelAI BPF program or map"
+  },
+  {
+   "blocked_by": [],
+   "category": "lab",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "LAB-LAB-UID",
+   "mandatory": true,
+   "next_action": null,
+   "observed": 1000,
+   "provenance": "scripts/r2c_cpu.py:59 LAB_UID; app metrics owner check",
+   "required": "uid 1000 resolves",
+   "status": "PASS",
+   "title": "Lab uid 1000 exists"
+  },
+  {
+   "blocked_by": [],
+   "category": "lab",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "LAB-OPENVPN-DISABLED",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "disabled",
+   "provenance": "docs/PROJECT_STATUS.json:234 known limitation; draft \u00a79",
+   "required": "disabled or masked",
+   "status": "PASS",
+   "title": "openvpn-server@server.service disabled"
+  },
+  {
+   "blocked_by": [],
+   "category": "resources",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "RES-MEM-AVAILABLE",
+   "mandatory": true,
+   "next_action": null,
+   "observed": 12648919040,
+   "provenance": "scripts/safety_check.sh:17 (SENTINEL_MIN_MEM_GB default 4); scripts/r2f_memory.py MEM_AVAILABLE_MIN_BYTES; design \u00a79 says 2 GiB (stale, register \u00a72 item 1)",
+   "required": ">= 4294967296 bytes (4 GiB)",
+   "status": "PASS",
+   "title": "MemAvailable floor"
+  },
+  {
+   "blocked_by": [],
+   "category": "resources",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "RES-DISK-REPO",
+   "mandatory": true,
+   "next_action": null,
+   "observed": 95658012672,
+   "provenance": "scripts/safety_check.sh:16 (SENTINEL_MIN_DISK_GB default 20, df on the repository)",
+   "required": ">= 21474836480 bytes (20 GiB)",
+   "status": "PASS",
+   "title": "Free disk on the repository filesystem"
+  },
+  {
+   "blocked_by": [],
+   "category": "staging",
+   "depends_on": [
+    "FZ-STAGING"
+   ],
+   "evaluation": null,
+   "explanation": "",
+   "id": "STG-EXISTS",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "/home/iiitd/sentinelai/results/phase1c_m5_pilot",
+   "provenance": "register item 7; design \u00a78 append-only raw data",
+   "required": "approved absolute path; every component exists; no symlink; final is a directory",
+   "status": "PASS",
+   "title": "Staging path exists as a directory without symlinks"
+  },
+  {
+   "blocked_by": [],
+   "category": "staging",
+   "depends_on": [
+    "FZ-STAGING"
+   ],
+   "evaluation": null,
+   "explanation": "",
+   "id": "STG-PERSISTENT",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "fstype": "ext4",
+    "mount": "/"
+   },
+   "provenance": "register item 7 ('persistent' staging path)",
+   "required": "filesystem type not tmpfs/ramfs/devtmpfs",
+   "status": "PASS",
+   "title": "Staging path is on a persistent filesystem"
+  },
+  {
+   "blocked_by": [],
+   "category": "staging",
+   "depends_on": [
+    "FZ-STAGING"
+   ],
+   "evaluation": null,
+   "explanation": "",
+   "id": "STG-PERMISSIONS",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "mode": "0o775",
+    "uid": 1000
+   },
+   "provenance": "register item 7; LAB_UID convention (scripts/r2c_cpu.py:59)",
+   "required": "owned by the invoking uid or uid 1000; not world-writable",
+   "status": "PASS",
+   "title": "Staging directory ownership and mode"
+  },
+  {
+   "blocked_by": [],
+   "category": "staging",
+   "depends_on": [
+    "FZ-STAGING",
+    "FZ-SAFETY-CHECKLIST"
+   ],
+   "evaluation": null,
+   "explanation": "",
+   "id": "STG-FREE-SPACE",
+   "mandatory": true,
+   "next_action": null,
+   "observed": 95658012672,
+   "provenance": "draft \u00a79 (disk >= 20 GiB free); register U-6 estimate 1.5-2.1 GB raw data",
+   "required": ">= 21474836480 bytes (20 GiB)",
+   "status": "PASS",
+   "title": "Free space on the staging filesystem"
+  },
+  {
+   "blocked_by": [],
+   "category": "integrity",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "INT-HEAD",
+   "mandatory": false,
+   "next_action": null,
+   "observed": "82ff593580c5b013358f0de13fb01af8dccdc388",
+   "provenance": "git",
+   "required": "none (record only)",
+   "status": "PASS",
+   "title": "Repository HEAD (recorded)"
+  },
+  {
+   "blocked_by": [],
+   "category": "integrity",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "INT-REPO-CLEAN",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "clean",
+   "provenance": "tests/faultlab/test_r2e.py (untracked-files=no must be empty); draft \u00a79",
+   "required": "git status (tracked) empty",
+   "status": "PASS",
+   "title": "No uncommitted tracked change"
+  },
+  {
+   "blocked_by": [],
+   "category": "integrity",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "INT-INTEGRITY-POLICY",
+   "mandatory": true,
+   "next_action": null,
+   "observed": [],
+   "provenance": "tests/faultlab/_integrity.py check(); tests/faultlab/test_integrity.py LIVE (AMD-18..)",
+   "required": "no violation",
+   "status": "PASS",
+   "title": "Live integrity policy holds"
+  },
+  {
+   "blocked_by": [],
+   "category": "integrity",
+   "depends_on": [
+    "FZ-M4-BASELINE"
+   ],
+   "evaluation": null,
+   "explanation": "",
+   "id": "INT-M4-BASELINE",
+   "mandatory": true,
+   "next_action": null,
+   "observed": "8cff3b8f6bf85ba9fcd6d416eda45c20b87e75e4",
+   "provenance": "draft \u00a79 preflight item 1",
+   "required": "git merge-base --is-ancestor <approved commit> HEAD",
+   "status": "PASS",
+   "title": "HEAD descends from the approved M4 commit"
+  },
+  {
+   "blocked_by": [],
+   "category": "lab",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "LAB-HOST-BASELINE",
+   "mandatory": true,
+   "next_action": null,
+   "observed": {
+    "bpf_captured": true,
+    "cgroup_dirs": 153,
+    "network_captured": {
+     "addrs": true,
+     "links": true,
+     "qdiscs": true,
+     "routes4": true,
+     "routes6": true
+    }
+   },
+   "provenance": "scripts/r2c_cpu.py host_snapshot/compare_host; register FZ-EXCLUSIONS",
+   "required": "R2-C host_snapshot with network state and BPF inventory captured",
+   "status": "PASS",
+   "title": "Host-state baseline capturable (incl. BPF)"
+  },
+  {
+   "blocked_by": [],
+   "category": "integrity",
+   "depends_on": [],
+   "evaluation": null,
+   "explanation": "",
+   "id": "INT-MANIFEST-VERIFIER",
+   "mandatory": true,
+   "next_action": null,
+   "observed": [
+    "manifest unreadable: No such file or directory"
+   ],
+   "provenance": "experiments/faultlab/rehearsal.py verify_manifest; register FZ-MANIFEST",
+   "required": "rehearsal.verify_manifest importable; it reports problems for a missing run (read-only probe)",
+   "status": "PASS",
+   "title": "Manifest verifier present and fail-closed"
+  }
+ ],
+ "format": "sentinelai.faultlab.preflight.v1",
+ "generated_utc": "2026-10-12T07:45:05Z",
+ "host_state": {
+  "caveat": "Observed current state only. It says nothing about the state during or after a future run; the preflight is read-only, the future run is not.",
+  "observed_now": {
+   "bpf_captured": true,
+   "cgroup_dirs": 153,
+   "digest_sha256": "a4f4abe9a1b5c04840812c3b063dffb37adf736c7e6941e00f85d9d700b701bc",
+   "netns": [],
+   "network_captured": true,
+   "root": {
+    "cgroup.subtree_control": "cpuset cpu io memory hugetlb pids rdma misc",
+    "cpuset.cpus.effective": "0-23",
+    "cpuset.mems.effective": "0"
+   },
+   "run_netns": []
+  }
+ },
+ "invariants": {
+  "after_run": [
+   "compare_host(base, after, require_bpf=True): every key in its 'must' list",
+   "cleanup verification (draft \u00a75.9): no sentinel cgroup, netns, interface, process or BPF object; /run/sentinelai-lab removed",
+   "oom_kill delta 0; swap I/O and PSI abort criteria (R2-C run.json criteria)"
+  ],
+  "before_run": [
+   "full scripts/r2c_cpu.py host_snapshot with BPF programs, links and maps (needs root)",
+   "scripts/safety_check.sh (not read-only: writes logs/; also covers the SSH recovery path)",
+   "re-run of every LAB-* check immediately before setup",
+   "host /proc/vmstat oom_kill baseline"
+  ],
+  "not_guaranteed": [
+   "kernel module state: veth and sch_netem are loaded on first use and stay loaded (not in compare_host)",
+   "dynamic counters (PSI, /proc/stat, /proc/vmstat, interface statistics)",
+   "page cache, slab and memory fragmentation",
+   "kernel log and journal entries",
+   "BPF JIT memory after unload",
+   "CPU frequency and thermal state"
+  ],
+  "preflight": [
+   "root cgroup files (cpuset.cpus.effective, cgroup.subtree_control, cpuset.mems.effective)",
+   "cgroup directory list",
+   "named network namespaces (/run/netns, ip netns)",
+   "interfaces, addresses, IPv4/IPv6 routes (ip -j)",
+   "qdiscs (tc -j)",
+   "R2 sysctl set",
+   "IRQ affinities",
+   "mounts (findmnt)",
+   "/run/sentinelai-lab absence",
+   "MemAvailable",
+   "free disk"
+  ]
+ },
+ "mandatory_counts": {
+  "BLOCKED": 0,
+  "FAIL": 0,
+  "PASS": 79,
+  "UNVERIFIED": 0
+ },
+ "note": "READY is not authorisation: the privileged pilot needs a separate owner authorisation (Gate 2).",
+ "overall": "READY",
+ "stage": "ctrl"
+}
