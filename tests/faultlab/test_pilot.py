@@ -2152,11 +2152,17 @@ class TestOpFaults(CtrlFixture):
         self.assertEqual((lv["I1"], lv["I3"], lv["I2"], lv["I0"]), (1, 5, 2, 0.5))
 
     def test_unapproved_candidates_are_refused_by_the_real_record(self):
-        with mock.patch.object(P, "approved_value", REAL_APPROVED):          # the committed record, unmocked
+        record = json.loads((ROOT / "docs/PHASE_1C_FREEZE1_DECISIONS.json").read_text())
+        record["decisions"]["FZ-INTENSITY-CPUNET"] = {"status": "proposed", "reference": "test",
+                                                      "value": CPUNET}         # as before the owner's approval
+        rec = self.tmp / "proposed.json"
+        rec.write_text(json.dumps(record))
+        with mock.patch.object(P, "approved_value", REAL_APPROVED):          # the real decision check
             for fault, mag in (("cpu_quota", 10000), ("netem_loss_a_egress", 1), ("netem_rate_r", 400)):
-                with self.subTest(fault), self.assertRaises(P.Refused):     # FZ-INTENSITY-CPUNET is only proposed
-                    P.op_fault_spec(fault, mag)
-            self.assertEqual(P.fault_spec("app_pool", 1, WORKLOAD)["magnitude"], 1)   # approved faults still run
+                with self.subTest(fault), self.assertRaises(P.Refused):     # a proposed record never authorises
+                    P.op_fault_spec(fault, mag, rec)
+                self.assertEqual(P.op_fault_spec(fault, mag)["magnitude"], mag)   # the committed, approved record
+            self.assertEqual(P.fault_spec("app_pool", 1, WORKLOAD)["magnitude"], 1)
 
     def test_ceilings_hold_even_if_a_candidate_list_exceeded_them(self):
         bad = dict(CPUNET, contender_weight_candidates=[400, 800], quota_us_candidates=[7500, 5000],

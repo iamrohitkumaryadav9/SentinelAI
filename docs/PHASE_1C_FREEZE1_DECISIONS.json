@@ -378,8 +378,10 @@
    }
   },
   "FZ-INTENSITY-CPUNET": {
-   "status": "proposed",
-   "reference": "Register §5 C-1: proposed 2026-10-12, NOT APPROVED; the pilot refuses these faults until the owner approves",
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-12",
+   "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply \"approved c-1\"; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §5 C-1",
    "value": {
     "contender_weight_candidates": [
      50,
