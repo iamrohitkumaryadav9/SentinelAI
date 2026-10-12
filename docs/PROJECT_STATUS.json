@@ -1,18 +1,22 @@
 {
-  "checkpoint": "Phase 2A.6 closeout committed locally (not pushed)",
-  "date": "2026-10-10",
-  "status_describes_commit": "d6b93333d3041417aece915a3004274b0ca0bee5",
-  "status_describes_commit_note": "the baseline closeout commit being documented (the last verified Phase 2A.6 closeout commit), not the commit containing this file. This record was reconciled by a separate documentation-only correction committed after d6b9333 (pending when this record was written); its SHA is not predicted or recorded here",
+  "checkpoint": "Phase 1C M5 pilot: every stage that needs no pending owner decision is complete and pushed; the fault-class stages are blocked on owner decisions",
+  "date": "2026-10-12",
+  "status_describes_commit": "6d9640e",
+  "status_describes_commit_note": "the last verified commit this record describes (M5 pilot campaign 20261012T045417Z evidence and report), not the commit containing this file; full suite at 6d9640e: 1,406 run, OK (1 skipped)",
   "closeout_commits": {
     "runtime": "d11961852854dfe68ad8f7ab930789264b75cef5",
     "evidence_and_documentation": "d6b93333d3041417aece915a3004274b0ca0bee5",
     "base": "5dad1334b50a8e5a1390fc86895675f4057fc5bf",
-    "pushed": false
+    "pushed": true,
+    "note": "Phase 2A.6 closeout commits; verified on origin/main (2026-10-12)"
   },
   "uncommitted": [
-    "experiments/faultlab/ (pre-existing feasibility probe; untracked, intentionally not committed)"
+    "docs/PHASE_1C_M4_M5_PILOT_DESIGN.md (owner draft; untracked, intentionally not committed)",
+    "experiments/faultlab/docker/Dockerfile (owner file; untracked, intentionally not committed)",
+    "docs/AUTONOMOUS_HANDOVER_STATUS.md (session handover note; untracked: a new docs path is outside the integrity allowlist)",
+    "results/phase1c_m5_pilot/*/*/lg/ and */collector/ (transport copies, gitignored; each verified byte-identical to its committed evidence/ copy)"
   ],
-  "current_status": "Phase 2A runtime integration CLOSED; the 2A.6 closeout is committed locally in two commits (d119618 runtime source and tests, d6b9333 live-run evidence, provenance and documentation; not pushed). Read-only runtime with offline snapshot and tick replay; first live M3A acquisition passed its bounded gate (M3A-only, idle target, PARTIAL, abstention, verify + replay MATCH). Runtime tests 153/153; documented regression 1,026/1,028 with two known environmental failures (not green). M2 remains the sole diagnostic authority; Phase 1B remains FAIL / NO-GO.",
+  "current_status": "Phase 1C M4 (FaultLab build) effectively complete and M5 pilot in progress. M4: app.* collector (lab-uid ownership check), instrumented workload and dependency peer, open-loop load generator, distractor logs, unprivileged loopback rehearsal, read-only fail-closed pilot preflight, A-R-B lab and pilot runner; Freeze-1: 31 decisions owner-approved, FZ-INTENSITY and FZ-PI5 pending. M5 pilot (docs/PHASE_1C_M5_PILOT_REPORT.md): PI-0 5/5 at three commits after two fixed lab defects; CTRL 6 runs pass (CTRL-900001 recorded and pinned as a FAILED evaluation, fixed in af2a4e7); PI-1 passes in both privilege modes; PI-6 passes; collectors and instrumentation on/off pairs report-only (differences within +-0.08 ms). No fault class has been run in the pilot; pipeline readiness only. Full suite 1,406 OK (1 skipped) at 6d9640e. M2 remains the sole diagnostic authority; Phase 1B remains FAIL / NO-GO.",
   "phases": [
     {
       "phase": "Phase 0",
@@ -31,7 +35,7 @@
     },
     {
       "phase": "Phase 1C",
-      "verdict": "in progress: M1, M2, M3A, M3A-C1, M3B, R2-A, R2-B, R2-C, R2-D done, R2-E closed not feasible, R2-F done; design milestones M4-M8 (FaultLab matrix, pilot, calibration, ML, PHASE_1C_EVALUATION) not done",
+      "verdict": "in progress: M1, M2, M3A, M3A-C1, M3B, R2-A, R2-B, R2-C, R2-D done, R2-E closed not feasible, R2-F done; M4 FaultLab build effectively complete; M5 pilot in progress (all decision-free stages passed; fault-class stages blocked on FZ-INTENSITY, FZ-PI5, AMD-13/15 and the FZ-PI7 lock-hold comparison); M6 matrix, M7 calibration/ML/lock and M8 PHASE_1C_EVALUATION not started",
       "report": "docs/PHASE_1C_DESIGN.md"
     },
     {
@@ -137,8 +141,56 @@
       "loader": "libbpf 1.4"
     },
     {
+      "phase": "M4 FaultLab build",
+      "verdict": "effectively complete (no separate gate report); built under integrity amendments AMD-18 to AMD-26",
+      "components": {
+        "app_metrics": "34a7a0d parser, caa4f45 file reader with lab-uid ownership check, 4b09fcd app.* in snapshots",
+        "workload": "d8206f7 workload + dependency peer (fixes 735d840, a9bdf24), c82cf92 distractor logs",
+        "load_generator": "e4b9a8b open-loop seeded load generator",
+        "rehearsal": "8cff3b8 unprivileged loopback rehearsal with evidence, manifest and replay",
+        "preflight": "bbfff1e read-only fail-closed pilot preflight (Gate 1.2), 62ff60c Gate 2 privileged mode",
+        "pilot_runner": "cab7b59 A-R-B lab and pilot runner; 29d652f PI-1 unprivileged, PI-6 collectors-off and instrumentation-off variants"
+      },
+      "report": "docs/PHASE_1C_M5_PILOT_REPORT.md"
+    },
+    {
+      "phase": "Freeze-1 decisions",
+      "verdict": "31 approved by the owner (4b6041c); FZ-INTENSITY and FZ-PI5 pending",
+      "report": [
+        "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md",
+        "docs/PHASE_1C_FREEZE1_DECISIONS.json"
+      ]
+    },
+    {
+      "phase": "M5 pilot",
+      "verdict": "IN PROGRESS: PI-0, CTRL, PI-1 (both modes) and PI-6 pass; instrumentation pairs reported; fault-class stages not run",
+      "campaigns": {
+        "20261011T175343Z": "cab7b59: PI0-1 FAILED (ip_forward inherited in A/B; /run/netns mount left) -> fixes 6c0030d, 7f6eac7; run.json pinned",
+        "20261012T030504Z": "7f6eac7: PI-0 5/5 pass; CTRL-900001 FAILED app_features (app.lock_wait_ms MISSING with the approved lock_hold_us 0) -> fix af2a4e7; report.json pinned, never re-scored",
+        "20261012T040045Z": "af2a4e7: PI-0 5/5; CTRL-900002..900005 pass",
+        "20261012T045417Z": "29d652f: PI-0 5/5; CTRL, PI6OFF, INSTOFF at seeds 900006/900007 and PI1U-900008/900009 all pass"
+      },
+      "pi_verdicts": {
+        "PI-0": "pass",
+        "PI-1": "pass in both modes (driver-root coverage 1.0 in 6 CTRL runs; unprivileged coverage 1.0 and netns verified in 2 runs); mode choice Q-2 is the owner's",
+        "PI-6": "pass (collector CPU 0.0015-0.0021 core vs 0.02; coverage >= 0.99); 2 collectors on/off pairs report-only",
+        "PI-7": "CTRL part pass (136/136 app ticks, app.latency_ms P99 measured); fault part not run",
+        "instrumentation": "2 metrics-writer on/off pairs, report-only",
+        "PI-2, PI-3, PI-5, PI-8, OV-4": "not run (blocked on owner decisions)"
+      },
+      "integrity": "AMD-27 (92efb56): pilot evidence committed append-only with names, modes and run manifests enforced; failed records pinned by SHA-256",
+      "report": "docs/PHASE_1C_M5_PILOT_REPORT.md",
+      "evidence": "results/phase1c_m5_pilot/",
+      "commits": {
+        "lock_wait_fix": "af2a4e7",
+        "amd_27": "92efb56",
+        "step2_stages": "29d652f",
+        "evidence_campaign_20261012T045417Z": "6d9640e"
+      }
+    },
+    {
       "phase": "Phase 2A runtime integration",
-      "verdict": "CLOSED: 2A.1-2A.4 PASS; 2A.5 PASS (bounded live gate); 2A.6 closeout committed locally (d119618, d6b9333; not pushed)",
+      "verdict": "CLOSED: 2A.1-2A.4 PASS; 2A.5 PASS (bounded live gate); 2A.6 closeout committed (d119618, d6b9333) and pushed",
       "steps": {
         "design": "GO (review session; decisions Q1 ebpf default required, Q2 r2c-validation-uncalibrated, Q3 snapshot.incident_id None)",
         "2A.1_pure_core": "PASS (67 tests; 65/65 mutants)",
@@ -207,7 +259,7 @@
   },
   "contract_labels_not_yet_validated": [
     "softirq_overload",
-    "application_bottleneck",
+    "application_bottleneck (app.* metrics are now collected, but no application fault class has been run)",
     "tcp_retransmissions (as primary decision)"
   ],
   "known_limitations": [
@@ -229,9 +281,14 @@
     "R2-D: throttle.quota_saturation not validated under binding throttling (MISSING in all 9 T1/T2/TC runs; M3A rejects per-interval values > 1.0); supporting metric only — not a failure of the mandatory R2-D evidence or ground truth",
     "R2-C E1: strong tail/PSI/run-delay degradation, M2 cpu_contention 3/3, but the approved G4 median-lateness criterion stayed FALSE (ground truth: not established) — recorded disagreement",
     "cpu.util.cpuset has a /proc/stat tick-accounting bias when CPU 18 is partially busy",
-    "M2 confidence limited to MEDIUM by IMPACT_NOT_MEASURED (no application metrics)",
     "thresholds are engineering/safety values (validation parameter set), not statistically calibrated; parameters.json UNCALIBRATED",
-    "host must keep openvpn-server@server.service disabled (crash-loop host noise otherwise)"
+    "host must keep openvpn-server@server.service disabled (crash-loop host noise otherwise)",
+    "M2 confidence limited to MEDIUM by IMPACT_NOT_MEASURED in the committed R2 validations (app.* metrics now exist in M4/M5 but have not entered any M2 validation)",
+    "M5 pilot: results are pipeline readiness only; no fault class has been run or validated in the pilot; M2 is never run on pilot data (pilot design section 7)",
+    "M5 pilot: in CTRL (FZ-WORKLOAD lock_hold_us 0) app.lock_wait_ms is structurally MISSING; af2a4e7 accepts it only when the run's manifest-verified evidence proves lock_hold_us == 0",
+    "M5 pilot: FZ-PI7's fault criterion compares a fault's wait metric with the CTRL maximum; for a lock-hold fault (app.lock_wait_ms) no CTRL maximum exists, so lock-hold results cannot be evaluated until the owner resolves it",
+    "M5 pilot: on/off pair differences are report-only and from 2 pairs each; they cannot bound a small effect",
+    "M5 pilot: single host and kernel; one workload operating point (100 req/s, no saturation)"
   ],
   "naming_notes": [
     "'Phase 2A' (runtime integration, subphases 2A.1-2A.6) was named in the Phase 2A design review session. The historical README roadmap (6d404c8, replaced in 5dad133) used 'Phase 2' for an eBPF telemetry collector; that work was carried out as Phase 1C M3B. The two uses of 'Phase 2' are not the same milestone.",
@@ -240,9 +297,16 @@
     "Unresolved, left for a separate design decision: the historical roadmap's Phase 1C exit gate (re-run the 48-scenario confirmatory suite, >= 70% correct, correct abstention) versus the success criteria in PHASE_1C_DESIGN.md section 7.5; and its Phase 3 (LLM diagnosis agent) versus Phase 1B FAIL / NO-GO and PHASE_1C_DESIGN.md section 11 (the LLM cannot set the decision). No committed decision states which governs."
   ],
   "next_phase": {
-    "named_in_repository": null,
+    "named_in_repository": "Phase 1C M5 pilot (fault-class stages), then M5 review, M6 matrix, M7, M8",
     "next_unvalidated_fault_class": null,
-    "basis": "undecided, pending an explicit design decision. Candidates (each needs its own design and approval): live eBPF acquisition mode; live interface/qdisc collection; Phase 1C M4-M8 (FaultLab matrix, pilot, calibration, ML)."
+    "blocked_on_owner_decisions": [
+      "FZ-INTENSITY (application, congestion, police, memory, OV-4 and OV-5 ceilings)",
+      "FZ-PI5 (the workload has no memory working set)",
+      "AMD-13 (n_r, tau, OV-4 level rule) and AMD-15 (OV-5 thresholds)",
+      "FZ-PI7 lock-hold comparison (no CTRL maximum of app.lock_wait_ms)",
+      "Q-2 collector privilege mode (PI-1 passed in both modes)"
+    ],
+    "basis": "pilot design section 6 and docs/PHASE_1C_M5_PILOT_REPORT.md section 6; after M8, any LLM explanation layer or mitigation loop is undecided and needs its own design"
   },
   "deferred": [
     {
@@ -264,6 +328,10 @@
     {
       "item": "live eBPF acquisition mode and live interface/qdisc collection",
       "scope": "out of scope for Phase 2A; each requires a separate design, root/privilege gate and approval"
+    },
+    {
+      "item": "README.md update for M4/M5",
+      "scope": "README describes the state at 0152b9b (Phase 2A.6); deferred at the owner's request"
     }
   ],
   "completed_feasibility_studies": [
