@@ -1,0 +1,1 @@
+{"config":{"cpu_us":2000,"dependency_timeout_ms":1000.0,"lock_hold_us":0,"lock_wait_exceeded_ms":5.0,"pool":1,"queue":32,"ws_anon_mib":16,"ws_file_mib":1024,"ws_pass_s":1.0,"ws_slices":10},"config_sha256":"e06a456ba76107df0641f1c8828e3e081156fc0de5be2269d3962cfc473f44a5","control_error":null,"mono_ns":6948737882329,"seq":2}

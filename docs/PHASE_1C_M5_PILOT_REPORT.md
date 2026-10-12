@@ -4,9 +4,11 @@ Status: **in progress.**
 
 - **Complete:** PI-0, CTRL, PI-1 in both privilege modes, the PI-6 collectors-on/off pairs and the workload
   instrumentation on/off pairs. All were repeated under the approved working set (§3b).
-- **Application fault class (PI-8, §3c):** dependency delay has levels. Pool shrink and lock hold produced no effect
-  under the approved workload, which needs an owner decision (§6).
-- **Not yet built or run:** the CPU, network and memory fault classes and OV-4/OV-5.
+- **Application and CPU fault classes (PI-8, §3d):** levels found for all five mechanisms under Poisson arrivals
+  (not frozen).
+- **Network faults:** built; the first run exposed a reconciliation defect (§3d), fixed in `6320943`; the network
+  runs follow in a new campaign.
+- **Not yet built:** memory pressure (floor pending) and OV-4/OV-5.
 
 What this report shows: the A–R–B lab, the collection pipeline and the CTRL-stage pilot criteria work on this host. It
 does **not** validate any fault class, and it does not support any diagnostic claim. M2 was never run on pilot data
@@ -24,6 +26,7 @@ Evidence lives in `results/phase1c_m5_pilot/<campaign>/<run>/` and is committed 
 | `20261012T030504Z` | `7f6eac7` | PI0-1…5, CTRL-900001 | PI-0 5/5 passed. CTRL-900001 **FAILED** (`app_features`, §3). |
 | `20261012T040045Z` | `af2a4e7` | PI0-1…5, CTRL-900002…900005 | PI-0 5/5 passed. CTRL 4/4 passed. |
 | `20261012T045417Z` | `29d652f` | PI0-1…5; CTRL, PI6OFF, INSTOFF at seeds 900006 and 900007; PI1U-900008, PI1U-900009 | PI-0 5/5 passed. All 8 runs passed (§3a). |
+| `20261012T104753Z` | `2280a18` | PI0-1…5; CTRL-900050…900053 under Poisson arrivals; PI8-900060…900082 (application faults, repeated); PI8-900100…900116 (CPU faults; one local-loss run) | 64 of 66 runs passed their pipeline checks (§3d). **PI8-900081 FAILED** (host comparison: an external SSH login change). **PI8-900116 FAILED** (across-R reconciliation under local loss; fixed in `6320943`). Quota runs miss PI-6 coverage on throttle features. |
 | `20261012T074028Z` | `82ff593` | PI0-1…5; re-baseline with the FZ-WORKSET working set: CTRL-900010…900013, PI6OFF and INSTOFF at 900010 and 900011, PI1U-900014, PI1U-900015; PI8-900020…900041 (application faults) | PI-0 5/5 passed. All 10 re-baseline runs passed (§3b). All 22 fault runs passed their pipeline checks (§3c): dependency delay has levels; pool shrink and lock hold produced no effect. |
 
 Every privileged invocation ran its own privileged preflight (`preflight.json` in each run directory). Each preflight
@@ -39,6 +42,7 @@ Criterion: 5/5 cycles with all lab checks passing, cleanup verified, and the hos
 | `20261012T040045Z` | 5/5 | pass | pass | verified | ok | yes |
 | `20261012T045417Z` | 5/5 | pass | pass | verified | ok | yes |
 | `20261012T074028Z` | 5/5 | pass | pass | verified, working-set directory removed | ok | yes |
+| `20261012T104753Z` | 5/5 | pass | pass | verified, working-set directory removed | ok | yes |
 
 Lab setup plus teardown (op-log span): 1.3–1.4 s per cycle.
 
@@ -188,6 +192,62 @@ measured, the minimum gap is 5.03 ms and the median 10.0 ms.
 The FZ-PI7-LOCK rule did what it was approved for: uncontended acquisitions, about 8,990 per run, all at 0.05 ms, did
 not count as an effect.
 
+## 3d. Poisson arrivals, application faults again, CPU faults (campaign `20261012T104753Z`, `2280a18`)
+
+From this campaign on, arrivals are Poisson at 100 /s (FZ-ARRIVALS, owner option A after §3c).
+
+**CTRL (4 runs).**
+- Every run passed and every request was answered.
+- W-window P99: queue wait 3.2 ms (bounded jitter: 0.05 ms), dependency latency 6.4 ms, no lock waits.
+- Client latency p50 / p99: 4.64–4.65 / 9.6–10.1 ms.
+- A's TCP retransmissions in W: 0 in every run (the CTRL maximum for PI-2).
+
+**PI-8, application faults (22 runs plus one repeat).** All injections were read back in 10–52 ms.
+
+| Fault | Candidates | W P99 of its wait (both valid reps) | Bar | Effect in 2/2 | Levels (not frozen) |
+|---|---|---|---|---|---|
+| Dependency delay | 4 / 7 / 10 / 15 ms | 12.8 / 12.8 / 25.6 / 25.6 ms | 6.4 ms | all four | I1 4, I2 7, I3 15 ms |
+| Lock hold | 500 / 1,000 / 2,000 / 5,000 µs | 6.4 / 6.4 / 12.8 / 25.6 ms | > 0.05 ms | all four | I1 500, I2 1,581, I3 5,000 µs |
+| Pool shrink | P′ 3 / 2 / 1 | 3.2 / 3.2 / 12.8 ms | 3.2 ms | P′ = 1 only | I1 = I2 = I3 = 1, I0 = 2 |
+
+With Poisson arrivals all three mechanisms produce waiting; under bounded jitter (§3c) pool shrink and lock hold did
+not.
+
+**PI-8, CPU faults (16 runs).**
+- All read back within 21 ms.
+- Effect ground truth (design §5.8) in every rep:
+
+| Fault | Candidates | Ground truth (both reps) | Levels (not frozen) |
+|---|---|---|---|
+| Contention (contender `cpu.weight`) | 50 / 100 / 200 / 400 | CPU 18 idle in W ≤ 0.02 % at every weight | I1 50, I2 141, I3 400 |
+| Throttling (target `cpu.max`) | 0.20 / 0.15 / 0.10 / 0.075 core | throttled periods 99.3–100 %; usage per period within 0.2 % of the quota | I1 0.20, I2 0.122, I3 0.075 core |
+
+The quota was restored with read-back before each cleanup.
+
+**PI-6 under throttling (all 8 quota runs).**
+- **Collector CPU:** stayed within budget.
+- **Coverage:** two throttle features miss 0.99. The pipeline checks passed, but each run's PI verdict is `ok: false`.
+  - `throttle.quota_cores` at about 0.989. It misses one tick: the boundary tick read just before the quota was
+    applied (CPU 18 is unlimited until the fault).
+  - `throttle.quota_saturation` at about 0.56: the collector limitation R2-D already documented.
+- **Heavier quotas:** two runs (0.10 and 0.075 core) also show `psi.cpu.some.target` below 0.99.
+- **For the M5 review:** whether PI-6 should exclude features whose source exists only after the fault starts. The
+  rule was not changed during the campaign.
+
+**Failed runs (kept, labelled, excluded from levels).**
+- **PI8-900081 (delay 15 ms, rep 2): host comparison failed.** Only `cgroup_dirs_identical` failed. The login session
+  cgroup `user.slice/.../session-15.scope` was replaced by `session-30.scope`: systemd-logind logged out SSH session 15
+  at 17:46:52 and opened SSH session 30 from 192.168.52.107 at 17:46:56, one second after the run's "before" snapshot.
+  Nothing the lab creates or touches changed. The check was not loosened; the rep was repeated as PI8-900082
+  (passed).
+- **PI8-900116 (loss 0.5 % on A egress): across-R reconciliation failed.** A sent 174,597 segments and R received
+  173,925; the 672 were dropped at A's netem qdisc by design. The CTRL invariant cannot hold for a fault that drops
+  on the path.
+  - **Fix (`6320943`):** the reconciliation now allows missing segments only at the declared fault's hop, and only as
+    many as that hop's qdisc drop counter shows.
+  - **This run stays failed:** it was evaluated at `2280a18` and has no qdisc counters.
+  - **Remaining network-fault runs:** the 31 not yet run move to a new campaign at the fixed commit.
+
 ## 4. PI verdicts so far
 
 | PI | Status | Basis |
@@ -197,7 +257,8 @@ not count as an effect.
 | PI-6 | **pass.** Collector CPU 0.0015–0.0021 core (budget 0.02) and coverage ≥ 0.99 in every collected run. 2 collectors-off pairs complete (§3a, report-only differences). | Design §6.7 |
 | Instrumentation | 2 on/off pairs complete; report-only (§3a) | Design §5.5 |
 | PI-7 | CTRL part: 136/136 valid app ticks, `app.latency_ms` P99 measured, in every run. Fault part: dependency delay above the CTRL maximum in every rep; pool shrink and lock hold not (§3c). An owner decision is pending. | FZ-PI7, FZ-PI7-LOCK |
-| PI-8 (application) | Dependency delay: levels found (I1 4, I2 7, I3 15 ms; not frozen). Pool shrink and lock hold: no level under the approved workload and ceilings (§3c). | FZ-PI8 |
+| PI-8 (application) | Under Poisson arrivals (§3d): dependency delay I1 4 / I2 7 / I3 15 ms; lock hold 500 / 1,581 / 5,000 µs; pool shrink only P′ = 1. Not frozen. (Under bounded jitter, §3c, pool and lock had no effect.) | FZ-PI8 |
+| PI-8 (CPU) | Contention I1 50 / I2 141 / I3 400; throttling 0.20 / 0.122 / 0.075 core; effect in every rep (§3d). Not frozen. | FZ-PI8 |
 | PI-2, PI-3, PI-5, PI-8 (other classes), OV-4, OV-5 | not run | §6 |
 
 ## 5. Evidence and integrity (AMD-27)
@@ -226,12 +287,10 @@ Re-check from a clean checkout:
 
 ## 6. Blockers (owner decisions)
 
-- **Application pool shrink and lock hold (new, §3c).** With the approved bounded-jitter arrivals (minimum gap 5 ms)
-  and the approved ceilings, neither mechanism can produce waiting. Options:
-  - change the arrival process (an FZ-WORKLOAD amendment, then a new CTRL baseline);
-  - raise the ceilings beyond the approved utilisation rule;
-  - accept `application_bottleneck` through dependency delay only, recording pool and lock as not reproducible under
-    this design.
+- **Application pool shrink and lock hold (§3c): resolved.** The owner chose Poisson arrivals (FZ-ARRIVALS); §3d
+  shows all three mechanisms producing waiting.
+- **PI-6 under throttling (§3d), for the M5 review:** whether features whose source exists only after the fault
+  starts count towards PI-6 coverage.
 
 - **FZ-INTENSITY (pending).** Ceilings for application (P′, lock hold, dependency delay), congestion, police, memory,
   OV-4 and OV-5 have no evidence, so those classes cannot run.
