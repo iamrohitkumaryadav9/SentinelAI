@@ -26,6 +26,7 @@ Evidence lives in `results/phase1c_m5_pilot/<campaign>/<run>/` and is committed 
 | `20261012T030504Z` | `7f6eac7` | PI0-1…5, CTRL-900001 | PI-0 5/5 passed. CTRL-900001 **FAILED** (`app_features`, §3). |
 | `20261012T040045Z` | `af2a4e7` | PI0-1…5, CTRL-900002…900005 | PI-0 5/5 passed. CTRL 4/4 passed. |
 | `20261012T045417Z` | `29d652f` | PI0-1…5; CTRL, PI6OFF, INSTOFF at seeds 900006 and 900007; PI1U-900008, PI1U-900009 | PI-0 5/5 passed. All 8 runs passed (§3a). |
+| `20261012T133839Z` | `a0b0aaa` | PI0-1…5; CTRL-900150…900153; PI8-900200 (loss 0.5 % on A egress) | PI-0 5/5 and CTRL 4/4 passed. **PI8-900200 FAILED** across-R reconciliation again: segments are not packets under retransmission (§3d note). Fixed in the next commit; the network runs moved to a new campaign. |
 | `20261012T104753Z` | `2280a18` | PI0-1…5; CTRL-900050…900053 under Poisson arrivals; PI8-900060…900082 (application faults, repeated); PI8-900100…900116 (CPU faults; one local-loss run) | 64 of 66 runs passed their pipeline checks (§3d). **PI8-900081 FAILED** (host comparison: an external SSH login change). **PI8-900116 FAILED** (across-R reconciliation under local loss; fixed in `6320943`). Quota runs miss PI-6 coverage on throttle features. |
 | `20261012T074028Z` | `82ff593` | PI0-1…5; re-baseline with the FZ-WORKSET working set: CTRL-900010…900013, PI6OFF and INSTOFF at 900010 and 900011, PI1U-900014, PI1U-900015; PI8-900020…900041 (application faults) | PI-0 5/5 passed. All 10 re-baseline runs passed (§3b). All 22 fault runs passed their pipeline checks (§3c): dependency delay has levels; pool shrink and lock hold produced no effect. |
 
@@ -247,6 +248,14 @@ The quota was restored with read-back before each cleanup.
     many as that hop's qdisc drop counter shows.
   - **This run stays failed:** it was evaluated at `2280a18` and has no qdisc counters.
   - **Remaining network-fault runs:** the 31 not yet run move to a new campaign at the fixed commit.
+  - **Second failure (campaign `20261012T133839Z`, PI8-900200, the same fault):** 699 segments short against 596 qdisc
+    drops. The window's kernel counters showed the reason. A's IP layer sent 92,926 packets; netem passed 92,449 and
+    dropped 471; A's interface carried 92,456. TCP, meanwhile, counted 92,737 segments plus 285 retransmissions.
+    Segments are not packets once there are retransmissions.
+  - **Second fix:** the reconciliation now compares A's IP packet counters with R's packet counters. In the same fix,
+    a client network failure under a declared network fault is accounted for: the server must have either never seen
+    the request or answered it with the answer lost, bounded by the number of such failures.
+  - **PI8-900200 stays failed.**
 
 ## 4. PI verdicts so far
 
