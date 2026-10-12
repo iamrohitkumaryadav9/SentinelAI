@@ -30,8 +30,9 @@ is handed to the invoking user at the end.
   cleanup DIR           idempotent cleanup from every op log under a campaign (after an interrupted invocation)
 
 Values come only from approved decisions (docs/PHASE_1C_FREEZE1_DECISIONS.json); the driver refuses otherwise. M2 is
-never invoked on pilot data (design §13 decision 7). Lab operations go through lab.Host only. The fault classes
-(FZ-INTENSITY, FZ-PI5 pending) are not implemented here.
+never invoked on pilot data (design §13 decision 7). Lab operations go through lab.Host only. Faults (pi8): the
+application faults (FZ-INTENSITY-APP) and the CPU and network faults (FZ-INTENSITY-CPUNET, refused until approved);
+memory pressure (FZ-INTENSITY memory floor, FZ-PI5 pending) is not implemented here.
 """
 import argparse
 import hashlib
@@ -45,6 +46,7 @@ import sys
 import threading
 import time
 from pathlib import Path
+from typing import Optional
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
@@ -358,10 +360,136 @@ APP_FAULTS = {"app_pool": ("pool", "pool_candidates", "queue_wait", "config.json
 T_CAP_S = 30.0                                                    # FZ-TTRANS T_cap: read-back after it = failed
 
 
+# CPU and network faults: fault type -> (candidate key in FZ-INTENSITY-CPUNET, stronger magnitude is, design class)
+OP_FAULTS = {"cpu_contender": ("contender_weight_candidates", "higher", "cpu_contention"),
+             "cpu_quota": ("quota_us_candidates", "lower", "cpu_throttling"),
+             "netem_loss_a_egress": ("loss_a_pct_candidates", "higher", "network_packet_loss"),
+             "police_a_ingress": ("police_kbit_candidates", "lower", "network_packet_loss"),
+             "netem_loss_r_egress": ("loss_r_pct_candidates", "higher", "tcp_retransmissions"),
+             "netem_rate_r": ("congestion_kbit_candidates", "lower", "tcp_retransmissions")}
+QUOTA_TOLERANCE = 1.05                       # usage <= quota x 1.05 (window edges are not CFS period edges; ENG)
+THROTTLE_RATIO_MIN, IDLE_MAX = 0.9, 0.05     # design §5.8 (R2-D GT, R2-C G2/G3/G6)
+
+
+def op_fault_spec(fault: str, magnitude, decisions=DECISIONS) -> dict:
+    """A CPU or network fault at an approved candidate (FZ-INTENSITY-CPUNET), re-checked against the approved
+    ceilings and floors (FZ-INTENSITY-R2, FZ-INTENSITY-NET); its exact lab operations; refuses anything else."""
+    key, stronger, cls = OP_FAULTS[fault]
+    cand = approved_value("FZ-INTENSITY-CPUNET", decisions)
+    r2, net = approved_value("FZ-INTENSITY-R2", decisions), approved_value("FZ-INTENSITY-NET", decisions)
+    if isinstance(magnitude, bool) or not isinstance(magnitude, (int, float)) or magnitude not in cand[key]:
+        refuse(f"{fault} magnitude {magnitude!r} is not an approved candidate {cand[key]}")
+    ceiling_ok = {"cpu_contender": lambda m: m <= r2["contender_weight_max"],
+                  "cpu_quota": lambda m: m >= r2["cpu_quota_min_core"] * L.CPU_PERIOD_US,
+                  "netem_loss_a_egress": lambda m: 0 < m <= r2["loss_a_egress_max_pct"],
+                  "netem_loss_r_egress": lambda m: 0 < m <= net["loss_r_egress_max_pct"],
+                  "netem_rate_r": lambda m: m >= cand["congestion_floor_kbit"],
+                  "police_a_ingress": lambda m: m >= cand["police_floor_kbit"]}[fault]
+    if not ceiling_ok(magnitude) or cand["netem_limit_packets"] > net["netem_limit_max_packets"]:
+        refuse(f"{fault} magnitude {magnitude!r} violates its approved ceiling or floor")
+    ops = {"cpu_contender": lambda m: L.contender_ops(int(m)), "cpu_quota": lambda m: L.quota_ops(int(m)),
+           "netem_loss_a_egress": lambda m: L.netem_loss_ops("a", m),
+           "netem_loss_r_egress": lambda m: L.netem_loss_ops("r", m),
+           "netem_rate_r": lambda m: L.netem_rate_ops(int(m), cand["netem_limit_packets"]),
+           "police_a_ingress": lambda m: L.police_ops(int(m))}[fault](magnitude)
+    return {"type": fault, "class": cls, "magnitude": magnitude, "candidates": cand[key], "stronger": stronger,
+            "ops": ops, "decision": "FZ-INTENSITY-CPUNET"}
+
+
+_TC_RATE = re.compile(r"\brate ([0-9.]+)([KMG]?)bit")
+_UNIT = {"": 1e-3, "K": 1.0, "M": 1e3, "G": 1e6}
+
+
+def _kbit(text: str) -> Optional[float]:
+    m = _TC_RATE.search(text or "")
+    return float(m.group(1)) * _UNIT[m.group(2)] if m else None
+
+
+def op_readback(spec: dict, sysr) -> bool:
+    """The kernel's own view of the injected fault (design §5.8 injection verification)."""
+    t, m = spec["type"], spec["magnitude"]
+    if t == "cpu_quota":
+        return (sysr.read(L.QUOTA_PATH) or "").strip() == f"{int(m)} {L.CPU_PERIOD_US}"
+    if t == "cpu_contender":
+        return (sysr.read(L.CONTENDER_WEIGHT_PATH) or "").strip() == str(int(m)) and bool(leaf_pids(sysr, "contender"))
+    probe = lambda k: (lambda r: r[1] if r and r[0] == 0 else "")(sysr.probe(L.TC_READS[k]))
+    if t in ("netem_loss_a_egress", "netem_loss_r_egress"):
+        text = probe("a_qdisc_text" if t == "netem_loss_a_egress" else "r_qdisc_text")
+        mm = re.search(r"\bnetem\b.*\bloss ([0-9.]+)%", text)
+        return bool(mm) and abs(float(mm.group(1)) - float(m)) < 1e-9
+    if t == "netem_rate_r":
+        text = probe("r_qdisc_text")
+        return "netem" in text and _kbit(text) == float(m)
+    if t == "police_a_ingress":
+        text = probe("a_ingress_filter")
+        return "police" in text and "drop" in text and _kbit(text) == float(m)
+    return False
+
+
+def gt_snapshot(sysr, tpid: int) -> dict:
+    """Raw ground-truth sources at a window edge, read directly from the kernel (never through the collector)."""
+    probe = lambda argv: (lambda r: r[1] if r and r[0] == 0 else None)(sysr.probe(argv))
+    return {"mono_ns": time.monotonic_ns(), "proc_stat": sysr.read("/proc/stat"),
+            "target_cpu_stat": sysr.read(f"{L.TARGET_DIR}/cpu.stat"), "a_snmp": sysr.read(f"/proc/{tpid}/net/snmp"),
+            "a_links": probe(L.LAB_READS["a_links"]), "a_qdisc": probe(L.TC_READS["a_qdisc_json"]),
+            "r_qdisc": probe(L.TC_READS["r_qdisc_json"])}
+
+
+def gt_parse(g: dict) -> dict:
+    """The numbers the CPU / network ground truth needs, from one gt_snapshot (raw kernel text)."""
+    out = {"mono_ns": g["mono_ns"]}
+    cpu = next((l.split()[1:] for l in (g.get("proc_stat") or "").splitlines()
+                if l.startswith(f"cpu{L.TARGET_CPU} ")), None)          # unreadable source: no measurement
+    if cpu is not None and len(cpu) >= 8:
+        f = [int(x) for x in cpu[:8]]
+        out["cpu_idle"], out["cpu_total"] = f[3] + f[4], sum(f)
+    st = dict(l.split()[:2] for l in (g.get("target_cpu_stat") or "").splitlines() if len(l.split()) >= 2)
+    out.update({k: int(st[k]) for k in ("nr_periods", "nr_throttled", "usage_usec") if k in st})
+    out["retrans"] = (L.tcp_counters(g.get("a_snmp")) or {}).get("RetransSegs")
+    qa = json.loads(g.get("a_qdisc") or "[]")
+    out["a_root_drops"] = sum(q.get("drops", 0) for q in qa if q.get("kind") != "ingress")
+    out["a_ingress_drops"] = sum(q.get("drops", 0) for q in qa if q.get("kind") == "ingress")
+    links = json.loads(g.get("a_links") or "[]")
+    st64 = next((l["stats64"] for l in links if l.get("ifname") == L.IF_A), {})
+    out["a_if_drops"] = sum(st64.get(d, {}).get("dropped", 0) for d in ("rx", "tx"))
+    return out
+
+
+def fault_ground_truth(fault: str, magnitude, a: dict, b: dict, ctrl_retrans_max) -> dict:
+    """Effect ground truth of a CPU / network fault over W (design §5.8), from two gt_parse results."""
+    d = lambda k: (b.get(k) or 0) - (a.get(k) or 0)
+    dt_s = (b["mono_ns"] - a["mono_ns"]) / 1e9
+    m = {"window_s": dt_s}
+    if fault == "cpu_contender":
+        m["cpu18_idle_frac"] = d("cpu_idle") / d("cpu_total") if d("cpu_total") > 0 else None
+        ok = m["cpu18_idle_frac"] is not None and m["cpu18_idle_frac"] <= IDLE_MAX
+    elif fault == "cpu_quota":
+        m["throttled_ratio"] = d("nr_throttled") / d("nr_periods") if d("nr_periods") > 0 else None
+        m["usage_us_per_period"] = d("usage_usec") / d("nr_periods") if d("nr_periods") > 0 else None
+        ok = m["throttled_ratio"] is not None and m["throttled_ratio"] >= THROTTLE_RATIO_MIN and \
+            m["usage_us_per_period"] <= float(magnitude) * QUOTA_TOLERANCE      # usage within the quota per period
+    elif fault == "netem_loss_a_egress":
+        m["a_root_qdisc_drops"] = d("a_root_drops")
+        ok = m["a_root_qdisc_drops"] > 0
+    elif fault == "police_a_ingress":
+        m["a_ingress_drops"] = d("a_ingress_drops")
+        ok = m["a_ingress_drops"] > 0
+    elif fault in ("netem_loss_r_egress", "netem_rate_r"):                   # PI-2: invisible to A's local drops
+        m.update(retrans=d("retrans"), ctrl_retrans_max=ctrl_retrans_max,
+                 a_local_drops=d("a_root_drops") + d("a_if_drops"))
+        ok = ctrl_retrans_max is not None and m["retrans"] > ctrl_retrans_max and m["a_local_drops"] == 0
+    else:
+        raise ValueError(f"no ground truth for {fault!r}")
+    return dict(m, established=bool(ok))
+
+
 def fault_spec(fault: str, magnitude: int, w: dict, decisions=DECISIONS) -> dict:
-    """An application fault at an approved PI-8 candidate magnitude (FZ-INTENSITY-APP); refuses anything else."""
+    """An application fault at an approved PI-8 candidate magnitude (FZ-INTENSITY-APP), or a CPU / network fault
+    (op_fault_spec); refuses anything else."""
+    if fault in OP_FAULTS:
+        return op_fault_spec(fault, magnitude, decisions)
     if fault not in APP_FAULTS:
-        refuse(f"fault {fault!r} is not implemented (application faults only: {sorted(APP_FAULTS)})")
+        refuse(f"fault {fault!r} is not implemented ({sorted(APP_FAULTS) + sorted(OP_FAULTS)})")
     key, cands, hist, echo, stronger = APP_FAULTS[fault]
     app = approved_value("FZ-INTENSITY-APP", decisions)
     if type(magnitude) is not int or magnitude not in app[cands]:
@@ -376,14 +504,17 @@ class WindowHook:
     reads the raw metrics document and then issues the fault, if any; after tick nB + nW it reads the raw document
     again. Effect ground truth for application faults is computed from these documents, never from features."""
 
-    def __init__(self, app, nB: int, nW: int, read_raw, inject=None):
-        self.app, self.nB, self.nW, self.read_raw, self.inject = app, nB, nW, read_raw, inject
-        self.k, self.docs = 0, {}
+    def __init__(self, app, nB: int, nW: int, read_raw, inject=None, read_gt=None):
+        self.app, self.nB, self.nW, self.read_raw, self.inject, self.read_gt = app, nB, nW, read_raw, inject, read_gt
+        self.k, self.docs, self.gt = 0, {}, {}
 
     def sample(self):
         obs = self.app.sample()
         if self.k in (self.nB, self.nB + self.nW):
-            self.docs["w_start" if self.k == self.nB else "w_end"] = (time.monotonic_ns(), self.read_raw())
+            edge = "w_start" if self.k == self.nB else "w_end"
+            self.docs[edge] = (time.monotonic_ns(), self.read_raw())
+            if self.read_gt is not None:
+                self.gt[edge] = self.read_gt()
         if self.k == self.nB and self.inject is not None:
             self.inject(self.k)
         self.k += 1
@@ -397,13 +528,20 @@ class Injector:
         self.host, self.sysr, self.run_id, self.spec, self.clock_ns, self.poll_s = \
             host, sysr, run_id, spec, clock_ns, poll_s
         self.record = {"type": spec["type"], "magnitude": spec["magnitude"], "issued": False, "verified": False}
-        self.thread = None
+        self.thread, self.procs = None, []
 
     def __call__(self, tick: int):
         r = self.record
         r["issue_mono_ns"], r["issue_after_tick"] = self.clock_ns(), tick
         try:
-            self.host.apply(("replace_control", json.dumps(self.spec["control"], sort_keys=True).encode()))
+            if "ops" in self.spec:                                    # CPU / network: the declared exact ops
+                for op in self.spec["ops"]:
+                    res = self.host.apply(op, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) \
+                        if op[0] == "spawn" else self.host.apply(op)
+                    if op[0] == "spawn":
+                        self.procs.append(res)
+            else:
+                self.host.apply(("replace_control", json.dumps(self.spec["control"], sort_keys=True).encode()))
             r["issued"] = True
         except Exception as exc:                                       # noqa: BLE001 -- failed_injection
             r["issue_error"] = f"{type(exc).__name__}: {exc}"
@@ -421,14 +559,18 @@ class Injector:
     def watch(self):
         r, end = self.record, self.record["issue_mono_ns"] + int(T_CAP_S * 1e9)
         while self.clock_ns() < end:
-            value, err = self.echo_value()
-            if value == self.spec["magnitude"] and err is None:
+            if "ops" in self.spec:
+                ok = op_readback(self.spec, self.sysr)
+            else:
+                value, err = self.echo_value()
+                ok = value == self.spec["magnitude"] and err is None
+            if ok:
                 r["readback_mono_ns"] = self.clock_ns()
                 r["readback_latency_s"] = (r["readback_mono_ns"] - r["issue_mono_ns"]) / 1e9
                 r["verified"] = True
                 return
             time.sleep(self.poll_s)
-        r["readback_error"] = f"no echo of {self.spec['key']} = {self.spec['magnitude']} within {T_CAP_S} s"
+        r["readback_error"] = f"{self.spec['type']} = {self.spec['magnitude']} not read back within {T_CAP_S} s"
 
     def join(self, timeout: float):
         if self.thread is not None:
@@ -535,7 +677,8 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
     argv = {"dependency": L.dependency_argv(run_id, w), "workload": L.workload_argv(run_id, w, writer, ws),
             "loadgen": L.loadgen_argv(w, load_s, seed, str(client_tmp), arr)}
     sysr = sysr or L.Sys()
-    host = (host_cls or L.Host)(L.Plan(run_id, spawns=argv.items()), str(out / "ops.jsonl"), sysr)
+    host = (host_cls or L.Host)(L.Plan(run_id, spawns=argv.items(), fault_ops=(spec or {}).get("ops", ())),
+                                str(out / "ops.jsonl"), sysr)
     ev = out / EVIDENCE
     R = {"format": FORMAT, "stage": "CTRL" if variant == "ctrl" else variant.upper(), "variant": variant,
          "collector_mode": v["collector"], "ebpf": v["ebpf"], "metrics_writer": writer, "working_set": ws,
@@ -601,7 +744,7 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
             if spec is not None:
                 injector = Injector(host, sysr, run_id, spec)
             hook = WindowHook(appmod.AppSource(run_id), round(B_S / PERIOD_S), round(W_S / PERIOD_S), read_app,
-                              injector)
+                              injector, lambda: gt_snapshot(sysr, tpids[0]))
             evt("collect_start")
             ticks, stats = collect(target, params, LiveReader(), SystemClock(), PERIOD_S, LoaderTicks(loader), hook)
             evt("collect_end")
@@ -662,6 +805,8 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
         for k, (t, b) in (hook.docs.items() if hook is not None else ()):
             if isinstance(b, bytes):                                  # W-window documents (effect ground truth)
                 write_new(ev / f"app_{k}.json", b)
+        for k, g in (hook.gt.items() if hook is not None else ()):    # W-window kernel sources (ground truth)
+            write_new(ev / f"gt_{k}.json", dump(g))
         write_new(ev / "counters.json", dump({k: {"r": state[k]["r"], "tcp": state[k]["tcp"],
                                                   "mono_ns": state[k]["mono_ns"]} for k in ("start", "end")}))
         write_new(ev / "client.jsonl", read_regular(client_tmp))
@@ -1051,6 +1196,13 @@ def rep_effect(run_dir: Path, ctrl_max: dict, lock_rule: dict) -> dict:
     rep = evaluate(run_dir)
     run = json.loads((run_dir / EVIDENCE / "run.json").read_bytes())
     f = run["fault"]
+    verified = (rep["checks"].get("injection_verified") or {}).get("ok", False)
+    if f["type"] in OP_FAULTS:                                       # kernel-side ground truth (design §5.8)
+        a, b = (gt_parse(json.loads((run_dir / EVIDENCE / f"gt_{k}.json").read_bytes())) for k in ("w_start", "w_end"))
+        g = fault_ground_truth(f["type"], f["magnitude"], a, b, ctrl_max.get("retrans"))
+        return {"run": run_dir.name, "seed": run["seed"], "magnitude": f["magnitude"], "pipeline_ok": rep["pipeline_ok"],
+                "injection_verified": verified, "measure": g, "basis": "design §5.8",
+                "ground_truth": bool(rep["pipeline_ok"] and g["established"])}
     eff = (rep.get("w_effects") or {}).get(f["metric_histogram"]) or {}
     value = eff.get("p99_ms")
     if f["type"] == "app_lock":
@@ -1081,6 +1233,10 @@ def levels(campaign: Path, decisions=DECISIONS) -> dict:
                 for h, e in rep["w_effects"].items():
                     if e["p99_ms"] is not None:
                         ctrl_max[h] = max(ctrl_max.get(h, 0.0), e["p99_ms"])
+                if (d / EVIDENCE / "gt_w_start.json").exists():          # CTRL retransmissions in W (PI-2)
+                    a, b = (gt_parse(json.loads((d / EVIDENCE / f"gt_{k}.json").read_bytes()))
+                            for k in ("w_start", "w_end"))
+                    ctrl_max["retrans"] = max(ctrl_max.get("retrans", 0), (b["retrans"] or 0) - (a["retrans"] or 0))
     out = {"campaign": campaign.name, "ctrl_runs": ctrl_runs, "ctrl_max_ms": ctrl_max, "faults": {},
            "note": "report-only; levels are frozen only by the M5 review; the CTRL maximum of lock_wait is 0 ms by "
                    "FZ-PI7-LOCK"}
@@ -1088,7 +1244,7 @@ def levels(campaign: Path, decisions=DECISIONS) -> dict:
     for fault in sorted({r["fault"]["type"] for _, r in pi8}):
         reps = sorted((rep_effect(d, ctrl_max, lock_rule) for d, r in pi8 if r["fault"]["type"] == fault),
                       key=lambda x: x["seed"])
-        spec = next(r["fault"] for _, r in pi8 if r["fault"]["type"] == fault)
+        spec = next(r["fault"] for _, r in pi8 if r["fault"]["type"] == fault)       # candidates, direction
         order = sorted(spec["candidates"], reverse=spec["stronger"] == "lower")       # weakest -> strongest
         streak, stopped = 0, None
         for x in reps:                                                              # in run (seed) order
@@ -1130,6 +1286,14 @@ def cleanup_all(top: Path) -> int:
     return 0 if state["ok"] and all(r.get("ok") for r in res.values()) else 1
 
 
+def magnitude_arg(text: str):
+    """An integer when integral ('1000', '5'), otherwise a float ('0.5'); never NaN or infinite."""
+    v = float(text)
+    if v != v or v in (float("inf"), float("-inf")):
+        raise argparse.ArgumentTypeError(f"not a finite number: {text!r}")
+    return int(v) if v.is_integer() and "." not in text else v
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -1142,8 +1306,9 @@ def main(argv=None) -> int:
         else:
             p.add_argument("--seed", type=int, required=True)
         if name == "pi8":
-            p.add_argument("--fault", required=True, choices=sorted(APP_FAULTS))
-            p.add_argument("--magnitude", type=int, required=True, help="an approved FZ-INTENSITY-APP candidate")
+            p.add_argument("--fault", required=True, choices=sorted(APP_FAULTS) + sorted(OP_FAULTS))
+            p.add_argument("--magnitude", type=magnitude_arg, required=True,
+                           help="an approved candidate (FZ-INTENSITY-APP, FZ-INTENSITY-CPUNET)")
     sub.add_parser("evaluate").add_argument("dir")
     sub.add_parser("pairs").add_argument("campaign_dir")
     sub.add_parser("levels").add_argument("campaign_dir")

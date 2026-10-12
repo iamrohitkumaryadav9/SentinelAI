@@ -36,6 +36,7 @@ COMMIT = "c" * 40
 REAL_DO = L.Host._do                    # the real mutation dispatcher, for the one test that runs it on FakeSys
 REAL_PI_CHECKS, REAL_REPLAY = P.pi_checks, P.replay      # the CTRL fixture mocks both
 REAL_SNAPSHOT, REAL_COMPARE = L.host_snapshot, L.compare_host   # Sandboxed replaces both
+REAL_APPROVED = P.approved_value                                 # the CTRL fixture replaces it
 _RECORD = json.loads((ROOT / "docs/PHASE_1C_FREEZE1_DECISIONS.json").read_text())["decisions"]
 WORKLOAD = _RECORD["FZ-WORKLOAD"]["value"]
 WORKSET = _RECORD["FZ-WORKSET"]["value"]["values"]
@@ -81,6 +82,8 @@ class FakeSys(L.Sys):
         self.next_mount_id = 1600
         self.mountinfo_ok = True
         self.on_umount = None              # called before the simulated umount2 (concurrent changes)
+        self.qd = {L.IF_A: [], L.IF_RB: []}  # tc state: qdiscs added by the run (veth default: noqueue)
+        self.police_text = ""
 
     def add_mount(self, mnt, parent, **kw):
         self.next_mount_id += 1
@@ -178,11 +181,22 @@ class FakeSys(L.Sys):
             raise L.LabRefused(f"not a lab read: {argv}")
         key = next((k for k, v in {**L.LAB_READS, **{f"route_get_{s}": a for s, a in L.ROUTE_GET.items()},
                                    **{f"forward_{s}": a for s, a in L.FORWARD_READS.items()},
-                                   **{f"ping_{s}": a for s, a in L.PING.items()}}.items() if v == argv))
+                                   **{f"ping_{s}": a for s, a in L.PING.items()},
+                                   **{f"tc_{k}": a for k, a in L.TC_READS.items()}}.items() if v == argv))
         if key in self.tweak:
             return self.tweak[key]
         if not self.lab_built():
             return (1, "", "Cannot open network namespace")
+        if key.startswith("tc_"):                              # tc as iproute2 renders it (text and -j)
+            k = key[3:]
+            if k == "a_ingress_filter":
+                return (0, self.police_text, "")
+            qs = self.qd[L.IF_A if k.startswith("a_") else L.IF_RB] or \
+                [{"kind": "noqueue", "root": True, "drops": 0, "text": "qdisc noqueue 0: root refcnt 2"}]
+            if k.endswith("_json"):
+                return (0, json.dumps([{"kind": q["kind"], "root": q.get("root", False), "drops": q["drops"]}
+                                       for q in qs]), "")
+            return (0, "\n".join(q["text"] for q in qs) + "\n", "")
         side = key[0] if key[1] == "_" else None
         if key.startswith("route_get"):
             return (2, "", "RTNETLINK answers: Network is unreachable")
@@ -305,6 +319,23 @@ class SimHost(L.Host):
             s.run[op[1]] = ("file", 0, op[2])
         elif kind == "unlink_run":
             del s.run[op[1]]
+        elif kind == "tc":                                  # the kernel's view after the real tc command
+            argv = op[1]
+            dev = argv[argv.index("dev") + 1]
+            if argv[3] == "qdisc" and "ingress" in argv:
+                s.qd[dev].append({"kind": "ingress", "root": False, "drops": 0, "text": "qdisc ingress ffff: parent ffff:fff1"})
+            elif argv[3] == "qdisc" and "netem" in argv:
+                rest = list(argv[argv.index("netem") + 1:])
+                if "rate" in rest:
+                    rest[rest.index("rate") + 1] = rest[rest.index("rate") + 1].replace("kbit", "Kbit")
+                s.qd[dev].append({"kind": "netem", "root": True, "drops": 0,
+                                  "text": "qdisc netem 8001: root refcnt 2 limit 1000 " + " ".join(
+                                      t for t in rest if t != "limit" and not (rest.index(t) > 0 and
+                                                                             rest[rest.index(t) - 1] == "limit"))})
+            elif argv[3] == "filter":
+                k = argv[argv.index("rate") + 1].replace("kbit", "Kbit")
+                s.police_text = (f"filter parent ffff: protocol all pref 49152 matchall chain 0\n  action order 1:  "
+                                 f"police 0x1 rate {k} burst 3000b mtu 2Kb action drop overhead 0b\n")
         elif kind == "replace_control":
             s.run[f"{L.run_dir(self.plan.run_id)}/control.json"] = ("file", 0, op[1])
             if self.on_control:
@@ -315,8 +346,8 @@ class SimHost(L.Host):
             role = op[1]
             p = (self.spawn.get(role) or (lambda: FakeProc()))()
             leaf = {"echo_server": "support", "echo_client": "target", "workload": "target",
-                    "dependency": "support", "loadgen": "support"}[role]
-            if role in ("echo_server", "dependency", "loadgen", "workload"):
+                    "dependency": "support", "loadgen": "support", "contender": "contender"}[role]
+            if role in ("echo_server", "dependency", "loadgen", "workload", "contender"):
                 s.procs[p.pid] = f"/{L.LAB}/{leaf}"
             if role == "dependency":
                 s.run[f"{L.run_dir(self.plan.run_id)}/dependency_config.json"] = ("file", L.LAB_UID, b"{}")
@@ -1261,6 +1292,7 @@ class CtrlFixture(Sandboxed):
         self.snap = app_snapshot()                   # the run's canonical snapshot (live and replay)
         self.reads, self.live_sha, self.w_extra = 0, None, ()   # metrics reads; hash after a fault; W observations
         self.echo = True                             # the simulated workload echoes a replaced control file
+        self.effect = None                           # fn(FakeSys): the kernel-side effect of a fault during W
         target = Target(name="faultlab-ctrl", cgroup_path=L.TARGET_CGROUP_PATH, pids=(1,), cpuset="18",
                         netns_ref="pid:1", ifaces=())
 
@@ -1313,8 +1345,10 @@ class CtrlFixture(Sandboxed):
         import sentinelai.runtime.ticks as TICKS
         stats = SimpleNamespace(ticks=136, wall_s=135.0, cpu_s=1.0, max_tick_read_s=0.01)
         def collect(target, params, reader, clock, period, ebpf, app):   # drives the app source tick by tick
-            for _ in range(P.B_S + P.W_S + 1):
+            for k in range(P.B_S + P.W_S + 1):
                 app.sample()
+                if k == P.B_S and self.effect is not None:               # the fault acts during W
+                    self.effect(self.s)
             return ["t"] * 136, stats
 
         class Quiet:                                                     # the per-tick app source reads nothing
@@ -1928,7 +1962,8 @@ class TestFaults(CtrlFixture):
     def test_only_approved_faults_and_magnitudes(self):
         for fault, mag in (("app_pool", 4), ("app_pool", 0), ("app_lock", 6000), ("app_lock", 1500),
                            ("app_dependency_delay", 16), ("app_dependency_delay", 2), ("cpu_quota", 1),
-                           ("netem_loss_a_egress", 1), ("app_lock", 1000.0), ("app_lock", True)):
+                           ("netem_loss_a_egress", 3), ("cpu_contender", 800), ("netem_rate_r", 100),
+                           ("memory_max", 512), ("app_lock", 1000.0), ("app_lock", True)):
             with self.subTest((fault, mag)), self.assertRaises(P.Refused):
                 P.fault_spec(fault, mag, WORKLOAD)
         self.assertTrue(all(max(APP[k]) <= APP[c] for k, c in (("lock_hold_us_candidates", "lock_hold_us_max"),
@@ -2010,6 +2045,181 @@ class TestFaultRules(CtrlFixture):
         d = P.levels(self.tmp)["faults"]["app_dependency_delay"]
         self.assertEqual(d["established_2of2"], [15])                    # 7 ms: 1 of 2 reps above the CTRL maximum
         self.assertEqual((d["I1"], d["I3"]), (15, 15))
+
+
+CPUNET = _RECORD["FZ-INTENSITY-CPUNET"]["value"]
+
+
+def proc_stat(busy, idle):
+    return f"cpu  1 2 3 4 5 6 7 8 9 10\ncpu{L.TARGET_CPU} {busy} 0 0 {idle} 0 0 0 0 0 0\n"
+
+
+def cpu_stat(periods, throttled, usage):
+    return f"usage_usec {usage}\nuser_usec 0\nsystem_usec 0\nnr_periods {periods}\nnr_throttled {throttled}\n"
+
+
+class TestOpFaults(CtrlFixture):
+    """CPU and network faults (pi8) on the simulated host: exact ops, kernel read-back, design §5.8 ground truth."""
+
+    def setUp(self):
+        super().setUp()
+        self.base = lambda s: s.files.update({"/proc/stat": proc_stat(1000, 9000),
+                                              f"{L.TARGET_DIR}/cpu.stat": cpu_stat(0, 0, 0)})
+
+    def go(self, fault, mag, seed, effect=None, variant="pi8", tweak=None, **kw):
+        self.out = self.tmp / f"{P.VARIANTS[variant]['prefix']}-{seed}"
+        self.s, self.docs, self.reads, self.live_sha = FakeSys(), [], 0, None
+        self.s.tweak.update(tweak or {})
+        self.base(self.s)
+        self.effect = effect
+        rc, h = self.run_ctrl(variant=variant, seed=seed, fault=(fault, mag) if fault else None, **kw)
+        return rc, h, json.loads((self.out / "report.json").read_text())
+
+    def rep(self, seed, ctrl_retrans=0):
+        return P.rep_effect(self.tmp / f"PI8-{seed}", {"retrans": ctrl_retrans}, _RECORD["FZ-PI7-LOCK"]["value"])
+
+    def test_each_fault_issues_its_exact_ops_and_reads_back(self):
+        busy = lambda s: s.files.update({"/proc/stat": proc_stat(1000 + 9000, 9000 + 100)})      # idle 1 %
+        throttled = lambda s: s.files.update({f"{L.TARGET_DIR}/cpu.stat": cpu_stat(900, 880, 900 * 9800)})
+        a_drop = lambda s: s.qd[L.IF_A][0].update(drops=50)
+        police = lambda s: s.qd[L.IF_A][0].update(drops=40)
+        retrans = lambda s: s.__setattr__("tcp", [s.tcp[0], s.tcp[1], s.tcp[2] + 30])
+        cases = (("cpu_contender", 200, busy, ("write", L.CONTENDER_WEIGHT_PATH, "200")),
+                 ("cpu_quota", 10000, throttled, ("write", L.QUOTA_PATH, "10000 100000")),
+                 ("netem_loss_a_egress", 2, a_drop, ("tc", L.netem_loss_ops("a", 2)[0][1])),
+                 ("police_a_ingress", 350, police, ("tc", L.police_ops(350)[1][1])),
+                 ("netem_loss_r_egress", 1, retrans, ("tc", L.netem_loss_ops("r", 1)[0][1])),
+                 ("netem_rate_r", 400, retrans, ("tc", L.netem_rate_ops(400, 1000)[0][1])))
+        for seed, (fault, mag, effect, op) in enumerate(cases, start=900100):
+            with self.subTest(fault):
+                rc, h, rep = self.go(fault, mag, seed, effect)
+                self.assertEqual(rc, 0, (fault, rep["checks"]))
+                self.assertIn(op, h.ops)
+                self.assertTrue(rep["checks"]["injection_verified"]["ok"], rep["checks"]["injection_verified"])
+                self.assertTrue(self.rep(seed)["ground_truth"], self.rep(seed))
+                self.assertTrue(empty(self.s))
+                if fault == "cpu_contender":
+                    self.assertIn("contender", [o[1] for o in h.ops if o[0] == "spawn"])
+                if fault == "cpu_quota":
+                    self.assertIn(L.QUOTA_RESTORE, h.ops)                      # restored before the cgroup goes
+                    self.assertLess(h.ops.index(L.QUOTA_RESTORE), h.ops.index(("rmdir", L.TARGET_DIR)))
+
+    def test_ground_truth_fails_without_the_effect(self):
+        for seed, (fault, mag) in enumerate((("cpu_contender", 200), ("cpu_quota", 10000), ("netem_loss_a_egress", 2),
+                                             ("police_a_ingress", 350), ("netem_loss_r_egress", 1)), start=900120):
+            with self.subTest(fault):
+                rc, h, rep = self.go(fault, mag, seed)                          # injected, but no kernel effect
+                self.assertEqual(rc, 0)
+                self.assertFalse(self.rep(seed)["ground_truth"], self.rep(seed))
+
+    def test_path_loss_must_stay_invisible_to_a_local_drops(self):
+        def leak(s):
+            s.tcp = [s.tcp[0], s.tcp[1], s.tcp[2] + 30]
+            s.qd[L.IF_A].append({"kind": "pfifo", "root": True, "drops": 3, "text": "qdisc pfifo"})
+        self.go("netem_loss_r_egress", 2, 900130, leak)
+        g = self.rep(900130)
+        self.assertEqual((g["measure"]["a_local_drops"], g["ground_truth"]), (3, False))
+        self.assertFalse(self.rep(900130, ctrl_retrans=30)["ground_truth"])   # retransmissions must exceed CTRL
+
+    def test_throttling_needs_both_ratio_and_usage_within_quota(self):
+        for seed, (periods, throttled, usage, ok) in enumerate(((900, 880, 900 * 9800, True),
+                                                               (900, 500, 900 * 9800, False),
+                                                               (900, 880, 900 * 12000, False)), start=900140):
+            self.go("cpu_quota", 10000, seed,
+                    lambda s, a=(periods, throttled, usage): s.files.update({f"{L.TARGET_DIR}/cpu.stat": cpu_stat(*a)}))
+            self.assertEqual(self.rep(seed)["ground_truth"], ok, (periods, throttled, usage))
+
+    def test_failed_tc_and_wrong_read_back_are_failed_injections(self):
+        rc, h, rep = self.go("netem_loss_a_egress", 1, 900150, fail=lambda op: op[0] == "tc")
+        self.assertEqual((rc, rep["checks"]["injection_verified"]["label"]), (1, "failed_injection"))
+        self.assertTrue(rep["checks"]["cleanup"]["ok"])
+        with mock.patch.object(P, "T_CAP_S", 0.2):                          # the kernel shows 2 %, not 1 %
+            rc, h, rep = self.go("netem_loss_a_egress", 1, 900151,
+                                 tweak={"tc_a_qdisc_text": (0, "qdisc netem 8001: root refcnt 2 limit 1000 loss 2%\n", "")})
+        self.assertEqual((rc, rep["checks"]["injection_verified"]["ok"]), (1, False))   # kernel shows 2 %, not 1 %
+        self.assertTrue(empty(self.s))
+
+    def test_levels_for_op_faults(self):
+        self.go(None, None, 900160, variant="ctrl")
+        a_drop = lambda s: s.qd[L.IF_A][0].update(drops=50)
+        seed = 900161
+        for mag, eff in ((0.5, None), (0.5, a_drop), (1, a_drop), (1, a_drop), (2, a_drop), (2, a_drop),
+                         (5, a_drop), (5, a_drop)):
+            self.go("netem_loss_a_egress", mag, seed, eff)
+            seed += 1
+        lv = P.levels(self.tmp)["faults"]["netem_loss_a_egress"]
+        self.assertEqual(lv["established_2of2"], [1, 2, 5])                    # 0.5 %: 1 of 2 reps
+        self.assertEqual((lv["I1"], lv["I3"], lv["I2"], lv["I0"]), (1, 5, 2, 0.5))
+
+    def test_unapproved_candidates_are_refused_by_the_real_record(self):
+        with mock.patch.object(P, "approved_value", REAL_APPROVED):          # the committed record, unmocked
+            for fault, mag in (("cpu_quota", 10000), ("netem_loss_a_egress", 1), ("netem_rate_r", 400)):
+                with self.subTest(fault), self.assertRaises(P.Refused):     # FZ-INTENSITY-CPUNET is only proposed
+                    P.op_fault_spec(fault, mag)
+            self.assertEqual(P.fault_spec("app_pool", 1, WORKLOAD)["magnitude"], 1)   # approved faults still run
+
+    def test_ceilings_hold_even_if_a_candidate_list_exceeded_them(self):
+        bad = dict(CPUNET, contender_weight_candidates=[400, 800], quota_us_candidates=[7500, 5000],
+                   loss_a_pct_candidates=[5, 10], loss_r_pct_candidates=[5, 10], congestion_kbit_candidates=[320, 100],
+                   police_kbit_candidates=[300, 100])
+        approved = lambda name, rec=None: bad if name == "FZ-INTENSITY-CPUNET" else _RECORD[name]["value"]
+        with mock.patch.object(P, "approved_value", side_effect=approved):
+            for fault, ok, over in (("cpu_contender", 400, 800), ("cpu_quota", 7500, 5000),
+                                    ("netem_loss_a_egress", 5, 10), ("netem_loss_r_egress", 5, 10),
+                                    ("netem_rate_r", 320, 100), ("police_a_ingress", 300, 100)):
+                with self.subTest(fault):
+                    self.assertEqual(P.op_fault_spec(fault, ok)["magnitude"], ok)
+                    with self.assertRaises(P.Refused):                       # in the list, beyond the ceiling
+                        P.op_fault_spec(fault, over)
+
+    def test_contender_read_back_needs_a_live_contender(self):
+        s = FakeSys()
+        s.dirs |= set(L.LAB_DIRS)
+        s.files[L.CONTENDER_WEIGHT_PATH] = "200"
+        spec = {"type": "cpu_contender", "magnitude": 200}
+        self.assertFalse(P.op_readback(spec, s))                             # weight set, no process
+        s.procs[777] = f"/{L.LAB}/contender"
+        self.assertTrue(P.op_readback(spec, s))
+        s.files[L.CONTENDER_WEIGHT_PATH] = "100"
+        self.assertFalse(P.op_readback(spec, s))
+
+    def test_contention_needs_cpu18_idle_at_most_5_percent(self):
+        for seed, (idle, ok) in enumerate(((100, True), (500, True), (1000, False), (5000, False)), start=900180):
+            busy = 10000 - idle                                              # W adds 10000 ticks on CPU 18
+            self.go("cpu_contender", 100, seed,
+                    lambda s, b=busy, i=idle: s.files.update({"/proc/stat": proc_stat(1000 + b, 9000 + i)}))
+            g = self.rep(seed)
+            self.assertEqual((round(g["measure"]["cpu18_idle_frac"], 3), g["ground_truth"]), (idle / 10000, ok))
+
+    def test_tc_shape_refuses_protected_names_anywhere(self):
+        self.assertTrue(L.tc_shape_ok(L.netem_loss_ops("a", 1)[0][1]))
+        for p in L.PROTECTED:
+            with self.subTest(p):
+                argv = ("tc", "-n", L.NS_A, "filter", "add", "dev", L.IF_A, "parent", "ffff:", "matchall", "action",
+                        "mirred", "egress", "redirect", "dev", p)
+                self.assertFalse(L.tc_shape_ok(argv))
+                with self.assertRaises(L.LabRefused):
+                    L.Plan("PI8-s900170", fault_ops=[("tc", argv)])
+
+    def test_guard_admits_only_the_declared_lab_tc(self):
+        ops = L.netem_loss_ops("a", 1)
+        g = L.Plan("PI8-s900170", fault_ops=ops)
+        self.assertEqual(g.check(ops[0]), ops[0])
+        for bad in (("tc", L.netem_loss_ops("a", 2)[0][1]), ("tc", L.netem_loss_ops("r", 1)[0][1]),
+                    ("tc", ("tc", "-n", L.NS_A, "qdisc", "add", "dev", "enp0s31f6", "root", "netem", "loss", "1%")),
+                    ("cmd", ops[0][1]), ("write", L.QUOTA_PATH, "5000 100000"),
+                    ("write", L.CONTENDER_WEIGHT_PATH, "10000"), ("spawn", "contender", L.contender_argv())):
+            with self.subTest(bad), self.assertRaises(L.LabRefused):
+                g.check(bad)
+        for bad_ops in ([("tc", ("tc", "-n", "other-ns", "qdisc", "add", "dev", L.IF_A, "root", "netem"))],
+                        [("tc", ("tc", "-n", L.NS_A, "qdisc", "add", "dev", L.IF_RB, "root", "netem"))],
+                        [("tc", ("tc", "-n", L.NS_A, "qdisc", "add", "dev", "docker0", "root", "netem"))],
+                        [("mkdir", "/tmp/x")], [("write", "/etc/passwd", "x")]):
+            with self.subTest(bad_ops), self.assertRaises(L.LabRefused):
+                L.Plan("PI8-s900170", fault_ops=bad_ops)
+        self.assertEqual(L.Plan("PI8-s900170").check(L.QUOTA_RESTORE), L.QUOTA_RESTORE)   # restore is always allowed
+        q = L.Plan("PI8-s900170", fault_ops=L.contender_ops(100))
+        self.assertEqual(q.check(("spawn", "contender", L.contender_argv()))[1], "contender")
 
 
 class TestReplaceControl(unittest.TestCase):
@@ -2188,6 +2398,14 @@ class TestGates(unittest.TestCase):
             self.assertEqual((ct.call_args.args[0].name, ct.call_args.kwargs),
                              ("PI8-900020", {"variant": "pi8", "fault": ("app_lock", 2000)}))
 
+    def test_magnitude_argument(self):
+        self.assertEqual((P.magnitude_arg("1000"), P.magnitude_arg("0.5"), P.magnitude_arg("5")), (1000, 0.5, 5))
+        self.assertIsInstance(P.magnitude_arg("1000"), int)
+        self.assertIsInstance(P.magnitude_arg("2.0"), float)                    # "2.0" stays a float: never a candidate int
+        for bad in ("nan", "inf", "x"):
+            with self.subTest(bad), self.assertRaises((ValueError, P.argparse.ArgumentTypeError)):
+                P.magnitude_arg(bad)
+
     def test_run_names_are_exact(self):
         for ok in ("PI0-1", "CTRL-900001", "PI1U-909999", "PI6OFF-900006", "INSTOFF-900006", "PI8-900020"):
             self.assertRegex(ok, f"^(?:{P.RUN_NAME})$")
@@ -2260,9 +2478,10 @@ class TestStatic(unittest.TestCase):
             for node in ast.walk(tree):
                 if isinstance(node, ast.ImportFrom) and node.module and "diagnostic.rules" in node.module:
                     self.assertEqual(node.module, "sentinelai.diagnostic.rules.params", f)
-            self.assertNotIn('"FZ-INTENSITY"', src.replace("FZ-INTENSITY, FZ-PI5 pending", ""))
+            self.assertNotIn('"FZ-INTENSITY"', src.replace("FZ-INTENSITY, FZ-PI5 pending", ""))   # pending: unused
             self.assertNotIn('"FZ-PI5"', src)
-            self.assertNotIn("netem", src)
+            for memory_fault in ("TARGET_DIR}/memory", "memory.high", "memory_high"):   # FZ-PI5 pending
+                self.assertNotIn(memory_fault, src, f)
 
     def test_no_protected_name_in_any_plan_or_argv(self):
         everything = repr(L.cgroup_plan() + L.lab_plan() + L.netns_del_plan() +

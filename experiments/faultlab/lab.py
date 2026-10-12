@@ -14,7 +14,8 @@ Specification: docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md §3 FZ-LAB-SPEC (appro
               IPv4 conf/all and conf/default (devconf_inherit_init_net=0), so with host ip_forward=1 A and B would
               otherwise forward. The host's own value is never written.
   cgroup      /sys/fs/cgroup/sentinel-fl {target 18, contender 18, support 19,20,22,23}; cpuset cpu memory pids;
-              parent memory.max 2560 MiB; memory.swap.max 0 everywhere; cpu.max untouched (max)
+              parent memory.max 2560 MiB; memory.swap.max 0 everywhere; cpu.max max except a declared
+              cpu_quota fault on the target leaf (restored with read-back at cleanup)
   app root    /run/sentinelai-lab/app/<run_id>/ (tmpfs, volatile; owned by uid 1000; removed at cleanup)
 
 Pure except Host (the only mutation site: every operation is re-validated by check_op immediately before it runs and
@@ -251,12 +252,68 @@ def echo_argvs() -> Dict[str, List[str]]:
             "echo_client": placed("target", NS_A, [PYTHON, "-I", "-c", ECHO_CLIENT, IP_B, str(PORT_DEPENDENCY)])}
 
 
+# ------------------------------------------------------------------------------------------ fault operations (PI-8)
+# Exact operations of the CPU and network faults, built from approved magnitudes only by pilot.py. The guard accepts
+# them only when the run's Plan declares them (Plan(fault_ops=...)); they reuse the R2 mechanisms (design §5.8).
+CPU_PERIOD_US = 100000
+QUOTA_PATH, CONTENDER_WEIGHT_PATH = f"{TARGET_DIR}/cpu.max", f"{CONTENDER_DIR}/cpu.weight"
+QUOTA_RESTORE = ("write", QUOTA_PATH, f"max {CPU_PERIOD_US}")      # always allowed: the kernel default
+CONTENDER_CODE = "i = 0\nwhile True:\n    i += 1\n"               # one SCHED_OTHER busy thread (R2-C contender)
+POLICE_BURST_BYTES = 3000                                            # two MTU-sized packets (ENG)
+
+
+def contender_argv() -> List[str]:
+    return placed("contender", NS_B, [PYTHON, "-I", "-c", CONTENDER_CODE])
+
+
+def quota_ops(quota_us: int) -> List[tuple]:
+    return [("write", QUOTA_PATH, f"{int(quota_us)} {CPU_PERIOD_US}")]
+
+
+def contender_ops(weight: int) -> List[tuple]:
+    return [("write", CONTENDER_WEIGHT_PATH, str(int(weight))), ("spawn", "contender", contender_argv())]
+
+
+def _pct(p: float) -> str:
+    return f"{float(p):g}%"
+
+
+def netem_loss_ops(where: str, pct: float) -> List[tuple]:
+    ns, iface = {"a": (NS_A, IF_A), "r": (NS_R, IF_RB)}[where]      # A egress (local) or R toward B (path)
+    return [("tc", ("tc", "-n", ns, "qdisc", "add", "dev", iface, "root", "netem", "loss", _pct(pct)))]
+
+
+def netem_rate_ops(kbit: int, limit: int) -> List[tuple]:
+    return [("tc", ("tc", "-n", NS_R, "qdisc", "add", "dev", IF_RB, "root", "netem", "rate", f"{int(kbit)}kbit",
+                    "limit", str(int(limit))))]
+
+
+def police_ops(kbit: int) -> List[tuple]:
+    return [("tc", ("tc", "-n", NS_A, "qdisc", "add", "dev", IF_A, "ingress")),
+            ("tc", ("tc", "-n", NS_A, "filter", "add", "dev", IF_A, "parent", "ffff:", "matchall", "action", "police",
+                    "rate", f"{int(kbit)}kbit", "burst", str(POLICE_BURST_BYTES), "drop"))]
+
+
+def tc_shape_ok(argv: tuple) -> bool:
+    """A tc argv may only address a lab namespace and one of that namespace's own interfaces."""
+    if len(argv) < 7 or argv[:2] != ("tc", "-n") or argv[2] not in LAB_NETNS or "dev" not in argv:
+        return False
+    ifs = {ns: i for ns, i in IFACES.values()}[argv[2]]
+    i = argv.index("dev")
+    return i + 1 < len(argv) and argv[i + 1] in ifs and not any(p in " ".join(argv) for p in PROTECTED)
+
+
 # ------------------------------------------------------------------------------------------ read-only inspection
 LAB_READS = {f"{side}_{what}": ("ip", "-n", ns) + args
              for side, (ns, _) in IFACES.items()
              for what, args in (("links", ("-s", "-j", "-d", "link", "show")), ("addrs", ("-j", "addr", "show")),
                                 ("routes", ("-j", "route", "show")), ("routes6", ("-j", "-6", "route", "show")))}
 ROUTE_GET = {side: ("ip", "-n", ns, "route", "get", "8.8.8.8") for side, (ns, _) in IFACES.items()}
+TC_READS = {"a_qdisc_json": ("tc", "-n", NS_A, "-s", "-j", "qdisc", "show", "dev", IF_A),
+            "r_qdisc_json": ("tc", "-n", NS_R, "-s", "-j", "qdisc", "show", "dev", IF_RB),
+            "a_qdisc_text": ("tc", "-n", NS_A, "qdisc", "show", "dev", IF_A),
+            "r_qdisc_text": ("tc", "-n", NS_R, "qdisc", "show", "dev", IF_RB),
+            "a_ingress_filter": ("tc", "-n", NS_A, "-s", "filter", "show", "dev", IF_A, "ingress")}
 PING = {"a_to_b": ("ip", "netns", "exec", NS_A, "ping", "-c", "3", "-i", "0.2", "-W", "1", IP_B),
         "b_to_a": ("ip", "netns", "exec", NS_B, "ping", "-c", "3", "-i", "0.2", "-W", "1", IP_A)}
 FORWARD_READS = {side: ("ip", "netns", "exec", ns, "cat", "/proc/sys/net/ipv4/ip_forward")
@@ -266,7 +323,8 @@ FORWARD_READS = {side: ("ip", "netns", "exec", ns, "cat", "/proc/sys/net/ipv4/ip
 class Sys(C.Sys):
     """Read-only host view (R2-C) plus the exact lab inspection commands. `probe` returns (rc, stdout, stderr)."""
 
-    READ = set(LAB_READS.values()) | set(ROUTE_GET.values()) | set(PING.values()) | set(FORWARD_READS.values())
+    READ = set(LAB_READS.values()) | set(ROUTE_GET.values()) | set(PING.values()) | set(FORWARD_READS.values()) | \
+        set(TC_READS.values())
 
     def probe(self, argv) -> Optional[tuple]:
         if tuple(argv) not in self.READ:
@@ -556,9 +614,20 @@ FORBIDDEN = ("enp0s31f6", "docker0", "tc", "sysctl", "modprobe", "iptables", "nf
 class Plan:
     """The closed set of operations one invocation may perform."""
 
-    def __init__(self, run_id: Optional[str] = None, spawns: Iterable[tuple] = ()):
+    def __init__(self, run_id: Optional[str] = None, spawns: Iterable[tuple] = (), fault_ops: Iterable[tuple] = ()):
+        fault_ops = list(fault_ops)
         self.writes = {(op[1], op[2]) for op in cgroup_plan() if op[0] == "write"} | \
-            {(f"{LAB_DIR}/cgroup.kill", "1")}
+            {(f"{LAB_DIR}/cgroup.kill", "1"), QUOTA_RESTORE[1:]}
+        for op in fault_ops:                                        # the run's declared fault, exactly
+            if op[0] == "write" and op[1] in (QUOTA_PATH, CONTENDER_WEIGHT_PATH):
+                self.writes.add((op[1], op[2]))
+            elif op[0] == "spawn" and op[1] == "contender":
+                spawns = list(spawns) + [(op[1], op[2])]
+            elif op[0] != "tc":
+                raise LabRefused(f"not a fault operation: {op!r}")
+        self.tc = {op[1] for op in fault_ops if op[0] == "tc"}
+        if not all(tc_shape_ok(t) for t in self.tc):
+            raise LabRefused(f"tc operation outside the lab: {sorted(self.tc)}")
         self.cmds = {op[1] for op in lab_plan() + netns_del_plan()}
         self.dirs = set(LAB_DIRS)
         self.run_dirs = set()
@@ -596,6 +665,9 @@ class Plan:
             if len(op) != 3 or self.run_id is None or op[1] != f"{run_dir(self.run_id)}/control.json" or \
                     not isinstance(op[2], bytes):
                 raise LabRefused(f"file write not allowed: {op!r}")
+        elif kind == "tc":
+            if len(op) != 2 or not isinstance(op[1], tuple) or op[1] not in self.tc or not tc_shape_ok(op[1]):
+                raise LabRefused(f"tc operation not in the plan: {op!r}")
         elif kind == "replace_control":
             if len(op) != 2 or self.run_id is None or not isinstance(op[1], bytes) or not op[1] or len(op[1]) > 4096:
                 raise LabRefused(f"control replacement not allowed: {op!r}")
@@ -642,8 +714,12 @@ class Host:
 
     @staticmethod
     def _desc(op):
+        if op[0] == "tc":
+            return [op[0], list(op[1])]
         if op[0] == "replace_control":
             return [op[0], op[1].decode("utf-8", "replace")]
+        if op[0] == "write":                                    # cgroup values are short: logged in full
+            return [op[0], op[1], op[2]]
         return [op[0], list(op[1]) if op[0] == "cmd" else op[1]] + ([len(op[2])] if op[0] == "write_new" else [])
 
     def apply(self, op, stdout=None, stderr=None):
@@ -681,6 +757,10 @@ class Host:
             p = subprocess.run(list(op[1]), capture_output=True, text=True, timeout=15, shell=False)
             if p.returncode != 0:
                 raise OSError(f"{' '.join(op[1][:5])} failed (rc {p.returncode}): {p.stderr.strip()[:200]}")
+        elif kind == "tc":
+            p = subprocess.run(list(op[1]), capture_output=True, text=True, timeout=15, shell=False)
+            if p.returncode != 0:
+                raise OSError(f"tc failed (rc {p.returncode}): {p.stderr.strip()[:200]}")
         elif kind == "forward":
             p = subprocess.run(forward_argv(op[1], op[2]), capture_output=True, text=True, timeout=15, shell=False)
             if p.returncode != 0:
@@ -774,6 +854,12 @@ def cleanup(host: Host, sysr, entries: List[dict], run_id: Optional[str], wait_s
         sleep(0.05)
     if after_procs is not None:
         step("after_procs", after_procs)
+    wrote_quota = any(e.get("phase") == "result" and e.get("ok") and e["op"][0] == "write" and e["op"][1] == QUOTA_PATH
+                      and (len(e["op"]) < 3 or e["op"][2] != QUOTA_RESTORE[2]) for e in entries)
+    if wrote_quota and TARGET_DIR in st["dirs"] and sysr.exists(TARGET_DIR):     # design §5.9 step 1, read back
+        step("restore cpu.max", lambda: host.apply(QUOTA_RESTORE))
+        if (sysr.read(QUOTA_PATH) or "").strip() != QUOTA_RESTORE[2]:
+            errors.append(f"cpu.max not restored: {(sysr.read(QUOTA_PATH) or '').strip()!r}")
     if run_id is not None and run_dir(run_id) in st["dirs"]:
         for name in sysr.listdir_run(run_dir(run_id)):   # only run files and publish temporaries; anything else stays
             path = f"{run_dir(run_id)}/{name}"
