@@ -6,8 +6,7 @@ Status: **in progress.**
   instrumentation on/off pairs. All were repeated under the approved working set (§3b).
 - **Application and CPU fault classes (PI-8, §3d):** levels found for all five mechanisms under Poisson arrivals
   (not frozen).
-- **Network faults:** built; the first run exposed a reconciliation defect (§3d), fixed in `6320943`; the network
-  runs follow in a new campaign.
+- **Network fault class (PI-8, §3e):** levels found for all four faults; PI-2 passes.
 - **Not yet built:** memory pressure (floor pending) and OV-4/OV-5.
 
 What this report shows: the A–R–B lab, the collection pipeline and the CTRL-stage pilot criteria work on this host. It
@@ -26,6 +25,7 @@ Evidence lives in `results/phase1c_m5_pilot/<campaign>/<run>/` and is committed 
 | `20261012T030504Z` | `7f6eac7` | PI0-1…5, CTRL-900001 | PI-0 5/5 passed. CTRL-900001 **FAILED** (`app_features`, §3). |
 | `20261012T040045Z` | `af2a4e7` | PI0-1…5, CTRL-900002…900005 | PI-0 5/5 passed. CTRL 4/4 passed. |
 | `20261012T045417Z` | `29d652f` | PI0-1…5; CTRL, PI6OFF, INSTOFF at seeds 900006 and 900007; PI1U-900008, PI1U-900009 | PI-0 5/5 passed. All 8 runs passed (§3a). |
+| `20261012T141516Z` | `dc5b3d5` | PI0-1…5; CTRL-900160…900163; PI8-900240…900271 (network faults) | All 41 passed their pipeline checks (§3e). Every network fault has an effect at every candidate. |
 | `20261012T133839Z` | `a0b0aaa` | PI0-1…5; CTRL-900150…900153; PI8-900200 (loss 0.5 % on A egress) | PI-0 5/5 and CTRL 4/4 passed. **PI8-900200 FAILED** across-R reconciliation again: segments are not packets under retransmission (§3d note). Fixed in the next commit; the network runs moved to a new campaign. |
 | `20261012T104753Z` | `2280a18` | PI0-1…5; CTRL-900050…900053 under Poisson arrivals; PI8-900060…900082 (application faults, repeated); PI8-900100…900116 (CPU faults; one local-loss run) | 64 of 66 runs passed their pipeline checks (§3d). **PI8-900081 FAILED** (host comparison: an external SSH login change). **PI8-900116 FAILED** (across-R reconciliation under local loss; fixed in `6320943`). Quota runs miss PI-6 coverage on throttle features. |
 | `20261012T074028Z` | `82ff593` | PI0-1…5; re-baseline with the FZ-WORKSET working set: CTRL-900010…900013, PI6OFF and INSTOFF at 900010 and 900011, PI1U-900014, PI1U-900015; PI8-900020…900041 (application faults) | PI-0 5/5 passed. All 10 re-baseline runs passed (§3b). All 22 fault runs passed their pipeline checks (§3c): dependency delay has levels; pool shrink and lock hold produced no effect. |
@@ -44,6 +44,8 @@ Criterion: 5/5 cycles with all lab checks passing, cleanup verified, and the hos
 | `20261012T045417Z` | 5/5 | pass | pass | verified | ok | yes |
 | `20261012T074028Z` | 5/5 | pass | pass | verified, working-set directory removed | ok | yes |
 | `20261012T104753Z` | 5/5 | pass | pass | verified, working-set directory removed | ok | yes |
+| `20261012T133839Z` | 5/5 | pass | pass | verified, working-set directory removed | ok | yes |
+| `20261012T141516Z` | 5/5 | pass | pass | verified, working-set directory removed | ok | yes |
 
 Lab setup plus teardown (op-log span): 1.3–1.4 s per cycle.
 
@@ -257,6 +259,35 @@ The quota was restored with read-back before each cleanup.
     the request or answered it with the answer lost, bounded by the number of such failures.
   - **PI8-900200 stays failed.**
 
+## 3e. PI-8 network faults (campaign `20261012T141516Z`, `dc5b3d5`)
+
+PI-0 5/5, CTRL 4/4 and all 32 network-fault runs passed every pipeline check, with A's IP packets reconciled
+against R in every run (`caf5ff0`). Every run:
+- got exactly its intended fault, magnitude and seed (checked from the evidence);
+- had its fault read back within 2–19 ms;
+- left the host clean.
+
+CTRL: A's retransmissions in W 0 in every run (the PI-2 bar).
+
+| Fault | Candidates (weakest → strongest) | Effect ground truth in W (both reps) | Levels (not frozen) |
+|---|---|---|---|
+| Loss on A egress (`network_packet_loss`) | 0.5 / 1 / 2 / 5 % | A root qdisc drops 418–3,756 | I1 0.5, I2 1, I3 5 % |
+| Police on A ingress (`network_packet_loss`) | 550 / 450 / 350 / 300 kbit/s | A ingress drops 9,322–15,470 | I1 550, I2 407, I3 300 kbit/s |
+| Path loss, R toward B (`tcp_retransmissions`) | 0.5 / 1 / 2 / 5 % | A retransmissions 273–2,306, A's local drops 0 (PI-2) | I1 0.5, I2 1, I3 5 % |
+| Congestion, netem rate on R toward B (`tcp_retransmissions`) | 600 / 500 / 400 / 320 kbit/s | A retransmissions 86–91 at 600, **2–16 at 500 and below**; A's local drops 0 | I1 600, I2 439, I3 320 kbit/s |
+
+**Client side.**
+- Loss and police raise 503s and dependency 504s.
+- Police at ≤ 450 kbit/s also produced 1–2 client timeouts per run. Each was accounted for by the server counts
+  (`caf5ff0`).
+- Congestion and heavy loss saturate the client (`client_saturated`, never sent).
+
+**Congestion, for the M5 review.** The netem queue (limit 1,000) never overflowed, so R dropped nothing. The
+congestion shows up as queueing delay, 503 rejections and client saturation. Retransmissions fall as the rate falls,
+because less traffic gets through. At 400 kbit/s one rep meets the bar (CTRL maximum 0) with only 2
+retransmissions. The rule is met, but the signal is thin; whether it is robust enough for a `tcp_retransmissions`
+claim is for the M5 review.
+
 ## 4. PI verdicts so far
 
 | PI | Status | Basis |
@@ -268,6 +299,8 @@ The quota was restored with read-back before each cleanup.
 | PI-7 | CTRL part: 136/136 valid app ticks, `app.latency_ms` P99 measured, in every run. Fault part: dependency delay above the CTRL maximum in every rep; pool shrink and lock hold not (§3c). An owner decision is pending. | FZ-PI7, FZ-PI7-LOCK |
 | PI-8 (application) | Under Poisson arrivals (§3d): dependency delay I1 4 / I2 7 / I3 15 ms; lock hold 500 / 1,581 / 5,000 µs; pool shrink only P′ = 1. Not frozen. (Under bounded jitter, §3c, pool and lock had no effect.) | FZ-PI8 |
 | PI-8 (CPU) | Contention I1 50 / I2 141 / I3 400; throttling 0.20 / 0.122 / 0.075 core; effect in every rep (§3d). Not frozen. | FZ-PI8 |
+| PI-8 (network) | Local loss 0.5 / 1 / 5 %; police 550 / 407 / 300 kbit/s; path loss 0.5 / 1 / 5 %; congestion 600 / 439 / 320 kbit/s (thin retransmission signal below 600) (§3e). Not frozen. | FZ-PI8 |
+| PI-2 | **pass**: path loss shows A retransmissions above the CTRL maximum while A's local drop counters stay 0, in every rep (§3e) | design §6.3 |
 | PI-2, PI-3, PI-5, PI-8 (other classes), OV-4, OV-5 | not run | §6 |
 
 ## 5. Evidence and integrity (AMD-27)

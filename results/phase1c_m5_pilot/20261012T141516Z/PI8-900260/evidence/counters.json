@@ -1,0 +1,80 @@
+{
+ "end": {
+  "ip": {
+   "InReceives": 167935,
+   "OutRequests": 172255
+  },
+  "mono_ns": 21408948210819,
+  "qdisc": {
+   "a_ingress": 0,
+   "a_root": 0,
+   "r_root": 2203
+  },
+  "r": {
+   "sentlab-ra": {
+    "rx_bytes": 12758663,
+    "rx_dropped": 0,
+    "rx_errors": 0,
+    "rx_packets": 172267,
+    "tx_bytes": 12347293,
+    "tx_dropped": 0,
+    "tx_errors": 0,
+    "tx_packets": 167947
+   },
+   "sentlab-rb": {
+    "rx_bytes": 12347293,
+    "rx_dropped": 0,
+    "rx_errors": 0,
+    "rx_packets": 167947,
+    "tx_bytes": 12595941,
+    "tx_dropped": 0,
+    "tx_errors": 0,
+    "tx_packets": 170064
+   }
+  },
+  "tcp": {
+   "InSegs": 167929,
+   "OutSegs": 171354,
+   "RetransSegs": 1309
+  }
+ },
+ "start": {
+  "ip": {
+   "InReceives": 6,
+   "OutRequests": 6
+  },
+  "mono_ns": 21237236302271,
+  "qdisc": {
+   "a_ingress": 0,
+   "a_root": 0,
+   "r_root": 0
+  },
+  "r": {
+   "sentlab-ra": {
+    "rx_bytes": 1146,
+    "rx_dropped": 0,
+    "rx_errors": 0,
+    "rx_packets": 13,
+    "tx_bytes": 1146,
+    "tx_dropped": 0,
+    "tx_errors": 0,
+    "tx_packets": 13
+   },
+   "sentlab-rb": {
+    "rx_bytes": 1056,
+    "rx_dropped": 0,
+    "rx_errors": 0,
+    "rx_packets": 12,
+    "tx_bytes": 1146,
+    "tx_dropped": 0,
+    "tx_errors": 0,
+    "tx_packets": 13
+   }
+  },
+  "tcp": {
+   "InSegs": 0,
+   "OutSegs": 0,
+   "RetransSegs": 0
+  }
+ }
+}
