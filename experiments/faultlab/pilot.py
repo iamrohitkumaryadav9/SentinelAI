@@ -426,6 +426,22 @@ def op_readback(spec: dict, sysr) -> bool:
     return False
 
 
+def qdisc_drops(sysr) -> Optional[dict]:
+    """Cumulative qdisc drop counters at the three hops a network fault may drop at (tc -s -j), None if unreadable."""
+    out = {}
+    for name, key, ingress in (("a_root", "a_qdisc_json", False), ("a_ingress", "a_qdisc_json", True),
+                               ("r_root", "r_qdisc_json", False)):
+        r = sysr.probe(L.TC_READS[key])
+        if not r or r[0] != 0:
+            return None
+        try:
+            qs = json.loads(r[1] or "[]")
+        except ValueError:
+            return None
+        out[name] = sum(q.get("drops", 0) for q in qs if (q.get("kind") == "ingress") == ingress)
+    return out
+
+
 def gt_snapshot(sysr, tpid: int) -> dict:
     """Raw ground-truth sources at a window edge, read directly from the kernel (never through the collector)."""
     probe = lambda argv: (lambda r: r[1] if r and r[0] == 0 else None)(sysr.probe(argv))
@@ -729,10 +745,11 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
                 raise L.LabAbort(f"eBPF loader unavailable: {err}")
             evt("loader_started", pid=loader.proc.pid)
         read_snmp = lambda: L.tcp_counters(sysr.read(f"/proc/{tpids[0]}/net/snmp"))
-        state["start"] = {"app": read_app(), "r": L.r_counters(sysr), "tcp": read_snmp(),
+        state["start"] = {"app": read_app(), "r": L.r_counters(sysr), "tcp": read_snmp(), "qdisc": qdisc_drops(sysr),
                           "mono_ns": time.monotonic_ns()}
         if (writer and not isinstance(state["start"]["app"], bytes)) or None in (state["start"]["r"],
-                                                                                  state["start"]["tcp"]):
+                                                                                  state["start"]["tcp"],
+                                                                                  state["start"]["qdisc"]):
             raise L.LabAbort("start counters unavailable")
         procs["loadgen"] = host.apply(("spawn", "loadgen", argv["loadgen"]),
                                       stderr=(out / "logs" / "loadgen.stderr").open("wb"))
@@ -793,9 +810,10 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
         else:                                                     # no server document: the client records decide
             R["drain"] = "not observable (metrics writer off); client records checked in client_records"
         sleep(2 * float(w["publish_s"]))                          # one more document after the last completion
-        state["end"] = {"app": read_app(), "r": L.r_counters(sysr), "tcp": read_snmp(),
+        state["end"] = {"app": read_app(), "r": L.r_counters(sysr), "tcp": read_snmp(), "qdisc": qdisc_drops(sysr),
                         "mono_ns": time.monotonic_ns()}
-        if (writer and not isinstance(state["end"]["app"], bytes)) or None in (state["end"]["r"], state["end"]["tcp"]):
+        if (writer and not isinstance(state["end"]["app"], bytes)) or None in (state["end"]["r"], state["end"]["tcp"],
+                                                                               state["end"]["qdisc"]):
             raise L.LabAbort("end counters unavailable")
         for name in ("config.json", "dependency_config.json", "control.json"):
             write_new(ev / name, sysr.read_run(f"{rdir}/{name}", 1 << 20))
@@ -807,7 +825,7 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
                 write_new(ev / f"app_{k}.json", b)
         for k, g in (hook.gt.items() if hook is not None else ()):    # W-window kernel sources (ground truth)
             write_new(ev / f"gt_{k}.json", dump(g))
-        write_new(ev / "counters.json", dump({k: {"r": state[k]["r"], "tcp": state[k]["tcp"],
+        write_new(ev / "counters.json", dump({k: {"r": state[k]["r"], "tcp": state[k]["tcp"], "qdisc": state[k]["qdisc"],
                                                   "mono_ns": state[k]["mono_ns"]} for k in ("start", "end")}))
         write_new(ev / "client.jsonl", read_regular(client_tmp))
         R["load"] = {"arrivals": scheduled_arrivals(w, load_s, seed, arr), "duration_s": load_s, "seed": seed,
@@ -938,20 +956,34 @@ def client_records(run, recs):
     return {"client_outcomes": dict(sorted(outcomes.items())), "scheduled": n}, problems
 
 
-def reconcile_r(counters):
+DROP_HOP = {"netem_loss_a_egress": "a_root",                 # where a declared network fault drops by design
+            "netem_loss_r_egress": "r_root", "netem_rate_r": "r_root"}
+
+
+def reconcile_r(counters, fault: Optional[str] = None):
     """Across R: every TCP segment A sent entered R on sentlab-ra and left R on sentlab-rb; every segment A received
-    entered R on sentlab-rb and left it on sentlab-ra (packet counts include ARP, so >=); R dropped nothing."""
+    entered R on sentlab-rb and left it on sentlab-ra (packet counts include ARP, so >=); R's interfaces dropped
+    nothing. A run whose recorded fault drops on that path by design (DROP_HOP) may lose segments only at that hop,
+    and only as many as that hop's qdisc drop counter shows over the load; every other hop keeps the exact check, and
+    without such a fault (CTRL) no drop excuses anything. Police on A's ingress drops after R, so it needs none."""
     s, e = counters["start"], counters["end"]
     d = lambda ifn, k: e["r"][ifn][k] - s["r"][ifn][k]
     out_a = e["tcp"]["OutSegs"] - s["tcp"]["OutSegs"] + e["tcp"]["RetransSegs"] - s["tcp"]["RetransSegs"]
     in_a = e["tcp"]["InSegs"] - s["tcp"]["InSegs"]
-    c = {"a_out_entered_r": d(L.IF_RA, "rx_packets") >= out_a, "a_out_left_r": d(L.IF_RB, "tx_packets") >= out_a,
+    hop = DROP_HOP.get(fault)
+    qd = {k: (e.get("qdisc") or {}).get(k, 0) - (s.get("qdisc") or {}).get(k, 0)
+          for k in ("a_root", "a_ingress", "r_root")}
+    a_drop = qd["a_root"] if hop == "a_root" else 0                     # dropped at A, never reached R
+    r_drop = qd["r_root"] if hop == "r_root" else 0                     # dropped inside R toward B
+    c = {"a_out_entered_r": d(L.IF_RA, "rx_packets") + a_drop >= out_a,
+         "a_out_left_r": d(L.IF_RB, "tx_packets") + a_drop + r_drop >= out_a,
          "a_in_entered_r": d(L.IF_RB, "rx_packets") >= in_a, "a_in_left_r": d(L.IF_RA, "tx_packets") >= in_a,
          "traffic_present": out_a > 0 and in_a > 0}
     for ifn in (L.IF_RA, L.IF_RB):
         for k in ("rx_dropped", "tx_dropped", "rx_errors", "tx_errors"):
             c[f"{ifn}_{k}_0"] = d(ifn, k) == 0
-    summary = {"a_tcp_out_incl_retrans": out_a, "a_tcp_in": in_a,
+    summary = {"a_tcp_out_incl_retrans": out_a, "a_tcp_in": in_a, "qdisc_drops": qd,
+               "declared_drop_hop": hop, "allowance": {"a_root": a_drop, "r_root": r_drop},
                "r": {ifn: {k: d(ifn, k) for k in s["r"][ifn]} for ifn in (L.IF_RA, L.IF_RB)}}
     return summary, sorted(k for k, v in c.items() if not v)
 
@@ -1119,7 +1151,7 @@ def evaluate(out: Path, live: bool = False, run_result=None) -> dict:
                 summary, problems = client_records(run, recs)
                 checks["client_records"] = dict(summary, ok=not problems, problems=problems)
             counters = json.loads((out / EVIDENCE / "counters.json").read_bytes())
-            summary, failed = reconcile_r(counters)
+            summary, failed = reconcile_r(counters, (run.get("fault") or {}).get("type"))
             checks["across_r_reconciliation"] = dict(summary, ok=not failed, failed=failed)
             if collected:
                 ticks = decode_ticks((out / EVIDENCE / "ticks.jsonl").read_bytes())
@@ -1251,7 +1283,9 @@ def levels(campaign: Path, decisions=DECISIONS) -> dict:
             streak = 0 if x["injection_verified"] else streak + 1
             if streak >= 2 and stopped is None:
                 stopped = x["run"]
-        by = {m: [x for x in reps if x["magnitude"] == m] for m in order}
+        # runs that fail their pipeline (host comparison, cleanup, failed_injection, ...) are excluded and repeated;
+        # a level is decided on its first two valid reps
+        by = {m: [x for x in reps if x["magnitude"] == m and x["pipeline_ok"]] for m in order}
         established = [m for m in order if len(by[m]) >= 2 and all(x["ground_truth"] for x in by[m][:2])]
         res = {"reps": reps, "order_weakest_first": order, "established_2of2": established,
                "stopped_after": stopped, "I1": None, "I2": None, "I3": None, "I0": None}

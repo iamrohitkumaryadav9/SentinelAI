@@ -2026,6 +2026,20 @@ class TestFaultRules(CtrlFixture):
         self.w_extra = ((hist, eff_ms, 200),)
         self.run_ctrl(variant="pi8", seed=seed, fault=(fault, mag))
 
+    def test_a_failed_rep_is_excluded_and_its_repeat_counts(self):
+        self.w_extra = (("dependency_latency", 3.0, 200),)
+        self.out, self.s, self.docs, self.reads = self.tmp / "CTRL-900075", FakeSys(), [], 0
+        self.run_ctrl(variant="ctrl", seed=900075)
+        self.go("app_dependency_delay", 15, 900076, 12.0, "dependency_latency")
+        with mock.patch.object(L, "compare_host", return_value={"ok": False, "failed": ["cgroup_dirs_identical"]}):
+            self.go("app_dependency_delay", 15, 900077, 12.0, "dependency_latency")        # fails its pipeline
+        d = P.levels(self.tmp)["faults"]["app_dependency_delay"]
+        self.assertEqual(d["established_2of2"], [])                                       # one valid rep only
+        self.go("app_dependency_delay", 15, 900078, 12.0, "dependency_latency")           # the repeat
+        d = P.levels(self.tmp)["faults"]["app_dependency_delay"]
+        self.assertEqual((d["established_2of2"], len(d["reps"])), ([15], 3))
+        self.assertFalse([x for x in d["reps"] if x["seed"] == 900077][0]["pipeline_ok"])  # kept, labelled
+
     def test_lock_reps_need_more_than_the_first_bucket(self):
         self.snap, self.lock_waits = app_snapshot(lock="OK"), 5
         self.go("app_lock", 500, 900060, 0.04, "lock_wait")              # P99 0.05 ms: an uncontended acquisition
@@ -2103,6 +2117,25 @@ class TestOpFaults(CtrlFixture):
                 if fault == "cpu_quota":
                     self.assertIn(L.QUOTA_RESTORE, h.ops)                      # restored before the cgroup goes
                     self.assertLess(h.ops.index(L.QUOTA_RESTORE), h.ops.index(("rmdir", L.TARGET_DIR)))
+
+    def test_local_loss_run_reconciles_through_the_declared_hop(self):
+        def loadgen():                                                   # A sent 50 segments that never reached R
+            def finish():
+                base = json.loads(self.docs[0])["mono_ns"] if self.docs else time.monotonic_ns()
+                recs = [{"k": k, "scheduled_ns": base + 1000 + k, "sent_ns": base + 1000 + k, "outcome": "200",
+                         "latency_ms": 0.001} for k in range(self.n)]
+                (self.out / "lg" / "client.jsonl").write_text("".join(json.dumps(r) + "\n" for r in recs))
+                self.s.tcp = [1060, 900, 0]
+                self.s.r_stats = {L.IF_RA: [1010, 905, 0, 0], L.IF_RB: [905, 1010, 0, 0]}
+            return FakeProc(on_wait=finish)
+        drops = lambda n: lambda s: s.qd[L.IF_A][0].update(drops=n)
+        rc, h, rep = self.go("netem_loss_a_egress", 2, 900190, drops(60), spawn={"loadgen": loadgen})
+        ar = rep["checks"]["across_r_reconciliation"]
+        self.assertTrue(ar["ok"], ar)                                     # 50 short, 60 dropped at A's netem
+        self.assertEqual((ar["declared_drop_hop"], ar["qdisc_drops"]["a_root"]), ("a_root", 60))
+        rc, h, rep = self.go("netem_loss_a_egress", 2, 900191, drops(40), spawn={"loadgen": loadgen})
+        self.assertFalse(rep["checks"]["across_r_reconciliation"]["ok"])  # 10 segments unexplained
+        self.assertEqual(rc, 1)
 
     def test_ground_truth_fails_without_the_effect(self):
         for seed, (fault, mag) in enumerate((("cpu_contender", 200), ("cpu_quota", 10000), ("netem_loss_a_egress", 2),
@@ -2226,6 +2259,53 @@ class TestOpFaults(CtrlFixture):
         self.assertEqual(L.Plan("PI8-s900170").check(L.QUOTA_RESTORE), L.QUOTA_RESTORE)   # restore is always allowed
         q = L.Plan("PI8-s900170", fault_ops=L.contender_ops(100))
         self.assertEqual(q.check(("spawn", "contender", L.contender_argv()))[1], "contender")
+
+
+class TestFaultAwareReconciliation(unittest.TestCase):
+    """Across-R reconciliation under a declared network fault, on the PI8-900116 numbers (0.5 % loss on A egress):
+    A sent 174,597 segments, R received 173,925 (672 short); R dropped nothing on its interfaces."""
+
+    def counters(self, a_root=0, r_root=0, ra_rx=173925, rb_tx=173925, ra_drop=0):
+        z = {"rx_packets": 0, "tx_packets": 0, "rx_dropped": 0, "tx_dropped": 0, "rx_errors": 0, "tx_errors": 0,
+             "rx_bytes": 0, "tx_bytes": 0}
+        start = {"r": {L.IF_RA: dict(z), L.IF_RB: dict(z)}, "tcp": {"OutSegs": 0, "InSegs": 0, "RetransSegs": 0},
+                 "qdisc": {"a_root": 0, "a_ingress": 0, "r_root": 0}}
+        end = {"r": {L.IF_RA: dict(z, rx_packets=ra_rx, tx_packets=171166, rx_dropped=ra_drop),
+                     L.IF_RB: dict(z, rx_packets=171163, tx_packets=rb_tx)},
+               "tcp": {"OutSegs": 174000, "InSegs": 171158, "RetransSegs": 597},
+               "qdisc": {"a_root": a_root, "a_ingress": 0, "r_root": r_root}}
+        return {"start": start, "end": end}
+
+    def test_the_declared_hop_explains_exactly_its_drops(self):
+        self.assertEqual(P.reconcile_r(self.counters(a_root=672), "netem_loss_a_egress")[1], [])
+        self.assertEqual(P.reconcile_r(self.counters(a_root=700), "netem_loss_a_egress")[1], [])   # >= (ARP etc.)
+        self.assertEqual(P.reconcile_r(self.counters(a_root=600), "netem_loss_a_egress")[1],     # 72 unexplained
+                         ["a_out_entered_r", "a_out_left_r"])
+
+    def test_drops_never_excuse_another_hop_or_ctrl(self):
+        for fault in (None, "police_a_ingress", "cpu_quota", "app_pool"):            # no path allowance at all
+            with self.subTest(fault):
+                self.assertIn("a_out_entered_r", P.reconcile_r(self.counters(a_root=672), fault)[1])
+        failed = P.reconcile_r(self.counters(r_root=672), "netem_loss_r_egress")[1]   # loss happened at A, not R
+        self.assertIn("a_out_entered_r", failed)
+
+    def test_r_side_faults_explain_only_the_r_to_b_hop(self):
+        ok = self.counters(ra_rx=174597, rb_tx=174000, r_root=597)
+        self.assertEqual(P.reconcile_r(ok, "netem_loss_r_egress")[1], [])
+        self.assertEqual(P.reconcile_r(ok, "netem_rate_r")[1], [])
+        self.assertEqual(P.reconcile_r(ok, None)[1], ["a_out_left_r"])
+        self.assertEqual(P.reconcile_r(self.counters(ra_rx=174597, rb_tx=174000, r_root=500),
+                                       "netem_loss_r_egress")[1], ["a_out_left_r"])
+
+    def test_r_interface_drops_still_fail_and_old_records_get_no_allowance(self):
+        failed = P.reconcile_r(self.counters(a_root=672, ra_drop=1), "netem_loss_a_egress")[1]
+        self.assertEqual(failed, [f"{L.IF_RA}_rx_dropped_0"])
+        old = self.counters(a_root=672)
+        for k in ("start", "end"):
+            del old[k]["qdisc"]                                          # counters.json before this change
+        self.assertIn("a_out_entered_r", P.reconcile_r(old, "netem_loss_a_egress")[1])   # PI8-900116 stays failed
+        summary = P.reconcile_r(self.counters(a_root=672), "netem_loss_a_egress")[0]
+        self.assertEqual((summary["declared_drop_hop"], summary["allowance"]), ("a_root", {"a_root": 672, "r_root": 0}))
 
 
 class TestReplaceControl(unittest.TestCase):
