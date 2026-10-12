@@ -245,7 +245,14 @@ def setup_lab(host, sysr, R, run_id=None):
     R["verify_cgroups"] = L.verify_cgroups(sysr)
     if not all(R["verify_cgroups"].values()):
         raise L.LabAbort(f"cgroup verification failed: {L.failures(R['verify_cgroups'])}")
-    for op in L.lab_plan():
+    plan = L.lab_plan()
+    host.apply(plan[0])                                     # first ip netns add: Host records /run/netns around it
+    own = L.netns_mount_owner(L.read_oplog(host.oplog))
+    R["netns_dir_mount"] = {"owned": own["owned"], "error": own["error"],
+                            "pre_existing": [L._identity(m) for m in (own["before"] or {}).get("at", [])]}
+    if own["error"]:
+        raise L.LabAbort(own["error"])
+    for op in plan[1:]:
         host.apply(op)
     for ns in L.LAB_NETNS:                                  # A 0, R 1, B 0: never inherited from the host
         ino = sysr.netns_inode(ns)

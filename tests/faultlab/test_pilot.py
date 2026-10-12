@@ -33,6 +33,7 @@ W = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(W)
 
 COMMIT = "c" * 40
+REAL_DO = L.Host._do                    # the real mutation dispatcher, for the one test that runs it on FakeSys
 SNAP = b'{"measurements": [], "missing_measurements": []}\n'
 WORKLOAD = json.loads((ROOT / "docs/PHASE_1C_FREEZE1_DECISIONS.json").read_text())["decisions"]["FZ-WORKLOAD"]["value"]
 
@@ -45,10 +46,20 @@ def _link(name, kind="veth", up=True, txq=1, rxq=1, stats=None):
             "qdisc": "noqueue", "stats64": s}
 
 
+def _mount(mid, parent, mnt, root="/", dev="0:26", fstype="tmpfs", optional=("shared:5",)):
+    return {"id": mid, "parent": parent, "dev": dev, "root": root, "mnt": mnt, "optional": list(optional),
+            "fstype": fstype}
+
+
+BOOT_MOUNTS = [_mount(1, 0, "/", dev="259:2", fstype="ext4", optional=("shared:1",)), _mount(29, 1, "/run"),
+               _mount(35, 1, "/sys/fs/cgroup", dev="0:27", fstype="cgroup2", optional=("shared:9",))]
+
+
 class FakeSys(L.Sys):
-    """In-memory host: cgroup files, namespaces, /run/sentinelai-lab, processes. Lab inspection answers follow the
-    model. Like the kernel observed in PI0-1, every new namespace inherits the host's ip_forward=1 until the runner
-    writes its own value."""
+    """In-memory host: cgroup files, namespaces, /run/sentinelai-lab, processes, the mount table. Lab inspection
+    answers follow the model. Like the kernel observed in PI0-1, every new namespace inherits the host's ip_forward=1
+    until the runner writes its own value, and the first `ip netns add` on a host where /run/netns is not a mount
+    point bind-mounts it onto itself (iproute2), a mount `ip netns del` leaves in place."""
 
     def __init__(self):
         self.dirs, self.files, self.netns, self.applied = set(), {}, set(), set()
@@ -61,6 +72,34 @@ class FakeSys(L.Sys):
         self.r_stats = {L.IF_RA: [0, 0, 0, 0], L.IF_RB: [0, 0, 0, 0]}   # rx, tx, rx_dropped, tx_dropped
         self.tcp = [0, 0, 0]              # OutSegs, InSegs, RetransSegs
         self.snmp_pid = None
+        self.mounts = [dict(m) for m in BOOT_MOUNTS]   # /proc/self/mountinfo, in order
+        self.next_mount_id = 1600
+        self.mountinfo_ok = True
+        self.on_umount = None              # called before the simulated umount2 (concurrent changes)
+
+    def add_mount(self, mnt, parent, **kw):
+        self.next_mount_id += 1
+        self.mounts.append(_mount(self.next_mount_id, parent, mnt, **kw))
+        return self.next_mount_id
+
+    def top_mount(self, mnt):
+        return next((m for m in reversed(self.mounts) if m["mnt"] == mnt), None)
+
+    def umount(self, path):
+        """umount2 without MNT_DETACH: the top mount at path; EBUSY with a child mount."""
+        if self.on_umount:
+            self.on_umount()
+        m = self.top_mount(path)
+        if m is None:
+            raise OSError(22, f"umount2 {path}: Invalid argument")
+        if any(c["parent"] == m["id"] for c in self.mounts):
+            raise OSError(16, f"umount2 {path}: Device or resource busy")
+        self.mounts.remove(m)
+
+    def mountinfo(self):
+        return "".join(" ".join([str(m["id"]), str(m["parent"]), m["dev"], m["root"], m["mnt"].replace(" ", "\\040"),
+                                 "rw"] + m["optional"] + ["-", m["fstype"], m["fstype"], "rw"]) + "\n"
+                       for m in self.mounts)
 
     # read-only interface
     def read(self, path):
@@ -81,6 +120,8 @@ class FakeSys(L.Sys):
             return ("Tcp: RtoAlgorithm OutSegs InSegs RetransSegs\nTcp: 1 %d %d %d\n" % (o, i, r))
         if path == f"{L.CG_ROOT}/cpuset.cpus.effective":
             return "0-23\n"
+        if path == L.MOUNTINFO:
+            return self.mountinfo() if self.mountinfo_ok else None
         return self.files.get(path)
 
     def exists(self, path):
@@ -185,9 +226,10 @@ class FakeProc:
 class SimHost(L.Host):
     """Real plan check and op log; the effect is simulated on FakeSys. fail(op) -> True raises OSError there."""
 
-    def __init__(self, plan, oplog, sysr, fail=None, spawn=None):
+    def __init__(self, plan, oplog, sysr, fail=None, spawn=None, fail_after_mount=False):
         super().__init__(plan, oplog, sysr)
         self.fail, self.spawn, self.ops = fail or (lambda op: False), spawn or {}, []
+        self.fail_after_mount = fail_after_mount     # the first ip netns add fails after mounting /run/netns
 
     def _do(self, op, stdout, stderr):
         self.ops.append(op)
@@ -224,10 +266,18 @@ class SimHost(L.Host):
         elif kind == "cmd":
             argv = op[1]
             if argv[:3] == ("ip", "netns", "add"):
+                if s.top_mount(L.NETNS_DIR) is None:          # iproute2: make /run/netns a (shared) mount point
+                    run = s.top_mount("/run")
+                    s.add_mount(L.NETNS_DIR, run["id"], root="/netns", dev=run["dev"], fstype=run["fstype"])
+                    if self.fail_after_mount:
+                        raise OSError("simulated failure after the /run/netns mount")
+                s.add_mount(f"{L.NETNS_DIR}/{argv[3]}", s.top_mount(L.NETNS_DIR)["id"], dev="0:4", fstype="nsfs",
+                            optional=())
                 s.netns.add(argv[3])
                 s.fwd[argv[3]] = s.inherit                    # inherited from the host (conf/all, conf/default)
             elif argv[:3] == ("ip", "netns", "del"):
                 s.netns.discard(argv[3])
+                s.mounts = [m for m in s.mounts if m["mnt"] != f"{L.NETNS_DIR}/{argv[3]}"]
                 s.applied = {a for a in s.applied if argv[3] not in a}
             s.applied.add(argv)
         elif kind == "forward":
@@ -243,6 +293,8 @@ class SimHost(L.Host):
             s.run[op[1]] = ("file", 0, op[2])
         elif kind == "unlink_run":
             del s.run[op[1]]
+        elif kind == "umount_netns_dir":
+            L.umount_owned_netns_dir(s, op[1], s.umount)      # the real checks; only umount2 is simulated
         elif kind == "spawn":
             role = op[1]
             p = (self.spawn.get(role) or (lambda: FakeProc()))()
@@ -274,11 +326,16 @@ class Sandboxed(unittest.TestCase):
         self.tmp = Path(tempfile.mkdtemp())
         self.addCleanup(lambda: __import__("shutil").rmtree(self.tmp))
         snap = mock.patch.object(L, "host_snapshot", side_effect=lambda sysr, require_bpf=True: {
-            "bpf_available": True, "lab": sorted(sysr.netns), "run": sorted(sysr.run)})
+            "bpf_available": True, "lab": sorted(sysr.netns), "run": sorted(sysr.run),
+            "mounts": sorted(f"{m['mnt']} {m['fstype']}" for m in sysr.mounts)})     # as findmnt TARGET,FSTYPE
         snap.start()
         self.addCleanup(snap.stop)
-        cmp = mock.patch.object(L, "compare_host", side_effect=lambda a, b, require_bpf=True: {
-            "ok": not b["lab"] and not b["run"], "failed": [] if not b["lab"] and not b["run"] else ["leftover"]})
+
+        def compare(a, b, require_bpf=True):
+            failed = (["leftover"] if b["lab"] or b["run"] else []) + \
+                (["mounts_identical"] if a.get("mounts") != b.get("mounts") else [])
+            return {"ok": not failed, "failed": failed}
+        cmp = mock.patch.object(L, "compare_host", side_effect=compare)
         cmp.start()
         self.addCleanup(cmp.stop)
 
@@ -292,7 +349,7 @@ def host_factory(store, **kw):
 
 
 def empty(sysr):
-    return not sysr.dirs and not sysr.netns and not sysr.run and not sysr.procs
+    return not sysr.dirs and not sysr.netns and not sysr.run and not sysr.procs and sysr.mounts == BOOT_MOUNTS
 
 
 # ------------------------------------------------------------------------------------------ plans and the guard
@@ -792,6 +849,265 @@ class TestLifecycle(Sandboxed):
         self.assertEqual(rc, 1)
         self.assertFalse(R["cleanup"]["ok"])
         self.assertFalse(R["host_compare"]["ok"])
+
+
+# ------------------------------------------------------------------------------------------ /run/netns mount
+PI0_1_MOUNT = "1609 29 0:26 /netns /run/netns rw,nosuid,nodev,noexec,relatime shared:5 - tmpfs tmpfs rw,size=1605392k"
+
+
+class TestNetnsDirMount(Sandboxed):
+    """Regression for PI0-1 (20261011T175343Z): the first `ip netns add` bind-mounted /run/netns onto itself, `ip
+    netns del` left it, cleanup reported success and the host comparison failed mounts_identical."""
+
+    def run_cycle(self, s=None, **kw):
+        return TestLifecycle.run_cycle(self, s, **kw)
+
+    def pre_mounted(self):
+        s = FakeSys()
+        s.mounts.append(_mount(1609, 29, L.NETNS_DIR, root="/netns"))
+        return s
+
+    def umounts(self, h):
+        return [op for op in h.ops if op[0] == "umount_netns_dir"]
+
+    def test_mount_introduced_by_the_run_is_identified_and_removed(self):
+        rc, R, s, h = self.run_cycle()
+        self.assertEqual(rc, 0, R["aborts"])
+        self.assertEqual(R["netns_dir_mount"], {"owned": [1601, 29, "0:26", "/netns"], "error": None,
+                                                "pre_existing": []})
+        self.assertEqual(s.mounts, BOOT_MOUNTS)
+        self.assertTrue(R["host_compare"]["ok"] and R["cleanup"]["verify"]["checks"]["netns_dir_mounts_as_before"])
+        last_del = max(i for i, op in enumerate(h.ops) if op[0] == "cmd" and op[1][:3] == ("ip", "netns", "del"))
+        self.assertEqual([h.ops.index(op) for op in self.umounts(h)], [last_del + 1])   # after every namespace
+        self.assertEqual(R["cleanup"]["steps"][-1], f"umount {L.NETNS_DIR}")
+
+    def test_without_the_unmount_the_cycle_fails_like_pi0_1(self):
+        """The old cleanup (no unmount step) leaves exactly the PI0-1 difference and must not pass."""
+        with mock.patch.object(L, "netns_mount_owner", side_effect=lambda e: {
+                "attempted": False, "before": None, "owned": None, "error": None}):
+            rc, R, s, h = self.run_cycle()
+        self.assertEqual(rc, 1)
+        self.assertEqual(R["host_compare"]["failed"], ["mounts_identical"])
+        self.assertEqual([m["mnt"] for m in s.mounts if m not in BOOT_MOUNTS], [L.NETNS_DIR])
+
+    def test_pre_existing_mount_is_preserved(self):
+        rc, R, s, h = self.run_cycle(self.pre_mounted())
+        self.assertEqual(rc, 0, R["aborts"])
+        self.assertEqual(R["netns_dir_mount"], {"owned": None, "error": None,
+                                                "pre_existing": [[1609, 29, "0:26", "/netns"]]})
+        self.assertEqual(self.umounts(h), [])
+        self.assertEqual([m["id"] for m in s.mounts if m["mnt"] == L.NETNS_DIR], [1609])
+
+    def test_concurrent_extra_mount_during_the_first_add_is_never_claimed(self):
+        s = FakeSys()
+        orig = s.add_mount
+
+        def add(mnt, parent, **kw):
+            mid = orig(mnt, parent, **kw)
+            if mnt == L.NETNS_DIR:
+                orig(L.NETNS_DIR, mid, root="/netns")                  # someone else stacks one at once
+            return mid
+        s.add_mount = add
+        rc, R, s, h = self.run_cycle(s)
+        self.assertEqual(rc, 1)
+        self.assertIn("unexpected mounts", R["aborts"][0])
+        self.assertEqual(self.umounts(h), [])
+        self.assertEqual(len([m for m in s.mounts if m["mnt"] == L.NETNS_DIR]), 2)   # both kept
+        self.assertFalse(R["cleanup"]["ok"])
+        self.assertTrue(any("not owned" in e for e in R["cleanup"]["errors"]))
+        self.assertEqual(s.netns, set())                               # namespaces still removed
+
+    def test_concurrent_identical_self_bind_in_use_is_not_unmounted(self):
+        """Another `ip netns add` racing the first one makes the same self-bind (indistinguishable by mount data);
+        its namespace stays in /run/netns, so the unmount precondition (empty directory) refuses."""
+        def race(op, s):
+            if op[0] == "cmd" and op[1][:4] == ("ip", "netns", "add", L.NS_A):
+                s.add_mount(L.NETNS_DIR, 29, root="/netns")
+                s.netns.add("someone")
+                s.add_mount(f"{L.NETNS_DIR}/someone", s.top_mount(L.NETNS_DIR)["id"], dev="0:4", fstype="nsfs",
+                            optional=())
+            return False
+        s = FakeSys()
+        rc, R, s, h = self.run_cycle(s, fail=lambda op: race(op, s))
+        self.assertEqual(rc, 1)
+        self.assertFalse(R["cleanup"]["ok"])
+        self.assertTrue(any("differ" in e or "not empty" in e for e in R["cleanup"]["errors"]), R["cleanup"])
+        self.assertIsNotNone(s.top_mount(L.NETNS_DIR))
+        self.assertIn("someone", s.netns)
+
+    def test_mount_of_unexpected_shape_is_never_claimed(self):
+        for change in ({"root": "/"}, {"dev": "0:99"}, {"parent": 1}, {"fstype": "ramfs"}):
+            with self.subTest(change):
+                s = FakeSys()
+                orig = s.add_mount
+
+                def add(mnt, parent, _c=change, **kw):
+                    if mnt == L.NETNS_DIR:
+                        parent = _c.get("parent", parent)
+                        kw.update({k: v for k, v in _c.items() if k != "parent"})
+                    return orig(mnt, parent, **kw)
+                s.add_mount = add
+                rc, R, s, h = self.run_cycle(s)
+                self.assertEqual(rc, 1)
+                self.assertIn("not the self-bind", R["aborts"][0])
+                self.assertEqual(self.umounts(h), [])
+                self.assertTrue(any(m["mnt"] == L.NETNS_DIR for m in s.mounts))
+
+    def test_mount_replaced_or_changed_before_cleanup_is_kept(self):
+        def swap(s, how):
+            m = s.top_mount(L.NETNS_DIR)
+            if how == "stacked":
+                s.add_mount(L.NETNS_DIR, m["id"], root="/netns")
+            elif how == "replaced":
+                s.mounts.remove(m)
+                s.add_mount(L.NETNS_DIR, 29, root="/netns")
+            elif how == "root":
+                m["root"] = "/other"
+            elif how == "foreign_netns":
+                s.add_mount(f"{L.NETNS_DIR}/someone", m["id"], dev="0:4", fstype="nsfs", optional=())
+        for how in ("stacked", "replaced", "root", "foreign_netns"):
+            with self.subTest(how):
+                s = FakeSys()
+                hosts = []
+
+                def fail(op, s=s, how=how):
+                    if op[0] == "cmd" and op[1][:4] == ("ip", "netns", "del", L.NS_A):
+                        swap(s, how)
+                    return False
+                out = self.tmp / f"x-{how}"
+                rc = P.lifecycle(out, 1, COMMIT, sysr=s, host_cls=host_factory(hosts, fail=fail),
+                                 sleep=lambda x: None)
+                R = json.loads((out / "run.json").read_text())
+                self.assertEqual(rc, 1)
+                self.assertFalse(R["cleanup"]["ok"])
+                self.assertTrue(any("umount" in e and "differ" in e for e in R["cleanup"]["errors"]),
+                                R["cleanup"]["errors"])
+                self.assertTrue(any(m["mnt"] == L.NETNS_DIR for m in s.mounts))   # nothing unmounted
+                self.assertFalse(R["cleanup"]["verify"]["checks"]["netns_dir_mounts_as_before"])
+
+    def test_non_empty_directory_is_not_unmounted(self):
+        class Busy(FakeSys):
+            def listdir(self, path):
+                return ["stray"] if path == L.NETNS_DIR and not self.netns else super().listdir(path)
+        rc, R, s, h = self.run_cycle(Busy())
+        self.assertEqual(rc, 1)
+        self.assertTrue(any("not empty" in e for e in R["cleanup"]["errors"]))
+        self.assertTrue(any(m["mnt"] == L.NETNS_DIR for m in s.mounts))
+
+    def test_unmount_failure_and_failed_restoration_fail_the_cycle(self):
+        for name, effect in (("ebusy", OSError(16, "Device or resource busy")), ("no_effect", None)):
+            with self.subTest(name):
+                s = FakeSys()
+                s.umount = (lambda p, e=effect: (_ for _ in ()).throw(e)) if effect else (lambda p: None)
+                rc, R, s, h = self.run_cycle(s)
+                self.assertEqual(rc, 1)
+                self.assertFalse(R["cleanup"]["ok"])
+                self.assertTrue(any(f"umount {L.NETNS_DIR}" in e for e in R["cleanup"]["errors"]))
+                if effect is None:
+                    self.assertTrue(any("not restored" in e for e in R["cleanup"]["errors"]))
+                self.assertFalse(R["host_compare"]["ok"])
+
+    def test_concurrent_mount_on_top_at_unmount_time_is_detected(self):
+        """A mount stacked between the identity check and umount2 is the one umount2 removes: detected, reported."""
+        s = FakeSys()
+        s.on_umount = lambda: s.add_mount(L.NETNS_DIR, s.top_mount(L.NETNS_DIR)["id"], root="/netns")
+        rc, R, s, h = self.run_cycle(s)
+        self.assertEqual(rc, 1)
+        self.assertTrue(any("not restored" in e for e in R["cleanup"]["errors"]), R["cleanup"]["errors"])
+
+    def test_first_add_failing_after_the_mount_still_removes_it(self):
+        rc, R, s, h = self.run_cycle(fail_after_mount=True)
+        self.assertEqual(rc, 1)
+        self.assertIn("after the /run/netns mount", R["aborts"][0])
+        self.assertTrue(empty(s))
+        self.assertTrue(R["cleanup"]["ok"] and R["host_compare"]["ok"])
+
+    def test_unreadable_or_ambiguous_mount_state_refuses_before_any_namespace(self):
+        s = FakeSys()
+        s.mountinfo_ok = False
+        out = self.tmp / "PI0-1"
+        hosts = []
+        with self.assertRaises(P.Refused):
+            P.lifecycle(out, 1, COMMIT, sysr=s, host_cls=host_factory(hosts), sleep=lambda x: None)
+        self.assertEqual(hosts[0].ops, [])
+        self.assertFalse(json.loads((out / "run.json").read_text())["preflight"]["checks"][
+            "netns_dir_mount_unambiguous"])
+        for extra in ([_mount(1609, 29, L.NETNS_DIR, root="/netns"), _mount(1610, 1609, L.NETNS_DIR, root="/netns")],
+                      [_mount(1609, 29, L.NETNS_DIR, root="/netns"),
+                       _mount(1611, 1609, f"{L.NETNS_DIR}/other", dev="0:4", fstype="nsfs", optional=())]):
+            with self.subTest(extra):
+                s = FakeSys()
+                s.mounts += extra
+                self.assertFalse(L.preflight(s)["checks"]["netns_dir_mount_unambiguous"])
+                h = SimHost(L.Plan("PI0-s1"), str(self.tmp / "g.jsonl"), s)
+                with self.assertRaises(L.LabRefused):                  # the Host refuses on its own as well
+                    h.apply(L.lab_plan()[0])
+                self.assertEqual(h.ops, [])
+
+    def test_mount_table_unreadable_after_the_first_add_is_not_claimed(self):
+        class Flaky(FakeSys):
+            def read(self, path):
+                if path == L.MOUNTINFO and self.netns and not getattr(self, "seen", False):
+                    self.seen = True
+                    return None
+                return super().read(path)
+        rc, R, s, h = self.run_cycle(Flaky())
+        self.assertEqual(rc, 1)
+        self.assertIn("not recorded", R["aborts"][0])
+        self.assertEqual(self.umounts(h), [])
+
+    def test_cleanup_is_repeatable_and_the_wrapper_trap_removes_the_mount(self):
+        s = FakeSys()
+        h = SimHost(L.Plan("PI0-s1"), str(self.tmp / "ops.jsonl"), s)
+        for op in L.cgroup_plan() + L.lab_plan():
+            h.apply(op)                                                # interrupted here: no cleanup ran
+        res = L.cleanup(SimHost(L.Plan("PI0-s1"), h.oplog, s), s, L.read_oplog(h.oplog), "PI0-s1")
+        self.assertTrue(res["ok"], res)
+        self.assertTrue(empty(s))
+        h2 = SimHost(L.Plan("PI0-s1"), h.oplog, s)
+        res = L.cleanup(h2, s, L.read_oplog(h.oplog), "PI0-s1")         # again: nothing to do, still ok
+        self.assertTrue(res["ok"], res)
+        self.assertEqual(h2.ops, [])
+
+    def test_guard_and_real_unmount_call(self):
+        plan = L.Plan("PI0-s1")
+        plan.check(("umount_netns_dir", (1601, 29, "0:26", "/netns")))
+        for bad in (("umount_netns_dir",), ("umount_netns_dir", [1601, 29, "0:26", "/netns"]),
+                    ("umount_netns_dir", (0, 29, "0:26", "/netns")), ("umount_netns_dir", (True, 29, "0:26", "/n")),
+                    ("umount_netns_dir", (1601, 29, "x", "/netns")), ("umount_netns_dir", (1601, 29, "0:26", "n")),
+                    ("umount_netns_dir", (1601, 29, "0:26", "/netns"), "/etc"), ("umount", "/run/netns")):
+            with self.subTest(bad=bad), self.assertRaises(L.LabRefused):
+                plan.check(bad)
+        s = FakeSys()
+        mid = s.add_mount(L.NETNS_DIR, 29, root="/netns")
+        calls = []
+        host = L.Host(plan, str(self.tmp / "r.jsonl"), s)
+        with mock.patch.object(L.Host, "_do", REAL_DO), \
+                mock.patch.object(L, "_umount2", side_effect=lambda p: calls.append(p) or s.umount(p)):
+            host.apply(("umount_netns_dir", (mid, 29, "0:26", "/netns")))
+        self.assertEqual(calls, [L.NETNS_DIR])
+        self.assertEqual(s.mounts, BOOT_MOUNTS)
+        libc = mock.Mock()
+        libc.umount2.return_value = 0
+        with mock.patch("ctypes.CDLL", return_value=libc):
+            L._umount2(L.NETNS_DIR)
+        libc.umount2.assert_called_once_with(b"/run/netns", L.UMOUNT_NOFOLLOW)   # never MNT_DETACH (2)
+        self.assertEqual(L.UMOUNT_NOFOLLOW & 2, 0)
+
+    def test_parse_mountinfo_and_ownership_from_the_observed_pi0_1_line(self):
+        run_line = "29 30 0:26 / /run rw,nosuid,nodev,noexec,relatime shared:5 - tmpfs tmpfs rw,size=1605392k"
+        root_line = "30 1 259:2 / / rw,relatime shared:1 - ext4 /dev/nvme0n1p2 rw"
+        before = {"phase": "observe", "what": L.NETNS_DIR, "label": "before",
+                  "state": L.netns_dir_state(SimpleNamespace(read=lambda p: f"{root_line}\n{run_line}\n"))}
+        after = {"phase": "observe", "what": L.NETNS_DIR, "label": "after_first_add",
+                 "state": L.netns_dir_state(SimpleNamespace(read=lambda p: f"{root_line}\n{run_line}\n{PI0_1_MOUNT}\n"))}
+        intent = {"phase": "intent", "op": ["cmd", ["ip", "netns", "add", L.NS_A]]}
+        own = L.netns_mount_owner([before, intent, after])
+        self.assertEqual((own["owned"], own["error"]), ((1609, 29, "0:26", "/netns"), None))
+        self.assertEqual(L.parse_mountinfo("40 29 0:26 /a\\040b /run/a\\040b rw - tmpfs tmpfs rw")[0]["mnt"],
+                         "/run/a b")
+        self.assertIsNone(L.parse_mountinfo("garbage line"))
+        self.assertIsNone(L.parse_mountinfo(""))
 
 
 # ------------------------------------------------------------------------------------------ CTRL orchestration

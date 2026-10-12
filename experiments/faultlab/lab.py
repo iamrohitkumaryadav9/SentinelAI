@@ -93,6 +93,17 @@ FWD_HELPER = (
 FWD_EXIT = {2: "invalid value", 3: "namespace inode mismatch", 4: "unexpected interfaces in the namespace",
             5: "read-back differs from the written value"}
 
+# /run/netns: when it is not a mount point, the first `ip netns add` bind-mounts it onto itself and makes it shared
+# (iproute2 netns_add); `ip netns del` never removes that mount (PI0-1, 20261011T175343Z: mounts_identical failed).
+# The run records the mount table at /run/netns before and right after its first `ip netns add`; a mount that appears
+# there, is the only one, and is the expected self-bind of the covering mount is this run's, and cleanup unmounts
+# exactly that mount (same id, parent, device, root) once /run/netns is empty. A pre-existing mount is never touched.
+# Limit: an identical self-bind made by a concurrent `ip netns add` in the same window cannot be told apart by mount
+# data; its namespace file keeps /run/netns non-empty, which the unmount precondition refuses.
+NETNS_DIR = "/run/netns"
+MOUNTINFO = "/proc/self/mountinfo"
+UMOUNT_NOFOLLOW = 8
+
 
 class LabRefused(ValueError):
     """An operation outside the run's closed set was requested. Nothing was executed."""
@@ -295,6 +306,108 @@ class Sys(C.Sys):
             return None
 
 
+def _unescape(field: str) -> str:
+    return re.sub(r"\\([0-7]{3})", lambda m: chr(int(m.group(1), 8)), field)
+
+
+def parse_mountinfo(text) -> Optional[List[dict]]:
+    """/proc/<pid>/mountinfo as dicts (id, parent, dev, root, mnt, fstype, optional); None if unreadable."""
+    if not text:
+        return None
+    out = []
+    for line in text.splitlines():
+        f = line.split()
+        try:
+            sep = f.index("-", 6)
+            out.append({"id": int(f[0]), "parent": int(f[1]), "dev": f[2], "root": _unescape(f[3]),
+                        "mnt": _unescape(f[4]), "optional": f[6:sep], "fstype": f[sep + 1]})
+        except (ValueError, IndexError):
+            return None
+    return out
+
+
+def netns_dir_state(sysr) -> Optional[dict]:
+    """Read-only: the mounts at /run/netns, below it, and the mount that covers the directory itself."""
+    mounts = parse_mountinfo(sysr.read(MOUNTINFO))
+    if mounts is None:
+        return None
+    up = [m for m in mounts if m["mnt"] == "/" or NETNS_DIR.startswith(m["mnt"].rstrip("/") + "/")]
+    return {"at": [m for m in mounts if m["mnt"] == NETNS_DIR],
+            "below": [m for m in mounts if m["mnt"].startswith(NETNS_DIR + "/")],
+            "cover": max(up, key=lambda m: (len(m["mnt"]), mounts.index(m))) if up else None,
+            "ids": sorted(m["id"] for m in mounts)}
+
+
+def _identity(m: dict) -> tuple:
+    return m["id"], m["parent"], m["dev"], m["root"]
+
+
+def netns_mount_owner(entries: List[dict]) -> dict:
+    """From the op log: the /run/netns state before the first `ip netns add` and the mount that add introduced.
+    {'attempted': bool, 'before': state|None, 'owned': identity|None, 'error': str|None}."""
+    obs = {e.get("label"): e.get("state") for e in entries if e.get("phase") == "observe" and e.get("what") == NETNS_DIR}
+    attempted = any(e.get("phase") == "intent" and e["op"][0] == "cmd" and e["op"][1][:3] == ["ip", "netns", "add"]
+                    for e in entries)
+    res = {"attempted": attempted, "before": obs.get("before"), "owned": None, "error": None}
+    if not attempted:
+        return res
+    before, after = obs.get("before"), obs.get("after_first_add")
+    if not before or not after:
+        res["error"] = "the /run/netns mount state around the first ip netns add was not recorded"
+    elif before["at"]:
+        pass                                                  # pre-existing mount point: ip netns add made no mount
+    elif not after["at"]:
+        pass                                                  # the add failed before mounting: nothing introduced
+    else:
+        new = [m for m in after["at"] if m["id"] not in before["ids"]]
+        cover = before["cover"]
+        rel = os.path.relpath(NETNS_DIR, cover["mnt"]) if cover else None
+        want_root = os.path.normpath(os.path.join(cover["root"], rel)) if cover else None
+        if len(after["at"]) != 1 or len(new) != 1:
+            res["error"] = f"unexpected mounts at {NETNS_DIR} after the first ip netns add: {after['at']}"
+        elif cover is None or (new[0]["parent"], new[0]["dev"], new[0]["root"], new[0]["fstype"]) != \
+                (cover["id"], cover["dev"], want_root, cover["fstype"]):
+            res["error"] = f"the mount at {NETNS_DIR} is not the self-bind ip netns add makes: {new[0]}"
+        else:
+            res["owned"] = _identity(new[0])
+    return res
+
+
+def netns_dir_restored(sysr, owner: dict) -> bool:
+    """The mounts at /run/netns are the ones recorded before the run (by identity), nothing below it."""
+    if not owner["attempted"]:
+        return True
+    now, before = netns_dir_state(sysr), owner["before"]
+    if now is None or before is None:
+        return False
+    return not now["below"] and [_identity(m) for m in now["at"]] == [_identity(m) for m in before["at"]]
+
+
+def umount_owned_netns_dir(sysr, owned: tuple, umount) -> None:
+    """Unmount exactly the run's /run/netns mount: it must still be the only mount there with the recorded identity,
+    nothing mounted below it and the directory empty; afterwards it must be gone and nothing left at /run/netns.
+    Raises OSError (recorded by cleanup) otherwise; never detaches lazily."""
+    st = netns_dir_state(sysr)
+    if st is None:
+        raise OSError(f"{MOUNTINFO} unreadable")
+    if [_identity(m) for m in st["at"]] != [tuple(owned)] or st["below"]:
+        raise OSError(f"{NETNS_DIR} mounts differ from the run's own mount {owned}: {st['at'] + st['below']}")
+    if sysr.listdir(NETNS_DIR) != []:
+        raise OSError(f"{NETNS_DIR} is not empty: {sysr.listdir(NETNS_DIR)}")
+    umount(NETNS_DIR)
+    st = netns_dir_state(sysr)
+    if st is None or st["at"] or st["below"] or owned[0] in st["ids"]:
+        raise OSError(f"{NETNS_DIR} not restored after unmount: {None if st is None else st['at']}")
+
+
+def _umount2(path: str) -> None:
+    import ctypes
+    libc = ctypes.CDLL(None, use_errno=True)
+    if libc.umount2(path.encode(), UMOUNT_NOFOLLOW) != 0:
+        e = ctypes.get_errno()
+        raise OSError(e, f"umount2 {path}: {os.strerror(e)}")
+
+
 def lab_state(sysr) -> dict:
     """Raw inspection texts of one lab check (saved before evaluation)."""
     raw = {k: sysr.probe(argv) for k, argv in LAB_READS.items()}
@@ -464,6 +577,12 @@ class Plan:
         elif kind == "kill":
             if len(op) != 2 or isinstance(op[1], bool) or not isinstance(op[1], int) or op[1] <= 1:
                 raise LabRefused(f"malformed kill {op!r}")
+        elif kind == "umount_netns_dir":
+            if len(op) != 2 or not isinstance(op[1], tuple) or len(op[1]) != 4 or \
+                    not all(isinstance(x, int) and not isinstance(x, bool) and x > 0 for x in op[1][:2]) or \
+                    not isinstance(op[1][2], str) or not re.fullmatch(r"[0-9]+:[0-9]+", op[1][2]) or \
+                    not isinstance(op[1][3], str) or not op[1][3].startswith("/"):
+                raise LabRefused(f"malformed {NETNS_DIR} unmount {op!r}")
         else:
             raise LabRefused(f"operation {kind!r} is not authorised")
         return op
@@ -474,10 +593,17 @@ class Host:
 
     def __init__(self, plan: Plan, oplog: str, sysr=None):
         self.plan, self.oplog, self.sys = plan, oplog, sysr or Sys()
+        self.netns_observed = False
 
     def _log(self, **kw):
         with open(self.oplog, "a") as fh:
             fh.write(json.dumps({"t": time.monotonic(), **kw}, sort_keys=True, default=str) + "\n")
+
+    def observe_netns_dir(self, label: str) -> Optional[dict]:
+        """Read-only: log the /run/netns mount state (the basis of mount ownership at cleanup)."""
+        st = netns_dir_state(self.sys)
+        self._log(phase="observe", what=NETNS_DIR, label=label, state=st)
+        return st
 
     @staticmethod
     def _desc(op):
@@ -485,6 +611,17 @@ class Host:
 
     def apply(self, op, stdout=None, stderr=None):
         self.plan.check(op)
+        if op[0] == "cmd" and op[1][:3] == ("ip", "netns", "add") and not self.netns_observed:
+            self.netns_observed = True                         # the first add may bind-mount /run/netns
+            if not netns_dir_unambiguous(self.observe_netns_dir("before")):
+                raise LabRefused(f"{NETNS_DIR} mount state unreadable or ambiguous; no namespace created")
+            try:
+                return self._apply(op, stdout, stderr)
+            finally:
+                self.observe_netns_dir("after_first_add")      # also when the add failed after mounting
+        return self._apply(op, stdout, stderr)
+
+    def _apply(self, op, stdout, stderr):
         self._log(phase="intent", op=self._desc(op))
         try:
             res = self._do(op, stdout, stderr)
@@ -536,6 +673,8 @@ class Host:
             if f"::/{LAB}/" not in (self.sys.read(f"/proc/{op[1]}/cgroup") or ""):
                 return None                   # gone, or not a lab process: never signalled
             os.kill(op[1], signal.SIGKILL)
+        elif kind == "umount_netns_dir":
+            umount_owned_netns_dir(self.sys, op[1], _umount2)
         return None
 
 
@@ -550,7 +689,8 @@ def created(entries: List[dict]) -> dict:
     return {"dirs": [o[1] for o in ok if o[0] == "mkdir"],
             "netns": [o[1][3] for o in ok if o[0] == "cmd" and o[1][:3] == ["ip", "netns", "add"]],
             "pids": [e.get("pid") for e in entries if e.get("phase") == "result" and e.get("ok")
-                     and e["op"][0] == "spawn" and e.get("pid")]}
+                     and e["op"][0] == "spawn" and e.get("pid")],
+            "netns_mount": netns_mount_owner(entries)}
 
 
 def lab_pids(sysr) -> List[int]:
@@ -560,8 +700,9 @@ def lab_pids(sysr) -> List[int]:
 def cleanup(host: Host, sysr, entries: List[dict], run_id: Optional[str], wait_s: float = 5.0,
             sleep=time.sleep, after_procs=None) -> dict:
     """Idempotent cleanup of what this invocation created, in order: lab processes (cgroup.kill) -> after_procs (the
-    eBPF loader release) -> run files and app directories -> lab cgroups (leaves first) -> lab namespaces. Never
-    touches anything the op log does not show as created by this invocation."""
+    eBPF loader release) -> run files and app directories -> lab cgroups (leaves first) -> lab namespaces -> the
+    /run/netns mount the first `ip netns add` introduced. Never touches anything the op log does not show as created
+    by this invocation."""
     st = created(entries)
     steps, errors = [], []
 
@@ -599,12 +740,22 @@ def cleanup(host: Host, sysr, entries: List[dict], run_id: Optional[str], wait_s
     for op in netns_del_plan():
         if op[1][3] in st["netns"] and sysr.exists(f"/run/netns/{op[1][3]}"):
             step(f"netns del {op[1][3]}", lambda op=op: host.apply(op))
-    v = cleanup_state(sysr, st["pids"], run_id)
+    own = st["netns_mount"]
+    if own["error"]:
+        errors.append(f"{NETNS_DIR} mount not owned (kept): {own['error']}")
+    elif own["owned"] is not None:
+        now = netns_dir_state(sysr)
+        if now is not None and not now["at"] and not now["below"] and own["owned"][0] not in now["ids"]:
+            pass                                              # already removed by an earlier cleanup
+        else:
+            step(f"umount {NETNS_DIR}", lambda: host.apply(("umount_netns_dir", tuple(own["owned"]))))
+    v = cleanup_state(sysr, st["pids"], run_id, own)
     return {"ok": not errors and v["ok"], "steps": steps, "errors": errors, "verify": v}
 
 
-def cleanup_state(sysr, pids=(), run_id: Optional[str] = None) -> dict:
-    c = {"lab_cgroup_absent": not sysr.exists(LAB_DIR), "no_sentinel_cgroup": not C.sentinel_cgroups(sysr),
+def cleanup_state(sysr, pids=(), run_id: Optional[str] = None, netns_mount: Optional[dict] = None) -> dict:
+    c = {"netns_dir_mounts_as_before": netns_dir_restored(sysr, netns_mount or {"attempted": False}),
+         "lab_cgroup_absent": not sysr.exists(LAB_DIR), "no_sentinel_cgroup": not C.sentinel_cgroups(sysr),
          "no_lab_process": not lab_pids(sysr),
          "no_logged_pid_alive_in_lab": not [p for p in pids
                                             if f"::/{LAB}/" in (sysr.read(f"/proc/{p}/cgroup") or "")],
@@ -634,5 +785,12 @@ def preflight(sysr) -> dict:
     c = {"no_sentinel_cgroup": not C.sentinel_cgroups(sysr), "no_lab_process": not lab_pids(sysr),
          "no_lab_netns": not E.lab_netns_present(sysr), "no_lab_interface_in_host": not E.host_lab_ifaces(sysr),
          "run_lab_absent": sysr.lstat_run(RUN_LAB) is None,
+         "netns_dir_mount_unambiguous": netns_dir_unambiguous(netns_dir_state(sysr)),
          "root_cpuset_0_23": C.parse_cpulist(sysr.read(f"{CG_ROOT}/cpuset.cpus.effective")) == C.HOST_CPUS}
     return {"ok": all(c.values()), "checks": c}
+
+
+def netns_dir_unambiguous(st: Optional[dict]) -> bool:
+    """Ownership of a /run/netns mount can be decided: the mount table is readable, a covering mount exists, at most
+    one mount at /run/netns and nothing mounted below it."""
+    return st is not None and st["cover"] is not None and len(st["at"]) <= 1 and not st["below"]
