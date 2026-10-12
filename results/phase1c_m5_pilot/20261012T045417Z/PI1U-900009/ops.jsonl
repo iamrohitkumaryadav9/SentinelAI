@@ -1,0 +1,134 @@
+{"op": ["mkdir", "/sys/fs/cgroup/sentinel-fl"], "phase": "intent", "t": 97823.566484898}
+{"ok": true, "op": ["mkdir", "/sys/fs/cgroup/sentinel-fl"], "phase": "result", "pid": null, "t": 97823.566589747}
+{"op": ["write", "/sys/fs/cgroup/sentinel-fl/cpuset.mems"], "phase": "intent", "t": 97823.566609133}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-fl/cpuset.mems"], "phase": "result", "pid": null, "t": 97823.566634322}
+{"op": ["write", "/sys/fs/cgroup/sentinel-fl/cpuset.cpus"], "phase": "intent", "t": 97823.566646378}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-fl/cpuset.cpus"], "phase": "result", "pid": null, "t": 97823.56666282}
+{"op": ["write", "/sys/fs/cgroup/sentinel-fl/cgroup.subtree_control"], "phase": "intent", "t": 97823.56667367}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-fl/cgroup.subtree_control"], "phase": "result", "pid": null, "t": 97823.56669086}
+{"op": ["write", "/sys/fs/cgroup/sentinel-fl/memory.max"], "phase": "intent", "t": 97823.566701112}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-fl/memory.max"], "phase": "result", "pid": null, "t": 97823.566720175}
+{"op": ["write", "/sys/fs/cgroup/sentinel-fl/memory.swap.max"], "phase": "intent", "t": 97823.566729728}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-fl/memory.swap.max"], "phase": "result", "pid": null, "t": 97823.56674374}
+{"op": ["mkdir", "/sys/fs/cgroup/sentinel-fl/target"], "phase": "intent", "t": 97823.566753357}
+{"ok": true, "op": ["mkdir", "/sys/fs/cgroup/sentinel-fl/target"], "phase": "result", "pid": null, "t": 97823.566801627}
+{"op": ["write", "/sys/fs/cgroup/sentinel-fl/target/cpuset.cpus"], "phase": "intent", "t": 97823.566811983}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-fl/target/cpuset.cpus"], "phase": "result", "pid": null, "t": 97823.566827975}
+{"op": ["write", "/sys/fs/cgroup/sentinel-fl/target/cpuset.mems"], "phase": "intent", "t": 97823.566837293}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-fl/target/cpuset.mems"], "phase": "result", "pid": null, "t": 97823.566851551}
+{"op": ["write", "/sys/fs/cgroup/sentinel-fl/target/memory.swap.max"], "phase": "intent", "t": 97823.566861183}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-fl/target/memory.swap.max"], "phase": "result", "pid": null, "t": 97823.566874816}
+{"op": ["write", "/sys/fs/cgroup/sentinel-fl/target/pids.max"], "phase": "intent", "t": 97823.566884201}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-fl/target/pids.max"], "phase": "result", "pid": null, "t": 97823.566898534}
+{"op": ["mkdir", "/sys/fs/cgroup/sentinel-fl/contender"], "phase": "intent", "t": 97823.566908113}
+{"ok": true, "op": ["mkdir", "/sys/fs/cgroup/sentinel-fl/contender"], "phase": "result", "pid": null, "t": 97823.566952442}
+{"op": ["write", "/sys/fs/cgroup/sentinel-fl/contender/cpuset.cpus"], "phase": "intent", "t": 97823.566962047}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-fl/contender/cpuset.cpus"], "phase": "result", "pid": null, "t": 97823.566977543}
+{"op": ["write", "/sys/fs/cgroup/sentinel-fl/contender/cpuset.mems"], "phase": "intent", "t": 97823.566987087}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-fl/contender/cpuset.mems"], "phase": "result", "pid": null, "t": 97823.567004063}
+{"op": ["write", "/sys/fs/cgroup/sentinel-fl/contender/memory.swap.max"], "phase": "intent", "t": 97823.567014912}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-fl/contender/memory.swap.max"], "phase": "result", "pid": null, "t": 97823.567028658}
+{"op": ["write", "/sys/fs/cgroup/sentinel-fl/contender/pids.max"], "phase": "intent", "t": 97823.567038099}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-fl/contender/pids.max"], "phase": "result", "pid": null, "t": 97823.567052176}
+{"op": ["mkdir", "/sys/fs/cgroup/sentinel-fl/support"], "phase": "intent", "t": 97823.567061291}
+{"ok": true, "op": ["mkdir", "/sys/fs/cgroup/sentinel-fl/support"], "phase": "result", "pid": null, "t": 97823.567102329}
+{"op": ["write", "/sys/fs/cgroup/sentinel-fl/support/cpuset.cpus"], "phase": "intent", "t": 97823.567111765}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-fl/support/cpuset.cpus"], "phase": "result", "pid": null, "t": 97823.567127391}
+{"op": ["write", "/sys/fs/cgroup/sentinel-fl/support/cpuset.mems"], "phase": "intent", "t": 97823.567143836}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-fl/support/cpuset.mems"], "phase": "result", "pid": null, "t": 97823.567157912}
+{"op": ["write", "/sys/fs/cgroup/sentinel-fl/support/memory.swap.max"], "phase": "intent", "t": 97823.567167201}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-fl/support/memory.swap.max"], "phase": "result", "pid": null, "t": 97823.56718077}
+{"op": ["write", "/sys/fs/cgroup/sentinel-fl/support/pids.max"], "phase": "intent", "t": 97823.567190424}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-fl/support/pids.max"], "phase": "result", "pid": null, "t": 97823.567204326}
+{"label": "before", "phase": "observe", "state": {"at": [], "below": [], "cover": {"dev": "0:26", "fstype": "tmpfs", "id": 29, "mnt": "/run", "optional": ["shared:5"], "parent": 30, "root": "/"}, "ids": [25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 209, 212, 215, 2094, 4077, 4078, 4119, 5532]}, "t": 97823.567493333, "what": "/run/netns"}
+{"op": ["cmd", ["ip", "netns", "add", "sentinel-lab-a"]], "phase": "intent", "t": 97823.567517568}
+{"ok": true, "op": ["cmd", ["ip", "netns", "add", "sentinel-lab-a"]], "phase": "result", "pid": null, "t": 97823.568535861}
+{"label": "after_first_add", "phase": "observe", "state": {"at": [{"dev": "0:26", "fstype": "tmpfs", "id": 1609, "mnt": "/run/netns", "optional": ["shared:5"], "parent": 29, "root": "/netns"}], "below": [{"dev": "0:4", "fstype": "nsfs", "id": 1644, "mnt": "/run/netns/sentinel-lab-a", "optional": ["shared:884"], "parent": 1609, "root": "net:[4026532762]"}, {"dev": "0:4", "fstype": "nsfs", "id": 1645, "mnt": "/run/netns/sentinel-lab-a", "optional": ["shared:884"], "parent": 29, "root": "net:[4026532762]"}], "cover": {"dev": "0:26", "fstype": "tmpfs", "id": 29, "mnt": "/run", "optional": ["shared:5"], "parent": 30, "root": "/"}, "ids": [25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 209, 212, 215, 1609, 1644, 1645, 2094, 4077, 4078, 4119, 5532]}, "t": 97823.568731578, "what": "/run/netns"}
+{"op": ["cmd", ["ip", "netns", "add", "sentinel-lab-r"]], "phase": "intent", "t": 97823.568910506}
+{"ok": true, "op": ["cmd", ["ip", "netns", "add", "sentinel-lab-r"]], "phase": "result", "pid": null, "t": 97823.5697126}
+{"op": ["cmd", ["ip", "netns", "add", "sentinel-lab-b"]], "phase": "intent", "t": 97823.569734455}
+{"ok": true, "op": ["cmd", ["ip", "netns", "add", "sentinel-lab-b"]], "phase": "result", "pid": null, "t": 97823.570515232}
+{"op": ["cmd", ["ip", "link", "add", "sentlab-a0", "numtxqueues", "1", "numrxqueues", "1", "netns", "sentinel-lab-a", "type", "veth", "peer", "name", "sentlab-ra", "numtxqueues", "1", "numrxqueues", "1", "netns", "sentinel-lab-r"]], "phase": "intent", "t": 97823.570535868}
+{"ok": true, "op": ["cmd", ["ip", "link", "add", "sentlab-a0", "numtxqueues", "1", "numrxqueues", "1", "netns", "sentinel-lab-a", "type", "veth", "peer", "name", "sentlab-ra", "numtxqueues", "1", "numrxqueues", "1", "netns", "sentinel-lab-r"]], "phase": "result", "pid": null, "t": 97823.57117098}
+{"op": ["cmd", ["ip", "link", "add", "sentlab-rb", "numtxqueues", "1", "numrxqueues", "1", "netns", "sentinel-lab-r", "type", "veth", "peer", "name", "sentlab-b0", "numtxqueues", "1", "numrxqueues", "1", "netns", "sentinel-lab-b"]], "phase": "intent", "t": 97823.571191578}
+{"ok": true, "op": ["cmd", ["ip", "link", "add", "sentlab-rb", "numtxqueues", "1", "numrxqueues", "1", "netns", "sentinel-lab-r", "type", "veth", "peer", "name", "sentlab-b0", "numtxqueues", "1", "numrxqueues", "1", "netns", "sentinel-lab-b"]], "phase": "result", "pid": null, "t": 97823.571857635}
+{"op": ["cmd", ["ip", "-n", "sentinel-lab-a", "addr", "add", "10.199.1.1/24", "dev", "sentlab-a0"]], "phase": "intent", "t": 97823.571880141}
+{"ok": true, "op": ["cmd", ["ip", "-n", "sentinel-lab-a", "addr", "add", "10.199.1.1/24", "dev", "sentlab-a0"]], "phase": "result", "pid": null, "t": 97823.572580591}
+{"op": ["cmd", ["ip", "-n", "sentinel-lab-r", "addr", "add", "10.199.1.254/24", "dev", "sentlab-ra"]], "phase": "intent", "t": 97823.572598533}
+{"ok": true, "op": ["cmd", ["ip", "-n", "sentinel-lab-r", "addr", "add", "10.199.1.254/24", "dev", "sentlab-ra"]], "phase": "result", "pid": null, "t": 97823.573241615}
+{"op": ["cmd", ["ip", "-n", "sentinel-lab-r", "addr", "add", "10.199.2.254/24", "dev", "sentlab-rb"]], "phase": "intent", "t": 97823.573258912}
+{"ok": true, "op": ["cmd", ["ip", "-n", "sentinel-lab-r", "addr", "add", "10.199.2.254/24", "dev", "sentlab-rb"]], "phase": "result", "pid": null, "t": 97823.573922107}
+{"op": ["cmd", ["ip", "-n", "sentinel-lab-b", "addr", "add", "10.199.2.2/24", "dev", "sentlab-b0"]], "phase": "intent", "t": 97823.573938429}
+{"ok": true, "op": ["cmd", ["ip", "-n", "sentinel-lab-b", "addr", "add", "10.199.2.2/24", "dev", "sentlab-b0"]], "phase": "result", "pid": null, "t": 97823.574561353}
+{"op": ["cmd", ["ip", "-n", "sentinel-lab-a", "link", "set", "lo", "up"]], "phase": "intent", "t": 97823.574578654}
+{"ok": true, "op": ["cmd", ["ip", "-n", "sentinel-lab-a", "link", "set", "lo", "up"]], "phase": "result", "pid": null, "t": 97823.575287808}
+{"op": ["cmd", ["ip", "-n", "sentinel-lab-r", "link", "set", "lo", "up"]], "phase": "intent", "t": 97823.575304377}
+{"ok": true, "op": ["cmd", ["ip", "-n", "sentinel-lab-r", "link", "set", "lo", "up"]], "phase": "result", "pid": null, "t": 97823.575980454}
+{"op": ["cmd", ["ip", "-n", "sentinel-lab-b", "link", "set", "lo", "up"]], "phase": "intent", "t": 97823.57599668}
+{"ok": true, "op": ["cmd", ["ip", "-n", "sentinel-lab-b", "link", "set", "lo", "up"]], "phase": "result", "pid": null, "t": 97823.576634843}
+{"op": ["cmd", ["ip", "-n", "sentinel-lab-a", "link", "set", "sentlab-a0", "up"]], "phase": "intent", "t": 97823.576650557}
+{"ok": true, "op": ["cmd", ["ip", "-n", "sentinel-lab-a", "link", "set", "sentlab-a0", "up"]], "phase": "result", "pid": null, "t": 97823.577269477}
+{"op": ["cmd", ["ip", "-n", "sentinel-lab-r", "link", "set", "sentlab-ra", "up"]], "phase": "intent", "t": 97823.577285633}
+{"ok": true, "op": ["cmd", ["ip", "-n", "sentinel-lab-r", "link", "set", "sentlab-ra", "up"]], "phase": "result", "pid": null, "t": 97823.577878405}
+{"op": ["cmd", ["ip", "-n", "sentinel-lab-r", "link", "set", "sentlab-rb", "up"]], "phase": "intent", "t": 97823.577895065}
+{"ok": true, "op": ["cmd", ["ip", "-n", "sentinel-lab-r", "link", "set", "sentlab-rb", "up"]], "phase": "result", "pid": null, "t": 97823.578483495}
+{"op": ["cmd", ["ip", "-n", "sentinel-lab-b", "link", "set", "sentlab-b0", "up"]], "phase": "intent", "t": 97823.578500009}
+{"ok": true, "op": ["cmd", ["ip", "-n", "sentinel-lab-b", "link", "set", "sentlab-b0", "up"]], "phase": "result", "pid": null, "t": 97823.579100673}
+{"op": ["cmd", ["ip", "-n", "sentinel-lab-a", "route", "add", "10.199.2.0/24", "via", "10.199.1.254", "dev", "sentlab-a0"]], "phase": "intent", "t": 97823.579117802}
+{"ok": true, "op": ["cmd", ["ip", "-n", "sentinel-lab-a", "route", "add", "10.199.2.0/24", "via", "10.199.1.254", "dev", "sentlab-a0"]], "phase": "result", "pid": null, "t": 97823.579700008}
+{"op": ["cmd", ["ip", "-n", "sentinel-lab-b", "route", "add", "10.199.1.0/24", "via", "10.199.2.254", "dev", "sentlab-b0"]], "phase": "intent", "t": 97823.579717829}
+{"ok": true, "op": ["cmd", ["ip", "-n", "sentinel-lab-b", "route", "add", "10.199.1.0/24", "via", "10.199.2.254", "dev", "sentlab-b0"]], "phase": "result", "pid": null, "t": 97823.580308185}
+{"op": ["forward", "sentinel-lab-a"], "phase": "intent", "t": 97823.58033511}
+{"ok": true, "op": ["forward", "sentinel-lab-a"], "phase": "result", "pid": null, "t": 97823.588839537}
+{"op": ["forward", "sentinel-lab-r"], "phase": "intent", "t": 97823.588864784}
+{"ok": true, "op": ["forward", "sentinel-lab-r"], "phase": "result", "pid": null, "t": 97823.59742485}
+{"op": ["forward", "sentinel-lab-b"], "phase": "intent", "t": 97823.597456149}
+{"ok": true, "op": ["forward", "sentinel-lab-b"], "phase": "result", "pid": null, "t": 97823.605905088}
+{"op": ["mkdir", "/run/sentinelai-lab"], "phase": "intent", "t": 97824.570629511}
+{"ok": true, "op": ["mkdir", "/run/sentinelai-lab"], "phase": "result", "pid": null, "t": 97824.570694274}
+{"op": ["mkdir", "/run/sentinelai-lab/app"], "phase": "intent", "t": 97824.570709903}
+{"ok": true, "op": ["mkdir", "/run/sentinelai-lab/app"], "phase": "result", "pid": null, "t": 97824.570721584}
+{"op": ["mkdir", "/run/sentinelai-lab/app/PI1U-s900009"], "phase": "intent", "t": 97824.570731887}
+{"ok": true, "op": ["mkdir", "/run/sentinelai-lab/app/PI1U-s900009"], "phase": "result", "pid": null, "t": 97824.570741873}
+{"op": ["chown_lab", "/run/sentinelai-lab/app/PI1U-s900009"], "phase": "intent", "t": 97824.570752883}
+{"ok": true, "op": ["chown_lab", "/run/sentinelai-lab/app/PI1U-s900009"], "phase": "result", "pid": null, "t": 97824.570767915}
+{"op": ["write_new", "/run/sentinelai-lab/app/PI1U-s900009/control.json", 26], "phase": "intent", "t": 97824.570793528}
+{"ok": true, "op": ["write_new", "/run/sentinelai-lab/app/PI1U-s900009/control.json", 26], "phase": "result", "pid": null, "t": 97824.570815684}
+{"op": ["spawn", "dependency"], "phase": "intent", "t": 97824.570885199}
+{"ok": true, "op": ["spawn", "dependency"], "phase": "result", "pid": 808774, "t": 97824.571326693}
+{"op": ["spawn", "workload"], "phase": "intent", "t": 97824.621647878}
+{"ok": true, "op": ["spawn", "workload"], "phase": "result", "pid": 808778, "t": 97824.622060913}
+{"op": ["spawn", "loadgen"], "phase": "intent", "t": 97824.67371154}
+{"ok": true, "op": ["spawn", "loadgen"], "phase": "result", "pid": 808787, "t": 97824.673983727}
+{"op": ["write", "/sys/fs/cgroup/sentinel-fl/cgroup.kill"], "phase": "intent", "t": 97995.54311194}
+{"ok": true, "op": ["write", "/sys/fs/cgroup/sentinel-fl/cgroup.kill"], "phase": "result", "pid": null, "t": 97995.543158619}
+{"op": ["unlink_run", "/run/sentinelai-lab/app/PI1U-s900009/config.json"], "phase": "intent", "t": 97995.595242778}
+{"ok": true, "op": ["unlink_run", "/run/sentinelai-lab/app/PI1U-s900009/config.json"], "phase": "result", "pid": null, "t": 97995.595286171}
+{"op": ["unlink_run", "/run/sentinelai-lab/app/PI1U-s900009/control.json"], "phase": "intent", "t": 97995.595305911}
+{"ok": true, "op": ["unlink_run", "/run/sentinelai-lab/app/PI1U-s900009/control.json"], "phase": "result", "pid": null, "t": 97995.595320769}
+{"op": ["unlink_run", "/run/sentinelai-lab/app/PI1U-s900009/dependency_config.json"], "phase": "intent", "t": 97995.595334644}
+{"ok": true, "op": ["unlink_run", "/run/sentinelai-lab/app/PI1U-s900009/dependency_config.json"], "phase": "result", "pid": null, "t": 97995.595347868}
+{"op": ["unlink_run", "/run/sentinelai-lab/app/PI1U-s900009/metrics.json"], "phase": "intent", "t": 97995.595359792}
+{"ok": true, "op": ["unlink_run", "/run/sentinelai-lab/app/PI1U-s900009/metrics.json"], "phase": "result", "pid": null, "t": 97995.595372057}
+{"op": ["rmdir", "/run/sentinelai-lab/app/PI1U-s900009"], "phase": "intent", "t": 97995.59538782}
+{"ok": true, "op": ["rmdir", "/run/sentinelai-lab/app/PI1U-s900009"], "phase": "result", "pid": null, "t": 97995.595407152}
+{"op": ["rmdir", "/run/sentinelai-lab/app"], "phase": "intent", "t": 97995.595420293}
+{"ok": true, "op": ["rmdir", "/run/sentinelai-lab/app"], "phase": "result", "pid": null, "t": 97995.595430543}
+{"op": ["rmdir", "/run/sentinelai-lab"], "phase": "intent", "t": 97995.595441309}
+{"ok": true, "op": ["rmdir", "/run/sentinelai-lab"], "phase": "result", "pid": null, "t": 97995.595453592}
+{"op": ["rmdir", "/sys/fs/cgroup/sentinel-fl/support"], "phase": "intent", "t": 97995.595469808}
+{"ok": true, "op": ["rmdir", "/sys/fs/cgroup/sentinel-fl/support"], "phase": "result", "pid": null, "t": 97995.595505781}
+{"op": ["rmdir", "/sys/fs/cgroup/sentinel-fl/contender"], "phase": "intent", "t": 97995.595518331}
+{"ok": true, "op": ["rmdir", "/sys/fs/cgroup/sentinel-fl/contender"], "phase": "result", "pid": null, "t": 97995.595547623}
+{"op": ["rmdir", "/sys/fs/cgroup/sentinel-fl/target"], "phase": "intent", "t": 97995.595559012}
+{"ok": true, "op": ["rmdir", "/sys/fs/cgroup/sentinel-fl/target"], "phase": "result", "pid": null, "t": 97995.595586517}
+{"op": ["rmdir", "/sys/fs/cgroup/sentinel-fl"], "phase": "intent", "t": 97995.595598536}
+{"ok": true, "op": ["rmdir", "/sys/fs/cgroup/sentinel-fl"], "phase": "result", "pid": null, "t": 97995.5956331}
+{"op": ["cmd", ["ip", "netns", "del", "sentinel-lab-b"]], "phase": "intent", "t": 97995.595652131}
+{"ok": true, "op": ["cmd", ["ip", "netns", "del", "sentinel-lab-b"]], "phase": "result", "pid": null, "t": 97995.596501471}
+{"op": ["cmd", ["ip", "netns", "del", "sentinel-lab-r"]], "phase": "intent", "t": 97995.596549085}
+{"ok": true, "op": ["cmd", ["ip", "netns", "del", "sentinel-lab-r"]], "phase": "result", "pid": null, "t": 97995.597376588}
+{"op": ["cmd", ["ip", "netns", "del", "sentinel-lab-a"]], "phase": "intent", "t": 97995.597414316}
+{"ok": true, "op": ["cmd", ["ip", "netns", "del", "sentinel-lab-a"]], "phase": "result", "pid": null, "t": 97995.598046214}
+{"op": ["umount_netns_dir", [1609, 29, "0:26", "/netns"]], "phase": "intent", "t": 97995.59833862}
+{"ok": true, "op": ["umount_netns_dir", [1609, 29, "0:26", "/netns"]], "phase": "result", "pid": null, "t": 97995.599598387}

@@ -1,7 +1,8 @@
 # Phase 1C M5 pilot report
 
-Status: **in progress.** PI-0 and the CTRL runs are complete. The PI-1 unprivileged, PI-6 collectors-off and workload
-instrumentation on/off runs are being built (Step 2). No fault class has been run.
+Status: **in progress.** Every pilot stage that needs no pending decision is complete: PI-0, CTRL, PI-1 in both
+privilege modes, the PI-6 collectors-on/off pairs and the workload instrumentation on/off pairs. No fault class has been
+run; the fault-class stages are blocked on owner decisions (§6).
 
 What this report shows: the A–R–B lab, the collection pipeline and the CTRL-stage pilot criteria work on this host. It
 does **not** validate any fault class, and it does not support any diagnostic claim. M2 was never run on pilot data
@@ -18,6 +19,7 @@ Evidence lives in `results/phase1c_m5_pilot/<campaign>/<run>/` and is committed 
 | `20261011T175343Z` | `cab7b59` | PI0-1 | **FAILED.** Lab checks failed `a_ip_forward`, `b_ip_forward`. The host comparison failed `mounts_identical` (the first `ip netns add` mounted `/run/netns`, and that mount stayed). Fixed in `6c0030d` and `7f6eac7`. |
 | `20261012T030504Z` | `7f6eac7` | PI0-1…5, CTRL-900001 | PI-0 5/5 passed. CTRL-900001 **FAILED** (`app_features`, §3). |
 | `20261012T040045Z` | `af2a4e7` | PI0-1…5, CTRL-900002…900005 | PI-0 5/5 passed. CTRL 4/4 passed. |
+| `20261012T045417Z` | `29d652f` | PI0-1…5; CTRL, PI6OFF, INSTOFF at seeds 900006 and 900007; PI1U-900008, PI1U-900009 | PI-0 5/5 passed. All 8 runs passed (§3a). |
 
 Every privileged invocation ran its own privileged preflight (`preflight.json` in each run directory). Each preflight
 was READY and recorded the run's commit.
@@ -30,6 +32,7 @@ Criterion: 5/5 cycles with all lab checks passing, cleanup verified, and the hos
 |---|---|---|---|---|---|---|
 | `20261012T030504Z` | 5/5 | pass | pass | verified | ok | yes |
 | `20261012T040045Z` | 5/5 | pass | pass | verified | ok | yes |
+| `20261012T045417Z` | 5/5 | pass | pass | verified | ok | yes |
 
 Lab setup plus teardown (op-log span): 1.3–1.4 s per cycle.
 
@@ -68,23 +71,68 @@ MISSING.
 
 The exemption is recorded in every report under `checks.app_features.structurally_unavailable`.
 
+## 3a. PI-1 unprivileged, PI-6 pairs, instrumentation pairs (campaign `20261012T045417Z`, `29d652f`)
+
+Same lab, workload, load and timeline as CTRL. Run variants (`pilot.py`):
+
+- `ctrl`: as §3.
+- `pi6off`: no collector and no eBPF loader.
+- `instoff`: as `pi6off`, with the workload's metrics writer off. No server document exists, so a client-only
+  `client_records` check replaces client/server reconciliation.
+- `pi1u`: M3A + app collected by a child running as the lab uid (uid/gid 1000, no supplementary groups, `CapEff` 0),
+  with no eBPF (the loader needs root).
+
+Every run below passed its own pipeline checks and all its cleanup, host-comparison and BPF-release checks. Each
+re-evaluates offline to the same verdict.
+
+| Run | Requests (200 / scheduled) | Collector CPU (core) | PI-1 | Notes |
+|---|---|---|---|---|
+| CTRL-900006 | 17000 / 17000 | 0.0021 | root, coverage 1.0 | lock-wait exemption applied (§3) |
+| CTRL-900007 | 17000 / 17000 | 0.0019 | root, coverage 1.0 | lock-wait exemption applied |
+| PI6OFF-900006 | 17000 / 17000 | — (off) | — | client/server reconciliation exact |
+| PI6OFF-900007 | 17000 / 17000 | — (off) | — | client/server reconciliation exact |
+| INSTOFF-900006 | 17000 / 17000 | — (off) | — | `client_records`: complete, all answered |
+| INSTOFF-900007 | 17000 / 17000 | — (off) | — | `client_records`: complete, all answered |
+| PI1U-900008 | 17000 / 17000 | 0.0015 | **unprivileged, coverage 1.0, netns verified** | uid 1000, `CapEff` 0, netns link = lab A's inode |
+| PI1U-900009 | 17000 / 17000 | 0.0015 | **unprivileged, coverage 1.0, netns verified** | uid 1000, `CapEff` 0, netns link = lab A's inode |
+
+Bytes the collectors wrote per run (ticks + snapshot + raw eBPF): CTRL 6.3–6.5 MB; PI1U 2.4 MB (no eBPF).
+
+**Pairs** (`pilot.py pairs`; client side, off minus on; nearest-rank percentiles over the 200 answers):
+
+| Pair | On p50 / p99 (ms) | Off p50 / p99 (ms) | Δ p50 | Δ p99 |
+|---|---|---|---|---|
+| Collectors: CTRL-900006 / PI6OFF-900006 | 4.392 / 4.600 | 4.349 / 4.590 | −0.042 | −0.010 |
+| Collectors: CTRL-900007 / PI6OFF-900007 | 4.390 / 4.587 | 4.411 / 4.646 | +0.021 | +0.059 |
+| Metrics writer: PI6OFF-900006 / INSTOFF-900006 | 4.349 / 4.590 | 4.407 / 4.659 | +0.058 | +0.069 |
+| Metrics writer: PI6OFF-900007 / INSTOFF-900007 | 4.411 / 4.646 | 4.337 / 4.591 | −0.074 | −0.055 |
+
+- Throughput is 100.0 req/s in every run. Arrivals are open-loop at a fixed rate and the service never saturated, so
+  throughput cannot differ by construction.
+- The latency differences change sign between seeds and stay within ±0.08 ms (about ±1.5 %). At this load, neither
+  the collectors nor the metrics writer has an effect distinguishable from run-to-run variation.
+- The design sets no threshold on these differences (§5.5, §6.7); they are reported, not scored. Two pairs per kind
+  cannot bound a small effect.
+
 ## 4. PI verdicts so far
 
 | PI | Status | Basis |
 |---|---|---|
 | PI-0 | **pass** (5/5 at `af2a4e7`) | §2 |
-| PI-1 | driver-root mode: coverage 1.0 in every CTRL run. **Unprivileged mode not yet run.** | Design: 2 runs per mode |
-| PI-6 | CTRL part: collector CPU ≈ 0.002 core, coverage ≥ 0.99 in every run. **Collectors-off pairs not yet run.** | Design §6.7 |
+| PI-1 | **pass in both modes.** Driver-root: coverage 1.0 in all 6 CTRL runs at `af2a4e7` and `29d652f`. Unprivileged: coverage 1.0 and netns verified in PI1U-900008 and PI1U-900009. The choice of mode (Q-2) is the owner's. | Design §6.2: 2 runs per mode |
+| PI-6 | **pass.** Collector CPU 0.0015–0.0021 core (budget 0.02) and coverage ≥ 0.99 in every collected run. 2 collectors-off pairs complete (§3a, report-only differences). | Design §6.7 |
+| Instrumentation | 2 on/off pairs complete; report-only (§3a) | Design §5.5 |
 | PI-7 | CTRL part: 136/136 valid app ticks, `app.latency_ms` P99 measured, in every run. The fault part needs FZ-INTENSITY and FZ-PI7 (§6). | FZ-PI7 `ctrl` |
 | PI-2, PI-3, PI-5, PI-8, OV-4 | not run | §6 |
 
 ## 5. Evidence and integrity (AMD-27)
 
-- **Committed:** every file under `results/phase1c_m5_pilot/<campaign>/<run>/`, for PI-0 cycles and CTRL runs,
-  passing and failed: 175 files, about 45 MB.
+- **Committed:** every file under `results/phase1c_m5_pilot/<campaign>/<run>/`, for PI-0 cycles and all runs,
+  passing and failed: 175 files (about 45 MB) in `92efb56`, plus 181 files (about 36 MB) for campaign
+  `20261012T045417Z`.
 - **Excluded:** `<run>/lg/client.jsonl` (transport copy) and `<run>/collector/` (the unprivileged collector's
-  output, copied into `evidence/`). These are ignored by `.gitignore`. Each `lg/client.jsonl` was verified
-  byte-identical to the manifest-covered `evidence/client.jsonl` before it was excluded.
+  output, copied into `evidence/`). These are ignored by `.gitignore`. Each excluded copy was verified
+  byte-identical to its manifest-covered `evidence/` counterpart before it was excluded.
 - `tests/faultlab/test_integrity.py` enforces the following on the committed tree:
   - allowed names only: `<UTC campaign>/<PI0-k | CTRL|PI1U|PI6OFF|INSTOFF-9xxxxx>/[evidence/|logs/]<name>.(json|jsonl|stderr)`;
   - regular files only;

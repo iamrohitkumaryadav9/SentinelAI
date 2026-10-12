@@ -1,0 +1,484 @@
+{
+ "aborts": [],
+ "bpf_release": {
+  "elapsed_s": 0.0018462360021658242,
+  "polls": 1,
+  "released": true,
+  "remaining": {
+   "maps": [],
+   "progs": []
+  },
+  "timed_out": false
+ },
+ "cleanup": {
+  "errors": [],
+  "ok": true,
+  "steps": [
+   "cgroup.kill",
+   "after_procs",
+   "unlink config.json",
+   "unlink control.json",
+   "unlink dependency_config.json",
+   "unlink metrics.json",
+   "rmdir /run/sentinelai-lab/app/PI6OFF-s900007",
+   "rmdir /run/sentinelai-lab/app",
+   "rmdir /run/sentinelai-lab",
+   "rmdir /sys/fs/cgroup/sentinel-fl/support",
+   "rmdir /sys/fs/cgroup/sentinel-fl/contender",
+   "rmdir /sys/fs/cgroup/sentinel-fl/target",
+   "rmdir /sys/fs/cgroup/sentinel-fl",
+   "netns del sentinel-lab-b",
+   "netns del sentinel-lab-r",
+   "netns del sentinel-lab-a",
+   "umount /run/netns"
+  ],
+  "verify": {
+   "checks": {
+    "lab_cgroup_absent": true,
+    "netns_dir_mounts_as_before": true,
+    "no_lab_interface_in_host": true,
+    "no_lab_netns": true,
+    "no_lab_process": true,
+    "no_logged_pid_alive_in_lab": true,
+    "no_sentinel_cgroup": true,
+    "run_lab_absent": true
+   },
+   "ok": true
+  }
+ },
+ "collector_mode": null,
+ "commit": "29d652fa1dcd8581a5c5be9d69281236af282cd7",
+ "ebpf": false,
+ "events": [
+  {
+   "event": "dependency_ready",
+   "t_mono": 97307.381610275
+  },
+  {
+   "event": "workload_ready",
+   "t_mono": 97307.4323124
+  },
+  {
+   "event": "loadgen_started",
+   "t_mono": 97307.433880117
+  },
+  {
+   "event": "loadgen_finished",
+   "t_mono": 97477.610183441
+  }
+ ],
+ "exit_codes": {
+  "dependency": -9,
+  "loadgen": 0,
+  "workload": -9
+ },
+ "format": "sentinelai.faultlab.pilot.ctrl.v1",
+ "host_compare": {
+  "addresses_identical": true,
+  "bpf_compared": true,
+  "bpf_links_identical": true,
+  "bpf_maps_identical": true,
+  "bpf_progs_identical": true,
+  "cgroup_attrs_identical": true,
+  "cgroup_dirs_identical": true,
+  "cgroups_added": [],
+  "cgroups_differing": [],
+  "cgroups_removed": [],
+  "docker0_identical": true,
+  "enp0s31f6_identical": true,
+  "failed": [],
+  "host_rps_identical": true,
+  "interfaces_differing": [],
+  "interfaces_identical": true,
+  "irq_affinity_identical": true,
+  "irqs_differing": [],
+  "mounts_identical": true,
+  "netns_identical": true,
+  "network_state_captured": true,
+  "nic_irq_identical": true,
+  "no_lab_cgroup": true,
+  "no_lab_interface_in_host": true,
+  "no_lab_netns": true,
+  "no_lab_process": true,
+  "ok": true,
+  "protected_qdiscs_identical": true,
+  "qdiscs_identical": true,
+  "root_cpuset_0_23": true,
+  "root_identical": true,
+  "routes_identical": true,
+  "run_lab_absent": true,
+  "sn_programs_left": [],
+  "sysctls_identical": true
+ },
+ "lab": {
+  "cgroup": "/sys/fs/cgroup/sentinel-fl",
+  "netns": [
+   "sentinel-lab-a",
+   "sentinel-lab-r",
+   "sentinel-lab-b"
+  ],
+  "support_cpus": [
+   19,
+   20,
+   22,
+   23
+  ],
+  "target_cpu": 18
+ },
+ "lab_settle": [
+  {
+   "checks": {
+    "a_addresses": true,
+    "a_ip_forward": true,
+    "a_lo_up": true,
+    "a_no_default_route": true,
+    "a_no_external_path": true,
+    "a_only_lo_and_lab_veths": true,
+    "a_routes": true,
+    "a_sentlab-a0_single_queue": true,
+    "a_sentlab-a0_veth_up": true,
+    "b_addresses": true,
+    "b_ip_forward": true,
+    "b_lo_up": true,
+    "b_no_default_route": true,
+    "b_no_external_path": true,
+    "b_only_lo_and_lab_veths": true,
+    "b_routes": true,
+    "b_sentlab-b0_single_queue": true,
+    "b_sentlab-b0_veth_up": true,
+    "r_addresses": true,
+    "r_ip_forward": true,
+    "r_lo_up": true,
+    "r_no_default_route": true,
+    "r_no_external_path": true,
+    "r_only_lo_and_lab_veths": true,
+    "r_routes": true,
+    "r_sentlab-ra_single_queue": true,
+    "r_sentlab-ra_veth_up": false,
+    "r_sentlab-rb_single_queue": true,
+    "r_sentlab-rb_veth_up": true
+   },
+   "failures": [
+    "r_sentlab-ra_veth_up"
+   ],
+   "mono": 97306.383345034,
+   "raw": {
+    "a_addrs": [
+     0,
+     "[{\"ifindex\":1,\"ifname\":\"lo\",\"flags\":[\"LOOPBACK\",\"UP\",\"LOWER_UP\"],\"mtu\":65536,\"qdisc\":\"noqueue\",\"operstate\":\"UNKNOWN\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"loopback\",\"address\":\"00:00:00:00:00:00\",\"broadcast\":\"00:00:00:00:00:00\",\"addr_info\":[{\"family\":\"inet\",\"local\":\"127.0.0.1\",\"prefixlen\":8,\"scope\":\"host\",\"label\":\"lo\",\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295},{\"family\":\"inet6\",\"local\":\"::1\",\"prefixlen\":128,\"scope\":\"host\",\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295}]},{\"ifindex\":2,\"link_index\":2,\"ifname\":\"sentlab-a0\",\"flags\":[\"BROADCAST\",\"MULTICAST\",\"UP\",\"LOWER_UP\"],\"mtu\":1500,\"qdisc\":\"noqueue\",\"operstate\":\"UP\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"ether\",\"address\":\"32:75:d5:b9:95:a6\",\"broadcast\":\"ff:ff:ff:ff:ff:ff\",\"link_netnsid\":0,\"addr_info\":[{\"family\":\"inet\",\"local\":\"10.199.1.1\",\"prefixlen\":24,\"scope\":\"global\",\"label\":\"sentlab-a0\",\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295},{\"family\":\"inet6\",\"local\":\"fe80::3075:d5ff:feb9:95a6\",\"prefixlen\":64,\"scope\":\"link\",\"tentative\":true,\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295}]}]\n",
+     ""
+    ],
+    "a_links": [
+     0,
+     "[{\"ifindex\":1,\"ifname\":\"lo\",\"flags\":[\"LOOPBACK\",\"UP\",\"LOWER_UP\"],\"mtu\":65536,\"qdisc\":\"noqueue\",\"operstate\":\"UNKNOWN\",\"linkmode\":\"DEFAULT\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"loopback\",\"address\":\"00:00:00:00:00:00\",\"broadcast\":\"00:00:00:00:00:00\",\"promiscuity\":0,\"min_mtu\":0,\"max_mtu\":0,\"inet6_addr_gen_mode\":\"eui64\",\"num_tx_queues\":1,\"num_rx_queues\":1,\"gso_max_size\":65536,\"gso_max_segs\":65535,\"stats64\":{\"rx\":{\"bytes\":0,\"packets\":0,\"errors\":0,\"dropped\":0,\"over_errors\":0,\"multicast\":0},\"tx\":{\"bytes\":0,\"packets\":0,\"errors\":0,\"dropped\":0,\"carrier_errors\":0,\"collisions\":0}}},{\"ifindex\":2,\"link_index\":2,\"ifname\":\"sentlab-a0\",\"flags\":[\"BROADCAST\",\"MULTICAST\",\"UP\",\"LOWER_UP\"],\"mtu\":1500,\"qdisc\":\"noqueue\",\"operstate\":\"UP\",\"linkmode\":\"DEFAULT\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"ether\",\"address\":\"32:75:d5:b9:95:a6\",\"broadcast\":\"ff:ff:ff:ff:ff:ff\",\"link_netnsid\":0,\"promiscuity\":0,\"min_mtu\":68,\"max_mtu\":65535,\"linkinfo\":{\"info_kind\":\"veth\"},\"inet6_addr_gen_mode\":\"eui64\",\"num_tx_queues\":1,\"num_rx_queues\":1,\"gso_max_size\":65536,\"gso_max_segs\":65535,\"stats64\":{\"rx\":{\"bytes\":0,\"packets\":0,\"errors\":0,\"dropped\":0,\"over_errors\":0,\"multicast\":0},\"tx\":{\"bytes\":90,\"packets\":1,\"errors\":0,\"dropped\":0,\"carrier_errors\":0,\"collisions\":0}}}]\n",
+     ""
+    ],
+    "a_routes": [
+     0,
+     "[{\"dst\":\"10.199.1.0/24\",\"dev\":\"sentlab-a0\",\"protocol\":\"kernel\",\"scope\":\"link\",\"prefsrc\":\"10.199.1.1\",\"flags\":[]},{\"dst\":\"10.199.2.0/24\",\"gateway\":\"10.199.1.254\",\"dev\":\"sentlab-a0\",\"flags\":[]}]\n",
+     ""
+    ],
+    "a_routes6": [
+     0,
+     "[{\"dst\":\"fe80::/64\",\"dev\":\"sentlab-a0\",\"protocol\":\"kernel\",\"metric\":256,\"flags\":[],\"pref\":\"medium\"}]\n",
+     ""
+    ],
+    "b_addrs": [
+     0,
+     "[{\"ifindex\":1,\"ifname\":\"lo\",\"flags\":[\"LOOPBACK\",\"UP\",\"LOWER_UP\"],\"mtu\":65536,\"qdisc\":\"noqueue\",\"operstate\":\"UNKNOWN\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"loopback\",\"address\":\"00:00:00:00:00:00\",\"broadcast\":\"00:00:00:00:00:00\",\"addr_info\":[{\"family\":\"inet\",\"local\":\"127.0.0.1\",\"prefixlen\":8,\"scope\":\"host\",\"label\":\"lo\",\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295},{\"family\":\"inet6\",\"local\":\"::1\",\"prefixlen\":128,\"scope\":\"host\",\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295}]},{\"ifindex\":2,\"link_index\":3,\"ifname\":\"sentlab-b0\",\"flags\":[\"BROADCAST\",\"MULTICAST\",\"UP\",\"LOWER_UP\"],\"mtu\":1500,\"qdisc\":\"noqueue\",\"operstate\":\"UP\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"ether\",\"address\":\"ce:20:65:29:08:fc\",\"broadcast\":\"ff:ff:ff:ff:ff:ff\",\"link_netnsid\":0,\"addr_info\":[{\"family\":\"inet\",\"local\":\"10.199.2.2\",\"prefixlen\":24,\"scope\":\"global\",\"label\":\"sentlab-b0\",\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295},{\"family\":\"inet6\",\"local\":\"fe80::cc20:65ff:fe29:8fc\",\"prefixlen\":64,\"scope\":\"link\",\"tentative\":true,\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295}]}]\n",
+     ""
+    ],
+    "b_links": [
+     0,
+     "[{\"ifindex\":1,\"ifname\":\"lo\",\"flags\":[\"LOOPBACK\",\"UP\",\"LOWER_UP\"],\"mtu\":65536,\"qdisc\":\"noqueue\",\"operstate\":\"UNKNOWN\",\"linkmode\":\"DEFAULT\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"loopback\",\"address\":\"00:00:00:00:00:00\",\"broadcast\":\"00:00:00:00:00:00\",\"promiscuity\":0,\"min_mtu\":0,\"max_mtu\":0,\"inet6_addr_gen_mode\":\"eui64\",\"num_tx_queues\":1,\"num_rx_queues\":1,\"gso_max_size\":65536,\"gso_max_segs\":65535,\"stats64\":{\"rx\":{\"bytes\":0,\"packets\":0,\"errors\":0,\"dropped\":0,\"over_errors\":0,\"multicast\":0},\"tx\":{\"bytes\":0,\"packets\":0,\"errors\":0,\"dropped\":0,\"carrier_errors\":0,\"collisions\":0}}},{\"ifindex\":2,\"link_index\":3,\"ifname\":\"sentlab-b0\",\"flags\":[\"BROADCAST\",\"MULTICAST\",\"UP\",\"LOWER_UP\"],\"mtu\":1500,\"qdisc\":\"noqueue\",\"operstate\":\"UP\",\"linkmode\":\"DEFAULT\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"ether\",\"address\":\"ce:20:65:29:08:fc\",\"broadcast\":\"ff:ff:ff:ff:ff:ff\",\"link_netnsid\":0,\"promiscuity\":0,\"min_mtu\":68,\"max_mtu\":65535,\"linkinfo\":{\"info_kind\":\"veth\"},\"inet6_addr_gen_mode\":\"eui64\",\"num_tx_queues\":1,\"num_rx_queues\":1,\"gso_max_size\":65536,\"gso_max_segs\":65535,\"stats64\":{\"rx\":{\"bytes\":90,\"packets\":1,\"errors\":0,\"dropped\":0,\"over_errors\":0,\"multicast\":0},\"tx\":{\"bytes\":90,\"packets\":1,\"errors\":0,\"dropped\":0,\"carrier_errors\":0,\"collisions\":0}}}]\n",
+     ""
+    ],
+    "b_routes": [
+     0,
+     "[{\"dst\":\"10.199.1.0/24\",\"gateway\":\"10.199.2.254\",\"dev\":\"sentlab-b0\",\"flags\":[]},{\"dst\":\"10.199.2.0/24\",\"dev\":\"sentlab-b0\",\"protocol\":\"kernel\",\"scope\":\"link\",\"prefsrc\":\"10.199.2.2\",\"flags\":[]}]\n",
+     ""
+    ],
+    "b_routes6": [
+     0,
+     "[{\"dst\":\"fe80::/64\",\"dev\":\"sentlab-b0\",\"protocol\":\"kernel\",\"metric\":256,\"flags\":[],\"pref\":\"medium\"}]\n",
+     ""
+    ],
+    "forward_a": [
+     0,
+     "0\n",
+     ""
+    ],
+    "forward_b": [
+     0,
+     "0\n",
+     ""
+    ],
+    "forward_r": [
+     0,
+     "1\n",
+     ""
+    ],
+    "r_addrs": [
+     0,
+     "[{\"ifindex\":1,\"ifname\":\"lo\",\"flags\":[\"LOOPBACK\",\"UP\",\"LOWER_UP\"],\"mtu\":65536,\"qdisc\":\"noqueue\",\"operstate\":\"UNKNOWN\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"loopback\",\"address\":\"00:00:00:00:00:00\",\"broadcast\":\"00:00:00:00:00:00\",\"addr_info\":[{\"family\":\"inet\",\"local\":\"127.0.0.1\",\"prefixlen\":8,\"scope\":\"host\",\"label\":\"lo\",\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295},{\"family\":\"inet6\",\"local\":\"::1\",\"prefixlen\":128,\"scope\":\"host\",\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295}]},{\"ifindex\":2,\"link_index\":2,\"ifname\":\"sentlab-ra\",\"flags\":[\"NO-CARRIER\",\"BROADCAST\",\"MULTICAST\",\"UP\",\"LOWER_UP\"],\"mtu\":1500,\"qdisc\":\"noqueue\",\"operstate\":\"DOWN\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"ether\",\"address\":\"fe:ce:91:3b:e5:5a\",\"broadcast\":\"ff:ff:ff:ff:ff:ff\",\"link_netnsid\":1,\"addr_info\":[{\"family\":\"inet\",\"local\":\"10.199.1.254\",\"prefixlen\":24,\"scope\":\"global\",\"label\":\"sentlab-ra\",\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295}]},{\"ifindex\":3,\"link_index\":2,\"ifname\":\"sentlab-rb\",\"flags\":[\"BROADCAST\",\"MULTICAST\",\"UP\",\"LOWER_UP\"],\"mtu\":1500,\"qdisc\":\"noqueue\",\"operstate\":\"UP\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"ether\",\"address\":\"2e:af:0f:8f:72:d1\",\"broadcast\":\"ff:ff:ff:ff:ff:ff\",\"link_netnsid\":0,\"addr_info\":[{\"family\":\"inet\",\"local\":\"10.199.2.254\",\"prefixlen\":24,\"scope\":\"global\",\"label\":\"sentlab-rb\",\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295},{\"family\":\"inet6\",\"local\":\"fe80::2caf:fff:fe8f:72d1\",\"prefixlen\":64,\"scope\":\"link\",\"tentative\":true,\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295}]}]\n",
+     ""
+    ],
+    "r_links": [
+     0,
+     "[{\"ifindex\":1,\"ifname\":\"lo\",\"flags\":[\"LOOPBACK\",\"UP\",\"LOWER_UP\"],\"mtu\":65536,\"qdisc\":\"noqueue\",\"operstate\":\"UNKNOWN\",\"linkmode\":\"DEFAULT\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"loopback\",\"address\":\"00:00:00:00:00:00\",\"broadcast\":\"00:00:00:00:00:00\",\"promiscuity\":0,\"min_mtu\":0,\"max_mtu\":0,\"inet6_addr_gen_mode\":\"eui64\",\"num_tx_queues\":1,\"num_rx_queues\":1,\"gso_max_size\":65536,\"gso_max_segs\":65535,\"stats64\":{\"rx\":{\"bytes\":0,\"packets\":0,\"errors\":0,\"dropped\":0,\"over_errors\":0,\"multicast\":0},\"tx\":{\"bytes\":0,\"packets\":0,\"errors\":0,\"dropped\":0,\"carrier_errors\":0,\"collisions\":0}}},{\"ifindex\":2,\"link_index\":2,\"ifname\":\"sentlab-ra\",\"flags\":[\"NO-CARRIER\",\"BROADCAST\",\"MULTICAST\",\"UP\",\"LOWER_UP\"],\"mtu\":1500,\"qdisc\":\"noqueue\",\"operstate\":\"DOWN\",\"linkmode\":\"DEFAULT\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"ether\",\"address\":\"fe:ce:91:3b:e5:5a\",\"broadcast\":\"ff:ff:ff:ff:ff:ff\",\"link_netnsid\":1,\"promiscuity\":0,\"min_mtu\":68,\"max_mtu\":65535,\"linkinfo\":{\"info_kind\":\"veth\"},\"inet6_addr_gen_mode\":\"eui64\",\"num_tx_queues\":1,\"num_rx_queues\":1,\"gso_max_size\":65536,\"gso_max_segs\":65535,\"stats64\":{\"rx\":{\"bytes\":90,\"packets\":1,\"errors\":0,\"dropped\":0,\"over_errors\":0,\"multicast\":0},\"tx\":{\"bytes\":0,\"packets\":0,\"errors\":0,\"dropped\":0,\"carrier_errors\":0,\"collisions\":0}}},{\"ifindex\":3,\"link_index\":2,\"ifname\":\"sentlab-rb\",\"flags\":[\"BROADCAST\",\"MULTICAST\",\"UP\",\"LOWER_UP\"],\"mtu\":1500,\"qdisc\":\"noqueue\",\"operstate\":\"UP\",\"linkmode\":\"DEFAULT\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"ether\",\"address\":\"2e:af:0f:8f:72:d1\",\"broadcast\":\"ff:ff:ff:ff:ff:ff\",\"link_netnsid\":0,\"promiscuity\":0,\"min_mtu\":68,\"max_mtu\":65535,\"linkinfo\":{\"info_kind\":\"veth\"},\"inet6_addr_gen_mode\":\"eui64\",\"num_tx_queues\":1,\"num_rx_queues\":1,\"gso_max_size\":65536,\"gso_max_segs\":65535,\"stats64\":{\"rx\":{\"bytes\":90,\"packets\":1,\"errors\":0,\"dropped\":0,\"over_errors\":0,\"multicast\":0},\"tx\":{\"bytes\":90,\"packets\":1,\"errors\":0,\"dropped\":0,\"carrier_errors\":0,\"collisions\":0}}}]\n",
+     ""
+    ],
+    "r_routes": [
+     0,
+     "[{\"dst\":\"10.199.1.0/24\",\"dev\":\"sentlab-ra\",\"protocol\":\"kernel\",\"scope\":\"link\",\"prefsrc\":\"10.199.1.254\",\"flags\":[]},{\"dst\":\"10.199.2.0/24\",\"dev\":\"sentlab-rb\",\"protocol\":\"kernel\",\"scope\":\"link\",\"prefsrc\":\"10.199.2.254\",\"flags\":[]}]\n",
+     ""
+    ],
+    "r_routes6": [
+     0,
+     "[{\"dst\":\"fe80::/64\",\"dev\":\"sentlab-rb\",\"protocol\":\"kernel\",\"metric\":256,\"flags\":[],\"pref\":\"medium\"},{\"dst\":\"fe80::/64\",\"dev\":\"sentlab-ra\",\"protocol\":\"kernel\",\"metric\":256,\"flags\":[],\"pref\":\"medium\"}]\n",
+     ""
+    ],
+    "route_get_a": [
+     2,
+     "",
+     "RTNETLINK answers: Network is unreachable\n"
+    ],
+    "route_get_b": [
+     2,
+     "",
+     "RTNETLINK answers: Network is unreachable\n"
+    ],
+    "route_get_r": [
+     2,
+     "",
+     "RTNETLINK answers: Network is unreachable\n"
+    ]
+   }
+  },
+  {
+   "checks": {
+    "a_addresses": true,
+    "a_ip_forward": true,
+    "a_lo_up": true,
+    "a_no_default_route": true,
+    "a_no_external_path": true,
+    "a_only_lo_and_lab_veths": true,
+    "a_routes": true,
+    "a_sentlab-a0_single_queue": true,
+    "a_sentlab-a0_veth_up": true,
+    "b_addresses": true,
+    "b_ip_forward": true,
+    "b_lo_up": true,
+    "b_no_default_route": true,
+    "b_no_external_path": true,
+    "b_only_lo_and_lab_veths": true,
+    "b_routes": true,
+    "b_sentlab-b0_single_queue": true,
+    "b_sentlab-b0_veth_up": true,
+    "r_addresses": true,
+    "r_ip_forward": true,
+    "r_lo_up": true,
+    "r_no_default_route": true,
+    "r_no_external_path": true,
+    "r_only_lo_and_lab_veths": true,
+    "r_routes": true,
+    "r_sentlab-ra_single_queue": true,
+    "r_sentlab-ra_veth_up": true,
+    "r_sentlab-rb_single_queue": true,
+    "r_sentlab-rb_veth_up": true
+   },
+   "failures": [],
+   "mono": 97306.500409508,
+   "raw": {
+    "a_addrs": [
+     0,
+     "[{\"ifindex\":1,\"ifname\":\"lo\",\"flags\":[\"LOOPBACK\",\"UP\",\"LOWER_UP\"],\"mtu\":65536,\"qdisc\":\"noqueue\",\"operstate\":\"UNKNOWN\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"loopback\",\"address\":\"00:00:00:00:00:00\",\"broadcast\":\"00:00:00:00:00:00\",\"addr_info\":[{\"family\":\"inet\",\"local\":\"127.0.0.1\",\"prefixlen\":8,\"scope\":\"host\",\"label\":\"lo\",\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295},{\"family\":\"inet6\",\"local\":\"::1\",\"prefixlen\":128,\"scope\":\"host\",\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295}]},{\"ifindex\":2,\"link_index\":2,\"ifname\":\"sentlab-a0\",\"flags\":[\"BROADCAST\",\"MULTICAST\",\"UP\",\"LOWER_UP\"],\"mtu\":1500,\"qdisc\":\"noqueue\",\"operstate\":\"UP\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"ether\",\"address\":\"32:75:d5:b9:95:a6\",\"broadcast\":\"ff:ff:ff:ff:ff:ff\",\"link_netnsid\":0,\"addr_info\":[{\"family\":\"inet\",\"local\":\"10.199.1.1\",\"prefixlen\":24,\"scope\":\"global\",\"label\":\"sentlab-a0\",\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295},{\"family\":\"inet6\",\"local\":\"fe80::3075:d5ff:feb9:95a6\",\"prefixlen\":64,\"scope\":\"link\",\"tentative\":true,\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295}]}]\n",
+     ""
+    ],
+    "a_links": [
+     0,
+     "[{\"ifindex\":1,\"ifname\":\"lo\",\"flags\":[\"LOOPBACK\",\"UP\",\"LOWER_UP\"],\"mtu\":65536,\"qdisc\":\"noqueue\",\"operstate\":\"UNKNOWN\",\"linkmode\":\"DEFAULT\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"loopback\",\"address\":\"00:00:00:00:00:00\",\"broadcast\":\"00:00:00:00:00:00\",\"promiscuity\":0,\"min_mtu\":0,\"max_mtu\":0,\"inet6_addr_gen_mode\":\"eui64\",\"num_tx_queues\":1,\"num_rx_queues\":1,\"gso_max_size\":65536,\"gso_max_segs\":65535,\"stats64\":{\"rx\":{\"bytes\":0,\"packets\":0,\"errors\":0,\"dropped\":0,\"over_errors\":0,\"multicast\":0},\"tx\":{\"bytes\":0,\"packets\":0,\"errors\":0,\"dropped\":0,\"carrier_errors\":0,\"collisions\":0}}},{\"ifindex\":2,\"link_index\":2,\"ifname\":\"sentlab-a0\",\"flags\":[\"BROADCAST\",\"MULTICAST\",\"UP\",\"LOWER_UP\"],\"mtu\":1500,\"qdisc\":\"noqueue\",\"operstate\":\"UP\",\"linkmode\":\"DEFAULT\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"ether\",\"address\":\"32:75:d5:b9:95:a6\",\"broadcast\":\"ff:ff:ff:ff:ff:ff\",\"link_netnsid\":0,\"promiscuity\":0,\"min_mtu\":68,\"max_mtu\":65535,\"linkinfo\":{\"info_kind\":\"veth\"},\"inet6_addr_gen_mode\":\"eui64\",\"num_tx_queues\":1,\"num_rx_queues\":1,\"gso_max_size\":65536,\"gso_max_segs\":65535,\"stats64\":{\"rx\":{\"bytes\":90,\"packets\":1,\"errors\":0,\"dropped\":0,\"over_errors\":0,\"multicast\":0},\"tx\":{\"bytes\":90,\"packets\":1,\"errors\":0,\"dropped\":0,\"carrier_errors\":0,\"collisions\":0}}}]\n",
+     ""
+    ],
+    "a_routes": [
+     0,
+     "[{\"dst\":\"10.199.1.0/24\",\"dev\":\"sentlab-a0\",\"protocol\":\"kernel\",\"scope\":\"link\",\"prefsrc\":\"10.199.1.1\",\"flags\":[]},{\"dst\":\"10.199.2.0/24\",\"gateway\":\"10.199.1.254\",\"dev\":\"sentlab-a0\",\"flags\":[]}]\n",
+     ""
+    ],
+    "a_routes6": [
+     0,
+     "[{\"dst\":\"fe80::/64\",\"dev\":\"sentlab-a0\",\"protocol\":\"kernel\",\"metric\":256,\"flags\":[],\"pref\":\"medium\"}]\n",
+     ""
+    ],
+    "b_addrs": [
+     0,
+     "[{\"ifindex\":1,\"ifname\":\"lo\",\"flags\":[\"LOOPBACK\",\"UP\",\"LOWER_UP\"],\"mtu\":65536,\"qdisc\":\"noqueue\",\"operstate\":\"UNKNOWN\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"loopback\",\"address\":\"00:00:00:00:00:00\",\"broadcast\":\"00:00:00:00:00:00\",\"addr_info\":[{\"family\":\"inet\",\"local\":\"127.0.0.1\",\"prefixlen\":8,\"scope\":\"host\",\"label\":\"lo\",\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295},{\"family\":\"inet6\",\"local\":\"::1\",\"prefixlen\":128,\"scope\":\"host\",\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295}]},{\"ifindex\":2,\"link_index\":3,\"ifname\":\"sentlab-b0\",\"flags\":[\"BROADCAST\",\"MULTICAST\",\"UP\",\"LOWER_UP\"],\"mtu\":1500,\"qdisc\":\"noqueue\",\"operstate\":\"UP\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"ether\",\"address\":\"ce:20:65:29:08:fc\",\"broadcast\":\"ff:ff:ff:ff:ff:ff\",\"link_netnsid\":0,\"addr_info\":[{\"family\":\"inet\",\"local\":\"10.199.2.2\",\"prefixlen\":24,\"scope\":\"global\",\"label\":\"sentlab-b0\",\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295},{\"family\":\"inet6\",\"local\":\"fe80::cc20:65ff:fe29:8fc\",\"prefixlen\":64,\"scope\":\"link\",\"tentative\":true,\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295}]}]\n",
+     ""
+    ],
+    "b_links": [
+     0,
+     "[{\"ifindex\":1,\"ifname\":\"lo\",\"flags\":[\"LOOPBACK\",\"UP\",\"LOWER_UP\"],\"mtu\":65536,\"qdisc\":\"noqueue\",\"operstate\":\"UNKNOWN\",\"linkmode\":\"DEFAULT\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"loopback\",\"address\":\"00:00:00:00:00:00\",\"broadcast\":\"00:00:00:00:00:00\",\"promiscuity\":0,\"min_mtu\":0,\"max_mtu\":0,\"inet6_addr_gen_mode\":\"eui64\",\"num_tx_queues\":1,\"num_rx_queues\":1,\"gso_max_size\":65536,\"gso_max_segs\":65535,\"stats64\":{\"rx\":{\"bytes\":0,\"packets\":0,\"errors\":0,\"dropped\":0,\"over_errors\":0,\"multicast\":0},\"tx\":{\"bytes\":0,\"packets\":0,\"errors\":0,\"dropped\":0,\"carrier_errors\":0,\"collisions\":0}}},{\"ifindex\":2,\"link_index\":3,\"ifname\":\"sentlab-b0\",\"flags\":[\"BROADCAST\",\"MULTICAST\",\"UP\",\"LOWER_UP\"],\"mtu\":1500,\"qdisc\":\"noqueue\",\"operstate\":\"UP\",\"linkmode\":\"DEFAULT\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"ether\",\"address\":\"ce:20:65:29:08:fc\",\"broadcast\":\"ff:ff:ff:ff:ff:ff\",\"link_netnsid\":0,\"promiscuity\":0,\"min_mtu\":68,\"max_mtu\":65535,\"linkinfo\":{\"info_kind\":\"veth\"},\"inet6_addr_gen_mode\":\"eui64\",\"num_tx_queues\":1,\"num_rx_queues\":1,\"gso_max_size\":65536,\"gso_max_segs\":65535,\"stats64\":{\"rx\":{\"bytes\":90,\"packets\":1,\"errors\":0,\"dropped\":0,\"over_errors\":0,\"multicast\":0},\"tx\":{\"bytes\":90,\"packets\":1,\"errors\":0,\"dropped\":0,\"carrier_errors\":0,\"collisions\":0}}}]\n",
+     ""
+    ],
+    "b_routes": [
+     0,
+     "[{\"dst\":\"10.199.1.0/24\",\"gateway\":\"10.199.2.254\",\"dev\":\"sentlab-b0\",\"flags\":[]},{\"dst\":\"10.199.2.0/24\",\"dev\":\"sentlab-b0\",\"protocol\":\"kernel\",\"scope\":\"link\",\"prefsrc\":\"10.199.2.2\",\"flags\":[]}]\n",
+     ""
+    ],
+    "b_routes6": [
+     0,
+     "[{\"dst\":\"fe80::/64\",\"dev\":\"sentlab-b0\",\"protocol\":\"kernel\",\"metric\":256,\"flags\":[],\"pref\":\"medium\"}]\n",
+     ""
+    ],
+    "forward_a": [
+     0,
+     "0\n",
+     ""
+    ],
+    "forward_b": [
+     0,
+     "0\n",
+     ""
+    ],
+    "forward_r": [
+     0,
+     "1\n",
+     ""
+    ],
+    "r_addrs": [
+     0,
+     "[{\"ifindex\":1,\"ifname\":\"lo\",\"flags\":[\"LOOPBACK\",\"UP\",\"LOWER_UP\"],\"mtu\":65536,\"qdisc\":\"noqueue\",\"operstate\":\"UNKNOWN\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"loopback\",\"address\":\"00:00:00:00:00:00\",\"broadcast\":\"00:00:00:00:00:00\",\"addr_info\":[{\"family\":\"inet\",\"local\":\"127.0.0.1\",\"prefixlen\":8,\"scope\":\"host\",\"label\":\"lo\",\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295},{\"family\":\"inet6\",\"local\":\"::1\",\"prefixlen\":128,\"scope\":\"host\",\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295}]},{\"ifindex\":2,\"link_index\":2,\"ifname\":\"sentlab-ra\",\"flags\":[\"BROADCAST\",\"MULTICAST\",\"UP\",\"LOWER_UP\"],\"mtu\":1500,\"qdisc\":\"noqueue\",\"operstate\":\"UP\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"ether\",\"address\":\"fe:ce:91:3b:e5:5a\",\"broadcast\":\"ff:ff:ff:ff:ff:ff\",\"link_netnsid\":1,\"addr_info\":[{\"family\":\"inet\",\"local\":\"10.199.1.254\",\"prefixlen\":24,\"scope\":\"global\",\"label\":\"sentlab-ra\",\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295},{\"family\":\"inet6\",\"local\":\"fe80::fcce:91ff:fe3b:e55a\",\"prefixlen\":64,\"scope\":\"link\",\"tentative\":true,\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295}]},{\"ifindex\":3,\"link_index\":2,\"ifname\":\"sentlab-rb\",\"flags\":[\"BROADCAST\",\"MULTICAST\",\"UP\",\"LOWER_UP\"],\"mtu\":1500,\"qdisc\":\"noqueue\",\"operstate\":\"UP\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"ether\",\"address\":\"2e:af:0f:8f:72:d1\",\"broadcast\":\"ff:ff:ff:ff:ff:ff\",\"link_netnsid\":0,\"addr_info\":[{\"family\":\"inet\",\"local\":\"10.199.2.254\",\"prefixlen\":24,\"scope\":\"global\",\"label\":\"sentlab-rb\",\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295},{\"family\":\"inet6\",\"local\":\"fe80::2caf:fff:fe8f:72d1\",\"prefixlen\":64,\"scope\":\"link\",\"tentative\":true,\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295}]}]\n",
+     ""
+    ],
+    "r_links": [
+     0,
+     "[{\"ifindex\":1,\"ifname\":\"lo\",\"flags\":[\"LOOPBACK\",\"UP\",\"LOWER_UP\"],\"mtu\":65536,\"qdisc\":\"noqueue\",\"operstate\":\"UNKNOWN\",\"linkmode\":\"DEFAULT\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"loopback\",\"address\":\"00:00:00:00:00:00\",\"broadcast\":\"00:00:00:00:00:00\",\"promiscuity\":0,\"min_mtu\":0,\"max_mtu\":0,\"inet6_addr_gen_mode\":\"eui64\",\"num_tx_queues\":1,\"num_rx_queues\":1,\"gso_max_size\":65536,\"gso_max_segs\":65535,\"stats64\":{\"rx\":{\"bytes\":0,\"packets\":0,\"errors\":0,\"dropped\":0,\"over_errors\":0,\"multicast\":0},\"tx\":{\"bytes\":0,\"packets\":0,\"errors\":0,\"dropped\":0,\"carrier_errors\":0,\"collisions\":0}}},{\"ifindex\":2,\"link_index\":2,\"ifname\":\"sentlab-ra\",\"flags\":[\"BROADCAST\",\"MULTICAST\",\"UP\",\"LOWER_UP\"],\"mtu\":1500,\"qdisc\":\"noqueue\",\"operstate\":\"UP\",\"linkmode\":\"DEFAULT\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"ether\",\"address\":\"fe:ce:91:3b:e5:5a\",\"broadcast\":\"ff:ff:ff:ff:ff:ff\",\"link_netnsid\":1,\"promiscuity\":0,\"min_mtu\":68,\"max_mtu\":65535,\"linkinfo\":{\"info_kind\":\"veth\"},\"inet6_addr_gen_mode\":\"eui64\",\"num_tx_queues\":1,\"num_rx_queues\":1,\"gso_max_size\":65536,\"gso_max_segs\":65535,\"stats64\":{\"rx\":{\"bytes\":90,\"packets\":1,\"errors\":0,\"dropped\":0,\"over_errors\":0,\"multicast\":0},\"tx\":{\"bytes\":90,\"packets\":1,\"errors\":0,\"dropped\":0,\"carrier_errors\":0,\"collisions\":0}}},{\"ifindex\":3,\"link_index\":2,\"ifname\":\"sentlab-rb\",\"flags\":[\"BROADCAST\",\"MULTICAST\",\"UP\",\"LOWER_UP\"],\"mtu\":1500,\"qdisc\":\"noqueue\",\"operstate\":\"UP\",\"linkmode\":\"DEFAULT\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"ether\",\"address\":\"2e:af:0f:8f:72:d1\",\"broadcast\":\"ff:ff:ff:ff:ff:ff\",\"link_netnsid\":0,\"promiscuity\":0,\"min_mtu\":68,\"max_mtu\":65535,\"linkinfo\":{\"info_kind\":\"veth\"},\"inet6_addr_gen_mode\":\"eui64\",\"num_tx_queues\":1,\"num_rx_queues\":1,\"gso_max_size\":65536,\"gso_max_segs\":65535,\"stats64\":{\"rx\":{\"bytes\":90,\"packets\":1,\"errors\":0,\"dropped\":0,\"over_errors\":0,\"multicast\":0},\"tx\":{\"bytes\":90,\"packets\":1,\"errors\":0,\"dropped\":0,\"carrier_errors\":0,\"collisions\":0}}}]\n",
+     ""
+    ],
+    "r_routes": [
+     0,
+     "[{\"dst\":\"10.199.1.0/24\",\"dev\":\"sentlab-ra\",\"protocol\":\"kernel\",\"scope\":\"link\",\"prefsrc\":\"10.199.1.254\",\"flags\":[]},{\"dst\":\"10.199.2.0/24\",\"dev\":\"sentlab-rb\",\"protocol\":\"kernel\",\"scope\":\"link\",\"prefsrc\":\"10.199.2.254\",\"flags\":[]}]\n",
+     ""
+    ],
+    "r_routes6": [
+     0,
+     "[{\"dst\":\"fe80::/64\",\"dev\":\"sentlab-rb\",\"protocol\":\"kernel\",\"metric\":256,\"flags\":[],\"pref\":\"medium\"},{\"dst\":\"fe80::/64\",\"dev\":\"sentlab-ra\",\"protocol\":\"kernel\",\"metric\":256,\"flags\":[],\"pref\":\"medium\"}]\n",
+     ""
+    ],
+    "route_get_a": [
+     2,
+     "",
+     "RTNETLINK answers: Network is unreachable\n"
+    ],
+    "route_get_b": [
+     2,
+     "",
+     "RTNETLINK answers: Network is unreachable\n"
+    ],
+    "route_get_r": [
+     2,
+     "",
+     "RTNETLINK answers: Network is unreachable\n"
+    ]
+   }
+  }
+ ],
+ "load": {
+  "arrivals": 17000,
+  "duration_s": 170,
+  "seed": 900007
+ },
+ "metrics_writer": true,
+ "netns_dir_mount": {
+  "error": null,
+  "owned": [
+   1609,
+   29,
+   "0:26",
+   "/netns"
+  ],
+  "pre_existing": []
+ },
+ "ping": {
+  "a_to_b": [
+   0,
+   "PING 10.199.2.2 (10.199.2.2) 56(84) bytes of data.\n64 bytes from 10.199.2.2: icmp_seq=1 ttl=63 time=0.022 ms\n64 bytes from 10.199.2.2: icmp_seq=2 ttl=63 time=0.065 ms\n64 bytes from 10.199.2.2: icmp_seq=3 ttl=63 time=0.070 ms\n\n--- 10.199.2.2 ping statistics ---\n3 packets transmitted, 3 received, 0% packet loss, time 412ms\nrtt min/avg/max/mdev = 0.022/0.052/0.070/0.021 ms\n",
+   ""
+  ],
+  "b_to_a": [
+   0,
+   "PING 10.199.1.1 (10.199.1.1) 56(84) bytes of data.\n64 bytes from 10.199.1.1: icmp_seq=1 ttl=63 time=0.009 ms\n64 bytes from 10.199.1.1: icmp_seq=2 ttl=63 time=0.069 ms\n64 bytes from 10.199.1.1: icmp_seq=3 ttl=63 time=0.040 ms\n\n--- 10.199.1.1 ping statistics ---\n3 packets transmitted, 3 received, 0% packet loss, time 413ms\nrtt min/avg/max/mdev = 0.009/0.039/0.069/0.024 ms\n",
+   ""
+  ]
+ },
+ "preflight": {
+  "checks": {
+   "netns_dir_mount_unambiguous": true,
+   "no_lab_interface_in_host": true,
+   "no_lab_netns": true,
+   "no_lab_process": true,
+   "no_sentinel_cgroup": true,
+   "root_cpuset_0_23": true,
+   "run_lab_absent": true
+  },
+  "ok": true
+ },
+ "run_id": "PI6OFF-s900007",
+ "seed": 900007,
+ "stage": "PI6OFF",
+ "target": {
+  "cpuset": "18",
+  "lab_a_inode": 4026532762,
+  "netns_inode": 4026532762,
+  "pids": [
+   705608
+  ]
+ },
+ "timeline": {
+  "B_s": 45,
+  "W_s": 90,
+  "cooldown_s": 20,
+  "load_s": 170,
+  "period_s": 1.0,
+  "warmup_s": 15
+ },
+ "variant": "pi6off",
+ "verify_cgroups": {
+  "contender_cpus": true,
+  "contender_empty": true,
+  "contender_no_quota": true,
+  "contender_pids_max": true,
+  "contender_swap_0": true,
+  "parent_cpus": true,
+  "parent_memory_max": true,
+  "parent_subtree_control": true,
+  "parent_swap_0": true,
+  "support_cpus": true,
+  "support_empty": true,
+  "support_no_quota": true,
+  "support_pids_max": true,
+  "support_swap_0": true,
+  "target_cpus": true,
+  "target_empty": true,
+  "target_no_quota": true,
+  "target_pids_max": true,
+  "target_swap_0": true
+ },
+ "workload": {
+  "connection_model": "HTTP/1.1, one request per connection (Connection: close), open-loop seeded arrivals from netns B to A through R; every request calls the dependency peer in B",
+  "cpu_us": 2000,
+  "dependency_delay_ms": 2,
+  "dependency_timeout_ms": 1000.0,
+  "jitter": 0.5,
+  "lock_hold_us": 0,
+  "lock_wait_exceeded_ms": 5.0,
+  "max_inflight": 64,
+  "poll_s": 0.05,
+  "pool": 4,
+  "pool_shrink": 1,
+  "publish_s": 0.25,
+  "queue": 32,
+  "rate_per_s": 100,
+  "timeout_s": 5.0
+ }
+}
