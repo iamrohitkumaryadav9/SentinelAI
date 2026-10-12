@@ -1667,11 +1667,11 @@ class TestStaticAndIntegrity(unittest.TestCase):
                                   "tests/faultlab/test_pilot.py")
                             or re.fullmatch(r"datasets/faultlab/v1/raw/[A-Z0-9]+(?:-[A-Z0-9]+)*-s[0-9]+/[a-z0-9_]+\.jsonl\.gz",
                                             p) is not None)
-            # AMD-27: the M5 pilot evidence (tests/faultlab/test_integrity.py checks its names, modes, append-only
-            # history and run manifests), the pilot report and the ignore rule for the transport copies
+            # AMD-27 (AMD-28: PI8 runs): the M5 pilot evidence (tests/faultlab/test_integrity.py checks its names,
+            # modes, append-only history and run manifests), the pilot report and the ignore rule for transport copies
             m5 = lambda p: (p in ("docs/PHASE_1C_M5_PILOT_REPORT.md", ".gitignore")
                             or re.fullmatch(r"results/phase1c_m5_pilot/[0-9]{8}T[0-9]{6}Z/(?:PI0-[1-5]|(?:CTRL|PI1U|"
-                                            r"PI6OFF|INSTOFF)-9[0-9]{5})/(?:(?:evidence|logs)/)?[a-z0-9_]+\.(?:json|jsonl|"
+                                            r"PI6OFF|INSTOFF|PI8)-9[0-9]{5})/(?:(?:evidence|logs)/)?[a-z0-9_]+\.(?:json|jsonl|"
                                             r"stderr)", p) is not None)
             changed = git("diff", "--name-only", base, "HEAD").stdout.split()
             others = sorted(p for p in changed if p not in E.TOOLING)

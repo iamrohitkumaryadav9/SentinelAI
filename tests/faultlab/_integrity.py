@@ -78,7 +78,7 @@ def history_statuses(repo, anchor, paths) -> List[Tuple[str, str]]:
 
 
 PILOT_ROOT = "results/phase1c_m5_pilot/"
-PILOT_RUN = r"(?:PI0-[1-5]|(?:CTRL|PI1U|PI6OFF|INSTOFF)-9[0-9]{5})"     # pilot.run_path names (seed range 900000-)
+PILOT_RUN = r"(?:PI0-[1-5]|(?:CTRL|PI1U|PI6OFF|INSTOFF|PI8)-9[0-9]{5})"   # pilot.run_path names (AMD-27, AMD-28: PI8)
 PILOT_FILE = re.compile(re.escape(PILOT_ROOT) + r"[0-9]{8}T[0-9]{6}Z/" + PILOT_RUN +
                         r"/(?:(?:evidence|logs)/)?[a-z0-9_]+\.(?:json|jsonl|stderr)")
 

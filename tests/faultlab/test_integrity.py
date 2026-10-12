@@ -51,8 +51,8 @@ FAILED_PILOT_PINS = {
         "dd79326c5951f87e6dd69c20ce039b4c23f938e49eef6073ae7221c94fc56519",       # pipeline_ok false (app_features)
 }
 PINS = {
-    "tests/faultlab/test_r2e.py": "813d53250e6e74a9df95b922bf406bf74d8e3b61dbcece9d13f9d368254d1343",
-    "tests/faultlab/test_r2f.py": "adcd326bca995eeb7275df395a5e6fbe8f278aa557d56087cf5dbdcf57784297",
+    "tests/faultlab/test_r2e.py": "a57baf39133988b20fc1dcb5036e63b9977e12fb8d5f57c6e8ac250f6a531fa3",
+    "tests/faultlab/test_r2f.py": "17b0e4474a4b90768ee1b73348c513551e43277ba2c5d6a1f02cc1922a5a27e9",
 }
 LIVE = I.Policy(anchor=ANCHOR, add_or_modify=M4_PATHS | CHECKER_FILES, pinned=PINS)   # checker: see test_r2f
 
@@ -201,7 +201,7 @@ class TestPilotEvidence(Disposable):
 
     def test_intended_evidence_is_accepted(self):
         self.add_run()
-        for name in ("PI1U-900008", "PI6OFF-900006", "INSTOFF-900006"):
+        for name in ("PI1U-900008", "PI6OFF-900006", "INSTOFF-900006", "PI8-900020"):   # AMD-28: PI8
             self.add_run(name)
         for k in range(1, 6):
             for rel in ("run.json", "ops.jsonl", "host_before.json", "echo_server.stderr"):
