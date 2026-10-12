@@ -681,7 +681,8 @@ class TestStagesAndPrivilege(Base):
         self.assertTrue(max(app["lock_hold_us_candidates"]) <= app["lock_hold_us_max"] and
                         max(app["dependency_delay_ms_candidates"]) <= app["dependency_delay_ms_max"] and
                         min(app["pool_candidates"]) >= app["pool_min"])
-        self.assertIn("not yet set", v("FZ-WORKSET")["values"])            # D4 sizes still need approval
+        ws = v("FZ-WORKSET")["values"]                                     # D4 values, approved the same day
+        self.assertEqual((ws["file_mib"], ws["pass_s"], ws["slices_per_pass"], ws["anon_mib"]), (1024, 1.0, 10, 16))
         self.assertEqual(v("FZ-Q2")["collector_mode_m6"], "driver-root")
 
     def test_committed_decisions_record_grants_only_what_it_states(self):

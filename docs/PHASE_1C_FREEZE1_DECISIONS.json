@@ -319,10 +319,19 @@
    "status": "approved",
    "approved_by": "Rohit Kumar",
    "date": "2026-10-12",
-   "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply to the pilot decision package, option A of D4; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §5 D4",
+   "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply to the pilot decision package, option A of D4; working-set values approved by the owner the same day; recorded in these commits). Owner approval of a design choice, not scientific validation. Basis: Register §5 D4",
    "value": {
     "approach": "preregistered file-backed working set shaped like R2-F (file scanned at a fixed rate, small fixed anonymous buffer), always present in the workload; an FZ-WORKLOAD amendment",
-    "values": "not yet set: the concrete sizes and rates are proposed from R2-F and need owner approval as the FZ-WORKLOAD amendment before any run",
+    "values": {
+     "file_mib": 1024,
+     "file_path": "/var/tmp/sentinelai-lab/<run_id>/ws.bin (ext4; created and fsynced by the workload in its own cgroup before it reports ready; deleted and verified absent at cleanup)",
+     "access": "mmap, MADV_RANDOM, one byte touched per page",
+     "pass_s": 1.0,
+     "slices_per_pass": 10,
+     "anon_mib": 16,
+     "ctrl_memory_limit": "none beyond the lab cap (2.5 GiB)",
+     "deviation_from_r2f": "R2-F scanned continuously on its own CPU; here the whole file is scanned once per second in 10 slices because the workload shares CPU 18 with request handling (measured ~2.6 ms CPU per pass)"
+    },
     "ctrl_rebaseline": "CTRL, PI-1 and PI-6 are repeated at the commit that adds the working set"
    }
   },
