@@ -7,6 +7,9 @@ hard-coded. Every snapshot gets exactly one classification:
   UNREGISTERED_PARAMETER_SET    parameter set not in the runtime registry (kept as a limitation, not registered here)
   LIVE_RUN                      results/phase2a_live/**: persisted runtime runs from live acquisition (Phase 2A.5);
                                 each must verify and replay as MATCH from both ticks and snapshot
+  PILOT_RUN                     results/phase1c_m5_pilot/**: M5 pilot runs (AMD-27). M2 is never invoked on pilot data
+                                (pilot design §7): the parameter set must stay unregistered and the run's evidence
+                                manifest must verify (byte-identical replay: test_raw_replay)
   NOT_FAULTLAB                  outside results/phase1c_r2*/ (M3A smoke snapshots; no run record)
 For REPLAYABLE snapshots the recomputed M2 output, projected with the same functions the FaultLab drivers used
 (m2_summary plus each driver's extra fields), must equal the recorded run.json "m2" exactly, the snapshot must
@@ -28,6 +31,7 @@ from sentinelai.runtime.replay import replay_run_dir, verify_run_dir
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
+sys.path.insert(0, str(ROOT / "experiments" / "faultlab"))
 from r2b_driver import m2_summary  # noqa: E402          (the projection every R2 driver recorded)
 from r2c_driver import cc_items  # noqa: E402
 from r2d_cpu import m2_record  # noqa: E402
@@ -51,6 +55,8 @@ def classify(rel):
     run_json = ROOT / Path(rel).parent / "run.json"
     if rel.startswith("results/phase2a_live/"):
         return "LIVE_RUN", snap, raw, None
+    if rel.startswith("results/phase1c_m5_pilot/"):
+        return "PILOT_RUN", snap, raw, None
     if not rel.startswith("results/phase1c_r2"):
         return "NOT_FAULTLAB", snap, raw, None
     if snap.parameter_set_id not in registry.known():
@@ -82,7 +88,7 @@ class TestCorpus(unittest.TestCase):
         self.assertTrue(self.files)
         kinds = {c for c, *_ in self.cls.values()}
         self.assertTrue(kinds <= {"REPLAYABLE", "REPLAYABLE_NO_RECORD", "UNREGISTERED_PARAMETER_SET", "NOT_FAULTLAB",
-                                  "LIVE_RUN"})
+                                  "LIVE_RUN", "PILOT_RUN"})
         if (ROOT / "results" / "phase2a_live").is_dir():
             self.assertIn("LIVE_RUN", kinds)
         replayable = [r for r, (c, *_) in self.cls.items() if c == "REPLAYABLE"]
@@ -97,6 +103,12 @@ class TestCorpus(unittest.TestCase):
             if c == "NOT_FAULTLAB":
                 self.assertFalse((ROOT / Path(rel).parent / "run.json").exists(), rel)
                 self.assertNotIn(snap.parameter_set_id, registry.known(), rel)
+            if c == "PILOT_RUN":                  # never evaluated by M2; the run's evidence must verify
+                from rehearsal import verify_manifest
+                self.assertNotIn(snap.parameter_set_id, registry.known(), rel)
+                with self.assertRaises(registry.UnknownParameterSet, msg=rel):
+                    diagnose_snapshot(raw, code_commit="0bb1fc6")
+                self.assertEqual(verify_manifest(ROOT / Path(rel).parent), [], rel)
             if c == "LIVE_RUN":                   # not excluded: the persisted run must verify and replay exactly
                 run_dir = str(ROOT / Path(rel).parent)
                 self.assertTrue(verify_run_dir(run_dir)["ok"], rel)

@@ -40,10 +40,19 @@ M4_PATHS = frozenset({
     "experiments/faultlab/lab.py",           # AMD-26: A–R–B lab plans, mutation guard, checks, cleanup
     "experiments/faultlab/pilot.py",         # AMD-26: PI-0 / CTRL pilot driver (Gate 2)
     "tests/faultlab/test_pilot.py",          # AMD-26: their tests (simulated host)
+    "tests/runtime/test_corpus.py",          # AMD-27: committed pilot snapshots verified, never given to M2
+    "tests/runtime/test_raw_replay.py",      # AMD-27: committed pilot ticks replayed byte-identically
 })
+# AMD-27: recorded failed evaluations, pinned so that they can never be edited or relabelled as passing
+FAILED_PILOT_PINS = {
+    "results/phase1c_m5_pilot/20261011T175343Z/PI0-1/run.json":
+        "5bf519a04fb5d2fa9c997f8dd7b4b1e8b1b851758319b3d7fbd5900c2bb1c9b2",       # ok false (forwarding, mounts)
+    "results/phase1c_m5_pilot/20261012T030504Z/CTRL-900001/report.json":
+        "dd79326c5951f87e6dd69c20ce039b4c23f938e49eef6073ae7221c94fc56519",       # pipeline_ok false (app_features)
+}
 PINS = {
-    "tests/faultlab/test_r2e.py": "2c82d3136e13fdd1a95ce8acfa45b7c949eab4e2c7bcd06fc0610330b853e78c",
-    "tests/faultlab/test_r2f.py": "75edc7db8b28d87458013bed19f0efa8d5f7c6ebef4217ccefb8dedd6180c76f",
+    "tests/faultlab/test_r2e.py": "813d53250e6e74a9df95b922bf406bf74d8e3b61dbcece9d13f9d368254d1343",
+    "tests/faultlab/test_r2f.py": "adcd326bca995eeb7275df395a5e6fbe8f278aa557d56087cf5dbdcf57784297",
 }
 LIVE = I.Policy(anchor=ANCHOR, add_or_modify=M4_PATHS | CHECKER_FILES, pinned=PINS)   # checker: see test_r2f
 
@@ -52,6 +61,16 @@ class TestLiveRepository(unittest.TestCase):
     @unittest.skipUnless(IN_GIT, "integrity checks need the git checkout")
     def test_policy_holds(self):
         self.assertEqual(I.check(ROOT, LIVE), [])
+
+    @unittest.skipUnless(IN_GIT, "integrity checks need the git checkout")
+    def test_pilot_evidence_policy_holds(self):
+        self.assertEqual(I.check_pilot_evidence(ROOT, ANCHOR, FAILED_PILOT_PINS), [])
+
+    @unittest.skipUnless(IN_GIT, "integrity checks need the git checkout")
+    def test_recorded_failures_stay_failures(self):
+        for path in FAILED_PILOT_PINS:
+            doc = json.loads(I._blob(ROOT, "HEAD", path))
+            self.assertFalse(doc.get("ok") or doc.get("pipeline_ok"), path)
 
     def test_policy_paths_are_exact(self):
         for p in M4_PATHS | CHECKER_FILES | set(PINS):
@@ -156,6 +175,104 @@ class TestPolicyAccepts(Disposable):
         self.r.g("add", "docs/notes.md")
         self.r.g("commit", "-qm", "docs outside the governed scope")
         self.assertEqual(self.r.check(), [])
+
+
+PILOT = "results/phase1c_m5_pilot/20261012T040045Z"
+
+
+class TestPilotEvidence(Disposable):
+    """AMD-27: names, modes, append-only history, run manifests and pins of committed pilot evidence."""
+
+    def add_run(self, name="CTRL-900002", extra=()):
+        ev = {f"evidence/{n}": f"{n}\n".encode() for n in ("run.json", "ticks.jsonl", "client.jsonl")}
+        for rel, data in ev.items():
+            self.r.write(f"{PILOT}/{name}/{rel}", data)
+        self.r.write(f"{PILOT}/{name}/manifest.json",
+                     json.dumps({"files": {k: hashlib.sha256(v).hexdigest() for k, v in ev.items()}}))
+        for rel in ("report.json", "snapshot.json", "ops.jsonl", "preflight.json", "logs/workload.stderr") + extra:
+            self.r.write(f"{PILOT}/{name}/{rel}", "x\n")
+
+    def pv(self, pins=None):
+        return I.check_pilot_evidence(self.r.d, self.r.anchor, pins)
+
+    def committed(self, msg="pilot"):
+        self.r.commit(msg)
+        return self.pv()
+
+    def test_intended_evidence_is_accepted(self):
+        self.add_run()
+        for name in ("PI1U-900008", "PI6OFF-900006", "INSTOFF-900006"):
+            self.add_run(name)
+        for k in range(1, 6):
+            for rel in ("run.json", "ops.jsonl", "host_before.json", "echo_server.stderr"):
+                self.r.write(f"{PILOT}/PI0-{k}/{rel}", "x\n")
+        self.assertEqual(self.committed(), [])
+        self.add_run("CTRL-900003")                                         # later runs are added, never edited
+        self.assertEqual(self.committed("more"), [])
+
+    def test_unauthorised_paths_are_rejected(self):
+        for bad in ("CTRL-900002/lg/client.jsonl", "CTRL-900002/collector/child_ticks.jsonl", "CTRL-900002/x.txt",
+                    "CTRL-800002/run.json", "PI0-6/run.json", "FAULT-900002/run.json", "CTRL-900002/evidence/a/b.json",
+                    "CTRL-900002/Run.json", "../CTRL-900002/run.json"):
+            with self.subTest(bad):
+                r = Repo(tempfile.mkdtemp(dir=self._t.name))
+                r.write(f"{PILOT}/{bad}", "x\n")
+                r.commit("bad")
+                v = I.check_pilot_evidence(r.d, r.anchor)
+                self.assertTrue(any("not allowed" in x for x in v), v)
+        r = Repo(tempfile.mkdtemp(dir=self._t.name))
+        r.write("results/phase1c_m5_pilot/2026-10-12/CTRL-900002/run.json", "x\n")
+        r.commit("bad campaign")
+        self.assertTrue(I.check_pilot_evidence(r.d, r.anchor))
+
+    def test_modes_are_regular_files_only(self):
+        self.add_run()
+        os.chmod(Path(self.r.d, PILOT, "CTRL-900002/report.json"), 0o755)
+        os.symlink("report.json", Path(self.r.d, PILOT, "CTRL-900002/snapshot_link.json"))
+        v = self.committed()
+        self.assertTrue(any("mode 100755" in x for x in v), v)
+        self.assertTrue(any("mode 120000" in x for x in v), v)
+
+    def test_history_is_append_only(self):
+        self.add_run()
+        self.assertEqual(self.committed(), [])
+        self.r.write(f"{PILOT}/CTRL-900002/report.json", '{"pipeline_ok": true}\n')    # relabel after the fact
+        self.assertTrue(any("not append-only: M" in x for x in self.committed("relabel")))
+        r = Repo(tempfile.mkdtemp(dir=self._t.name))
+        self.r = r
+        self.add_run()
+        r.commit("pilot")
+        r.g("rm", "-q", f"{PILOT}/CTRL-900002/report.json")
+        r.commit("drop a failed report")
+        self.assertTrue(any("not append-only: D" in x for x in self.pv()))
+
+    def test_manifest_must_cover_the_tracked_evidence(self):
+        self.add_run()
+        self.r.write(f"{PILOT}/CTRL-900002/evidence/extra.json", "x\n")
+        self.assertTrue(any("not in its manifest" in x for x in self.committed()))
+        r = Repo(tempfile.mkdtemp(dir=self._t.name))
+        self.r = r
+        self.add_run()
+        r.write(f"{PILOT}/CTRL-900002/evidence/ticks.jsonl", "tampered before the commit\n")
+        self.assertTrue(any("sha256 mismatch" in x for x in self.committed()))
+        r = Repo(tempfile.mkdtemp(dir=self._t.name))
+        self.r = r
+        self.add_run()
+        r.g("add", "-A")
+        r.g("rm", "-q", "--cached", f"{PILOT}/CTRL-900002/evidence/client.jsonl")
+        r.g("commit", "-qm", "partial")
+        self.assertTrue(any("lists an untracked file" in x for x in self.pv()))
+        r.write(f"{PILOT}/CTRL-900002/manifest.json", "{not json")
+        self.assertTrue(any("malformed" in x for x in self.committed("bad manifest")))
+
+    def test_pins_hold_the_recorded_content(self):
+        self.add_run()
+        path = f"{PILOT}/CTRL-900002/report.json"
+        self.r.commit("pilot")
+        pin = {path: hashlib.sha256(b"x\n").hexdigest()}
+        self.assertEqual(self.pv(pin), [])
+        self.assertTrue(self.pv({path: "0" * 64}))
+        self.assertTrue(self.pv({f"{PILOT}/CTRL-900009/report.json": "0" * 64}))   # a pinned file must exist
 
 
 class TestPolicyRejects(Disposable):

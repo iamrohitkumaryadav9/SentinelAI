@@ -1,0 +1,138 @@
+{
+ "checks": {
+  "across_r_reconciliation": {
+   "a_tcp_in": 169953,
+   "a_tcp_out_incl_retrans": 186293,
+   "failed": [],
+   "ok": true,
+   "r": {
+    "sentlab-ra": {
+     "rx_dropped": 0,
+     "rx_errors": 0,
+     "rx_packets": 186301,
+     "tx_dropped": 0,
+     "tx_errors": 0,
+     "tx_packets": 169961
+    },
+    "sentlab-rb": {
+     "rx_dropped": 0,
+     "rx_errors": 0,
+     "rx_packets": 169961,
+     "tx_dropped": 0,
+     "tx_errors": 0,
+     "tx_packets": 186299
+    }
+   }
+  },
+  "app_features": {
+   "ok": false,
+   "problems": [
+    "('app.lock_wait_ms', 'P99', None): quality MISSING",
+    "listed as missing: app.lock_wait_ms (no requests in the window, or the rank is in the +Inf bucket)"
+   ]
+  },
+  "bpf_released": {
+   "ok": true
+  },
+  "cleanup": {
+   "detail": {
+    "errors": [],
+    "ok": true,
+    "steps": [
+     "cgroup.kill",
+     "after_procs",
+     "unlink config.json",
+     "unlink control.json",
+     "unlink dependency_config.json",
+     "unlink metrics.json",
+     "rmdir /run/sentinelai-lab/app/CTRL-s900001",
+     "rmdir /run/sentinelai-lab/app",
+     "rmdir /run/sentinelai-lab",
+     "rmdir /sys/fs/cgroup/sentinel-fl/support",
+     "rmdir /sys/fs/cgroup/sentinel-fl/contender",
+     "rmdir /sys/fs/cgroup/sentinel-fl/target",
+     "rmdir /sys/fs/cgroup/sentinel-fl",
+     "netns del sentinel-lab-b",
+     "netns del sentinel-lab-r",
+     "netns del sentinel-lab-a",
+     "umount /run/netns"
+    ],
+    "verify": {
+     "checks": {
+      "lab_cgroup_absent": true,
+      "netns_dir_mounts_as_before": true,
+      "no_lab_interface_in_host": true,
+      "no_lab_netns": true,
+      "no_lab_process": true,
+      "no_logged_pid_alive_in_lab": true,
+      "no_sentinel_cgroup": true,
+      "run_lab_absent": true
+     },
+     "ok": true
+    }
+   },
+   "ok": true
+  },
+  "client_server_reconciliation": {
+   "client_outcomes": {
+    "200": 17000
+   },
+   "ok": true,
+   "problems": [],
+   "scheduled": 17000,
+   "server_delta": {
+    "requests_completed_total": 17000.0,
+    "requests_failed_total": 0.0,
+    "requests_rejected_total": 0.0
+   }
+  },
+  "host_compare": {
+   "failed": [],
+   "ok": true
+  },
+  "manifest": {
+   "ok": true,
+   "problems": []
+  },
+  "replay_byte_identical": {
+   "ok": true,
+   "sha256": "a0932cb89e622f5c5fc1de709d53f5850e679f8cc49cc56fdeb9477f2f5a78fd"
+  },
+  "run_completed": {
+   "aborts": [],
+   "ok": true
+  }
+ },
+ "format": "sentinelai.faultlab.pilot.ctrl.v1.report",
+ "note": "PI verdicts are measurements against the proposed criteria; a pipeline pass is not a scientific validation.",
+ "ok": false,
+ "pi": {
+  "PI-1": {
+   "measurements": 34,
+   "min_coverage": 1.0,
+   "mode": "driver-root",
+   "ok": true
+  },
+  "PI-6": {
+   "budget_core": 0.02,
+   "collector_cpu_core": 0.001997608453985689,
+   "features_below_coverage": [],
+   "not_collected": [
+    "app.lock_wait_ms",
+    "net.drop.netfilter",
+    "tcp.cwnd",
+    "tcp.srtt_ms",
+    "throttle.ratio"
+   ],
+   "note": "coverage over collected measurements; structurally unavailable sources listed, not scored",
+   "ok": true
+  },
+  "PI-7_ctrl": {
+   "latency_p99_measured": true,
+   "ok": true,
+   "ticks": 136,
+   "valid_app_ticks": 136
+  }
+ },
+ "pipeline_ok": false
+}

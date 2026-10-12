@@ -11,6 +11,7 @@ through the full encode -> persist -> decode -> rebuild path. No make, no replay
 import json
 import os
 import subprocess
+import sys
 import tempfile
 import unittest
 from datetime import datetime, timezone
@@ -206,13 +207,23 @@ class TestHybridEbpfStreams(unittest.TestCase):
 
 class TestCommittedTickRuns(unittest.TestCase):
     def test_committed_tick_runs(self):
-        """Replays every committed run that carries ticks.jsonl (there are none at 2A.3; nothing is claimed)."""
+        """Replays every committed run that carries ticks.jsonl (there are none at 2A.3; nothing is claimed).
+        AMD-27: an M5 pilot run (results/phase1c_m5_pilot/<campaign>/<run>/evidence/ticks.jsonl) is not a runtime run
+        directory; its snapshot.json must be rebuilt byte-identically from the committed ticks by the pilot's own
+        replay (experiments/faultlab/pilot.py), without M2."""
         found = sorted(p.parent for p in (ROOT / "results").rglob("ticks.jsonl"))
         if IN_GIT:
             tracked = subprocess.run(["git", "-C", str(ROOT), "ls-files", "*ticks.jsonl"], capture_output=True,
                                      text=True, check=True).stdout.split()
             self.assertEqual(sorted(ROOT / Path(t).parent for t in tracked), found)
+        pilot = ROOT / "results" / "phase1c_m5_pilot"
         for run in found:
+            if pilot in run.parents:
+                sys.path.insert(0, str(ROOT / "experiments" / "faultlab"))
+                import pilot as P
+                self.assertEqual(run.name, P.EVIDENCE, run)
+                self.assertEqual(P.replay(run.parent), (run.parent / "snapshot.json").read_bytes(), run)
+                continue
             self.assertEqual(replay_run_dir(str(run), "ticks").status, "MATCH", run)
 
 

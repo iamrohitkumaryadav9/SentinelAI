@@ -20,3 +20,8 @@ ebpf/build/
 # Secrets / local overrides
 .env
 *.local
+
+# M5 pilot transport copies (AMD-27): lg/ is the load generator's client.jsonl, byte-identical to the
+# manifest-covered evidence/client.jsonl; collector/ is the unprivileged collector's output, copied into evidence/
+results/phase1c_m5_pilot/*/*/lg/
+results/phase1c_m5_pilot/*/*/collector/

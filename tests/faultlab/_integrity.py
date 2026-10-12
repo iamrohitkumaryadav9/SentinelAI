@@ -77,6 +77,55 @@ def history_statuses(repo, anchor, paths) -> List[Tuple[str, str]]:
     return list(zip(t[0::2], t[1::2]))
 
 
+PILOT_ROOT = "results/phase1c_m5_pilot/"
+PILOT_RUN = r"(?:PI0-[1-5]|(?:CTRL|PI1U|PI6OFF|INSTOFF)-9[0-9]{5})"     # pilot.run_path names (seed range 900000-)
+PILOT_FILE = re.compile(re.escape(PILOT_ROOT) + r"[0-9]{8}T[0-9]{6}Z/" + PILOT_RUN +
+                        r"/(?:(?:evidence|logs)/)?[a-z0-9_]+\.(?:json|jsonl|stderr)")
+
+
+def check_pilot_evidence(repo, anchor: str, pins: Optional[Dict[str, str]] = None, root: str = PILOT_ROOT,
+                         file_re=PILOT_FILE) -> List[str]:
+    """AMD-27: committed M5 pilot evidence. Sorted violations; [] = holds.
+
+    - every tracked file under root is a regular file whose path matches file_re (<campaign>/<run>/<file>, optionally
+      under evidence/ or logs/; the load generator's and the unprivileged collector's transport copies are not
+      evidence and are never accepted);
+    - append-only: every commit after anchor that touches root only adds files (no edit, delete or retype);
+    - every run's manifest.json lists exactly the run's tracked evidence/ files, each with the SHA-256 of its blob;
+    - pinned files (a recorded failed evaluation) keep their exact content."""
+    v: List[str] = []
+    paths = []
+    for line in _z(git(repo, "ls-tree", "-r", "-z", "HEAD", "--", root).stdout):
+        meta, path = line.split("\t", 1)
+        paths.append(path)
+        if meta.split()[0] != REGULAR:
+            v.append(f"pilot mode {meta.split()[0]} not allowed: {path!r}")
+        if not file_re.fullmatch(path):
+            v.append(f"pilot path not allowed: {path!r}")
+    for status, path in history_statuses(repo, anchor, [root]):
+        if status != "A":
+            v.append(f"pilot evidence not append-only: {status} {path!r}")
+    for man in sorted(p for p in paths if p.endswith("/manifest.json")):
+        run = man[:-len("manifest.json")]
+        files, err = _manifest(repo, "HEAD", man)
+        if err or files is None:
+            v.append(err or f"manifest unreadable: {man!r}")
+            continue
+        listed = {run + p for p in files}
+        evidence = {p for p in paths if p.startswith(run + "evidence/")}
+        v += [f"pilot evidence not in its manifest: {p!r}" for p in sorted(evidence - listed)]
+        v += [f"pilot manifest lists an untracked file: {p!r}" for p in sorted(listed - evidence)]
+        for rel, sha in files.items():
+            blob = _blob(repo, "HEAD", run + rel)
+            if blob is not None and hashlib.sha256(blob).hexdigest() != sha:
+                v.append(f"pilot sha256 mismatch: {run + rel!r}")
+    for path, sha in sorted((pins or {}).items()):
+        blob = _blob(repo, "HEAD", path)
+        if blob is None or hashlib.sha256(blob).hexdigest() != sha:
+            v.append(f"pinned pilot evidence missing or changed: {path!r}")
+    return sorted(set(v))
+
+
 def check(repo, policy: Policy) -> List[str]:
     anchor = policy.anchor
     if git(repo, "rev-parse", "--verify", "--quiet", f"{anchor}^{{commit}}", check=False).returncode:
