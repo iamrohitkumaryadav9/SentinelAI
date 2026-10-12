@@ -72,6 +72,7 @@ DISK_FREE_MIN = 20 * GIB                        # scripts/safety_check.sh:16 (df
 SAFE_QDISCS = frozenset({"fq_codel", "mq", "fq", "pfifo_fast", "noqueue"})   # scripts/safety_check.sh:20
 PHYS_NIC = PROTECTED[0]                         # enp0s31f6
 RUN_LAB = "/run/sentinelai-lab"
+WS_ROOT = "/var/tmp/sentinelai-lab"          # FZ-WORKSET working-set scratch (experiments/faultlab/lab.py WS_ROOT)
 OPENVPN_UNIT = "openvpn-server@server.service"
 # Lab placement proposed in the draft §5.1 (FZ-LAB-SPEC): target 18; contender 18 or 19, 23; support 19, 20, 22, 23.
 LAB_CPUS = frozenset({18, 19, 20, 22, 23})
@@ -815,6 +816,13 @@ class Preflight:
         self.add(Spec("LAB-RUN-DIR-ABSENT", f"No {RUN_LAB} leftover", "lab", "absent",
                       "draft §9 preflight; app metrics root (src/sentinelai/collectors/app.py APP_ROOT)"), run_lab)
 
+        def ws_scratch():
+            st = h.lstat(WS_ROOT)
+            return ok("absent") if st is None else bad(stat.filemode(st.st_mode), f"{WS_ROOT} exists (leftover)",
+                                                       "owner cleanup; the preflight never removes it")
+        self.add(Spec("LAB-WS-SCRATCH-ABSENT", f"No {WS_ROOT} leftover", "lab", "absent",
+                      "draft §9 preflight; FZ-WORKSET working-set scratch (register §5 D4)"), ws_scratch)
+
         def bpf():
             got = {k: h.run((C.BPFTOOL, "-j", k, "show")) for k in ("prog", "map")}
             if any(v is None or v[0] != 0 for v in got.values()):
@@ -1041,7 +1049,8 @@ def expected_ids(stage: str = "full") -> List[str]:
     ids += ["ENV-PRIVILEGE", "LAB-NETNS-SUPPORT", "LAB-VETH-AVAILABLE", "LAB-NETEM-AVAILABLE", "LAB-ROOT-SUBTREE",
             "LAB-ROOT-CPUSET", "LAB-CPUS-ONLINE", "LAB-CPU18-NO-SMT", "LAB-NIC-IRQ", "LAB-PROTECTED-IFACES",
             "LAB-DEFAULT-ROUTE", "LAB-NO-NETEM", "LAB-IP-FORWARD", "LAB-NO-SENTINEL-NETNS", "LAB-NO-LAB-INTERFACES",
-            "LAB-NO-SENTINEL-CGROUP", "LAB-NO-LAB-PROCESS", "LAB-RUN-DIR-ABSENT", "LAB-NO-SENTINEL-BPF",
+            "LAB-NO-SENTINEL-CGROUP", "LAB-NO-LAB-PROCESS", "LAB-RUN-DIR-ABSENT", "LAB-WS-SCRATCH-ABSENT",
+            "LAB-NO-SENTINEL-BPF",
             "LAB-LAB-UID", "LAB-OPENVPN-DISABLED", "RES-MEM-AVAILABLE", "RES-DISK-REPO", "STG-EXISTS",
             "STG-PERSISTENT", "STG-PERMISSIONS", "STG-FREE-SPACE", "INT-REPO-CLEAN", "INT-INTEGRITY-POLICY",
             "INT-M4-BASELINE", "LAB-HOST-BASELINE", "INT-MANIFEST-VERIFIER"]

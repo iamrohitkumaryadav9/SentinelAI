@@ -61,6 +61,7 @@ WARMUP_S, B_S, W_S, COOLDOWN_S = 15, 45, 90, 20                   # design §6.2
 SEED_MIN, SEED_MAX = 900000, 909999                               # pilot seed range (draft §7)
 EVIDENCE, MANIFEST = "evidence", "manifest.json"
 READY_TIMEOUT_S, LAB_SETTLE_MAX_S, DRAIN_MAX_S = 10.0, 3.0, 15.0
+WORKLOAD_READY_TIMEOUT_S = 60.0                                   # writes and fsyncs its 1 GiB working set first
 COVERAGE_MIN = 0.99                                               # PI-1, PI-6, PI-7 (registered / proposed)
 CPU_BUDGET_CORE = 0.02                                            # PI-6 (registered "<= 2 % CPU")
 PARAMS_ID = "pilot-ctrl-uncalibrated"
@@ -425,6 +426,7 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
     v = VARIANTS[variant]
     check_seed(seed)
     w = approved_value("FZ-WORKLOAD", decisions)
+    ws = approved_value("FZ-WORKSET", decisions)["values"]           # D4: always present (approved 2026-10-12)
     run_id = f"{v['prefix']}-s{seed}"
     load_s = WARMUP_S + B_S + W_S + COOLDOWN_S
     unpriv, writer = v["collector"] == "unprivileged", v["metrics_writer"]
@@ -435,13 +437,13 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
     if unpriv:
         os.chown(out / COLLECTOR_DIR, C.LAB_UID, C.LAB_GID)           # the unprivileged collector writes here
     client_tmp = out / "lg" / "client.jsonl"
-    argv = {"dependency": L.dependency_argv(run_id, w), "workload": L.workload_argv(run_id, w, writer),
+    argv = {"dependency": L.dependency_argv(run_id, w), "workload": L.workload_argv(run_id, w, writer, ws),
             "loadgen": L.loadgen_argv(w, load_s, seed, str(client_tmp))}
     sysr = sysr or L.Sys()
     host = (host_cls or L.Host)(L.Plan(run_id, spawns=argv.items()), str(out / "ops.jsonl"), sysr)
     ev = out / EVIDENCE
     R = {"format": FORMAT, "stage": "CTRL" if variant == "ctrl" else variant.upper(), "variant": variant,
-         "collector_mode": v["collector"], "ebpf": v["ebpf"], "metrics_writer": writer,
+         "collector_mode": v["collector"], "ebpf": v["ebpf"], "metrics_writer": writer, "working_set": ws,
          "run_id": run_id, "seed": seed, "commit": commit, "workload": w,
          "timeline": {"warmup_s": WARMUP_S, "B_s": B_S, "W_s": W_S, "cooldown_s": COOLDOWN_S, "load_s": load_s,
                       "period_s": PERIOD_S},
@@ -466,8 +468,9 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
             procs[role] = host.apply(("spawn", role, argv[role]), stderr=(out / "logs" / f"{role}.stderr").open("wb"))
             ready = f"{rdir}/" + ("dependency_config.json" if role == "dependency" else
                                   "metrics.json" if writer else "config.json")
-            if not wait_for(lambda: sysr.lstat_run(ready) is not None, READY_TIMEOUT_S, procs.items()):
-                raise L.LabAbort(f"{role} not ready within {READY_TIMEOUT_S} s")
+            limit = WORKLOAD_READY_TIMEOUT_S if role == "workload" else READY_TIMEOUT_S
+            if not wait_for(lambda: sysr.lstat_run(ready) is not None, limit, procs.items()):
+                raise L.LabAbort(f"{role} not ready within {limit} s")
             evt(f"{role}_ready")
         tpids = leaf_pids(sysr, "target")
         if len(tpids) != 1:

@@ -9,6 +9,11 @@ serve       HTTP/1.1 service (one request per connection) with a bounded worker 
             every applied configuration is echoed atomically to config.json (ground truth).
 dependency  TCP peer: answers each line after dependency_delay_ms (from the same control file); echo in
             dependency_config.json.
+working set (serve --ws-file, FZ-WORKSET) a file-backed working set shaped like R2-F: the file (ws-file-mib, on ext4)
+            is created, written in full and fsynced by this process (so its page cache is charged to the workload's
+            own cgroup) before the service starts, mapped read-only with MADV_RANDOM, and touched one byte per page,
+            the whole file once per ws-pass-s in ws-slices equal slices, together with a ws-anon-mib anonymous buffer.
+            Without a memory limit the file stays resident; under memory.max below it the scan refaults (memory class).
 distractor  (serve --distractor-kind) free-text log lines for OV-6 ("slow request") and OV-10 (generic) appended to
             <run dir>/distractor.log at distractor_lines_per_s (control file; 0 until switched on). They are never
             metrics and never closed-set events: no counter changes and the collector does not read the file
@@ -29,6 +34,7 @@ import argparse
 import hashlib
 import json
 import math
+import mmap
 import os
 import queue
 import random
@@ -441,6 +447,64 @@ class Distractor:
                 stop.wait(poll_s)
 
 
+# ------------------------------------------------------------------------------------------------ working set
+PAGE = mmap.PAGESIZE
+WS_CHUNK = 1 << 20
+
+
+class WorkingSet:
+    """FZ-WORKSET: file-backed working set plus a small anonymous buffer, touched at a fixed pace (one byte per page)."""
+
+    def __init__(self, path: str, file_mib: int, anon_mib: int, pass_s: float, slices: int):
+        if file_mib < 1 or anon_mib < 0 or pass_s <= 0 or slices < 1:
+            raise WorkloadError("working set: file_mib >= 1, anon_mib >= 0, pass_s > 0 and slices >= 1")
+        self.size, self.pass_s, self.slices = file_mib << 20, pass_s, slices
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC, 0o600)
+        try:
+            block = b"\x5a" * WS_CHUNK                    # real data blocks (never a sparse file)
+            for _ in range(self.size // WS_CHUNK):
+                view = memoryview(block)
+                while view:
+                    view = view[os.write(fd, view):]
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+        try:
+            if os.fstat(fd).st_size != self.size:
+                raise WorkloadError("working-set file has the wrong size")
+            self.map = mmap.mmap(fd, self.size, prot=mmap.PROT_READ)
+        finally:
+            os.close(fd)
+        self.map.madvise(mmap.MADV_RANDOM)
+        self.anon = bytearray(anon_mib << 20)
+        self.passes, self.max_slice_s = 0, 0.0
+
+    def touch(self, k: int) -> None:
+        """Slice k of `slices`: one byte of every page of that part of the file and of the anonymous buffer."""
+        for buf, n in ((self.map, self.size), (self.anon, len(self.anon))):
+            if n:
+                per = -(-n // PAGE // self.slices) * PAGE
+                a = k * per
+                if a < n:
+                    _ = buf[a:min(n, a + per):PAGE]           # C-level strided read: faults in each page
+                    if buf is self.anon:
+                        buf[a:min(n, a + per):PAGE] = bytes(len(range(a, min(n, a + per), PAGE)))
+
+    def loop(self, stop: threading.Event) -> None:
+        nxt = time.monotonic()
+        while not stop.is_set():
+            for k in range(self.slices):
+                s = time.monotonic()
+                self.touch(k)
+                self.max_slice_s = max(self.max_slice_s, time.monotonic() - s)
+                nxt += self.pass_s / self.slices
+                stop.wait(max(0.0, nxt - time.monotonic()))
+                if stop.is_set():
+                    return
+            self.passes += 1
+
+
 # ------------------------------------------------------------------------------------------------ runtime loops
 class Runner:
     """Control polling, config echo and metrics publication for one run directory."""
@@ -564,6 +628,11 @@ def main(argv=None) -> int:
     s.add_argument("--poll-s", type=float, required=True)
     s.add_argument("--distractor-kind", choices=DISTRACTOR_KINDS, default=None, help="OV-6 slow_request, OV-10 generic")
     s.add_argument("--distractor-seed", type=int, default=None)
+    s.add_argument("--ws-file", default=None, help="FZ-WORKSET: path of the working-set file (created, must not exist)")
+    s.add_argument("--ws-file-mib", type=int, default=1024)
+    s.add_argument("--ws-anon-mib", type=int, default=16)
+    s.add_argument("--ws-pass-s", type=float, default=1.0)
+    s.add_argument("--ws-slices", type=int, default=10)
     s.add_argument("--metrics", choices=("on", "off"), default="on",
                    help="off: never publish metrics.json (instrumentation-off pilot runs); recorded in config.json")
     d = sub.add_parser("dependency")
@@ -598,6 +667,15 @@ def main(argv=None) -> int:
             cfg.update(distractor_kind=a.distractor_kind, distractor_lines_per_s=0)
         if a.metrics == "off":
             cfg["metrics_writer"] = "off"
+        ws = None
+        if a.ws_file is not None:                        # before the service: "ready" implies the working set exists
+            try:
+                ws = WorkingSet(a.ws_file, a.ws_file_mib, a.ws_anon_mib, a.ws_pass_s, a.ws_slices)
+            except OSError as exc:
+                raise WorkloadError(f"working set: {exc.strerror or exc}") from None
+            cfg.update(ws_file_mib=a.ws_file_mib, ws_anon_mib=a.ws_anon_mib, ws_pass_s=a.ws_pass_s,
+                       ws_slices=a.ws_slices)
+            threading.Thread(target=ws.loop, args=(stop,), daemon=True).start()
         svc = Service(cfg, dependency=dep)
         runner = Runner(svc, dir_fd, a.publish_s, a.poll_s, metrics_writer=a.metrics == "on")
         if distractor is not None:

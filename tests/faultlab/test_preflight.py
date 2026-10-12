@@ -284,6 +284,7 @@ class TestEnvironment(Base):
             "LAB-NO-SENTINEL-CGROUP": lambda h: h.cgroups.append("sentinel-fl/target"),
             "LAB-NO-LAB-PROCESS": lambda h: h.files.__setitem__("/proc/2/cgroup", "0::/sentinel-fl/target\n"),
             "LAB-RUN-DIR-ABSENT": lambda h: h.stats.__setitem__(P.RUN_LAB, (DIR, 1000)),
+            "LAB-WS-SCRATCH-ABSENT": lambda h: h.stats.__setitem__(P.WS_ROOT, (DIR, 1000)),
             "LAB-NO-NETEM": lambda h: h.commands.__setitem__(("tc", "-j", "qdisc", "show"),
                                                              (0, '[{"kind": "fq_codel", "dev": "enp0s31f6"}, '
                                                                  '{"kind": "netem", "dev": "veth9"}]')),

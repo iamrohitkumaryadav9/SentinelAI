@@ -137,6 +137,90 @@ class TestRunDirectory(RunDir):
                 W.open_run_dir(RUN, self.root)
 
 
+class TestWorkingSet(unittest.TestCase):
+    """FZ-WORKSET working set (small sizes; the approved values are 1024 MiB, 16 MiB, 1 s, 10 slices)."""
+
+    def setUp(self):
+        self._t = tempfile.TemporaryDirectory()
+        self.d = Path(self._t.name)
+
+    def tearDown(self):
+        self._t.cleanup()
+
+    def test_file_is_created_in_full_mapped_and_touched(self):
+        ws = W.WorkingSet(str(self.d / "ws.bin"), 4, 1, 0.5, 4)
+        st = os.lstat(self.d / "ws.bin")
+        self.assertEqual((st.st_size, st.st_mode & 0o777), (4 << 20, 0o600))
+        self.assertGreaterEqual(st.st_blocks * 512, 4 << 20)                  # real blocks, not sparse
+        self.assertEqual(ws.map[:1] + ws.map[-1:], b"\x5a\x5a")
+        for k in range(4):
+            ws.touch(k)
+        stop = threading.Event()
+        t = threading.Thread(target=ws.loop, args=(stop,))
+        t.start()
+        time.sleep(1.2)
+        stop.set()
+        t.join(5)
+        self.assertGreaterEqual(ws.passes, 1)                                  # a pass every 0.5 s
+        self.assertLessEqual(ws.passes, 3)                                     # paced, never a busy loop
+
+    def test_slices_cover_every_page_exactly_once_per_pass(self):
+        ws = W.WorkingSet(str(self.d / "ws.bin"), 3, 1, 1.0, 7)
+        pages = []
+
+        class Recorder:                                    # stands in for the mapping: records the strided reads
+            def __getitem__(self, sl):
+                pages.extend(range(sl.start, sl.stop, sl.step))
+                return b""
+        ws.map = Recorder()
+        for k in range(ws.slices):
+            ws.touch(k)
+        self.assertEqual(sorted(pages), list(range(0, ws.size, W.PAGE)))       # each page once, nothing beyond
+        anon = bytearray(len(ws.anon))
+        ws.anon[:] = b"\x01" * len(anon)
+        for k in range(ws.slices):
+            ws.touch(k)
+        self.assertEqual(bytes(ws.anon[::W.PAGE]), bytes(len(ws.anon) // W.PAGE))  # every anon page written
+
+    def test_refusals(self):
+        W.WorkingSet(str(self.d / "ws.bin"), 1, 0, 1.0, 1)
+        with self.assertRaises(FileExistsError):                               # never reuses a file
+            W.WorkingSet(str(self.d / "ws.bin"), 1, 0, 1.0, 1)
+        os.symlink(self.d / "elsewhere", self.d / "link.bin")
+        with self.assertRaises(OSError):                                        # never follows a symlink
+            W.WorkingSet(str(self.d / "link.bin"), 1, 0, 1.0, 1)
+        self.assertFalse((self.d / "elsewhere").exists())
+        for bad in ((0, 0, 1.0, 1), (1, -1, 1.0, 1), (1, 0, 0.0, 1), (1, 0, 1.0, 0)):
+            with self.subTest(bad), self.assertRaises(W.WorkloadError):
+                W.WorkingSet(str(self.d / f"b{len(list(self.d.iterdir()))}.bin"), *bad)
+
+    def test_cli_creates_the_working_set_before_the_service_and_records_it(self):
+        args = ["serve", "--run-id", "CTRL-s1", "--listen", "127.0.0.1:0", "--pool", "1", "--queue", "1",
+                "--cpu-us", "0", "--lock-wait-exceeded-ms", "5", "--dependency-timeout-ms", "100", "--poll-s", "0.05"]
+        seen = {}
+
+        class Stop(Exception):
+            pass
+
+        def runner(svc, dir_fd, publish_s, poll_s, metrics_writer=True):
+            seen.update(cfg=dict(svc.cfg), exists=(self.d / "ws.bin").exists())
+            raise Stop
+        with mock.patch.object(W, "Runner", runner), mock.patch.object(W, "check_identity"), \
+                mock.patch.object(W, "open_run_dir", return_value=-1), self.assertRaises(Stop):
+            W.main(args + ["--ws-file", str(self.d / "ws.bin"), "--ws-file-mib", "2", "--ws-anon-mib", "1",
+                           "--ws-pass-s", "0.5", "--ws-slices", "5"])
+        self.assertTrue(seen["exists"])
+        self.assertEqual({k: seen["cfg"][k] for k in seen["cfg"] if k.startswith("ws_")},
+                         {"ws_file_mib": 2, "ws_anon_mib": 1, "ws_pass_s": 0.5, "ws_slices": 5})
+        with mock.patch.object(W, "Runner", runner), mock.patch.object(W, "check_identity"), \
+                mock.patch.object(W, "open_run_dir", return_value=-1), self.assertRaises(Stop):
+            W.main(args)                                                        # no --ws-file: no working set
+        self.assertFalse(any(k.startswith("ws_") for k in seen["cfg"]))
+        with mock.patch.object(W, "check_identity"), mock.patch.object(W, "open_run_dir", return_value=-1), \
+                mock.patch("sys.stderr"):
+            self.assertEqual(W.main(args + ["--ws-file", str(self.d / "ws.bin"), "--ws-file-mib", "1"]), 2)
+
+
 class TestPublication(RunDir):
     def runner(self, cfg=CFG, dependency=None):
         return W.Runner(W.Service(cfg, dependency=dependency), self.dir_fd, publish_s=1.0, poll_s=1.0)

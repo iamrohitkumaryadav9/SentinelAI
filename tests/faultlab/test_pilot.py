@@ -35,7 +35,10 @@ _spec.loader.exec_module(W)
 COMMIT = "c" * 40
 REAL_DO = L.Host._do                    # the real mutation dispatcher, for the one test that runs it on FakeSys
 REAL_PI_CHECKS, REAL_REPLAY = P.pi_checks, P.replay      # the CTRL fixture mocks both
-WORKLOAD = json.loads((ROOT / "docs/PHASE_1C_FREEZE1_DECISIONS.json").read_text())["decisions"]["FZ-WORKLOAD"]["value"]
+REAL_SNAPSHOT, REAL_COMPARE = L.host_snapshot, L.compare_host   # Sandboxed replaces both
+_RECORD = json.loads((ROOT / "docs/PHASE_1C_FREEZE1_DECISIONS.json").read_text())["decisions"]
+WORKLOAD = _RECORD["FZ-WORKLOAD"]["value"]
+WORKSET = _RECORD["FZ-WORKSET"]["value"]["values"]
 
 
 # ------------------------------------------------------------------------------------------ simulated host
@@ -66,7 +69,7 @@ class FakeSys(L.Sys):
         self.fwd = {}                      # namespace -> ip_forward ("1" inherited from the host on creation)
         self.stuck = set()                 # namespaces whose ip_forward write silently does not take effect
         self.inherit = "1"                 # the host's ip_forward, copied into each new namespace
-        self.run = {}                      # path under /run/sentinelai-lab -> ("dir"|"file", uid, bytes)
+        self.run = {}                      # path under a lab scratch root -> ("dir"|"file", uid, bytes)
         self.procs = {}                    # pid -> cgroup path
         self.tweak = {}                    # probe key -> forced answer
         self.r_stats = {L.IF_RA: [0, 0, 0, 0], L.IF_RB: [0, 0, 0, 0]}   # rx, tx, rx_dropped, tx_dropped
@@ -193,8 +196,8 @@ class FakeSys(L.Sys):
                 st = None
                 if i in self.r_stats:
                     rx, tx, rd, td = self.r_stats[i]
-                    st = {"rx": {"packets": rx, "dropped": rd, "errors": 0},
-                          "tx": {"packets": tx, "dropped": td, "errors": 0}}
+                    st = {"rx": {"packets": rx, "bytes": 100 * rx, "dropped": rd, "errors": 0},
+                          "tx": {"packets": tx, "bytes": 100 * tx, "dropped": td, "errors": 0}}
                 links.append(_link(i, stats=st))
             return (0, json.dumps(links), "")
         if what == "addrs":
@@ -243,13 +246,13 @@ class SimHost(L.Host):
             raise OSError(f"simulated failure: {op[0]}")
         kind = op[0]
         if kind == "mkdir":
-            if op[1].startswith(L.RUN_LAB):
+            if op[1].startswith(L.SCRATCH_ROOTS):
                 s.run[op[1]] = ("dir", 0, b"")
             else:
                 assert op[1] not in s.dirs
                 s.dirs.add(op[1])
         elif kind == "rmdir":
-            if op[1].startswith(L.RUN_LAB):
+            if op[1].startswith(L.SCRATCH_ROOTS):
                 assert not s.listdir_run(op[1]), f"rmdir of non-empty {op[1]}"
                 del s.run[op[1]]
             else:
@@ -312,6 +315,8 @@ class SimHost(L.Host):
             if role == "workload":                            # --metrics off: the workload publishes no metrics.json
                 for n in ("config.json",) if "--metrics" in op[2] else ("metrics.json", "config.json"):
                     s.run[f"{L.run_dir(self.plan.run_id)}/{n}"] = ("file", L.LAB_UID, self.workload_files.get(n, b"{}"))
+                if "--ws-file" in op[2]:                      # the workload creates its working-set file
+                    s.run[op[2][op[2].index("--ws-file") + 1]] = ("file", L.LAB_UID, b"")
             return p
         return None
 
@@ -563,6 +568,71 @@ class TestGuard(unittest.TestCase):
 
 
 # ------------------------------------------------------------------------------------------ inspection parsing
+class TestWorkingSetScratch(Sandboxed):
+    """FZ-WORKSET scratch: /var/tmp/sentinelai-lab/<run_id>/ws.bin, created, owned, removed and checked like the run
+    directory, and nothing else under /var/tmp is ever touched."""
+
+    def test_plan_and_guard(self):
+        plan = L.app_plan("CTRL-s900010")
+        w = L.ws_dir("CTRL-s900010")
+        self.assertEqual(plan[-3:], [("mkdir", L.WS_ROOT), ("mkdir", w), ("chown_lab", w)])
+        g = L.Plan("CTRL-s900010")
+        for op in plan + [("unlink_run", f"{w}/{L.WS_FILE}"), ("rmdir", w), ("rmdir", L.WS_ROOT)]:
+            self.assertEqual(g.check(op), op)
+        for bad in (("mkdir", "/var/tmp/x"), ("mkdir", f"{L.WS_ROOT}/CTRL-s900011"), ("chown_lab", L.WS_ROOT),
+                    ("chown_lab", "/var/tmp"), ("unlink_run", f"{w}/other.bin"), ("unlink_run", f"{L.WS_ROOT}/ws.bin"),
+                    ("unlink_run", f"{L.ws_dir('CTRL-s900011')}/{L.WS_FILE}"), ("rmdir", "/var/tmp")):
+            with self.subTest(bad), self.assertRaises(L.LabRefused):
+                g.check(bad)
+        for bad in ("/var/tmp/sentinelai-labX", "/var/tmp/sentinelai-lab/../x", "/var/tmp", "/etc/passwd"):
+            with self.subTest(bad), self.assertRaises(L.LabRefused):
+                L.Sys._run_lab_path(bad)
+        self.assertEqual(L.Sys._run_lab_path(f"{w}/{L.WS_FILE}"), f"{w}/{L.WS_FILE}")
+
+    def test_workload_argv_carries_the_approved_values(self):
+        argv = L.workload_argv("CTRL-s900010", WORKLOAD, True, WORKSET)
+        tail = argv[argv.index("--ws-file"):]
+        self.assertEqual(tail, ["--ws-file", f"{L.WS_ROOT}/CTRL-s900010/ws.bin", "--ws-file-mib", "1024",
+                                "--ws-anon-mib", "16", "--ws-pass-s", "1.0", "--ws-slices", "10"])
+        self.assertNotIn("--ws-file", L.workload_argv("CTRL-s900010", WORKLOAD))
+
+    def test_cleanup_removes_the_working_set_and_keeps_anything_else(self):
+        s, hosts = FakeSys(), []
+        h = SimHost(L.Plan("CTRL-s900010"), str(self.tmp / "ops.jsonl"), s)
+        for op in L.app_plan("CTRL-s900010"):
+            h.apply(op)
+        w = L.ws_dir("CTRL-s900010")
+        s.run[f"{w}/{L.WS_FILE}"] = ("file", L.LAB_UID, b"")
+        res = L.cleanup(h, s, L.read_oplog(h.oplog), "CTRL-s900010")
+        self.assertTrue(res["ok"], res)
+        self.assertEqual(s.run, {})
+        self.assertIn(("unlink_run", f"{w}/{L.WS_FILE}"), h.ops)
+        s, h = FakeSys(), SimHost(L.Plan("CTRL-s900010"), str(self.tmp / "ops2.jsonl"), FakeSys())
+        h.sys = s
+        for op in L.app_plan("CTRL-s900010"):
+            h.apply(op)
+        s.run[f"{w}/evil.sh"] = ("file", L.LAB_UID, b"")
+        res = L.cleanup(h, s, L.read_oplog(h.oplog), "CTRL-s900010")
+        self.assertFalse(res["ok"])
+        self.assertIn(f"{w}/evil.sh", s.run)
+        self.assertFalse(res["verify"]["checks"]["ws_scratch_absent"])
+
+    def test_leftover_scratch_refuses_and_fails_the_host_comparison(self):
+        s = FakeSys()
+        with mock.patch.object(L.E, "host_snapshot", side_effect=lambda *a, **k: {}), \
+                mock.patch.object(L.E, "compare_host", lambda b, o, r=True: {"failed": [], "ok": True}):
+            base = REAL_SNAPSHOT(s)
+            s.run[L.WS_ROOT] = ("dir", 0, b"")                           # pre-existing: never ours
+            after = REAL_SNAPSHOT(s)
+            self.assertEqual((base["ws_scratch_present"], after["ws_scratch_present"]), (False, True))
+            self.assertIn("ws_scratch_absent", REAL_COMPARE(base, after)["failed"])
+            self.assertTrue(REAL_COMPARE(base, base)["ok"])
+        self.assertFalse(L.preflight(s)["checks"]["ws_scratch_absent"])
+        h = SimHost(L.Plan("CTRL-s900010"), str(self.tmp / "ops.jsonl"), s)
+        L.cleanup(h, s, [], "CTRL-s900010")
+        self.assertIn(L.WS_ROOT, s.run)                                  # not created by this invocation: kept
+
+
 class TestInspection(unittest.TestCase):
     def built(self):
         s = FakeSys()
@@ -646,16 +716,16 @@ class TestCleanup(Sandboxed):
         s.procs[99] = f"/{L.LAB}/target"
         s.run[f"{L.run_dir(run_id)}/metrics.json"] = ("file", 1000, b"x")
         s.run[f"{L.run_dir(run_id)}/.metrics.json.tmp.12"] = ("file", 1000, b"x")
-        order = []
+        order, before = [], len(h.ops)
         res = L.cleanup(h, s, L.read_oplog(h.oplog), run_id, after_procs=lambda: order.append("after"))
         self.assertTrue(res["ok"], res)
         self.assertTrue(empty(s))
-        kinds = [op[0] if op[0] != "cmd" else op[1][1:3] for op in h.ops[len(L.cgroup_plan()) + 25:]]
+        kinds = [op[0] if op[0] != "cmd" else op[1][1:3] for op in h.ops[before:]]
         self.assertEqual(kinds[0], "write")                          # cgroup.kill first
         self.assertEqual(order, ["after"])
         rm = [op[1] for op in h.ops if op[0] == "rmdir"]
-        self.assertEqual(rm, [L.run_dir(run_id), L.APP_ROOT.rstrip("/"), L.RUN_LAB, L.SUPPORT_DIR, L.CONTENDER_DIR,
-                              L.TARGET_DIR, L.LAB_DIR])
+        self.assertEqual(rm, [L.run_dir(run_id), L.APP_ROOT.rstrip("/"), L.RUN_LAB, L.ws_dir(run_id), L.WS_ROOT,
+                              L.SUPPORT_DIR, L.CONTENDER_DIR, L.TARGET_DIR, L.LAB_DIR])
         self.assertEqual([op[1][3] for op in h.ops if op[0] == "cmd" and op[1][:3] == ("ip", "netns", "del")],
                          list(reversed(L.LAB_NETNS)))
 
@@ -1244,7 +1314,8 @@ class CtrlFixture(Sandboxed):
                   mock.patch.object(P, "pi_checks", return_value={"PI-1": {"ok": True}})):
             p.start()
             self.addCleanup(p.stop)
-        approved = mock.patch.object(P, "approved_value", side_effect=lambda name, rec=None: self.workload)
+        approved = mock.patch.object(P, "approved_value", side_effect=lambda name, rec=None:
+                                     {"FZ-WORKLOAD": self.workload, "FZ-WORKSET": {"values": WORKSET}}[name])
         approved.start()
         self.addCleanup(approved.stop)
 
@@ -1278,7 +1349,16 @@ class TestCtrl(CtrlFixture):
         self.assertTrue(empty(self.s))
         run = json.loads((self.out / "evidence" / "run.json").read_text())
         self.assertEqual(run["workload"], WORKLOAD)
+        self.assertEqual(run["working_set"], WORKSET)
         self.assertEqual(run["load"]["arrivals"], self.n)
+        w = L.ws_dir("CTRL-s900001")
+        self.assertIn(("mkdir", w), h.ops)
+        self.assertIn(("unlink_run", f"{w}/{L.WS_FILE}"), h.ops)          # created by the workload, removed
+        self.assertTrue(run["cleanup"]["verify"]["checks"]["ws_scratch_absent"])
+        r = json.loads((self.out / "evidence" / "counters.json").read_text())["end"]["r"]
+        self.assertEqual((r[L.IF_RA]["rx_bytes"], r[L.IF_RB]["tx_bytes"]), (101000, 101000))   # D3 byte counters
+        self.assertIn("rx_bytes", json.loads((self.out / "report.json").read_text())
+                      ["checks"]["across_r_reconciliation"]["r"][L.IF_RA])
 
     def test_tampered_evidence_is_detected(self):
         self.run_ctrl()
@@ -1593,7 +1673,8 @@ class TestVariants(CtrlFixture):
         self.assertEqual(rc, 0, rep)
         rm.assert_not_called()                                         # nothing reads a metrics document
         wl = [op[2] for op in h.ops if op[0] == "spawn" and op[1] == "workload"][0]
-        self.assertEqual(list(wl[-2:]), ["--metrics", "off"])
+        self.assertEqual(wl[wl.index("--metrics") + 1], "off")
+        self.assertEqual(wl[wl.index("--ws-file") + 1], f"{L.ws_dir('INSTOFF-s900006')}/{L.WS_FILE}")
         self.assertEqual(set(rep["checks"]), P.pipeline_checks("instoff"))
         self.assertEqual(rep["checks"]["client_records"]["client_outcomes"], {"200": self.n})
         self.assertFalse((self.out / "evidence" / "app_start.json").exists())
@@ -1902,6 +1983,11 @@ class TestGates(unittest.TestCase):
 
 
 class TestStatic(unittest.TestCase):
+    def test_scratch_roots_agree_with_the_privileged_preflight(self):
+        import preflight as PF
+        self.assertEqual((PF.RUN_LAB, PF.WS_ROOT), (L.RUN_LAB, L.WS_ROOT))
+        self.assertTrue(L.WS_ROOT.startswith("/var/tmp/"))            # ext4 on this host, never tmpfs (/run, /tmp)
+
     def test_no_m2_and_no_fault_classes(self):
         for f in ("experiments/faultlab/pilot.py", "experiments/faultlab/lab.py"):
             src = (ROOT / f).read_text()

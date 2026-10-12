@@ -65,6 +65,9 @@ LEAF_CPUS = {"target": (TARGET_CPU,), "contender": (TARGET_CPU,), "support": SUP
 
 RUN_LAB = "/run/sentinelai-lab"
 APP_ROOT = f"{RUN_LAB}/app/"
+WS_ROOT = "/var/tmp/sentinelai-lab"            # FZ-WORKSET: the workload's file-backed working set (ext4, not tmpfs)
+WS_FILE = "ws.bin"
+SCRATCH_ROOTS = (RUN_LAB, WS_ROOT)             # the only places the lab creates files outside cgroupfs
 LAB_UID = LAB_GID = C.LAB_UID                 # 1000
 PYTHON = C.PYTHON                             # /usr/bin/python3 (workload and load generator: standard library)
 WORKLOAD = str(ROOT / "experiments/faultlab/docker/workload.py")
@@ -170,9 +173,17 @@ def run_dir(run_id: str) -> str:
     return f"{APP_ROOT}{run_id}"
 
 
+def ws_dir(run_id: str) -> str:
+    if not RUN_ID.fullmatch(run_id):
+        raise LabRefused(f"malformed run id {run_id!r}")
+    return f"{WS_ROOT}/{run_id}"
+
+
 def app_plan(run_id: str) -> List[tuple]:
-    d = run_dir(run_id)
-    return [("mkdir", RUN_LAB), ("mkdir", APP_ROOT.rstrip("/")), ("mkdir", d), ("chown_lab", d)]
+    """The run's app directory (metrics, config, control) and its working-set directory, both handed to the lab uid."""
+    d, w = run_dir(run_id), ws_dir(run_id)
+    return [("mkdir", RUN_LAB), ("mkdir", APP_ROOT.rstrip("/")), ("mkdir", d), ("chown_lab", d),
+            ("mkdir", WS_ROOT), ("mkdir", w), ("chown_lab", w)]
 
 
 # ------------------------------------------------------------------------------------------ process argv
@@ -187,8 +198,18 @@ def placed(leaf: str, ns: str, argv: List[str]) -> List[str]:
                       "ip", "netns", "exec", ns] + DROP + list(argv)
 
 
-def workload_argv(run_id: str, w: dict, metrics_writer: bool = True) -> List[str]:
-    """metrics_writer False (instrumentation-off pilot runs) appends --metrics off; otherwise the argv is unchanged."""
+def ws_args(run_id: str, ws: Optional[dict]) -> List[str]:
+    """The FZ-WORKSET working-set arguments (approved values), or none."""
+    if ws is None:
+        return []
+    return ["--ws-file", f"{ws_dir(run_id)}/{WS_FILE}", "--ws-file-mib", str(int(ws["file_mib"])),
+            "--ws-anon-mib", str(int(ws["anon_mib"])), "--ws-pass-s", str(float(ws["pass_s"])),
+            "--ws-slices", str(int(ws["slices_per_pass"]))]
+
+
+def workload_argv(run_id: str, w: dict, metrics_writer: bool = True, ws: Optional[dict] = None) -> List[str]:
+    """metrics_writer False (instrumentation-off pilot runs) appends --metrics off; ws (FZ-WORKSET values) appends the
+    working set; otherwise the argv is unchanged."""
     return placed("target", NS_A, [PYTHON, "-I", "-c", _LAUNCH, WORKLOAD, APP_ROOT, "serve", "--run-id", run_id,
                                    "--listen", f"{IP_A}:{PORT_WORKLOAD}", "--pool", str(w["pool"]),
                                    "--queue", str(w["queue"]), "--cpu-us", str(w["cpu_us"]),
@@ -197,7 +218,7 @@ def workload_argv(run_id: str, w: dict, metrics_writer: bool = True) -> List[str
                                    "--dependency", f"{IP_B}:{PORT_DEPENDENCY}",
                                    "--dependency-timeout-ms", str(w["dependency_timeout_ms"]),
                                    "--publish-s", str(w["publish_s"]), "--poll-s", str(w["poll_s"])]
-                  + ([] if metrics_writer else ["--metrics", "off"]))
+                  + ([] if metrics_writer else ["--metrics", "off"]) + ws_args(run_id, ws))
 
 
 def dependency_argv(run_id: str, w: dict) -> List[str]:
@@ -261,12 +282,13 @@ class Sys(C.Sys):
     @staticmethod
     def _run_lab_path(path) -> str:
         p = str(path)
-        if not (p == RUN_LAB or p.startswith(RUN_LAB + "/")) or "/../" in p or p.endswith("/..") or "\x00" in p:
-            raise LabRefused(f"not under {RUN_LAB}: {p!r}")
+        if not any(p == r or p.startswith(r + "/") for r in SCRATCH_ROOTS) or "/../" in p or p.endswith("/..") or \
+                "\x00" in p:
+            raise LabRefused(f"not under {' or '.join(SCRATCH_ROOTS)}: {p!r}")
         return p
 
     def lstat_run(self, path):
-        """os.lstat of a path under /run/sentinelai-lab, None if absent (read-only)."""
+        """os.lstat of a path under a lab scratch root, None if absent (read-only)."""
         try:
             return os.lstat(self._run_lab_path(path))
         except FileNotFoundError:
@@ -477,7 +499,8 @@ def ping_ok(r) -> bool:
 
 
 def r_counters(sysr) -> Optional[Dict[str, dict]]:
-    """Packet and drop counters of R's two interfaces (ip -s -j link in R)."""
+    """Packet, byte and drop counters of R's two interfaces (ip -s -j link in R); bytes give the CTRL bit rate that
+    FZ-INTENSITY-NET's congestion and police floors are derived from."""
     out = _out({"x": sysr.probe(LAB_READS["r_links"])}, "x")
     try:
         doc = json.loads(out)
@@ -486,6 +509,7 @@ def r_counters(sysr) -> Optional[Dict[str, dict]]:
             if l["ifname"] in (IF_RA, IF_RB):
                 s = l["stats64"]
                 res[l["ifname"]] = {"rx_packets": s["rx"]["packets"], "tx_packets": s["tx"]["packets"],
+                                    "rx_bytes": s["rx"]["bytes"], "tx_bytes": s["tx"]["bytes"],
                                     "rx_dropped": s["rx"]["dropped"], "tx_dropped": s["tx"]["dropped"],
                                     "rx_errors": s["rx"]["errors"], "tx_errors": s["tx"]["errors"]}
         return res if set(res) == {IF_RA, IF_RB} else None
@@ -562,16 +586,18 @@ class Plan:
                 raise LabRefused(f"malformed forward {op!r}")
             forward_argv(op[1], op[2])                         # refuses a non-lab namespace or a bad inode
         elif kind == "chown_lab":
-            if len(op) != 2 or self.run_id is None or op[1] != run_dir(self.run_id):
-                raise LabRefused(f"chown outside the run directory: {op!r}")
+            if len(op) != 2 or self.run_id is None or op[1] not in (run_dir(self.run_id), ws_dir(self.run_id)):
+                raise LabRefused(f"chown outside the run directories: {op!r}")
         elif kind == "write_new":
             if len(op) != 3 or self.run_id is None or op[1] != f"{run_dir(self.run_id)}/control.json" or \
                     not isinstance(op[2], bytes):
                 raise LabRefused(f"file write not allowed: {op!r}")
         elif kind == "unlink_run":
             name = os.path.basename(op[1]) if len(op) == 2 and isinstance(op[1], str) else ""
-            if len(op) != 2 or self.run_id is None or os.path.dirname(op[1]) != run_dir(self.run_id) or \
-                    not (name in RUN_FILES or TMP_FILE.fullmatch(name)):
+            parent = os.path.dirname(op[1]) if len(op) == 2 and isinstance(op[1], str) else ""
+            if len(op) != 2 or self.run_id is None or not (
+                    (parent == run_dir(self.run_id) and (name in RUN_FILES or TMP_FILE.fullmatch(name)))
+                    or (parent == ws_dir(self.run_id) and name == WS_FILE)):
                 raise LabRefused(f"unlink outside the run files: {op!r}")
         elif kind == "spawn":
             if len(op) != 3 or (op[1], tuple(op[2])) not in self.spawns:
@@ -636,7 +662,7 @@ class Host:
     def _do(self, op, stdout, stderr):
         kind = op[0]
         if kind == "mkdir":
-            os.mkdir(op[1], 0o755 if not op[1].startswith(APP_ROOT) else 0o700)
+            os.mkdir(op[1], 0o700 if op[1].startswith((APP_ROOT, WS_ROOT + "/")) else 0o755)
         elif kind == "rmdir":
             os.rmdir(op[1])
         elif kind == "write":
@@ -733,7 +759,15 @@ def cleanup(host: Host, sysr, entries: List[dict], run_id: Optional[str], wait_s
                 step(f"unlink {name}", lambda path=path: host.apply(("unlink_run", path)))
             else:
                 errors.append(f"unexpected file in the run directory (kept): {name!r}")
-    for d in ((run_dir(run_id),) if run_id is not None else ()) + (APP_ROOT.rstrip("/"), RUN_LAB):
+    if run_id is not None and ws_dir(run_id) in st["dirs"]:
+        for name in sysr.listdir_run(ws_dir(run_id)):     # only the working-set file; anything else stays
+            path = f"{ws_dir(run_id)}/{name}"
+            if name == WS_FILE:
+                step(f"unlink {name}", lambda path=path: host.apply(("unlink_run", path)))
+            else:
+                errors.append(f"unexpected file in the working-set directory (kept): {name!r}")
+    for d in ((run_dir(run_id),) if run_id is not None else ()) + (APP_ROOT.rstrip("/"), RUN_LAB) + \
+            ((ws_dir(run_id),) if run_id is not None else ()) + (WS_ROOT,):
         if d in st["dirs"] and sysr.lstat_run(d) is not None:     # each one only if this invocation created it
             step(f"rmdir {d}", lambda d=d: host.apply(("rmdir", d)))
     for d in (SUPPORT_DIR, CONTENDER_DIR, TARGET_DIR, LAB_DIR):
@@ -762,22 +796,27 @@ def cleanup_state(sysr, pids=(), run_id: Optional[str] = None, netns_mount: Opti
          "no_logged_pid_alive_in_lab": not [p for p in pids
                                             if f"::/{LAB}/" in (sysr.read(f"/proc/{p}/cgroup") or "")],
          "no_lab_netns": not E.lab_netns_present(sysr), "no_lab_interface_in_host": not E.host_lab_ifaces(sysr),
-         "run_lab_absent": sysr.lstat_run(RUN_LAB) is None}
+         "run_lab_absent": sysr.lstat_run(RUN_LAB) is None, "ws_scratch_absent": sysr.lstat_run(WS_ROOT) is None}
     return {"ok": all(c.values()), "checks": c}
 
 
 def host_snapshot(sysr, require_bpf=True) -> dict:
     snap = E.host_snapshot(sysr, require_bpf)
     snap["run_lab_present"] = sysr.lstat_run(RUN_LAB) is not None
+    snap["ws_scratch_present"] = sysr.lstat_run(WS_ROOT) is not None
     return snap
 
 
 def compare_host(base: dict, other: dict, require_bpf=True) -> dict:
-    """R2-E's comparison (R2-C must-list, host RPS, no lab netns, no lab interface) plus /run/sentinelai-lab absent."""
+    """R2-E's comparison (R2-C must-list, host RPS, no lab netns, no lab interface) plus both lab scratch roots
+    (/run/sentinelai-lab, /var/tmp/sentinelai-lab) absent."""
     r = E.compare_host(base, other, require_bpf)
     r["run_lab_absent"] = not other.get("run_lab_present", False)
     if not r["run_lab_absent"]:
         r["failed"].append("run_lab_absent")
+    r["ws_scratch_absent"] = not other.get("ws_scratch_present", False)
+    if not r["ws_scratch_absent"]:
+        r["failed"].append("ws_scratch_absent")
     r["ok"] = not r["failed"]
     return r
 
@@ -786,7 +825,7 @@ def preflight(sysr) -> dict:
     """Read-only refusal conditions immediately before setup (the privileged preflight ran just before)."""
     c = {"no_sentinel_cgroup": not C.sentinel_cgroups(sysr), "no_lab_process": not lab_pids(sysr),
          "no_lab_netns": not E.lab_netns_present(sysr), "no_lab_interface_in_host": not E.host_lab_ifaces(sysr),
-         "run_lab_absent": sysr.lstat_run(RUN_LAB) is None,
+         "run_lab_absent": sysr.lstat_run(RUN_LAB) is None, "ws_scratch_absent": sysr.lstat_run(WS_ROOT) is None,
          "netns_dir_mount_unambiguous": netns_dir_unambiguous(netns_dir_state(sysr)),
          "root_cpuset_0_23": C.parse_cpulist(sysr.read(f"{CG_ROOT}/cpuset.cpus.effective")) == C.HOST_CPUS}
     return {"ok": all(c.values()), "checks": c}
