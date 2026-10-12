@@ -2,7 +2,7 @@
 
 **Status: PARTLY APPROVED.** Rohit Kumar approved 31 of the 33 Freeze-1 decisions on 2026-10-11 (commit `4b6041c`),
 and on 2026-10-12 the eight items of the pilot decision package, the arrival-process amendment A-1, the CPU/network candidates C-1
-and the memory items M-1 (§5). `FZ-INTENSITY` remains **pending** (OV-5 only)
+the memory items M-1 and the working-set scanner amendment M-2 (§5). `FZ-INTENSITY` remains **pending** (OV-5 only)
 for what is still unresolved (§4, §5). Approval is recorded only in
 [`PHASE_1C_FREEZE1_DECISIONS.json`](PHASE_1C_FREEZE1_DECISIONS.json); this register holds the rationale (§3).
 **Owner approval of a design choice is not scientific validation:** every ENG value is still unvalidated until
@@ -179,6 +179,8 @@ holds each one under its own ID. Tags as in §1; **ENG** values are arithmetic o
 | C-1 | `FZ-INTENSITY-CPUNET` | **Approved 2026-10-12.** PI-8 candidates within the approved ceilings: contender weight 50, 100, 200, 400 (≤ 400; R2-C 100/400); CPU quota 20,000, 15,000, 10,000, 7,500 µs per 100,000 µs, i.e. 0.20 to 0.075 core (≥ 0.075; R2-D 0.15/0.075); loss on A egress and on R toward B 0.5, 1, 2, 5 % (≤ 5 %; R2-B 1/5 %); congestion (netem rate on R toward B) 600, 500, 400, 320 kbit/s; police on A ingress 550, 450, 350, 300 kbit/s, burst 3,000 bytes (ENG); floors 319 and 292 kbit/s = 0.5 × the CTRL bit rate measured in campaign `20261012T074028Z`; netem limit 1,000 packets | ceilings **V** (R2), floors **V** (byte counters); candidates and burst **ENG** |
 
 | M-1 | `FZ-INTENSITY-MEM`, `FZ-PI5` | Memory floor M ≥ 256 MiB and candidates 960, 768, 512, 256 MiB for `memory.max` on the target (AMD-12; AMD-12b `memory.high` only as the fallback). Basis: in CTRL the workload cgroup holds ≈ 1,080 MiB with the 1 GiB working-set file resident, so ≈ 56 MiB is not the file (the process's own anonymous memory measured at 22 MiB); the floor is ≈ 4.5× that, so a limit forces reclaim, not an OOM kill; 768 and 512 MiB are R2-F's validated levels; 960 MiB sits just below the working set. FZ-PI5 approved as drafted: memory PSI some in W above the CTRL maximum, `oom_kill` delta 0, swap ≤ 25 pages/s in every rep. Memory runs abort on host MemAvailable < 4 GiB or any OOM kill | **V** CTRL, R2-F; floor **ENG** |
+
+| M-2 | `FZ-WORKSET` (amended) | The working-set scan runs in a separate child process forked by the workload before it serves, in the same cgroup. File, `mmap` access, pace and anonymous buffer are unchanged. The target leaf then holds the workload and its scanner (two processes). Reason: in PI8-900320 the in-process scanner held the Python interpreter lock through its major faults under `memory.max`, so every request thread stalled (pilot report §3f); R2-F's scanner was also its own process. CTRL is re-baselined, and one run per other fault class is re-checked under it | **V** campaign `20261012T165705Z` |
 
 Still pending after §5:
 

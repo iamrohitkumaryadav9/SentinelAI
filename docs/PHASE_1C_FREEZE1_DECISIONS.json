@@ -326,7 +326,7 @@
    "status": "approved",
    "approved_by": "Rohit Kumar",
    "date": "2026-10-12",
-   "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply to the pilot decision package, option A of D4; working-set values approved by the owner the same day; recorded in these commits). Owner approval of a design choice, not scientific validation. Basis: Register §5 D4",
+   "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply to the pilot decision package, option A of D4; working-set values approved by the owner the same day; recorded in these commits). Owner approval of a design choice, not scientific validation. Basis: Register §5 D4; scanner as a separate process approved by Rohit Kumar on 2026-10-12 (owner reply \"go for a\"; Register §5 M-2)",
    "value": {
     "approach": "preregistered file-backed working set shaped like R2-F (file scanned at a fixed rate, small fixed anonymous buffer), always present in the workload; an FZ-WORKLOAD amendment",
     "values": {
@@ -337,7 +337,8 @@
      "slices_per_pass": 10,
      "anon_mib": 16,
      "ctrl_memory_limit": "none beyond the lab cap (2.5 GiB)",
-     "deviation_from_r2f": "R2-F scanned continuously on its own CPU; here the whole file is scanned once per second in 10 slices because the workload shares CPU 18 with request handling (measured ~2.6 ms CPU per pass)"
+     "deviation_from_r2f": "R2-F scanned continuously on its own CPU; here the whole file is scanned once per second in 10 slices because the workload shares CPU 18 with request handling (measured ~2.6 ms CPU per pass)",
+     "scanner_process": "a separate child process forked by the workload before it serves, in the same cgroup (owner option A, 2026-10-12, after PI8-900320: the in-process scan held the interpreter lock through major faults and stalled every request thread); file, access, pace and buffer unchanged"
     },
     "ctrl_rebaseline": "CTRL, PI-1 and PI-6 are repeated at the commit that adds the working set"
    }
