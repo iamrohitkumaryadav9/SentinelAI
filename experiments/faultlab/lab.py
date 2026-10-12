@@ -187,7 +187,8 @@ def placed(leaf: str, ns: str, argv: List[str]) -> List[str]:
                       "ip", "netns", "exec", ns] + DROP + list(argv)
 
 
-def workload_argv(run_id: str, w: dict) -> List[str]:
+def workload_argv(run_id: str, w: dict, metrics_writer: bool = True) -> List[str]:
+    """metrics_writer False (instrumentation-off pilot runs) appends --metrics off; otherwise the argv is unchanged."""
     return placed("target", NS_A, [PYTHON, "-I", "-c", _LAUNCH, WORKLOAD, APP_ROOT, "serve", "--run-id", run_id,
                                    "--listen", f"{IP_A}:{PORT_WORKLOAD}", "--pool", str(w["pool"]),
                                    "--queue", str(w["queue"]), "--cpu-us", str(w["cpu_us"]),
@@ -195,7 +196,8 @@ def workload_argv(run_id: str, w: dict) -> List[str]:
                                    "--lock-wait-exceeded-ms", str(w["lock_wait_exceeded_ms"]),
                                    "--dependency", f"{IP_B}:{PORT_DEPENDENCY}",
                                    "--dependency-timeout-ms", str(w["dependency_timeout_ms"]),
-                                   "--publish-s", str(w["publish_s"]), "--poll-s", str(w["poll_s"])])
+                                   "--publish-s", str(w["publish_s"]), "--poll-s", str(w["poll_s"])]
+                  + ([] if metrics_writer else ["--metrics", "off"]))
 
 
 def dependency_argv(run_id: str, w: dict) -> List[str]:

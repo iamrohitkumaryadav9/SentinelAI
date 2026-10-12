@@ -3,14 +3,17 @@
 
     sudo taskset -c 0-15 .venv/bin/python experiments/faultlab/pilot.py lifecycle --campaign <UTC> --cycle K --execute
     sudo taskset -c 0-15 .venv/bin/python experiments/faultlab/pilot.py ctrl --campaign <UTC> --seed N --execute
-    .venv/bin/python experiments/faultlab/pilot.py evaluate <campaign dir>/CTRL-<N>
+    sudo taskset -c 0-15 .venv/bin/python experiments/faultlab/pilot.py {pi1u|pi6off|instoff} --campaign <UTC> --seed N --execute
+    .venv/bin/python experiments/faultlab/pilot.py evaluate <campaign dir>/<run>
+    .venv/bin/python experiments/faultlab/pilot.py pairs <campaign dir>
     sudo .venv/bin/python experiments/faultlab/pilot.py cleanup <campaign dir>
 
 Before any host mutation every privileged invocation refuses unless: root via sudo from uid 1000, confined to CPUs
 0-15, and a fresh in-process privileged preflight (experiments/faultlab/preflight.py, --stage ctrl, the committed
 decisions record) is READY; the commit recorded is the preflight's HEAD. `ctrl` also refuses unless the same campaign
-holds PI-0 cycles 1-5, all ok, at the same commit (draft §6.1: nothing else runs until PI-0 passes). Output goes to
-<FZ-STAGING path>/<campaign>/{PI0-K | CTRL-N} and is handed to the invoking user at the end.
+holds PI-0 cycles 1-5, all ok, at the same commit (draft §6.1: nothing else runs until PI-0 passes); so do pi1u,
+pi6off and instoff. Output goes to <FZ-STAGING path>/<campaign>/{PI0-K | CTRL-N | PI1U-N | PI6OFF-N | INSTOFF-N} and
+is handed to the invoking user at the end.
 
   lifecycle --cycle K   PI-0: lab cgroup + A–R–B lab + app directory created, checked (structure, forwarding only in R,
                         no external path, ping both ways, TCP echo A->B), removed; cleanup verified; host compared with
@@ -18,6 +21,11 @@ holds PI-0 cycles 1-5, all ok, at the same commit (draft §6.1: nothing else run
   ctrl --seed N         one CTRL run: dependency peer and load generator in B, workload in A (target leaf, CPU 18),
                         M3A + M3B + app collection over B 45 s + W 90 s after a 15 s warm-up, 20 s cool-down; evidence,
                         manifest, replay, client/server and across-R reconciliation, PI-1 / PI-6 / PI-7 (CTRL part)
+  pi1u --seed N         PI-1 unprivileged mode: as ctrl, but M3A + app are collected by a child running as the lab uid
+                        with no capabilities (no eBPF: the loader needs root); netns verified from that child
+  pi6off --seed N       PI-6 collectors off: as ctrl with no collector and no loader (pair it with ctrl at the same seed)
+  instoff --seed N      instrumentation off: as pi6off with the workload's metrics writer off (pair with pi6off)
+  pairs DIR             offline: PI-6 and instrumentation pairs of a campaign, client-side differences, report-only
   evaluate DIR          offline (no root): every check recomputed from the saved evidence of a ctrl run
   cleanup DIR           idempotent cleanup from every op log under a campaign (after an interrupted invocation)
 
@@ -46,6 +54,7 @@ from lab import C  # noqa: E402
 FORMAT = "sentinelai.faultlab.pilot.ctrl.v1"
 DECISIONS = ROOT / "docs/PHASE_1C_FREEZE1_DECISIONS.json"
 CAMPAIGN = re.compile(r"[0-9]{8}T[0-9]{6}Z")
+RUN_NAME = r"PI0-[1-5]|(?:CTRL|PI1U|PI6OFF|INSTOFF)-9[0-9]{5}"    # one directory per run (AMD-27 evidence names)
 EVIDENCE_MAX = 64 << 20                                           # bytes read back from a lab-uid file
 PERIOD_S = 1.0
 WARMUP_S, B_S, W_S, COOLDOWN_S = 15, 45, 90, 20                   # design §6.2 timeline
@@ -58,6 +67,15 @@ PARAMS_ID = "pilot-ctrl-uncalibrated"
 PIPELINE_CHECKS = frozenset({"run_completed", "cleanup", "host_compare", "bpf_released", "manifest",
                              "replay_byte_identical", "app_features", "client_server_reconciliation",
                              "across_r_reconciliation"})            # every one present and ok, nothing else
+
+
+def pipeline_checks(variant: str) -> frozenset:
+    """The exact check set of a variant: collected runs as CTRL; collectors off: no snapshot, so no replay and no app
+    features; metrics writer off: no server documents, so the client records are checked on their own."""
+    if variant in ("ctrl", "pi1u"):
+        return PIPELINE_CHECKS
+    off = PIPELINE_CHECKS - {"replay_byte_identical", "app_features"}
+    return off if variant == "pi6off" else off - {"client_server_reconciliation"} | {"client_records"}
 
 
 class Refused(SystemExit):
@@ -107,7 +125,7 @@ def run_path(staging: Path, campaign: str, name: str) -> Path:
     """<staging>/<campaign>/<name>: the campaign is created if absent (never a symlink); the run must be new."""
     if not CAMPAIGN.fullmatch(campaign or ""):
         refuse(f"campaign {campaign!r} is not a UTC stamp YYYYMMDDTHHMMSSZ")
-    if not re.fullmatch(r"PI0-[1-5]|CTRL-9[0-9]{5}", name):
+    if not re.fullmatch(RUN_NAME, name):
         refuse(f"run name {name!r} not allowed")
     c = staging / campaign
     if c.is_symlink() or (c.exists() and not c.is_dir()):
@@ -342,31 +360,89 @@ def proc_cpu_s(pid) -> float:
     return (int(f[11]) + int(f[12])) / os.sysconf("SC_CLK_TCK")
 
 
+# variant -> run-name prefix, collector mode (root driver, unprivileged child, none), eBPF loader, workload metrics writer
+VARIANTS = {
+    "ctrl": {"prefix": "CTRL", "collector": "root", "ebpf": True, "metrics_writer": True},             # design §6.2
+    "pi1u": {"prefix": "PI1U", "collector": "unprivileged", "ebpf": False, "metrics_writer": True},     # PI-1 §6.2
+    "pi6off": {"prefix": "PI6OFF", "collector": None, "ebpf": False, "metrics_writer": True},           # PI-6 §6.7
+    "instoff": {"prefix": "INSTOFF", "collector": None, "ebpf": False, "metrics_writer": False},        # §5.5
+}
+COLLECTOR_DIR, CHILD_TICKS, CHILD_STATS = "collector", "child_ticks.jsonl", "child_stats.json"
+CHILD_TIMEOUT_S = B_S + W_S + 60                                  # collection (B + W + 1 ticks) plus start-up margin
+
+
+def collector_argv(run_id: str, out_dir: Path) -> list:
+    """The unprivileged collector child (PI-1): this file, isolated interpreter, run as the lab uid (no capabilities)."""
+    return [sys.executable, "-I", str(Path(__file__).resolve()), "collect-child", "--run-id", run_id,
+            "--out-dir", str(out_dir)]
+
+
+def spawn_collector(argv, cwd: Path, stderr):
+    """The driver's own child (like the eBPF loader, it is not a lab role): uid/gid = the lab uid, no supplementary
+    groups, a minimal environment, inheriting the driver's CPUs 0-15."""
+    return subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=stderr,
+                            user=C.LAB_UID, group=C.LAB_GID, extra_groups=[], env={"PATH": "/usr/bin:/bin", "LC_ALL": "C"},
+                            cwd=str(cwd), close_fds=True, start_new_session=True, shell=False)
+
+
+def collect_child(run_id: str, out_dir: Path) -> int:
+    """Runs as the lab uid: resolve the target, read its netns link, collect M3A + app over B + W (no eBPF: the loader
+    needs root), and write child_ticks.jsonl and child_stats.json into out_dir. Refuses with any privilege."""
+    from sentinelai.collectors import LiveReader, SystemClock, collect, resolve_target
+    from sentinelai.collectors import app as appmod
+    from sentinelai.runtime.ticks import encode_ticks
+    status = Path("/proc/self/status").read_text()
+    ident = {"uid": os.getuid(), "euid": os.geteuid(), "gid": os.getgid(), "egid": os.getegid(),
+             "groups": sorted(os.getgroups()),
+             "cap_eff": next((l.split()[1] for l in status.splitlines() if l.startswith("CapEff:")), None)}
+    if (ident["uid"], ident["euid"], ident["gid"], ident["egid"]) != (C.LAB_UID,) * 4 or \
+            ident["cap_eff"] != "0" * 16 or ident["groups"] not in ([], [C.LAB_GID]):
+        print(json.dumps({"refused": "collector child is not the unprivileged lab uid", **ident}), file=sys.stderr)
+        return 3
+    target = resolve_target(LiveReader(), "faultlab-ctrl", L.TARGET_CGROUP_PATH)
+    try:
+        link = os.readlink(f"/proc/{target.pids[0]}/ns/net")
+    except OSError as exc:
+        link = f"unreadable: {exc.strerror}"
+    ticks, stats = collect(target, pilot_params(), LiveReader(), SystemClock(), PERIOD_S, None, appmod.AppSource(run_id))
+    write_new(out_dir / CHILD_TICKS, encode_ticks(ticks))
+    write_new(out_dir / CHILD_STATS, dump({**ident, "netns_link": link, "target_doc": target.model_dump(mode="json"),
+                                           "ticks": stats.ticks, "wall_s": stats.wall_s, "cpu_s": stats.cpu_s,
+                                           "max_rss_kb": stats.max_rss_kb, "max_tick_read_s": stats.max_tick_read_s}))
+    return 0
+
+
 def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host_cls=None,
-         sleep=time.sleep) -> int:
+         sleep=time.sleep, variant: str = "ctrl", child_spawn=None) -> int:
     from sentinelai.collectors import LiveReader, SystemClock, build_snapshot, collect, resolve_target
     from sentinelai.collectors import app as appmod
-    from sentinelai.diagnostic.contract import canonical_bytes
+    from sentinelai.diagnostic.contract import Target, canonical_bytes
     from sentinelai.ebpf import loader_argv, resolve_ebpf_target
     from sentinelai.runtime.pipeline import validate_snapshot
-    from sentinelai.runtime.ticks import encode_ticks
+    from sentinelai.runtime.ticks import decode_ticks, encode_ticks
     from m3b_r1_validate import Recording
 
+    v = VARIANTS[variant]
     check_seed(seed)
     w = approved_value("FZ-WORKLOAD", decisions)
-    run_id = f"CTRL-s{seed}"
+    run_id = f"{v['prefix']}-s{seed}"
     load_s = WARMUP_S + B_S + W_S + COOLDOWN_S
+    unpriv, writer = v["collector"] == "unprivileged", v["metrics_writer"]
     out.mkdir(mode=0o755)
-    for d in (EVIDENCE, "logs", "lg"):
+    for d in (EVIDENCE, "logs", "lg") + ((COLLECTOR_DIR,) if unpriv else ()):
         (out / d).mkdir(mode=0o755)
     os.chown(out / "lg", C.LAB_UID, C.LAB_GID)                        # the load generator (uid 1000) writes here
+    if unpriv:
+        os.chown(out / COLLECTOR_DIR, C.LAB_UID, C.LAB_GID)           # the unprivileged collector writes here
     client_tmp = out / "lg" / "client.jsonl"
-    argv = {"dependency": L.dependency_argv(run_id, w), "workload": L.workload_argv(run_id, w),
+    argv = {"dependency": L.dependency_argv(run_id, w), "workload": L.workload_argv(run_id, w, writer),
             "loadgen": L.loadgen_argv(w, load_s, seed, str(client_tmp))}
     sysr = sysr or L.Sys()
     host = (host_cls or L.Host)(L.Plan(run_id, spawns=argv.items()), str(out / "ops.jsonl"), sysr)
     ev = out / EVIDENCE
-    R = {"format": FORMAT, "stage": "CTRL", "run_id": run_id, "seed": seed, "commit": commit, "workload": w,
+    R = {"format": FORMAT, "stage": "CTRL" if variant == "ctrl" else variant.upper(), "variant": variant,
+         "collector_mode": v["collector"], "ebpf": v["ebpf"], "metrics_writer": writer,
+         "run_id": run_id, "seed": seed, "commit": commit, "workload": w,
          "timeline": {"warmup_s": WARMUP_S, "B_s": B_S, "W_s": W_S, "cooldown_s": COOLDOWN_S, "load_s": load_s,
                       "period_s": PERIOD_S},
          "lab": {"netns": L.LAB_NETNS, "cgroup": L.LAB_DIR, "target_cpu": L.TARGET_CPU,
@@ -378,7 +454,8 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
     if not R["preflight"]["ok"] or not base["bpf_available"]:
         write_new(ev / "run.json", dump(R))
         refuse(f"pre-setup checks failed: {R['preflight']}; bpf_available={base['bpf_available']}")
-    procs, loader, state = {}, None, {}
+    procs, loader, child, state = {}, None, None, {}
+    read_app = (lambda: appmod.read_metrics(run_id)) if writer else (lambda: None)
     old = {s: signal.signal(s, on_signal) for s in (signal.SIGINT, signal.SIGTERM)}
     try:
         setup_lab(host, sysr, R, run_id)
@@ -387,7 +464,8 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
                     json.dumps({"dependency_delay_ms": int(w["dependency_delay_ms"])}).encode()))
         for role in ("dependency", "workload"):
             procs[role] = host.apply(("spawn", role, argv[role]), stderr=(out / "logs" / f"{role}.stderr").open("wb"))
-            ready = f"{rdir}/{'dependency_config.json' if role == 'dependency' else 'metrics.json'}"
+            ready = f"{rdir}/" + ("dependency_config.json" if role == "dependency" else
+                                  "metrics.json" if writer else "config.json")
             if not wait_for(lambda: sysr.lstat_run(ready) is not None, READY_TIMEOUT_S, procs.items()):
                 raise L.LabAbort(f"{role} not ready within {READY_TIMEOUT_S} s")
             evt(f"{role}_ready")
@@ -401,28 +479,52 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
         if list(target.pids) != tpids or ns_a is None or R["target"]["netns_inode"] != ns_a or \
                 target.cpuset != str(L.TARGET_CPU):
             raise L.LabAbort(f"target not in {L.NS_A} on CPU {L.TARGET_CPU}: {R['target']}")
-        ids = resolve_ebpf_target(target)
-        loader = Recording(loader_argv(ids, load_s + 120), ids, 5.0)
-        err = loader.start()
-        if err:
-            raise L.LabAbort(f"eBPF loader unavailable: {err}")
-        evt("loader_started", pid=loader.proc.pid)
+        if v["ebpf"]:
+            ids = resolve_ebpf_target(target)
+            loader = Recording(loader_argv(ids, load_s + 120), ids, 5.0)
+            err = loader.start()
+            if err:
+                raise L.LabAbort(f"eBPF loader unavailable: {err}")
+            evt("loader_started", pid=loader.proc.pid)
         read_snmp = lambda: L.tcp_counters(sysr.read(f"/proc/{tpids[0]}/net/snmp"))
-        state["start"] = {"app": appmod.read_metrics(run_id), "r": L.r_counters(sysr), "tcp": read_snmp(),
+        state["start"] = {"app": read_app(), "r": L.r_counters(sysr), "tcp": read_snmp(),
                           "mono_ns": time.monotonic_ns()}
-        if not isinstance(state["start"]["app"], bytes) or None in (state["start"]["r"], state["start"]["tcp"]):
+        if (writer and not isinstance(state["start"]["app"], bytes)) or None in (state["start"]["r"],
+                                                                                  state["start"]["tcp"]):
             raise L.LabAbort("start counters unavailable")
         procs["loadgen"] = host.apply(("spawn", "loadgen", argv["loadgen"]),
                                       stderr=(out / "logs" / "loadgen.stderr").open("wb"))
         evt("loadgen_started")
         sleep(WARMUP_S)
-        evt("collect_start")
         params = pilot_params()
-        ticks, stats = collect(target, params, LiveReader(), SystemClock(), PERIOD_S, LoaderTicks(loader),
-                               appmod.AppSource(run_id))
-        evt("collect_end")
-        R["collection"] = {"ticks": stats.ticks, "wall_s": stats.wall_s, "cpu_s": stats.cpu_s,
-                           "max_tick_read_s": stats.max_tick_read_s, "loader_cpu_s": proc_cpu_s(loader.proc.pid)}
+        ticks = None
+        if v["collector"] == "root":
+            evt("collect_start")
+            ticks, stats = collect(target, params, LiveReader(), SystemClock(), PERIOD_S, LoaderTicks(loader),
+                                   appmod.AppSource(run_id))
+            evt("collect_end")
+            R["collection"] = {"ticks": stats.ticks, "wall_s": stats.wall_s, "cpu_s": stats.cpu_s,
+                               "max_tick_read_s": stats.max_tick_read_s, "loader_cpu_s": proc_cpu_s(loader.proc.pid)}
+        elif unpriv:
+            evt("collect_start")
+            child = (child_spawn or spawn_collector)(collector_argv(run_id, out / COLLECTOR_DIR), out / COLLECTOR_DIR,
+                                                     (out / "logs" / "collector.stderr").open("wb"))
+            try:
+                R["exit_codes"]["collector"] = child.wait(CHILD_TIMEOUT_S)
+            except subprocess.TimeoutExpired:
+                raise L.LabAbort("unprivileged collector did not finish") from None
+            evt("collect_end")
+            if R["exit_codes"]["collector"] != 0:
+                raise L.LabAbort(f"unprivileged collector exited with {R['exit_codes']['collector']}")
+            raw_ticks = read_regular(out / COLLECTOR_DIR / CHILD_TICKS)
+            cs = json.loads(read_regular(out / COLLECTOR_DIR / CHILD_STATS, 1 << 20))
+            ticks = decode_ticks(raw_ticks)
+            if Target.model_validate_json(json.dumps(cs["target_doc"]), strict=False) != target:
+                raise L.LabAbort("the unprivileged collector resolved a different target")
+            R["collection"] = {"ticks": cs["ticks"], "wall_s": cs["wall_s"], "cpu_s": cs["cpu_s"],
+                               "max_tick_read_s": cs["max_tick_read_s"], "loader_cpu_s": 0.0}
+            R["unprivileged"] = {k: cs[k] for k in ("uid", "euid", "gid", "egid", "groups", "cap_eff", "netns_link")}
+            R["unprivileged"]["netns_verified"] = cs["netns_link"] == f"net:[{ns_a}]"
         try:
             R["exit_codes"]["loadgen"] = procs["loadgen"].wait(load_s + 60)
         except subprocess.TimeoutExpired:
@@ -434,27 +536,33 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
         def drained():
             d = appmod.parse(appmod.read_metrics(run_id))
             return isinstance(d, appmod.AppSample) and d.pool_busy == 0
-        if not wait_for(drained, DRAIN_MAX_S):
-            raise L.LabAbort(f"workload not drained within {DRAIN_MAX_S} s")
+        if writer:
+            if not wait_for(drained, DRAIN_MAX_S):
+                raise L.LabAbort(f"workload not drained within {DRAIN_MAX_S} s")
+        else:                                                     # no server document: the client records decide
+            R["drain"] = "not observable (metrics writer off); client records checked in client_records"
         sleep(2 * float(w["publish_s"]))                          # one more document after the last completion
-        state["end"] = {"app": appmod.read_metrics(run_id), "r": L.r_counters(sysr), "tcp": read_snmp(),
+        state["end"] = {"app": read_app(), "r": L.r_counters(sysr), "tcp": read_snmp(),
                         "mono_ns": time.monotonic_ns()}
-        if not isinstance(state["end"]["app"], bytes) or None in (state["end"]["r"], state["end"]["tcp"]):
+        if (writer and not isinstance(state["end"]["app"], bytes)) or None in (state["end"]["r"], state["end"]["tcp"]):
             raise L.LabAbort("end counters unavailable")
         for name in ("config.json", "dependency_config.json", "control.json"):
             write_new(ev / name, sysr.read_run(f"{rdir}/{name}", 1 << 20))
-        write_new(ev / "app_start.json", state["start"]["app"])
-        write_new(ev / "app_end.json", state["end"]["app"])
+        if writer:
+            write_new(ev / "app_start.json", state["start"]["app"])
+            write_new(ev / "app_end.json", state["end"]["app"])
         write_new(ev / "counters.json", dump({k: {"r": state[k]["r"], "tcp": state[k]["tcp"],
                                                   "mono_ns": state[k]["mono_ns"]} for k in ("start", "end")}))
         write_new(ev / "client.jsonl", read_regular(client_tmp))
-        write_new(ev / "ticks.jsonl", encode_ticks(ticks))
-        target_doc = target.model_dump(mode="json")
-        R["target_doc"], R["parameter_set"] = target_doc, params.model_dump(mode="json")
-        R["nB"], R["nW"] = round(B_S / PERIOD_S), round(W_S / PERIOD_S)
         R["load"] = {"arrivals": scheduled_arrivals(w, load_s, seed), "duration_s": load_s, "seed": seed}
-        snap = build_snapshot(ticks, target, params, PERIOD_S, True, True)
-        write_new(out / "snapshot.json", validate_snapshot(canonical_bytes(snap))[1])
+        if ticks is not None:
+            write_new(ev / "ticks.jsonl", raw_ticks if unpriv else encode_ticks(ticks))
+            if unpriv:
+                write_new(ev / "collector_stats.json", read_regular(out / COLLECTOR_DIR / CHILD_STATS, 1 << 20))
+            R["target_doc"], R["parameter_set"] = target.model_dump(mode="json"), params.model_dump(mode="json")
+            R["nB"], R["nW"] = round(B_S / PERIOD_S), round(W_S / PERIOD_S)
+            snap = build_snapshot(ticks, target, params, PERIOD_S, v["ebpf"], True)
+            write_new(out / "snapshot.json", validate_snapshot(canonical_bytes(snap))[1])
     except (L.LabAbort, L.LabRefused, Interrupted, Exception) as exc:     # noqa: BLE001 -- abort, then cleanup
         R["aborts"].append(f"{type(exc).__name__}: {exc}")
     finally:
@@ -462,6 +570,9 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
             signal.signal(s, signal.SIG_IGN)
 
         def release():
+            if child is not None and child.poll() is None:            # the driver's own child, never a host process
+                child.kill()
+                R["exit_codes"]["collector"] = child.wait(5)
             if loader is not None:
                 R["raw_ebpf_lines"] = len(loader.raw)
                 write_new(ev / "ebpf.jsonl", "\n".join(l or "" for l in loader.raw).encode())
@@ -481,8 +592,8 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
         from rehearsal import write_manifest
         write_manifest(out)
     rep = evaluate(out, live=True, run_result=R)
-    print(json.dumps({"stage": "CTRL", "run_id": run_id, "ok": rep["ok"], "aborts": R["aborts"][:3],
-                      "failed": [k for k, v in rep["checks"].items() if not v.get("ok")]}))
+    print(json.dumps({"stage": R["stage"], "run_id": run_id, "ok": rep["ok"], "aborts": R["aborts"][:3],
+                      "failed": [k for k, c in rep["checks"].items() if not c.get("ok")]}))
     return 0 if rep["ok"] else 1
 
 
@@ -507,7 +618,7 @@ def replay(out: Path) -> bytes:
     ticks = decode_ticks((out / EVIDENCE / "ticks.jsonl").read_bytes())
     target = Target.model_validate_json(json.dumps(run["target_doc"]), strict=False)
     params = ParameterSet.model_validate_json(json.dumps(run["parameter_set"]), strict=False)
-    snap = build_snapshot(ticks, target, params, run["timeline"]["period_s"], True, True)
+    snap = build_snapshot(ticks, target, params, run["timeline"]["period_s"], run.get("ebpf", True), True)
     return validate_snapshot(canonical_bytes(snap))[1]
 
 
@@ -547,6 +658,24 @@ def reconcile_clients(run, recs, a, b):
     expect = dict(zip(keys, (outcomes.get("200", 0), outcomes.get("503", 0), outcomes.get("504", 0))))
     problems += [f"{k}: server delta {delta[k]:g} != client {expect[k]}" for k in keys if delta[k] != expect[k]]
     return {"client_outcomes": dict(sorted(outcomes.items())), "server_delta": delta, "scheduled": n}, problems
+
+
+def client_records(run, recs):
+    """Metrics writer off: the client side alone. Every scheduled arrival recorded exactly once, sent, and answered
+    with a server outcome (200 / 503 / 504); a client timeout or saturation is a problem here, because no server
+    document can explain it."""
+    problems, outcomes = [], {}
+    n = run["load"]["arrivals"]
+    if [r["k"] for r in recs] != list(range(n)):
+        problems.append(f"client records do not cover the {n} scheduled arrivals exactly once")
+    for r in recs:
+        outcomes[r["outcome"]] = outcomes.get(r["outcome"], 0) + 1
+    other = set(outcomes) - {"200", "503", "504"}
+    if other:
+        problems.append(f"client outcomes without a server answer: { {k: outcomes[k] for k in other} }")
+    if any(r["sent_ns"] is None or r["latency_ms"] is None for r in recs if r["outcome"] in ("200", "503", "504")):
+        problems.append("an answered request has no send time or latency")
+    return {"client_outcomes": dict(sorted(outcomes.items())), "scheduled": n}, problems
 
 
 def reconcile_r(counters):
@@ -627,6 +756,11 @@ def pi_checks(run, snap, ticks):
     net = [m for m in ms if m["feature_id"].startswith(("tcp.", "net."))]
     pi1 = {"ok": bool(net) and all(m["coverage"] >= COVERAGE_MIN for m in net), "measurements": len(net),
            "min_coverage": min((m["coverage"] for m in net), default=None), "mode": "driver-root"}
+    if run.get("collector_mode") == "unprivileged":                # the netns must also be verified as the lab uid
+        u = run.get("unprivileged") or {}
+        pi1.update(mode="unprivileged", netns_verified=u.get("netns_verified") is True, netns_link=u.get("netns_link"),
+                   uid=u.get("uid"), cap_eff=u.get("cap_eff"))
+        pi1["ok"] = pi1["ok"] and pi1["netns_verified"]
     col = run.get("collection") or {}
     cpu = (col.get("cpu_s", 0) + col.get("loader_cpu_s", 0)) / col["wall_s"] if col.get("wall_s") else None
     low = sorted({m["feature_id"] for m in ms if m["coverage"] < COVERAGE_MIN})
@@ -654,36 +788,45 @@ def evaluate(out: Path, live: bool = False, run_result=None) -> dict:
                               "failed": (run.get("host_compare") or {}).get("failed")}
     checks["bpf_released"] = {"ok": bool((run.get("bpf_release") or {}).get("released"))}
     pis = {}
+    variant = run.get("variant", "ctrl")
+    collected = variant in ("ctrl", "pi1u")
     if not run.get("aborts"):
         m = verify_manifest(out)
         checks["manifest"] = {"ok": not m, "problems": m}
-        live_bytes = (out / "snapshot.json").read_bytes()
-        try:
-            rep = replay(out)
-            checks["replay_byte_identical"] = {"ok": rep == live_bytes,
-                                               "sha256": hashlib.sha256(live_bytes).hexdigest()}
-        except Exception as exc:                                        # noqa: BLE001 -- recorded, never hidden
-            checks["replay_byte_identical"] = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+        if collected:
+            live_bytes = (out / "snapshot.json").read_bytes()
+            try:
+                rep = replay(out)
+                checks["replay_byte_identical"] = {"ok": rep == live_bytes,
+                                                   "sha256": hashlib.sha256(live_bytes).hexdigest()}
+            except Exception as exc:                                    # noqa: BLE001 -- recorded, never hidden
+                checks["replay_byte_identical"] = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
         try:                                                            # malformed evidence fails, never crashes
-            gaps, basis = structural_app_gaps(out, checks["manifest"]["ok"])
-            rows, problems = app_feature_report(live_bytes, gaps)
-            checks["app_features"] = {"ok": not problems, "problems": problems, "structurally_unavailable": basis,
-                                      "rows": rows}
+            if collected:
+                gaps, basis = structural_app_gaps(out, checks["manifest"]["ok"])
+                rows, problems = app_feature_report(live_bytes, gaps)
+                checks["app_features"] = {"ok": not problems, "problems": problems,
+                                          "structurally_unavailable": basis, "rows": rows}
             recs = [json.loads(x) for x in (out / EVIDENCE / "client.jsonl").read_text().splitlines()]
-            a, b = (app_flat((out / EVIDENCE / n).read_bytes()) for n in ("app_start.json", "app_end.json"))
-            summary, problems = reconcile_clients(run, recs, a, b)
-            checks["client_server_reconciliation"] = dict(summary, ok=not problems, problems=problems)
+            if run.get("metrics_writer", True):
+                a, b = (app_flat((out / EVIDENCE / n).read_bytes()) for n in ("app_start.json", "app_end.json"))
+                summary, problems = reconcile_clients(run, recs, a, b)
+                checks["client_server_reconciliation"] = dict(summary, ok=not problems, problems=problems)
+            else:
+                summary, problems = client_records(run, recs)
+                checks["client_records"] = dict(summary, ok=not problems, problems=problems)
             counters = json.loads((out / EVIDENCE / "counters.json").read_bytes())
             summary, failed = reconcile_r(counters)
             checks["across_r_reconciliation"] = dict(summary, ok=not failed, failed=failed)
-            ticks = decode_ticks((out / EVIDENCE / "ticks.jsonl").read_bytes())
-            pis = pi_checks(run, json.loads(live_bytes), ticks)
+            if collected:
+                ticks = decode_ticks((out / EVIDENCE / "ticks.jsonl").read_bytes())
+                pis = pi_checks(run, json.loads(live_bytes), ticks)
         except Exception as exc:                                        # noqa: BLE001 -- recorded, never hidden
             checks["evidence_readable"] = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
             pis = {}
-    ok = set(checks) == PIPELINE_CHECKS and all(c["ok"] for c in checks.values())
-    report = {"format": FORMAT + ".report", "pipeline_ok": ok, "ok": ok and all(p["ok"] for p in pis.values()),
-              "checks": checks, "pi": pis,
+    ok = set(checks) == pipeline_checks(variant) and all(c["ok"] for c in checks.values())
+    report = {"format": FORMAT + ".report", "variant": variant, "pipeline_ok": ok,
+              "ok": ok and all(p["ok"] for p in pis.values()), "checks": checks, "pi": pis,
               "note": "PI verdicts are measurements against the proposed criteria; a pipeline pass is not a "
                       "scientific validation."}
     if live:
@@ -691,12 +834,59 @@ def evaluate(out: Path, live: bool = False, run_result=None) -> dict:
     return report
 
 
+# ------------------------------------------------------------------------------------------ pairs (offline, report-only)
+def client_summary(out: Path) -> dict:
+    """Client-side load and latency of one run (nearest-rank percentiles over answered 200 requests)."""
+    import math
+    run = json.loads((out / EVIDENCE / "run.json").read_bytes())
+    recs = [json.loads(x) for x in (out / EVIDENCE / "client.jsonl").read_text().splitlines()]
+    lat = sorted(r["latency_ms"] for r in recs if r["outcome"] == "200" and r["latency_ms"] is not None)
+    rank = lambda q: lat[max(0, math.ceil(q * len(lat)) - 1)] if lat else None
+    sent = sorted(r["sent_ns"] for r in recs if r["sent_ns"] is not None)
+    span_s = (sent[-1] - sent[0]) / 1e9 if len(sent) > 1 else None
+    return {"run_id": run["run_id"], "commit": run["commit"], "seed": run["seed"], "requests": len(recs),
+            "ok_200": len(lat), "p50_ms": rank(0.50), "p99_ms": rank(0.99),
+            "throughput_per_s": len(lat) / span_s if span_s else None}
+
+
+def pairs(campaign: Path) -> dict:
+    """PI-6 (collectors on vs off: CTRL-s / PI6OFF-s) and workload instrumentation (metrics writer on vs off:
+    PI6OFF-s / INSTOFF-s) pairs of one campaign, recomputed offline from the saved evidence. A pair counts only if
+    both members pass their own evaluation at the same commit and seed with the same scheduled arrivals. Differences
+    are reported (off minus on); design §5.5 / §6.7 set no pass threshold on them."""
+    runs = {d.name: d for d in sorted(campaign.iterdir()) if d.is_dir() and not d.is_symlink()}
+    out = {"campaign": campaign.name, "pi6_pairs": [], "instrumentation_pairs": [],
+           "note": "report-only: client-side differences (off minus on); no threshold (design §5.5, §6.7)"}
+    for kind, on_p, off_p in (("pi6_pairs", "CTRL", "PI6OFF"), ("instrumentation_pairs", "PI6OFF", "INSTOFF")):
+        for name in sorted(n for n in runs if n.startswith(off_p + "-")):
+            seed = name.split("-", 1)[1]
+            on, off = runs.get(f"{on_p}-{seed}"), runs[name]
+            pair = {"seed": int(seed), "on": f"{on_p}-{seed}", "off": name, "problems": []}
+            if on is None:
+                pair["problems"].append(f"{on_p}-{seed} missing")
+                pair["ok"] = False
+                out[kind].append(pair)
+                continue
+            reps = {k: evaluate(d) for k, d in (("on", on), ("off", off))}
+            ra, rb = (json.loads((d / EVIDENCE / "run.json").read_bytes()) for d in (on, off))
+            pair["problems"] += [f"{k} run does not pass its own evaluation" for k, r in reps.items()
+                                 if not r["pipeline_ok"]]
+            if (ra["commit"], ra["seed"], ra["load"]["arrivals"]) != (rb["commit"], rb["seed"], rb["load"]["arrivals"]):
+                pair["problems"].append("members differ in commit, seed or scheduled arrivals")
+            a, b = client_summary(on), client_summary(off)
+            pair.update(on_client=a, off_client=b, ok=not pair["problems"],
+                        diff={k: (b[k] - a[k]) if None not in (a[k], b[k]) else None
+                              for k in ("p50_ms", "p99_ms", "throughput_per_s")})
+            out[kind].append(pair)
+    return out
+
+
 # ------------------------------------------------------------------------------------------ cleanup (wrapper trap)
 def cleanup_all(top: Path) -> int:
     sysr = L.Sys()
     res = {}
     for oplog in sorted(top.glob("*/ops.jsonl")):
-        m = re.fullmatch(r"PI0-[1-5]|CTRL-9[0-9]{5}", oplog.parent.name)
+        m = re.fullmatch(RUN_NAME, oplog.parent.name)
         run_id = None
         entries = L.read_oplog(str(oplog))
         made = L.created(entries)
@@ -713,7 +903,7 @@ def cleanup_all(top: Path) -> int:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
-    for name in ("lifecycle", "ctrl"):
+    for name in ("lifecycle",) + tuple(VARIANTS):
         p = sub.add_parser(name)
         p.add_argument("--campaign", required=True, help="UTC stamp YYYYMMDDTHHMMSSZ (one directory per campaign)")
         p.add_argument("--execute", action="store_true", help="required: this mutates the host")
@@ -722,8 +912,20 @@ def main(argv=None) -> int:
         else:
             p.add_argument("--seed", type=int, required=True)
     sub.add_parser("evaluate").add_argument("dir")
+    sub.add_parser("pairs").add_argument("campaign_dir")
     sub.add_parser("cleanup").add_argument("dir")
+    child = sub.add_parser("collect-child")                       # internal: started by pi1u as the lab uid
+    child.add_argument("--run-id", required=True)
+    child.add_argument("--out-dir", required=True)
     a = ap.parse_args(argv)
+    if a.cmd == "collect-child":
+        if not L.RUN_ID.fullmatch(a.run_id) or not a.run_id.startswith("PI1U-"):
+            refuse(f"collector child run id {a.run_id!r} not allowed")
+        return collect_child(a.run_id, Path(a.out_dir))
+    if a.cmd == "pairs":
+        rep = pairs(Path(a.campaign_dir))
+        print(json.dumps(rep, indent=1, sort_keys=True, default=str))
+        return 0 if all(p["ok"] for k in ("pi6_pairs", "instrumentation_pairs") for p in rep[k]) else 1
     if a.cmd == "evaluate":
         rep = evaluate(Path(a.dir))
         print(json.dumps(rep, indent=1, sort_keys=True, default=str))
@@ -742,19 +944,20 @@ def run_stage(a, run_preflight=None) -> int:
     check_invocation()
     if a.cmd == "lifecycle" and not 1 <= a.cycle <= 5:
         refuse("PI-0 has cycles 1..5")
-    if a.cmd == "ctrl":
+    if a.cmd != "lifecycle":
         check_seed(a.seed)
     staging = staging_root()
-    out = run_path(staging, a.campaign, f"PI0-{a.cycle}" if a.cmd == "lifecycle" else f"CTRL-{a.seed}")
+    out = run_path(staging, a.campaign, f"PI0-{a.cycle}" if a.cmd == "lifecycle" else
+                   f"{VARIANTS[a.cmd]['prefix']}-{a.seed}")
     rep = require_preflight(run_preflight)
     commit = next(c["observed"] for c in rep["checks"] if c["id"] == "INT-HEAD")
-    if a.cmd == "ctrl":
+    if a.cmd != "lifecycle":
         require_pi0(out.parent, commit)
     if not out.parent.exists():
         out.parent.mkdir(mode=0o755)
         hand_over(out.parent)
     try:
-        rc = lifecycle(out, a.cycle, commit) if a.cmd == "lifecycle" else ctrl(out, a.seed, commit)
+        rc = lifecycle(out, a.cycle, commit) if a.cmd == "lifecycle" else ctrl(out, a.seed, commit, variant=a.cmd)
     finally:
         if out.is_dir() and not out.is_symlink():
             write_new(out / "preflight.json", dump(rep))

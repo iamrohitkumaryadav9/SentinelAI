@@ -157,6 +157,42 @@ class TestPublication(RunDir):
         self.assertLessEqual(st.st_size, A.MAX_BYTES)
         self.assertEqual(sorted(os.listdir(self.root + RUN)), ["config.json", "metrics.json"])   # no temp left
 
+    def test_metrics_writer_off_publishes_only_the_config_echo(self):
+        r = W.Runner(W.Service(dict(CFG, metrics_writer="off")), self.dir_fd, 1.0, 1.0, metrics_writer=False)
+        r.publish_metrics()
+        stop = threading.Event()
+        t = threading.Thread(target=r.loop, args=(stop,))
+        t.start()
+        time.sleep(0.2)
+        stop.set()
+        t.join(5)
+        self.assertEqual(sorted(os.listdir(self.root + RUN)), ["config.json"])
+        echo = json.loads(Path(self.path("config.json")).read_bytes())
+        self.assertEqual(echo["config"]["metrics_writer"], "off")
+        self.assertIsInstance(A.read_metrics(RUN), A.Bad)                    # the collector sees ABSENT, never a value
+        self.assertTrue(W.Runner(W.Service(CFG), self.dir_fd, 1.0, 1.0).metrics_writer)   # default: on
+
+    def test_cli_metrics_switch(self):
+        ap_args = ["serve", "--run-id", RUN, "--listen", "127.0.0.1:0", "--pool", "1", "--queue", "1", "--cpu-us", "0",
+                   "--lock-wait-exceeded-ms", "5", "--dependency-timeout-ms", "100", "--poll-s", "0.05"]
+        seen = {}
+
+        class Stop(Exception):
+            pass
+
+        def runner(svc, dir_fd, publish_s, poll_s, metrics_writer=True):
+            seen.update(cfg=dict(svc.cfg), writer=metrics_writer)
+            raise Stop
+        for flag, writer in (([], True), (["--metrics", "off"], False), (["--metrics", "on"], True)):
+            with self.subTest(flag), mock.patch.object(W, "Runner", runner), \
+                    mock.patch.object(W, "check_identity"), mock.patch.object(W, "open_run_dir", return_value=-1), \
+                    self.assertRaises(Stop):
+                W.main(ap_args + flag)
+            self.assertEqual(seen["writer"], writer)
+            self.assertEqual("metrics_writer" in seen["cfg"], not writer)
+        with self.assertRaises(SystemExit):
+            W.main(ap_args + ["--metrics", "maybe"])
+
     @unittest.skipUnless(AS_LAB, "the unpatched reader owner check needs the lab uid")
     def test_reader_accepts_as_the_real_lab_uid(self):
         self.runner().publish_metrics()

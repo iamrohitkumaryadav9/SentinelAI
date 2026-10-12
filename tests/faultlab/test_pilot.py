@@ -34,6 +34,7 @@ _spec.loader.exec_module(W)
 
 COMMIT = "c" * 40
 REAL_DO = L.Host._do                    # the real mutation dispatcher, for the one test that runs it on FakeSys
+REAL_PI_CHECKS, REAL_REPLAY = P.pi_checks, P.replay      # the CTRL fixture mocks both
 WORKLOAD = json.loads((ROOT / "docs/PHASE_1C_FREEZE1_DECISIONS.json").read_text())["decisions"]["FZ-WORKLOAD"]["value"]
 
 
@@ -210,16 +211,20 @@ class FakeProc:
     _next = 4242
 
     def __init__(self, rc=0, on_wait=None):
-        self.pid, self.rc, self.on_wait = FakeProc._next, rc, on_wait
+        self.pid, self.rc, self.on_wait, self.waited = FakeProc._next, rc, on_wait, False
         FakeProc._next += 1
 
-    def poll(self):
-        return None
+    def poll(self):                                    # like Popen: the exit code once it has been reaped
+        return self.rc if self.waited else None
 
     def wait(self, timeout=None):
         if self.on_wait:
             self.on_wait()
+        self.waited = True
         return self.rc
+
+    def kill(self):
+        self.waited = True
 
 
 class SimHost(L.Host):
@@ -304,8 +309,8 @@ class SimHost(L.Host):
                 s.procs[p.pid] = f"/{L.LAB}/{leaf}"
             if role == "dependency":
                 s.run[f"{L.run_dir(self.plan.run_id)}/dependency_config.json"] = ("file", L.LAB_UID, b"{}")
-            if role == "workload":
-                for n in ("metrics.json", "config.json"):
+            if role == "workload":                            # --metrics off: the workload publishes no metrics.json
+                for n in ("config.json",) if "--metrics" in op[2] else ("metrics.json", "config.json"):
                     s.run[f"{L.run_dir(self.plan.run_id)}/{n}"] = ("file", L.LAB_UID, self.workload_files.get(n, b"{}"))
             return p
         return None
@@ -444,6 +449,12 @@ class TestPlans(unittest.TestCase):
                 self.assertEqual(argv[8:12], ["ip", "netns", "exec", ns])
                 self.assertEqual(argv[12:17], ["setpriv", "--reuid=1000", "--regid=1000", "--init-groups", "--"])
                 self.assertEqual(argv[17], L.PYTHON)
+
+    def test_metrics_writer_off_only_appends_the_switch(self):
+        on, off = L.workload_argv("INSTOFF-s900006", WORKLOAD), L.workload_argv("INSTOFF-s900006", WORKLOAD, False)
+        self.assertEqual(on, L.workload_argv("INSTOFF-s900006", WORKLOAD, True))
+        self.assertEqual(off, on + ["--metrics", "off"])
+        self.assertNotIn("--metrics", on)
 
     def test_argv_uses_the_approved_workload_values(self):
         argv = L.workload_argv("CTRL-s900001", WORKLOAD)
@@ -1186,7 +1197,7 @@ class CtrlFixture(Sandboxed):
 
         def loadgen():
             def finish():
-                base = json.loads(self.docs[0])["mono_ns"]
+                base = json.loads(self.docs[0])["mono_ns"] if self.docs else time.monotonic_ns()
                 recs = [{"k": k, "scheduled_ns": base + 1000 + k, "sent_ns": base + 1000 + k, "outcome": "200",
                          "latency_ms": 0.001} for k in range(self.n)]
                 path = self.out / "lg" / "client.jsonl"
@@ -1243,10 +1254,11 @@ class CtrlFixture(Sandboxed):
     def run_ctrl(self, **kw):
         hosts = []
         spawn = dict(self.spawn, **kw.pop("spawn", {}))
+        run = {k: kw.pop(k) for k in ("variant", "child_spawn") if k in kw}
         kw.setdefault("workload_files", {"config.json": self.config_bytes()})
         with mock.patch.object(P.os, "chown"):
-            rc = P.ctrl(self.out, 900001, COMMIT, sysr=self.s, host_cls=host_factory(hosts, spawn=spawn, **kw),
-                        sleep=lambda x: None)
+            rc = P.ctrl(self.out, kw.pop("seed", 900001), COMMIT, sysr=self.s,
+                        host_cls=host_factory(hosts, spawn=spawn, **kw), sleep=lambda x: None, **run)
         return rc, hosts[0]
 
 
@@ -1504,6 +1516,214 @@ class TestCtrlAppFeatures(CtrlFixture):
         self.assertEqual(P.structural_app_gaps(self.out, True)[0], {P.LOCK_WAIT: mock.ANY})
 
 
+class HangingProc(FakeProc):
+    """A collector child that never finishes until killed."""
+
+    def __init__(self):
+        super().__init__()
+        self.killed = False
+
+    def wait(self, timeout=None):
+        if self.killed:
+            return -9
+        import subprocess
+        raise subprocess.TimeoutExpired("collector", timeout)
+
+    def kill(self):
+        self.killed = True
+
+
+class TestVariants(CtrlFixture):
+    """PI-1 unprivileged (pi1u), PI-6 collectors off (pi6off) and instrumentation off (instoff) on the simulated host."""
+
+    def go(self, variant, name=None, seed=900006, **kw):
+        self.out = self.tmp / (name or f"{P.VARIANTS[variant]['prefix']}-{seed}")
+        self.s, self.docs = FakeSys(), []
+        rc, h = self.run_ctrl(variant=variant, seed=seed, **kw)
+        return rc, h, json.loads((self.out / "report.json").read_text())
+
+    def child(self, rc=0, write=True, link=None, target=None, proc=None):
+        """A fake unprivileged collector child: writes what collect_child writes into its directory."""
+        def spawn(argv, cwd, stderr):
+            import sentinelai.collectors as COL
+            self.child_call = (argv, cwd)
+            t = COL.resolve_target(None, "faultlab-ctrl", L.TARGET_CGROUP_PATH)
+            t = t.model_copy(update=target or {})
+            if write:
+                (cwd / P.CHILD_TICKS).write_bytes(b"CHILD-TICKS\n")
+                (cwd / P.CHILD_STATS).write_bytes(P.dump({
+                    "uid": 1000, "euid": 1000, "gid": 1000, "egid": 1000, "groups": [], "cap_eff": "0" * 16,
+                    "netns_link": link or f"net:[{self.s.netns_inode(L.NS_A)}]", "target_doc": t.model_dump(mode="json"),
+                    "ticks": 136, "wall_s": 135.0, "cpu_s": 0.3, "max_rss_kb": 1, "max_tick_read_s": 0.01}))
+            return proc or FakeProc(rc=rc)
+        return spawn
+
+    def test_check_sets_are_exact_per_variant(self):
+        self.assertEqual(P.pipeline_checks("ctrl"), P.PIPELINE_CHECKS)
+        self.assertEqual(P.pipeline_checks("pi1u"), P.PIPELINE_CHECKS)
+        base = {"run_completed", "cleanup", "host_compare", "bpf_released", "manifest", "across_r_reconciliation"}
+        self.assertEqual(P.pipeline_checks("pi6off"), base | {"client_server_reconciliation"})
+        self.assertEqual(P.pipeline_checks("instoff"), base | {"client_records"})
+        self.assertEqual({v["prefix"] for v in P.VARIANTS.values()}, {"CTRL", "PI1U", "PI6OFF", "INSTOFF"})
+
+    def test_collectors_off_runs_no_collector_and_no_loader(self):
+        import m3b_r1_validate
+        import sentinelai.collectors as COL
+        with mock.patch.object(m3b_r1_validate, "Recording") as rec, mock.patch.object(COL, "collect") as col:
+            rc, h, rep = self.go("pi6off")
+        self.assertEqual(rc, 0, rep)
+        rec.assert_not_called()
+        col.assert_not_called()
+        self.assertEqual(set(rep["checks"]), P.pipeline_checks("pi6off"))
+        self.assertEqual(rep["pi"], {})
+        self.assertEqual(rep["checks"]["client_server_reconciliation"]["client_outcomes"], {"200": self.n})
+        for f in ("snapshot.json", "evidence/ticks.jsonl", "evidence/ebpf.jsonl"):
+            self.assertFalse((self.out / f).exists(), f)
+        self.assertEqual(RH.verify_manifest(self.out), [])
+        run = json.loads((self.out / "evidence" / "run.json").read_text())
+        self.assertEqual((run["run_id"], run["collector_mode"], run["ebpf"], run["metrics_writer"]),
+                         ("PI6OFF-s900006", None, False, True))
+        self.assertTrue(run["bpf_release"]["released"] and run["cleanup"]["ok"] and run["host_compare"]["ok"])
+        self.assertTrue(empty(self.s))
+
+    def test_instrumentation_off_runs_without_the_metrics_writer(self):
+        import sentinelai.collectors.app as APP
+        with mock.patch.object(APP, "read_metrics") as rm:
+            rc, h, rep = self.go("instoff")
+        self.assertEqual(rc, 0, rep)
+        rm.assert_not_called()                                         # nothing reads a metrics document
+        wl = [op[2] for op in h.ops if op[0] == "spawn" and op[1] == "workload"][0]
+        self.assertEqual(list(wl[-2:]), ["--metrics", "off"])
+        self.assertEqual(set(rep["checks"]), P.pipeline_checks("instoff"))
+        self.assertEqual(rep["checks"]["client_records"]["client_outcomes"], {"200": self.n})
+        self.assertFalse((self.out / "evidence" / "app_start.json").exists())
+        self.assertTrue((self.out / "evidence" / "config.json").exists())
+        self.assertIn("not observable", json.loads((self.out / "evidence" / "run.json").read_text())["drain"])
+        self.assertTrue(empty(self.s))
+
+    def test_client_records_alone_must_be_complete_and_answered(self):
+        run = {"load": {"arrivals": 3}}
+        rec = lambda k, o="200": {"k": k, "outcome": o, "sent_ns": 1, "latency_ms": 1.0}
+        self.assertEqual(P.client_records(run, [rec(0), rec(1), rec(2, "503")])[1], [])
+        for name, recs, needle in (("missing", [rec(0), rec(2)], "exactly once"),
+                                   ("duplicate", [rec(0), rec(1), rec(1)], "exactly once"),
+                                   ("client timeout", [rec(0), rec(1), rec(2, "client_timeout")], "without a server"),
+                                   ("saturated", [rec(0), rec(1), rec(2, "client_saturated")], "without a server"),
+                                   ("no latency", [rec(0), rec(1), dict(rec(2), latency_ms=None)], "no send time")):
+            with self.subTest(name):
+                self.assertTrue(any(needle in p for p in P.client_records(run, recs)[1]))
+
+    def test_unprivileged_collector_child_does_the_collection(self):
+        import m3b_r1_validate
+        import sentinelai.collectors as COL
+        with mock.patch.object(m3b_r1_validate, "Recording") as rec, mock.patch.object(COL, "collect") as col, \
+                mock.patch.object(COL, "build_snapshot", return_value="snap") as bs:
+            rc, h, rep = self.go("pi1u", child_spawn=self.child())
+        self.assertEqual(rc, 0, rep)
+        rec.assert_not_called()                                        # no eBPF loader in unprivileged mode
+        col.assert_not_called()                                        # the root driver collects nothing itself
+        self.assertIs(bs.call_args.args[4], False)                    # snapshot built without eBPF
+        argv, cwd = self.child_call
+        self.assertEqual(argv, P.collector_argv("PI1U-s900006", self.out / "collector"))
+        self.assertEqual(cwd, self.out / "collector")
+        self.assertEqual((self.out / "evidence" / "ticks.jsonl").read_bytes(), b"CHILD-TICKS\n")
+        self.assertTrue((self.out / "evidence" / "collector_stats.json").exists())
+        run = json.loads((self.out / "evidence" / "run.json").read_text())
+        self.assertEqual(run["unprivileged"]["netns_verified"], True)
+        self.assertEqual((run["unprivileged"]["uid"], run["unprivileged"]["cap_eff"]), (1000, "0" * 16))
+        self.assertEqual((run["collection"]["cpu_s"], run["collection"]["loader_cpu_s"]), (0.3, 0.0))
+        self.assertEqual(run["exit_codes"]["collector"], 0)
+        self.assertEqual(set(rep["checks"]), P.PIPELINE_CHECKS)
+        self.assertTrue(rep["pipeline_ok"], rep["checks"])
+        self.assertTrue(empty(self.s))
+
+    def test_unprivileged_child_failures_abort_and_clean_up(self):
+        hang = HangingProc()
+        for name, kw, needle in (("child exits 3", {"rc": 3}, "exited with 3"),
+                                 ("child wrote nothing", {"write": False}, "FileNotFoundError"),
+                                 ("another target", {"target": {"cpuset": "19"}}, "different target"),
+                                 ("child hangs", {"proc": hang}, "did not finish")):
+            with self.subTest(name):
+                rc, h, rep = self.go("pi1u", name=f"PI1U-90{len(list(self.tmp.iterdir())):04d}",
+                                     child_spawn=self.child(**kw))
+                run = json.loads((self.out / "evidence" / "run.json").read_text())
+                self.assertEqual(rc, 1)
+                self.assertTrue(any(needle in a for a in run["aborts"]), run["aborts"])
+                self.assertTrue(run["cleanup"]["ok"] and run["host_compare"]["ok"])
+                self.assertFalse((self.out / "manifest.json").exists())
+                self.assertTrue(empty(self.s))
+        self.assertTrue(hang.killed)                                   # the hanging child was killed at release
+
+    def test_pi1_unprivileged_needs_a_verified_netns(self):
+        ms = [{"feature_id": "tcp.retrans_rate", "aggregation": "RATE", "coverage": 1.0, "quality": "OK"},
+              {"feature_id": "app.latency_ms", "aggregation": "P99", "coverage": 1.0, "quality": "OK"}]
+        snap = {"measurements": ms, "missing_measurements": []}
+        ticks = [SimpleNamespace(obs={"app": {}})] * 10
+        run = lambda ok: {"collection": {"cpu_s": 0.2, "loader_cpu_s": 0.0, "wall_s": 135.0},
+                          "collector_mode": "unprivileged",
+                          "unprivileged": {"netns_verified": ok, "netns_link": "net:[1]", "uid": 1000,
+                                           "cap_eff": "0" * 16}}
+        good, bad = REAL_PI_CHECKS(run(True), snap, ticks)["PI-1"], REAL_PI_CHECKS(run(False), snap, ticks)["PI-1"]
+        self.assertEqual((good["mode"], good["ok"], good["netns_verified"]), ("unprivileged", True, True))
+        self.assertEqual((bad["ok"], bad["netns_verified"]), (False, False))
+        self.assertEqual(REAL_PI_CHECKS({"collection": run(True)["collection"]}, snap, ticks)["PI-1"]["mode"],
+                         "driver-root")
+
+    def test_collector_child_is_started_without_privileges(self):
+        argv = P.collector_argv("PI1U-s900008", Path("/x/collector"))
+        self.assertEqual(argv[1:4], ["-I", str(ROOT / "experiments/faultlab/pilot.py"), "collect-child"])
+        with mock.patch.object(P.subprocess, "Popen") as po:
+            P.spawn_collector(argv, Path("/x/collector"), None)
+        kw = po.call_args.kwargs
+        self.assertEqual((kw["user"], kw["group"], kw["extra_groups"], kw["shell"]), (1000, 1000, [], False))
+        self.assertEqual(kw["env"], {"PATH": "/usr/bin:/bin", "LC_ALL": "C"})
+
+    def test_collect_child_refuses_any_privilege(self):
+        import sentinelai.collectors as COL
+        lab = "CapEff:\t0000000000000000\n"
+        for name, ids, status in (("root", (0, 0, 0, 0), lab), ("setuid", (1000, 0, 1000, 1000), lab),
+                                  ("capabilities", (1000, 1000, 1000, 1000), "CapEff:\t0000003fffffffff\n")):
+            with self.subTest(name), mock.patch.object(P.os, "getuid", return_value=ids[0]), \
+                    mock.patch.object(P.os, "geteuid", return_value=ids[1]), \
+                    mock.patch.object(P.os, "getgid", return_value=ids[2]), \
+                    mock.patch.object(P.os, "getegid", return_value=ids[3]), \
+                    mock.patch.object(P.os, "getgroups", return_value=[]), \
+                    mock.patch("pathlib.Path.read_text", return_value=status), \
+                    mock.patch.object(COL, "collect") as col:
+                self.assertEqual(P.collect_child("PI1U-s900008", self.tmp), 3)
+                col.assert_not_called()
+        self.assertFalse((self.tmp / P.CHILD_TICKS).exists())
+        for bad in ("CTRL-s900008", "PI1U-x", "../PI1U-s1"):
+            with self.subTest(bad), self.assertRaises(P.Refused):
+                P.main(["collect-child", "--run-id", bad, "--out-dir", str(self.tmp)])
+
+    def test_pairs_compare_on_and_off_runs_of_the_same_seed(self):
+        for variant in ("ctrl", "pi6off", "instoff"):
+            self.go(variant, seed=900006)
+        rep = P.pairs(self.tmp)
+        (p6,), (pi,) = rep["pi6_pairs"], rep["instrumentation_pairs"]
+        self.assertEqual((p6["on"], p6["off"], p6["ok"]), ("CTRL-900006", "PI6OFF-900006", True), p6)
+        self.assertEqual((pi["on"], pi["off"], pi["ok"]), ("PI6OFF-900006", "INSTOFF-900006", True), pi)
+        self.assertEqual(p6["on_client"]["ok_200"], self.n)
+        self.assertEqual(set(p6["diff"]), {"p50_ms", "p99_ms", "throughput_per_s"})
+        self.go("pi6off", seed=900007)                                 # no CTRL partner
+        f = self.tmp / "INSTOFF-900006" / "evidence" / "client.jsonl"   # a member that no longer verifies
+        f.write_text(f.read_text().replace('"200"', '"503"', 1))
+        rep = P.pairs(self.tmp)
+        lone = [p for p in rep["pi6_pairs"] if p["seed"] == 900007][0]
+        self.assertEqual((lone["ok"], lone["problems"]), (False, ["CTRL-900007 missing"]))
+        self.assertIn("off run does not pass its own evaluation", rep["instrumentation_pairs"][0]["problems"])
+        with mock.patch("builtins.print"):
+            self.assertEqual(P.main(["pairs", str(self.tmp)]), 1)
+
+    def test_replay_uses_the_recorded_ebpf_flag(self):
+        import sentinelai.collectors as COL
+        self.go("pi1u", child_spawn=self.child())
+        with mock.patch.object(COL, "build_snapshot", return_value="snap") as bs:
+            REAL_REPLAY(self.out)
+        self.assertIs(bs.call_args.args[4], False)
+
+
 # ------------------------------------------------------------------------------------------ evaluation units
 class TestReconciliation(unittest.TestCase):
     def test_client_server(self):
@@ -1605,6 +1825,33 @@ class TestGates(unittest.TestCase):
             self.assertEqual(P.run_stage(self.args("ctrl"), run_preflight=lambda: self.report()), 0)
         ct.assert_called_once()
 
+    def test_new_stages_have_the_same_pi0_gate_and_run_their_variant(self):
+        camp = self.tmp / "20261012T000000Z"
+        for cmd, prefix in (("pi1u", "PI1U"), ("pi6off", "PI6OFF"), ("instoff", "INSTOFF")):
+            with self.subTest(cmd), mock.patch.object(P, "ctrl") as ct, self.assertRaises(P.Refused):
+                P.run_stage(self.args(cmd, seed=900006), run_preflight=lambda: self.report())
+            ct.assert_not_called()
+        for k in range(1, 6):
+            (camp / f"PI0-{k}").mkdir(parents=True)
+            (camp / f"PI0-{k}" / "run.json").write_text(json.dumps({"ok": True, "commit": COMMIT}))
+        for cmd, prefix in (("pi1u", "PI1U"), ("pi6off", "PI6OFF"), ("instoff", "INSTOFF")):
+            with self.subTest(cmd), mock.patch.object(P, "ctrl", return_value=0) as ct:
+                with self.assertRaises(P.Refused):                       # another commit's PI-0 does not qualify
+                    P.run_stage(self.args(cmd, seed=900006), run_preflight=lambda: self.report(head="d" * 40))
+                ct.assert_not_called()
+                self.assertEqual(P.run_stage(self.args(cmd, seed=900006), run_preflight=lambda: self.report()), 0)
+                self.assertEqual((ct.call_args.args[0].name, ct.call_args.args[1:3], ct.call_args.kwargs),
+                                 (f"{prefix}-900006", (900006, COMMIT), {"variant": cmd}))
+            with self.subTest(f"{cmd} seed range"), mock.patch.object(P, "ctrl") as ct, self.assertRaises(P.Refused):
+                P.run_stage(self.args(cmd, seed=800000), run_preflight=lambda: self.report())
+
+    def test_run_names_are_exact(self):
+        for ok in ("PI0-1", "CTRL-900001", "PI1U-909999", "PI6OFF-900006", "INSTOFF-900006"):
+            self.assertRegex(ok, f"^(?:{P.RUN_NAME})$")
+        for bad in ("PI0-6", "CTRL-800001", "PI1U-90000", "FAULT-900001", "pi1u-900001", "PI6OFF-900006/x"):
+            with self.subTest(bad), self.assertRaises(P.Refused):
+                P.run_path(self.tmp, "20261012T000000Z", bad)
+
     def test_bad_arguments_and_reused_directories_are_refused(self):
         for a in (self.args(campaign="../x"), self.args(campaign="today"), self.args(cycle=6),
                   self.args("ctrl", seed=42)):
@@ -1673,6 +1920,8 @@ class TestStatic(unittest.TestCase):
         everything = repr(L.cgroup_plan() + L.lab_plan() + L.netns_del_plan() +
                           [L.forward_argv(ns, 1) for ns in L.LAB_NETNS] +
                           list(L.echo_argvs().values()) + [L.workload_argv("CTRL-s900001", WORKLOAD),
+                                                           L.workload_argv("INSTOFF-s900001", WORKLOAD, False),
+                                                           P.collector_argv("PI1U-s900001", Path("/o")),
                                                            L.dependency_argv("CTRL-s900001", WORKLOAD),
                                                            L.loadgen_argv(WORKLOAD, 1, 900001, "/o")])
         for p in L.PROTECTED + ("'tc'", "sysctl", "iptables", "nft", "modprobe", "smp_affinity", "rps_cpus"):

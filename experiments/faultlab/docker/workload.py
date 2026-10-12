@@ -445,8 +445,9 @@ class Distractor:
 class Runner:
     """Control polling, config echo and metrics publication for one run directory."""
 
-    def __init__(self, service: Service, dir_fd: int, publish_s: float, poll_s: float):
+    def __init__(self, service: Service, dir_fd: int, publish_s: float, poll_s: float, metrics_writer: bool = True):
         self.svc, self.dir_fd, self.publish_s, self.poll_s = service, dir_fd, publish_s, poll_s
+        self.metrics_writer = metrics_writer   # False: never publish metrics.json (instrumentation on/off pair)
         self.config_seq, self.control_error, self.config_sha256 = 0, None, ""
         self.echo_config()
 
@@ -474,7 +475,8 @@ class Runner:
             self.echo_config()
 
     def publish_metrics(self) -> None:
-        publish(self.dir_fd, METRICS_FILE, self.svc.document(self.config_sha256))
+        if self.metrics_writer:
+            publish(self.dir_fd, METRICS_FILE, self.svc.document(self.config_sha256))
 
     def loop(self, stop: threading.Event) -> None:
         next_pub = next_poll = time.monotonic()
@@ -562,6 +564,8 @@ def main(argv=None) -> int:
     s.add_argument("--poll-s", type=float, required=True)
     s.add_argument("--distractor-kind", choices=DISTRACTOR_KINDS, default=None, help="OV-6 slow_request, OV-10 generic")
     s.add_argument("--distractor-seed", type=int, default=None)
+    s.add_argument("--metrics", choices=("on", "off"), default="on",
+                   help="off: never publish metrics.json (instrumentation-off pilot runs); recorded in config.json")
     d = sub.add_parser("dependency")
     d.add_argument("--run-id", required=True)
     d.add_argument("--listen", required=True, help="host:port")
@@ -592,8 +596,10 @@ def main(argv=None) -> int:
                 raise WorkloadError("--distractor-kind needs --distractor-seed")
             distractor = Distractor(dir_fd, a.distractor_kind, a.distractor_seed)
             cfg.update(distractor_kind=a.distractor_kind, distractor_lines_per_s=0)
+        if a.metrics == "off":
+            cfg["metrics_writer"] = "off"
         svc = Service(cfg, dependency=dep)
-        runner = Runner(svc, dir_fd, a.publish_s, a.poll_s)
+        runner = Runner(svc, dir_fd, a.publish_s, a.poll_s, metrics_writer=a.metrics == "on")
         if distractor is not None:
             threading.Thread(target=distractor.loop, args=(svc, stop, a.poll_s), daemon=True).start()
         threading.Thread(target=accept_loop, args=(listener, svc, stop), daemon=True).start()
