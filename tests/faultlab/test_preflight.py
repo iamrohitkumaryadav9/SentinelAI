@@ -685,6 +685,9 @@ class TestStagesAndPrivilege(Base):
         ws = v("FZ-WORKSET")["values"]                                     # D4 values, approved the same day
         self.assertEqual((ws["file_mib"], ws["pass_s"], ws["slices_per_pass"], ws["anon_mib"]), (1024, 1.0, 10, 16))
         self.assertEqual(v("FZ-Q2")["collector_mode_m6"], "driver-root")
+        self.assertEqual(P.decision_state("FZ-ARRIVALS", dec["FZ-ARRIVALS"]), (True, "approved"))   # A-1
+        self.assertNotIn("FZ-ARRIVALS", P.FULL_ONLY)                       # every run uses it, CTRL included
+        self.assertEqual((v("FZ-ARRIVALS")["process"], v("FZ-ARRIVALS")["rate_per_s"]), ("poisson", 100))
 
     def test_committed_decisions_record_grants_only_what_it_states(self):
         data = (ROOT / "docs/PHASE_1C_FREEZE1_DECISIONS.json").read_bytes()

@@ -1,7 +1,7 @@
 # Phase 1C Freeze-1 Decision Register
 
 **Status: PARTLY APPROVED.** Rohit Kumar approved 31 of the 33 Freeze-1 decisions on 2026-10-11 (commit `4b6041c`),
-and on 2026-10-12 the eight items of the pilot decision package (§5). `FZ-INTENSITY` and `FZ-PI5` remain **pending**
+and on 2026-10-12 the eight items of the pilot decision package and the arrival-process amendment A-1 (§5). `FZ-INTENSITY` and `FZ-PI5` remain **pending**
 for what is still unresolved (§4, §5). Approval is recorded only in
 [`PHASE_1C_FREEZE1_DECISIONS.json`](PHASE_1C_FREEZE1_DECISIONS.json); this register holds the rationale (§3).
 **Owner approval of a design choice is not scientific validation:** every ENG value is still unvalidated until
@@ -172,6 +172,8 @@ holds each one under its own ID. Tags as in §1; **ENG** values are arithmetic o
 | D5 | `FZ-OV` | OV-4: n_r = 2, τ = ±10 %, level 80,000 pps (a quarter of R2-E's loss-free maximum of about 320k pps on its topology); OV-5: r* = 0.9, sizes after D4 | **V** R2-E (other topology); **ENG** |
 | D5 (Q-5) | `FZ-Q5` | 14 CTRL test runs, so G-Q3 stays gate-valid if OV-4 proves infeasible | pilot design §8.1 |
 | Q-2 | `FZ-Q2` | Driver-root collector mode for M6 (keeps M3B eBPF, the validated configuration); unprivileged mode recorded as feasible for M3A + app (PI-1) | **V** PI-1 |
+
+| A-1 | `FZ-ARRIVALS` | Poisson arrivals at 100 /s (exponential gaps from the run seed) replace FZ-WORKLOAD's bounded jitter for every run from the next campaign; CTRL and the application PI-8 runs are repeated under it. Reason: in campaign `20261012T074028Z` the bounded jitter kept arrivals at least 5.03 ms apart, longer than a request's worker occupancy (about 4.4 ms) and every approved lock hold, so pool shrink and lock hold could not produce any waiting (pilot report §3c). Option A of three (B: raise the ceilings; C: dependency delay only) | **V** campaign `20261012T074028Z` |
 
 Still pending after §5:
 

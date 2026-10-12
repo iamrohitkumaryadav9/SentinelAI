@@ -137,6 +137,8 @@ DECISIONS: Dict[str, Tuple[str, str, Optional[Tuple[str, ...]]]] = {
               ("ov4_n_r", "ov4_tau", "ov4_level_pps", "ov5_r_star", "ov5_sizes")),
     "FZ-Q5": ("Test-seed provisioning, CTRL test runs (Q-5)", f"{REGISTER} §5 D5", ("ctrl_test_runs",)),
     "FZ-Q2": ("Collector privilege mode for M6 (Q-2)", f"{REGISTER} §5 Q-2", ("collector_mode_m6",)),
+    "FZ-ARRIVALS": ("Load arrival process (amends FZ-WORKLOAD jitter)", f"{REGISTER} §5 A-1",
+                    ("process", "rate_per_s", "replaces")),
 }
 # Decisions needed only by the fault classes (PI-2/3/5/8, OV-4/5) or by M6: not mandatory for the `ctrl` stage.
 FULL_ONLY = frozenset({"FZ-INTENSITY", "FZ-PI5", "FZ-PI8", "FZ-TTRANS", "FZ-INTENSITY-R2", "FZ-INTENSITY-APP",

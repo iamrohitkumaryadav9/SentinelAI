@@ -365,6 +365,17 @@
    "value": {
     "collector_mode_m6": "driver-root"
    }
+  },
+  "FZ-ARRIVALS": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-12",
+   "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply \"go for A\" after PI-8 campaign 20261012T074028Z showed pool shrink and lock hold could not produce waiting under bounded-jitter arrivals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §5 A-1",
+   "value": {
+    "process": "poisson",
+    "rate_per_s": 100,
+    "replaces": "FZ-WORKLOAD jitter (bounded uniform arrivals, minimum gap 5 ms) for every run from the next campaign on; CTRL and the application PI-8 runs are repeated under it"
+   }
   }
  }
 }
