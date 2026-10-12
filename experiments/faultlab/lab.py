@@ -9,7 +9,10 @@ Specification: docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md §3 FZ-LAB-SPEC (appro
   links       veth sentlab-a0 (A, 10.199.1.1/24) <-> sentlab-ra (R, 10.199.1.254/24);
               veth sentlab-rb (R, 10.199.2.254/24) <-> sentlab-b0 (B, 10.199.2.2/24); single queue
   routes      A: 10.199.2.0/24 via 10.199.1.254; B: 10.199.1.0/24 via 10.199.2.254; no default route anywhere;
-              net.ipv4.ip_forward=1 inside R only (written by FWD_HELPER after checking the namespace inode)
+              net.ipv4.ip_forward written explicitly in every lab namespace: 0 in A and B, 1 in R (FWD_HELPER,
+              after checking the namespace inode and its interfaces; read back). A new namespace inherits the host's
+              IPv4 conf/all and conf/default (devconf_inherit_init_net=0), so with host ip_forward=1 A and B would
+              otherwise forward. The host's own value is never written.
   cgroup      /sys/fs/cgroup/sentinel-fl {target 18, contender 18, support 19,20,22,23}; cpuset cpu memory pids;
               parent memory.max 2560 MiB; memory.swap.max 0 everywhere; cpu.max untouched (max)
   app root    /run/sentinelai-lab/app/<run_id>/ (tmpfs, volatile; owned by uid 1000; removed at cleanup)
@@ -43,6 +46,7 @@ IP_A, IP_RA, IP_RB, IP_B = "10.199.1.1", "10.199.1.254", "10.199.2.254", "10.199
 NET_A, NET_B, PREFIX = "10.199.1.0/24", "10.199.2.0/24", 24
 PORT_WORKLOAD, PORT_DEPENDENCY = 8080, 9000
 IFACES = {"a": (NS_A, (IF_A,)), "r": (NS_R, (IF_RA, IF_RB)), "b": (NS_B, (IF_B,))}
+FORWARD_VALUE = {NS_A: "0", NS_R: "1", NS_B: "0"}           # net.ipv4.ip_forward per lab namespace (FZ-LAB-SPEC)
 
 CG_ROOT = C.CG_ROOT
 LAB = "sentinel-fl"
@@ -73,17 +77,21 @@ TMP_FILE = re.compile(r"\.(metrics|config|dependency_config)\.json\.tmp\.[0-9]+"
 _LAUNCH = ("import importlib.util, sys; s = importlib.util.spec_from_file_location('faultlab_workload', sys.argv[1]); "
            "w = importlib.util.module_from_spec(s); s.loader.exec_module(w); w.APP_ROOT = sys.argv[2]; "
            "sys.exit(w.main(sys.argv[3:]))")
-# Runs inside sentinel-lab-r via `ip netns exec`; refuses unless it is in the namespace whose inode the driver read,
-# that namespace holds exactly lo + the two R veths, and the value read back is the one written.
+# Runs inside one lab namespace via `ip netns exec`: argv = inode value iface...; refuses unless the value is 0 or 1
+# (2), it is in the namespace whose inode the driver read (3) and that namespace holds exactly lo + the expected lab
+# interfaces (4); writes the namespace's own /proc/sys/net/ipv4/ip_forward and exits 5 unless the read-back equals it.
 FWD_HELPER = (
     "import os,sys\n"
-    "ino=int(sys.argv[1])\n"
+    "ino,val,ifs=int(sys.argv[1]),sys.argv[2],sorted(['lo']+sys.argv[3:])\n"
+    "if val not in ('0','1'):sys.exit(2)\n"
     "if os.stat('/proc/self/ns/net').st_ino!=ino:sys.exit(3)\n"
-    "if sorted(os.listdir('/sys/class/net'))!=['lo','sentlab-ra','sentlab-rb']:sys.exit(4)\n"
+    "if sorted(os.listdir('/sys/class/net'))!=ifs:sys.exit(4)\n"
     "p='/proc/sys/net/ipv4/ip_forward'\n"
     "fd=os.open(p,os.O_WRONLY|os.O_NOFOLLOW)\n"
-    "os.write(fd,b'1');os.close(fd)\n"
-    "sys.exit(0 if open(p).read().strip()=='1' else 5)\n")
+    "os.write(fd,val.encode());os.close(fd)\n"
+    "sys.exit(0 if open(p).read().strip()==val else 5)\n")
+FWD_EXIT = {2: "invalid value", 3: "namespace inode mismatch", 4: "unexpected interfaces in the namespace",
+            5: "read-back differs from the written value"}
 
 
 class LabRefused(ValueError):
@@ -137,8 +145,12 @@ def netns_del_plan() -> List[tuple]:
     return [("cmd", ("ip", "netns", "del", n)) for n in reversed(LAB_NETNS)]
 
 
-def forward_argv(ino: int) -> List[str]:
-    return ["ip", "netns", "exec", NS_R, PYTHON, "-I", "-c", FWD_HELPER, str(int(ino))]
+def forward_argv(ns: str, ino: int) -> List[str]:
+    """The exact helper invocation for one lab namespace; the value comes from FORWARD_VALUE, never from a caller."""
+    if ns not in FORWARD_VALUE or isinstance(ino, bool) or not isinstance(ino, int) or ino <= 0:
+        raise LabRefused(f"no forwarding operation for {ns!r} / {ino!r}")
+    ifs = next(i for n, i in IFACES.values() if n == ns)
+    return ["ip", "netns", "exec", ns, PYTHON, "-I", "-c", FWD_HELPER, str(ino), FORWARD_VALUE[ns], *ifs]
 
 
 def run_dir(run_id: str) -> str:
@@ -309,7 +321,7 @@ EXPECTED_ADDRS = {"a": {IF_A: [(IP_A, PREFIX)]}, "r": {IF_RA: [(IP_RA, PREFIX)],
                   "b": {IF_B: [(IP_B, PREFIX)]}}
 EXPECTED_ROUTES = {"a": sorted([(NET_A, IF_A), (NET_B, IF_A)]), "r": sorted([(NET_A, IF_RA), (NET_B, IF_RB)]),
                    "b": sorted([(NET_B, IF_B), (NET_A, IF_B)])}
-EXPECTED_FORWARD = {"a": "0", "r": "1", "b": "0"}
+EXPECTED_FORWARD = {side: FORWARD_VALUE[ns] for side, (ns, _) in IFACES.items()}
 
 
 def lab_checks(raw: dict, after_forward: bool = True) -> Dict[str, bool]:
@@ -431,8 +443,9 @@ class Plan:
                     any(t in op[1] for t in FORBIDDEN):
                 raise LabRefused(f"command not allowed: {op!r}")
         elif kind == "forward":
-            if len(op) != 2 or isinstance(op[1], bool) or not isinstance(op[1], int) or op[1] <= 0:
+            if len(op) != 3:
                 raise LabRefused(f"malformed forward {op!r}")
+            forward_argv(op[1], op[2])                         # refuses a non-lab namespace or a bad inode
         elif kind == "chown_lab":
             if len(op) != 2 or self.run_id is None or op[1] != run_dir(self.run_id):
                 raise LabRefused(f"chown outside the run directory: {op!r}")
@@ -495,9 +508,10 @@ class Host:
             if p.returncode != 0:
                 raise OSError(f"{' '.join(op[1][:5])} failed (rc {p.returncode}): {p.stderr.strip()[:200]}")
         elif kind == "forward":
-            p = subprocess.run(forward_argv(op[1]), capture_output=True, text=True, timeout=15, shell=False)
+            p = subprocess.run(forward_argv(op[1], op[2]), capture_output=True, text=True, timeout=15, shell=False)
             if p.returncode != 0:
-                raise OSError(f"forwarding helper refused or failed (rc {p.returncode})")
+                raise OSError(f"forwarding helper in {op[1]} failed (rc {p.returncode}: "
+                              f"{FWD_EXIT.get(p.returncode, 'error')})")
         elif kind == "chown_lab":
             fd = os.open(op[1], os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
             try:

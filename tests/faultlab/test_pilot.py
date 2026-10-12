@@ -47,11 +47,14 @@ def _link(name, kind="veth", up=True, txq=1, rxq=1, stats=None):
 
 class FakeSys(L.Sys):
     """In-memory host: cgroup files, namespaces, /run/sentinelai-lab, processes. Lab inspection answers follow the
-    model (a correct lab once every lab_plan command and the forwarding op have been applied)."""
+    model. Like the kernel observed in PI0-1, every new namespace inherits the host's ip_forward=1 until the runner
+    writes its own value."""
 
     def __init__(self):
         self.dirs, self.files, self.netns, self.applied = set(), {}, set(), set()
-        self.forwarded = False
+        self.fwd = {}                      # namespace -> ip_forward ("1" inherited from the host on creation)
+        self.stuck = set()                 # namespaces whose ip_forward write silently does not take effect
+        self.inherit = "1"                 # the host's ip_forward, copied into each new namespace
         self.run = {}                      # path under /run/sentinelai-lab -> ("dir"|"file", uid, bytes)
         self.procs = {}                    # pid -> cgroup path
         self.tweak = {}                    # probe key -> forced answer
@@ -121,7 +124,7 @@ class FakeSys(L.Sys):
         return 1000 if pid in self.procs else None
 
     def lab_built(self):
-        return {op[1] for op in L.lab_plan()} <= self.applied and self.forwarded
+        return {op[1] for op in L.lab_plan()} <= self.applied
 
     def probe(self, argv):
         argv = tuple(argv)
@@ -138,7 +141,7 @@ class FakeSys(L.Sys):
         if key.startswith("route_get"):
             return (2, "", "RTNETLINK answers: Network is unreachable")
         if key.startswith("forward"):
-            return (0, "1\n" if key.endswith("_r") else "0\n", "")
+            return (0, self.fwd[L.IFACES[key[-1]][0]] + "\n", "")
         if key.startswith("ping"):
             return (0, "3 packets transmitted, 3 received, 0% packet loss, time 400ms\n", "")
         ns, ifs = L.IFACES[side]
@@ -222,12 +225,17 @@ class SimHost(L.Host):
             argv = op[1]
             if argv[:3] == ("ip", "netns", "add"):
                 s.netns.add(argv[3])
+                s.fwd[argv[3]] = s.inherit                    # inherited from the host (conf/all, conf/default)
             elif argv[:3] == ("ip", "netns", "del"):
                 s.netns.discard(argv[3])
                 s.applied = {a for a in s.applied if argv[3] not in a}
             s.applied.add(argv)
         elif kind == "forward":
-            s.forwarded = True
+            argv = L.forward_argv(op[1], op[2])               # the real argv builder (refuses like the real host)
+            if s.netns_inode(op[1]) != op[2]:
+                raise OSError("forwarding helper failed (rc 3: namespace inode mismatch)")
+            if op[1] not in s.stuck:
+                s.fwd[op[1]] = argv[9]
         elif kind == "chown_lab":
             e = s.run[op[1]]
             s.run[op[1]] = (e[0], L.LAB_UID, e[2])
@@ -314,12 +322,58 @@ class TestPlans(unittest.TestCase):
         self.assertEqual([op[1] for op in L.netns_del_plan()], [("ip", "netns", "del", n)
                                                                 for n in reversed(L.LAB_NETNS)])
 
-    def test_forwarding_helper_only_in_r_and_checks_its_namespace(self):
-        argv = L.forward_argv(77)
-        self.assertEqual(argv[:4], ["ip", "netns", "exec", L.NS_R])
-        self.assertEqual(argv[-1], "77")
-        self.assertIn("st_ino!=ino", L.FWD_HELPER)
-        self.assertIn("['lo','sentlab-ra','sentlab-rb']", L.FWD_HELPER)
+    def test_forwarding_is_explicit_in_every_lab_namespace(self):
+        self.assertEqual(L.FORWARD_VALUE, {L.NS_A: "0", L.NS_R: "1", L.NS_B: "0"})
+        self.assertEqual(L.EXPECTED_FORWARD, {"a": "0", "r": "1", "b": "0"})
+        for ns, ifs in ((L.NS_A, [L.IF_A]), (L.NS_R, [L.IF_RA, L.IF_RB]), (L.NS_B, [L.IF_B])):
+            with self.subTest(ns):
+                argv = L.forward_argv(ns, 77)
+                self.assertEqual(argv[:4], ["ip", "netns", "exec", ns])
+                self.assertEqual(argv[4:8], [L.PYTHON, "-I", "-c", L.FWD_HELPER])
+                self.assertEqual(argv[8:], ["77", L.FORWARD_VALUE[ns]] + ifs)
+        for bad in (("sentinel-lab-x", 7), ("", 7), (L.NS_A, 0), (L.NS_A, True), (L.NS_A, "7"), (L.NS_A, -1)):
+            with self.subTest(bad=bad), self.assertRaises(L.LabRefused):
+                L.forward_argv(*bad)
+        self.assertNotIn("default/forwarding", L.FWD_HELPER)            # only the namespace's ip_forward
+
+    def run_helper(self, argv_tail, ino=77, ifaces=("lo", "sentlab-a0"), readback=None):
+        """Execute FWD_HELPER in-process with every OS access faked (nothing real is written)."""
+        written = []
+        st = SimpleNamespace(st_ino=ino)
+
+        class Exit(Exception):
+            pass
+
+        def fake_exit(code=0):
+            raise Exit(code)
+
+        def fake_open(path, *a, **k):
+            return SimpleNamespace(read=lambda: readback if readback is not None else written[-1].decode())
+        fake_os = SimpleNamespace(stat=lambda p: st, listdir=lambda p: list(ifaces), O_WRONLY=1, O_NOFOLLOW=2,
+                                  open=lambda p, f: (written.append(("open", p, f)) or 9),
+                                  write=lambda fd, b: written.append(b), close=lambda fd: None)
+        fake_sys = SimpleNamespace(argv=["-c"] + list(argv_tail), exit=fake_exit)
+        g = {"__builtins__": dict(__builtins__ if isinstance(__builtins__, dict) else vars(__builtins__),
+                                  open=fake_open,
+                                  __import__=lambda n, *a, **k: {"os": fake_os, "sys": fake_sys}[n])}
+        try:
+            exec(compile(L.FWD_HELPER, "fwd", "exec"), g)
+        except Exit as e:
+            return e.args[0], written
+        return None, written
+
+    def test_forwarding_helper_logic(self):
+        rc, w = self.run_helper(["77", "0", "sentlab-a0"])
+        self.assertEqual(rc, 0)
+        self.assertEqual(w[0], ("open", "/proc/sys/net/ipv4/ip_forward", 3))
+        self.assertEqual(w[1], b"0")
+        self.assertEqual(self.run_helper(["77", "2", "sentlab-a0"])[0], 2)                 # invalid value
+        self.assertEqual(self.run_helper(["78", "0", "sentlab-a0"])[0], 3)                 # wrong namespace
+        rc, w = self.run_helper(["77", "0", "sentlab-a0"], ifaces=("lo", "sentlab-a0", "eth0"))
+        self.assertEqual((rc, w), (4, []))                                                 # unexpected interfaces
+        self.assertEqual(self.run_helper(["77", "0", "sentlab-a0"], readback="1\n")[0], 5)  # read-back differs
+        for rc, _ in (self.run_helper(["78", "0", "sentlab-a0"]), self.run_helper(["77", "x", "sentlab-a0"])):
+            self.assertNotEqual(rc, 0)
 
     def test_processes_are_placed_in_leaf_namespace_and_lab_uid(self):
         run_id = "CTRL-s900001"
@@ -363,7 +417,8 @@ class TestGuard(unittest.TestCase):
         for op in L.cgroup_plan() + L.lab_plan() + L.netns_del_plan() + L.app_plan("CTRL-s900001"):
             self.plan.check(op)
         rd = L.run_dir("CTRL-s900001")
-        for op in (("forward", 12), ("write", f"{L.LAB_DIR}/cgroup.kill", "1"),
+        for op in (("forward", L.NS_A, 12), ("forward", L.NS_R, 12), ("forward", L.NS_B, 12),
+                   ("write", f"{L.LAB_DIR}/cgroup.kill", "1"),
                    ("write_new", f"{rd}/control.json", b"{}"), ("unlink_run", f"{rd}/metrics.json"),
                    ("unlink_run", f"{rd}/.metrics.json.tmp.77"), ("kill", 4242),
                    ("spawn", "workload", L.workload_argv("CTRL-s900001", WORKLOAD))):
@@ -378,7 +433,9 @@ class TestGuard(unittest.TestCase):
                ("cmd", ("ip", "link", "del", "enp0s31f6")), ("cmd", ("tc", "qdisc", "add", "dev", "sentlab-ra")),
                ("cmd", ("ip", "netns", "del", "other")), ("cmd", ("ip", "route", "add", "default")),
                ("cmd", ("sysctl", "-w", "net.ipv4.ip_forward=1")), ("cmd", ["ip", "netns", "add", L.NS_A]),
-               ("forward", True), ("forward", 0), ("chown_lab", "/run/sentinelai-lab"),
+               ("forward", True), ("forward", 0), ("forward", 12), ("forward", L.NS_A, True),
+               ("forward", L.NS_A, 0), ("forward", "sentinel-lab-x", 12), ("forward", "init", 1),
+               ("forward", L.NS_A, 12, "1"), ("chown_lab", "/run/sentinelai-lab"),
                ("chown_lab", "/etc"), ("write_new", f"{rd}/metrics.json", b"{}"), ("write_new", "/etc/x", b""),
                ("write_new", f"{rd}/control.json", "str"), ("unlink_run", f"{rd}/../x"),
                ("unlink_run", "/etc/passwd"), ("unlink_run", f"{rd}/evil"), ("unlink_run", f"{rd}/.evil.tmp.1"),
@@ -442,8 +499,8 @@ class TestInspection(unittest.TestCase):
     def built(self):
         s = FakeSys()
         s.applied = {op[1] for op in L.lab_plan()}
-        s.forwarded = True
         s.netns = set(L.LAB_NETNS)
+        s.fwd = dict(L.FORWARD_VALUE)
         return s
 
     def test_correct_lab_passes_every_check(self):
@@ -510,7 +567,8 @@ class TestCleanup(Sandboxed):
         s = FakeSys()
         run_id = "PI0-s1"
         h = SimHost(L.Plan(run_id), str(self.tmp / "ops.jsonl"), s, fail=fail)
-        ops = L.cgroup_plan() + L.lab_plan() + [("forward", 1)] + L.app_plan(run_id)
+        ops = L.cgroup_plan() + L.lab_plan() + [("forward", ns, 1000 + i) for i, ns in enumerate(L.LAB_NETNS)] + \
+            L.app_plan(run_id)
         for i, op in enumerate(ops[:upto]):
             h.apply(op)
         return s, h, run_id
@@ -524,7 +582,7 @@ class TestCleanup(Sandboxed):
         res = L.cleanup(h, s, L.read_oplog(h.oplog), run_id, after_procs=lambda: order.append("after"))
         self.assertTrue(res["ok"], res)
         self.assertTrue(empty(s))
-        kinds = [op[0] if op[0] != "cmd" else op[1][1:3] for op in h.ops[len(L.cgroup_plan()) + 23:]]
+        kinds = [op[0] if op[0] != "cmd" else op[1][1:3] for op in h.ops[len(L.cgroup_plan()) + 25:]]
         self.assertEqual(kinds[0], "write")                          # cgroup.kill first
         self.assertEqual(order, ["after"])
         rm = [op[1] for op in h.ops if op[0] == "rmdir"]
@@ -534,7 +592,7 @@ class TestCleanup(Sandboxed):
                          list(reversed(L.LAB_NETNS)))
 
     def test_partial_setup_is_rolled_back_exactly(self):
-        total = len(L.cgroup_plan() + L.lab_plan()) + 1 + len(L.app_plan("PI0-s1"))
+        total = len(L.cgroup_plan() + L.lab_plan()) + 3 + len(L.app_plan("PI0-s1"))
         for upto in range(0, total + 1):
             with self.subTest(upto=upto):
                 s, h, run_id = self.setup(upto=upto)
@@ -611,15 +669,76 @@ class TestLifecycle(Sandboxed):
         self.assertEqual(first, ["mkdir", "write", "write"])
 
     def test_failure_at_any_setup_step_aborts_and_rolls_back(self):
-        steps = L.cgroup_plan() + L.lab_plan() + [("forward",)] + L.app_plan("PI0-s1")
+        steps = L.cgroup_plan() + L.lab_plan() + [("forward", ns) for ns in L.LAB_NETNS] + L.app_plan("PI0-s1")
         for i, target in enumerate(steps):
             with self.subTest(step=i, op=target[:2]):
-                rc, R, s, h = self.run_cycle(fail=lambda op, t=target: op[:2] == t[:2] if t[0] != "forward"
-                                             else op[0] == "forward")
+                rc, R, s, h = self.run_cycle(fail=lambda op, t=target: op[:2] == t[:2])
                 self.assertEqual(rc, 1)
                 self.assertTrue(R["aborts"])
                 self.assertTrue(empty(s), (i, s.dirs, s.netns, s.run))
                 self.assertTrue(R["cleanup"]["verify"]["ok"])
+
+    def test_inherited_forwarding_is_set_explicitly_and_verified(self):
+        """Regression for PI0-1 (20261011T175343Z): A and B inherit ip_forward=1 from the host."""
+        rc, R, s, h = self.run_cycle()
+        self.assertEqual(rc, 0, R["aborts"])
+        fw = [op for op in h.ops if op[0] == "forward"]
+        self.assertEqual([op[1] for op in fw], list(L.LAB_NETNS))
+        self.assertEqual([op[2] for op in fw], [1000, 1001, 1002])          # each namespace's own inode
+        last = R["lab_settle"][-1]["raw"]
+        self.assertEqual({k: last[k][1].strip() for k in ("forward_a", "forward_r", "forward_b")},
+                         {"forward_a": "0", "forward_r": "1", "forward_b": "0"})
+        last_setup = max(i for i, op in enumerate(h.ops) if op[0] == "cmd" and op[1][3:5] == ("route", "add"))
+        self.assertTrue(all(h.ops.index(op) > last_setup for op in fw))       # after the topology exists
+
+    def test_forwarding_write_failures_abort_and_roll_back(self):
+        for ns in L.LAB_NETNS:
+            with self.subTest(ns):
+                rc, R, s, h = self.run_cycle(fail=lambda op, ns=ns: op[0] == "forward" and op[1] == ns)
+                self.assertEqual(rc, 1)
+                self.assertIn("simulated failure: forward", R["aborts"][0])
+                self.assertTrue(empty(s))
+                self.assertNotIn("lab_settle", R)                             # never reached the checks
+
+    def test_forwarding_readback_failure_aborts(self):
+        for ns, side, inherit in ((L.NS_A, "a", "1"), (L.NS_B, "b", "1"), (L.NS_R, "r", "0")):
+            with self.subTest(ns):
+                s = FakeSys()
+                s.stuck, s.inherit = {ns}, inherit                            # the write does not take effect
+                rc, R, s, h = self.run_cycle(s)
+                self.assertEqual(rc, 1)
+                self.assertIn(f"{side}_ip_forward", R["aborts"][0])
+                self.assertTrue(empty(s))
+
+    def test_host_without_forwarding_still_yields_the_specified_values(self):
+        s = FakeSys()
+        s.inherit = "0"
+        rc, R, s, h = self.run_cycle(s)
+        self.assertEqual(rc, 0, R["aborts"])
+        self.assertTrue(empty(s))
+
+    def test_unexpected_namespace_state_aborts(self):
+        class Gone(FakeSys):                                                  # B vanishes before its write
+            def netns_inode(self, ns):
+                return None if ns == L.NS_B else super().netns_inode(ns)
+        rc, R, s, h = self.run_cycle(Gone())
+        self.assertEqual(rc, 1)
+        self.assertIn(f"{L.NS_B} missing", R["aborts"][0])
+        self.assertTrue(empty(s))
+
+        class Swapped(FakeSys):                                               # inode no longer the one read
+            def __init__(self):
+                super().__init__()
+                self.calls = 0
+
+            def netns_inode(self, ns):
+                self.calls += 1
+                ino = super().netns_inode(ns)
+                return ino + 50 if ns == L.NS_A and ino is not None and self.calls == 1 else ino
+        rc, R, s, h = self.run_cycle(Swapped())
+        self.assertEqual(rc, 1)
+        self.assertIn("inode mismatch", R["aborts"][0])
+        self.assertTrue(empty(s))
 
     def test_lab_check_ping_and_echo_failures_abort(self):
         for tweak in ({"r_routes": (0, "[]", "")}, {"ping_a_to_b": (1, "100% packet loss", "")},
@@ -1028,7 +1147,8 @@ class TestStatic(unittest.TestCase):
             self.assertNotIn("netem", src)
 
     def test_no_protected_name_in_any_plan_or_argv(self):
-        everything = repr(L.cgroup_plan() + L.lab_plan() + L.netns_del_plan() + [L.forward_argv(1)] +
+        everything = repr(L.cgroup_plan() + L.lab_plan() + L.netns_del_plan() +
+                          [L.forward_argv(ns, 1) for ns in L.LAB_NETNS] +
                           list(L.echo_argvs().values()) + [L.workload_argv("CTRL-s900001", WORKLOAD),
                                                            L.dependency_argv("CTRL-s900001", WORKLOAD),
                                                            L.loadgen_argv(WORKLOAD, 1, 900001, "/o")])

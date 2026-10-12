@@ -247,10 +247,11 @@ def setup_lab(host, sysr, R, run_id=None):
         raise L.LabAbort(f"cgroup verification failed: {L.failures(R['verify_cgroups'])}")
     for op in L.lab_plan():
         host.apply(op)
-    ino = sysr.netns_inode(L.NS_R)
-    if ino is None:
-        raise L.LabAbort(f"{L.NS_R} missing after creation")
-    host.apply(("forward", ino))
+    for ns in L.LAB_NETNS:                                  # A 0, R 1, B 0: never inherited from the host
+        ino = sysr.netns_inode(ns)
+        if ino is None:
+            raise L.LabAbort(f"{ns} missing after creation")
+        host.apply(("forward", ns, ino))
     R["lab_settle"] = []
     if not settle(sysr, R["lab_settle"]):
         raise L.LabAbort(f"lab checks failed: {R['lab_settle'][-1]['failures']}")
