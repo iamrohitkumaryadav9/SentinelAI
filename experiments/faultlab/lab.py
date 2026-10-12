@@ -227,10 +227,13 @@ def dependency_argv(run_id: str, w: dict) -> List[str]:
                                     "--listen", f"{IP_B}:{PORT_DEPENDENCY}", "--poll-s", str(w["poll_s"])])
 
 
-def loadgen_argv(w: dict, duration_s: float, seed: int, out: str) -> List[str]:
-    return placed("support", NS_B, [PYTHON, "-I", LOADGEN, "--target", f"{IP_A}:{PORT_WORKLOAD}",
-                                    "--rate", str(w["rate_per_s"]), "--duration-s", str(duration_s),
-                                    "--jitter", str(w["jitter"]), "--seed", str(seed),
+def loadgen_argv(w: dict, duration_s: float, seed: int, out: str, arrivals: Optional[dict] = None) -> List[str]:
+    """arrivals (FZ-ARRIVALS) selects the Poisson process at its approved rate; None keeps FZ-WORKLOAD's bounded
+    jitter (the argv of every campaign before the amendment)."""
+    process = (["--arrivals", "poisson", "--rate", str(arrivals["rate_per_s"])] if arrivals is not None else
+               ["--rate", str(w["rate_per_s"]), "--jitter", str(w["jitter"])])
+    return placed("support", NS_B, [PYTHON, "-I", LOADGEN, "--target", f"{IP_A}:{PORT_WORKLOAD}"] + process +
+                                   ["--duration-s", str(duration_s), "--seed", str(seed),
                                     "--timeout-s", str(w["timeout_s"]), "--max-inflight", str(w["max_inflight"]),
                                     "--out", out])
 

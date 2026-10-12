@@ -6,10 +6,12 @@ import importlib.util
 import json
 import os
 import socket
+import statistics
 import tempfile
 import threading
 import time
 import unittest
+from unittest import mock
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -64,6 +66,50 @@ class TestSchedule(unittest.TestCase):
         for args in ((0, 1, 0.1), (10, 0, 0.1), (10, 1, 1.0), (10, 1, -0.1)):
             with self.subTest(args=args), self.assertRaises(ValueError):
                 L.schedule(*args, seed=1)
+
+
+class TestPoisson(unittest.TestCase):
+    """FZ-ARRIVALS (2026-10-12): Poisson arrivals, reproducible from the seed."""
+
+    def test_deterministic_ordered_and_inside_the_run(self):
+        a = L.poisson_schedule(100, 170.0, 900010)
+        self.assertEqual(a, L.poisson_schedule(100, 170.0, 900010))
+        self.assertNotEqual(a, L.poisson_schedule(100, 170.0, 900011))
+        self.assertEqual(a, sorted(a))
+        self.assertTrue(0 < a[0] and a[-1] < 170 * 10 ** 9)
+
+    def test_rate_and_overlapping_arrivals(self):
+        a = L.poisson_schedule(100, 1000.0, 1)
+        gaps = [(y - x) / 1e9 for x, y in zip(a, a[1:])]
+        self.assertAlmostEqual(len(a) / 1000.0, 100, delta=3)             # ~100,000 arrivals, sd ~316
+        self.assertAlmostEqual(statistics.mean(gaps), 0.01, delta=0.0003)
+        self.assertGreater(sum(g < 0.005 for g in gaps) / len(gaps), 0.35)  # exp: P(gap < 5 ms) = 1 - e^-0.5 = 0.39
+        self.assertLess(min(gaps), 0.0005)                                  # bounded jitter never went below 5 ms
+
+    def test_entry_point_and_refusals(self):
+        self.assertEqual(L.arrivals("poisson", 100, 2.0, None, 3), L.poisson_schedule(100, 2.0, 3))
+        self.assertEqual(L.arrivals("bounded", 100, 2.0, 0.5, 3), L.schedule(100, 2.0, 0.5, 3))
+        for args in (("poisson", 100, 2.0, 0.5, 3), ("bounded", 100, 2.0, None, 3), ("burst", 100, 2.0, None, 3),
+                     ("poisson", 0, 2.0, None, 3), ("poisson", 100, 0, None, 3)):
+            with self.subTest(args), self.assertRaises(ValueError):
+                L.arrivals(*args)
+
+    def test_cli_selects_the_process(self):
+        seen = {}
+
+        def run(connect, offsets, path, timeout_s, max_inflight):
+            seen["offsets"] = offsets
+            return []
+        with mock.patch.object(L, "run", run), mock.patch.object(L, "write_records"):
+            base = ["--target", "127.0.0.1:1", "--rate", "100", "--duration-s", "2", "--seed", "3", "--timeout-s", "1",
+                    "--max-inflight", "4", "--out", "/dev/null"]
+            self.assertEqual(L.main(base + ["--arrivals", "poisson"]), 0)
+            self.assertEqual(seen["offsets"], L.poisson_schedule(100, 2.0, 3))
+            self.assertEqual(L.main(base + ["--jitter", "0.5"]), 0)                  # default: bounded
+            self.assertEqual(seen["offsets"], L.schedule(100, 2.0, 0.5, 3))
+            with mock.patch("sys.stderr"):
+                self.assertEqual(L.main(base + ["--arrivals", "poisson", "--jitter", "0.5"]), 2)
+                self.assertEqual(L.main(base), 2)                                     # bounded needs a jitter
 
 
 class TestRequest(unittest.TestCase):

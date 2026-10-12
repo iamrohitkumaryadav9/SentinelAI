@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """SentinelAI Phase 1C FaultLab load generator (M4): fixed-rate open-loop HTTP client. Standard library only.
 
-Arrival k is scheduled at start + (k + u_k) / rate, with u_k drawn uniformly from [-jitter/2, +jitter/2] by a
-random.Random(seed): the jitter is bounded (|offset| <= jitter / (2 * rate)) and, for jitter < 1, arrivals keep their
-order. Open loop: a request is sent at its scheduled time whatever happened to earlier ones; at most max_inflight
+Two arrival processes, both reproducible from random.Random(seed):
+- bounded (--arrivals bounded --jitter j): arrival k at start + (k + u_k) / rate, u_k uniform in [-j/2, +j/2]; the
+  jitter is bounded, so consecutive arrivals are never closer than (1 - j) / rate (FZ-WORKLOAD, campaigns up to
+  20261012T074028Z);
+- poisson (--arrivals poisson): independent exponential gaps with mean 1 / rate (FZ-ARRIVALS, approved 2026-10-12),
+  so requests can overlap and queue the way real traffic does. Open loop: a request is sent at its scheduled time whatever happened to earlier ones; at most max_inflight
 requests are outstanding, and a scheduled arrival that finds the client saturated is recorded as "client_saturated"
 (not sent), so every scheduled arrival is accounted for. One request per connection (Connection: close).
 
@@ -22,6 +25,31 @@ import threading
 import time
 
 RESPONSE_MAX = 65536
+
+
+def poisson_schedule(rate: float, duration_s: float, seed: int):
+    """Offsets (ns from start) of a Poisson arrival process of the given rate over [0, duration_s), in order."""
+    if rate <= 0 or duration_s <= 0:
+        raise ValueError("rate and duration must be > 0")
+    rng, out, t = random.Random(seed), [], 0.0
+    while True:
+        t += rng.expovariate(rate)
+        if t >= duration_s:
+            return out
+        out.append(int(t * 1e9))
+
+
+def arrivals(process: str, rate: float, duration_s: float, jitter, seed: int):
+    """The schedule of either arrival process (the single entry point the drivers use)."""
+    if process == "poisson":
+        if jitter is not None:
+            raise ValueError("poisson arrivals take no jitter")
+        return poisson_schedule(rate, duration_s, seed)
+    if process == "bounded":
+        if jitter is None:
+            raise ValueError("bounded arrivals need a jitter")
+        return schedule(rate, duration_s, jitter, seed)
+    raise ValueError(f"unknown arrival process {process!r}")
 
 
 def schedule(rate: float, duration_s: float, jitter: float, seed: int):
@@ -118,7 +146,8 @@ def main(argv=None) -> int:
     ap.add_argument("--path", default="/work")
     ap.add_argument("--rate", type=float, required=True, help="requests per second")
     ap.add_argument("--duration-s", type=float, required=True)
-    ap.add_argument("--jitter", type=float, required=True, help="bounded uniform jitter, fraction of 1/rate, [0, 1)")
+    ap.add_argument("--arrivals", choices=("bounded", "poisson"), default="bounded")
+    ap.add_argument("--jitter", type=float, default=None, help="bounded arrivals: uniform jitter, fraction of 1/rate")
     ap.add_argument("--seed", type=int, required=True)
     ap.add_argument("--timeout-s", type=float, required=True)
     ap.add_argument("--max-inflight", type=int, required=True)
@@ -128,7 +157,7 @@ def main(argv=None) -> int:
         print("loadgen: max-inflight must be >= 1 and timeout-s > 0", file=sys.stderr)
         return 2
     try:
-        offsets = schedule(a.rate, a.duration_s, a.jitter, a.seed)
+        offsets = arrivals(a.arrivals, a.rate, a.duration_s, a.jitter, a.seed)
     except ValueError as exc:
         print(f"loadgen: {exc}", file=sys.stderr)
         return 2

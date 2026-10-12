@@ -518,6 +518,7 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
     check_seed(seed)
     w = approved_value("FZ-WORKLOAD", decisions)
     ws = approved_value("FZ-WORKSET", decisions)["values"]           # D4: always present (approved 2026-10-12)
+    arr = approved_value("FZ-ARRIVALS", decisions)                   # Poisson arrivals (approved 2026-10-12)
     if (variant == "pi8") != (fault is not None):
         refuse("a pi8 run needs exactly one fault; other variants take none")
     spec = fault_spec(fault[0], fault[1], w, decisions) if fault is not None else None
@@ -532,13 +533,13 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
         os.chown(out / COLLECTOR_DIR, C.LAB_UID, C.LAB_GID)           # the unprivileged collector writes here
     client_tmp = out / "lg" / "client.jsonl"
     argv = {"dependency": L.dependency_argv(run_id, w), "workload": L.workload_argv(run_id, w, writer, ws),
-            "loadgen": L.loadgen_argv(w, load_s, seed, str(client_tmp))}
+            "loadgen": L.loadgen_argv(w, load_s, seed, str(client_tmp), arr)}
     sysr = sysr or L.Sys()
     host = (host_cls or L.Host)(L.Plan(run_id, spawns=argv.items()), str(out / "ops.jsonl"), sysr)
     ev = out / EVIDENCE
     R = {"format": FORMAT, "stage": "CTRL" if variant == "ctrl" else variant.upper(), "variant": variant,
          "collector_mode": v["collector"], "ebpf": v["ebpf"], "metrics_writer": writer, "working_set": ws,
-         "fault": spec,
+         "fault": spec, "arrivals": arr,
          "run_id": run_id, "seed": seed, "commit": commit, "workload": w,
          "timeline": {"warmup_s": WARMUP_S, "B_s": B_S, "W_s": W_S, "cooldown_s": COOLDOWN_S, "load_s": load_s,
                       "period_s": PERIOD_S},
@@ -664,7 +665,8 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
         write_new(ev / "counters.json", dump({k: {"r": state[k]["r"], "tcp": state[k]["tcp"],
                                                   "mono_ns": state[k]["mono_ns"]} for k in ("start", "end")}))
         write_new(ev / "client.jsonl", read_regular(client_tmp))
-        R["load"] = {"arrivals": scheduled_arrivals(w, load_s, seed), "duration_s": load_s, "seed": seed}
+        R["load"] = {"arrivals": scheduled_arrivals(w, load_s, seed, arr), "duration_s": load_s, "seed": seed,
+                     "process": arr["process"]}
         if ticks is not None:
             write_new(ev / "ticks.jsonl", raw_ticks if unpriv else encode_ticks(ticks))
             if unpriv:
@@ -707,11 +709,14 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
     return 0 if rep["ok"] else 1
 
 
-def scheduled_arrivals(w, load_s, seed) -> int:
+def scheduled_arrivals(w, load_s, seed, arr=None) -> int:
+    """Arrivals the load generator schedules, from its own arrivals() (independent of the records it writes)."""
     import importlib.util
     spec = importlib.util.spec_from_file_location("faultlab_loadgen_for_pilot", L.LOADGEN)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
+    if arr is not None:
+        return len(mod.arrivals("poisson", float(arr["rate_per_s"]), float(load_s), None, seed))
     return len(mod.schedule(float(w["rate_per_s"]), float(load_s), float(w["jitter"]), seed))
 
 

@@ -39,6 +39,8 @@ REAL_SNAPSHOT, REAL_COMPARE = L.host_snapshot, L.compare_host   # Sandboxed repl
 _RECORD = json.loads((ROOT / "docs/PHASE_1C_FREEZE1_DECISIONS.json").read_text())["decisions"]
 WORKLOAD = _RECORD["FZ-WORKLOAD"]["value"]
 WORKSET = _RECORD["FZ-WORKSET"]["value"]["values"]
+ARRIVALS = _RECORD["FZ-ARRIVALS"]["value"]
+LOAD_S = 15 + 45 + 90 + 20                                        # pilot WARMUP_S + B_S + W_S + COOLDOWN_S
 
 
 # ------------------------------------------------------------------------------------------ simulated host
@@ -1250,7 +1252,7 @@ class CtrlFixture(Sandboxed):
         from sentinelai.diagnostic.contract import Target
         self.s = FakeSys()
         self.out = self.tmp / "CTRL-900001"
-        self.n = P.scheduled_arrivals(WORKLOAD, P.WARMUP_S + P.B_S + P.W_S + P.COOLDOWN_S, 900001)
+        self.n = P.scheduled_arrivals(WORKLOAD, LOAD_S, 900001, ARRIVALS)   # set per run from its seed
         self.docs = []
         self.workload = WORKLOAD                     # run.json workload (the approved FZ-WORKLOAD value)
         self.config = None                           # config.json bytes; None: the echo of self.workload
@@ -1368,7 +1370,9 @@ class CtrlFixture(Sandboxed):
         kw.setdefault("workload_files", {"config.json": self.config_bytes()})
         kw.setdefault("on_control", self.on_control)
         with mock.patch.object(P.os, "chown"):
-            rc = P.ctrl(self.out, kw.pop("seed", 900001), COMMIT, sysr=self.s,
+            seed = kw.pop("seed", 900001)
+            self.n = P.scheduled_arrivals(WORKLOAD, LOAD_S, seed, ARRIVALS)  # Poisson: the count depends on the seed
+            rc = P.ctrl(self.out, seed, COMMIT, sysr=self.s,
                         host_cls=host_factory(hosts, spawn=spawn, **kw), sleep=lambda x: None, **run)
         return rc, hosts[0]
 
@@ -1390,6 +1394,10 @@ class TestCtrl(CtrlFixture):
         run = json.loads((self.out / "evidence" / "run.json").read_text())
         self.assertEqual(run["workload"], WORKLOAD)
         self.assertEqual(run["working_set"], WORKSET)
+        self.assertEqual((run["arrivals"], run["load"]["process"]), (ARRIVALS, "poisson"))
+        lg = [op[2] for op in h.ops if op[0] == "spawn" and op[1] == "loadgen"][0]
+        self.assertEqual(lg[lg.index("--arrivals") + 1:lg.index("--arrivals") + 4], ["poisson", "--rate", "100"])
+        self.assertNotIn("--jitter", lg)
         self.assertEqual(run["load"]["arrivals"], self.n)
         w = L.ws_dir("CTRL-s900001")
         self.assertIn(("mkdir", w), h.ops)
