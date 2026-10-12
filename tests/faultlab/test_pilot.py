@@ -83,6 +83,7 @@ class FakeSys(L.Sys):
         self.mountinfo_ok = True
         self.on_umount = None              # called before the simulated umount2 (concurrent changes)
         self.qd = {L.IF_A: [], L.IF_RB: []}  # tc state: qdiscs added by the run (veth default: noqueue)
+        self.ppid = {}                       # pid -> parent pid (/proc/<pid>/stat)
         self.police_text = ""
 
     def add_mount(self, mnt, parent, **kw):
@@ -123,6 +124,9 @@ class FakeSys(L.Sys):
         if path.startswith("/proc/") and path.endswith("/cgroup"):
             pid = int(path.split("/")[2])
             return f"0::{self.procs[pid]}\n" if pid in self.procs else None
+        if path.startswith("/proc/") and path.endswith("/stat") and path.count("/") == 3:
+            pid = int(path.split("/")[2])
+            return f"{pid} (python3) S {self.ppid.get(pid, 1)} 0 0\n" if pid in self.procs else None
         if path.endswith("/net/snmp"):
             o, i, r = self.tcp
             return ("Ip: Forwarding InReceives OutRequests\nIp: 2 %d %d\n" % (i, o + r) +   # packets: segs + retrans
@@ -355,8 +359,10 @@ class SimHost(L.Host):
             if role == "workload":                            # --metrics off: the workload publishes no metrics.json
                 for n in ("config.json",) if "--metrics" in op[2] else ("metrics.json", "config.json"):
                     s.run[f"{L.run_dir(self.plan.run_id)}/{n}"] = ("file", L.LAB_UID, self.workload_files.get(n, b"{}"))
-                if "--ws-file" in op[2]:                      # the workload creates its working-set file
-                    s.run[op[2][op[2].index("--ws-file") + 1]] = ("file", L.LAB_UID, b"")
+                if "--ws-file" in op[2]:                      # the workload creates its working-set file and
+                    s.run[op[2][op[2].index("--ws-file") + 1]] = ("file", L.LAB_UID, b"")   # forks its scanner
+                    child = p.pid + 500000
+                    s.procs[child], s.ppid[child] = f"/{L.LAB}/target", p.pid
             return p
         return None
 
@@ -1297,9 +1303,9 @@ class CtrlFixture(Sandboxed):
         target = Target(name="faultlab-ctrl", cgroup_path=L.TARGET_CGROUP_PATH, pids=(1,), cpuset="18",
                         netns_ref="pid:1", ifaces=())
 
-        def resolve(reader, name, path):
-            pid = [p for p, cg in self.s.procs.items() if cg == L.TARGET_CGROUP_PATH][0]
-            return target.model_copy(update={"pids": (pid,), "netns_ref": f"pid:{pid}"})
+        def resolve(reader, name, path):                   # like collectors.resolve_target: every pid, sorted
+            pids = tuple(sorted(p for p, cg in self.s.procs.items() if cg == L.TARGET_CGROUP_PATH))
+            return target.model_copy(update={"pids": pids, "netns_ref": f"pid:{pids[0]}"})
 
         def read_metrics(run_id):
             try:
@@ -1429,6 +1435,8 @@ class TestCtrl(CtrlFixture):
         run = json.loads((self.out / "evidence" / "run.json").read_text())
         self.assertEqual(run["workload"], WORKLOAD)
         self.assertEqual(run["working_set"], WORKSET)
+        tp = run["target_processes"]                                   # the workload and its scanner child (M-2)
+        self.assertEqual(tp["scanner"] - tp["workload"], 500000)
         self.assertEqual((run["arrivals"], run["load"]["process"]), (ARRIVALS, "poisson"))
         lg = [op[2] for op in h.ops if op[0] == "spawn" and op[1] == "loadgen"][0]
         self.assertEqual(lg[lg.index("--arrivals") + 1:lg.index("--arrivals") + 4], ["poisson", "--rate", "100"])
@@ -2492,6 +2500,32 @@ class TestMemoryFault(OpFaultFixture):
         lv = P.levels(self.tmp)["faults"]["memory_max"]
         self.assertEqual(lv["established_2of2"], [768, 512, 256])
         self.assertEqual((lv["I1"], lv["I3"], lv["I0"]), (768, 256, 960))
+
+
+class TestTargetProcesses(unittest.TestCase):
+    """FZ-WORKSET M-2: the target leaf holds exactly the workload and the scanner it forked."""
+
+    def sysr(self, procs, ppid):
+        s = FakeSys()
+        s.procs.update({p: f"/{L.LAB}/target" for p in procs})
+        s.ppid.update(ppid)
+        return s
+
+    def test_workload_and_its_scanner_in_either_order(self):
+        self.assertEqual(P.target_processes(self.sysr((10, 20), {20: 10, 10: 1}), [10, 20]), (10, 20))
+        self.assertEqual(P.target_processes(self.sysr((10, 20), {10: 20, 20: 1}), [10, 20]), (20, 10))
+
+    def test_anything_else_aborts(self):
+        for name, pids, ppid in (("only the workload", [10], {10: 1}),
+                                 ("three processes", [10, 20, 30], {20: 10, 30: 10}),
+                                 ("unrelated pair", [10, 20], {10: 1, 20: 1}),
+                                 ("scanner of another parent", [10, 20], {20: 99, 10: 1}),
+                                 ("unreadable parent", [10, 20], {})):
+            with self.subTest(name), self.assertRaises(L.LabAbort):
+                s = self.sysr(pids, ppid)
+                if name == "unreadable parent":
+                    s.procs.pop(20)                                    # /proc/20/stat unreadable
+                P.target_processes(s, pids)
 
 
 class TestReplaceControl(unittest.TestCase):

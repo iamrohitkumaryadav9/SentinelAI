@@ -660,6 +660,25 @@ class LoaderTicks:
         return self.loader.sample()
 
 
+def parent_pid(sysr, pid: int) -> Optional[int]:
+    text = sysr.read(f"/proc/{int(pid)}/stat")
+    try:
+        return int(text.rsplit(")", 1)[1].split()[1])
+    except (AttributeError, IndexError, ValueError):
+        return None
+
+
+def target_processes(sysr, tpids):
+    """(workload pid, scanner pid): the target leaf must hold exactly the workload and the one working-set scanner it
+    forked (FZ-WORKSET M-2), verified through /proc/<pid>/stat; anything else aborts the run."""
+    if len(tpids) == 2:
+        a, b = tpids
+        for w, c in ((a, b), (b, a)):
+            if parent_pid(sysr, c) == w and parent_pid(sysr, w) != c:
+                return w, c
+    raise L.LabAbort(f"target leaf holds {tpids}: expected the workload and its working-set scanner")
+
+
 def proc_cpu_s(pid) -> float:
     f = Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()
     return (int(f[11]) + int(f[12])) / os.sysconf("SC_CLK_TCK")
@@ -784,12 +803,12 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
                 raise L.LabAbort(f"{role} not ready within {limit} s")
             evt(f"{role}_ready")
         tpids = leaf_pids(sysr, "target")
-        if len(tpids) != 1:
-            raise L.LabAbort(f"target leaf holds {tpids}: one-pid invariant broken")
+        wpid, spid = target_processes(sysr, tpids)                     # the workload and its scanner (FZ-WORKSET M-2)
+        R["target_processes"] = {"workload": wpid, "scanner": spid}
         target = resolve_target(LiveReader(), "faultlab-ctrl", L.TARGET_CGROUP_PATH)
         ns_a = sysr.netns_inode(L.NS_A)
         R["target"] = {"pids": list(target.pids), "cpuset": target.cpuset,
-                       "netns_inode": sysr.pid_netns_inode(tpids[0]), "lab_a_inode": ns_a}
+                       "netns_inode": sysr.pid_netns_inode(wpid), "lab_a_inode": ns_a}
         if list(target.pids) != tpids or ns_a is None or R["target"]["netns_inode"] != ns_a or \
                 target.cpuset != str(L.TARGET_CPU):
             raise L.LabAbort(f"target not in {L.NS_A} on CPU {L.TARGET_CPU}: {R['target']}")
@@ -800,8 +819,8 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
             if err:
                 raise L.LabAbort(f"eBPF loader unavailable: {err}")
             evt("loader_started", pid=loader.proc.pid)
-        read_snmp = lambda: L.tcp_counters(sysr.read(f"/proc/{tpids[0]}/net/snmp"))
-        read_ip = lambda: L.ip_counters(sysr.read(f"/proc/{tpids[0]}/net/snmp"))
+        read_snmp = lambda: L.tcp_counters(sysr.read(f"/proc/{wpid}/net/snmp"))
+        read_ip = lambda: L.ip_counters(sysr.read(f"/proc/{wpid}/net/snmp"))
         state["start"] = {"app": read_app(), "r": L.r_counters(sysr), "tcp": read_snmp(), "ip": read_ip(),
                           "qdisc": qdisc_drops(sysr), "mono_ns": time.monotonic_ns()}
         if (writer and not isinstance(state["start"]["app"], bytes)) or None in (state["start"]["r"],
@@ -819,7 +838,7 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
             if spec is not None:
                 injector = Injector(host, sysr, run_id, spec)
             hook = WindowHook(appmod.AppSource(run_id), round(B_S / PERIOD_S), round(W_S / PERIOD_S), read_app,
-                              injector, lambda: gt_snapshot(sysr, tpids[0]),
+                              injector, lambda: gt_snapshot(sysr, wpid),
                               memory_guard(sysr) if (spec or {}).get("type") == "memory_max" else None)
             evt("collect_start")
             ticks, stats = collect(target, params, LiveReader(), SystemClock(), PERIOD_S, LoaderTicks(loader), hook)

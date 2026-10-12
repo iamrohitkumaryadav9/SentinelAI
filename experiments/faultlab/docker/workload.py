@@ -13,6 +13,8 @@ working set (serve --ws-file, FZ-WORKSET) a file-backed working set shaped like 
             is created, written in full and fsynced by this process (so its page cache is charged to the workload's
             own cgroup) before the service starts, mapped read-only with MADV_RANDOM, and touched one byte per page,
             the whole file once per ws-pass-s in ws-slices equal slices, together with a ws-anon-mib anonymous buffer.
+            The scan runs in a child process forked before the service starts (FZ-WORKSET M-2), so a major fault in it
+            never holds the service's interpreter lock; the child exits when the workload is gone.
             Without a memory limit the file stays resident; under memory.max below it the scan refaults (memory class).
 distractor  (serve --distractor-kind) free-text log lines for OV-6 ("slow request") and OV-10 (generic) appended to
             <run dir>/distractor.log at distractor_lines_per_s (control file; 0 until switched on). They are never
@@ -505,6 +507,57 @@ class WorkingSet:
             self.passes += 1
 
 
+class ParentWatch:
+    """The scanner child's stop condition for WorkingSet.loop: its parent (the workload) is gone."""
+
+    def __init__(self, parent: int):
+        self.parent = parent
+
+    def is_set(self) -> bool:
+        return os.getppid() != self.parent
+
+    def wait(self, timeout: float) -> bool:
+        time.sleep(max(0.0, timeout))
+        return self.is_set()
+
+
+def start_scanner(ws: WorkingSet) -> int:
+    """FZ-WORKSET (M-2): fork the scanner as a child process in the same cgroup, before the workload opens its listener
+    or starts any thread, so a major fault in the scan never holds the service's interpreter lock. The parent keeps
+    no mapping (the file is mapped once, in the child). Returns the child's pid."""
+    parent = os.getpid()
+    sigs = {signal.SIGTERM, signal.SIGINT}
+    old = signal.pthread_sigmask(signal.SIG_BLOCK, sigs)   # a stop sent before the child resets stays pending
+    pid = os.fork()
+    if pid == 0:                                         # the child never returns into the service
+        try:
+            for sig in sigs:
+                signal.signal(sig, signal.SIG_DFL)
+            signal.pthread_sigmask(signal.SIG_SETMASK, old)
+            ws.loop(ParentWatch(parent))
+        finally:
+            os._exit(0)
+    signal.pthread_sigmask(signal.SIG_SETMASK, old)
+    ws.map.close()
+    ws.anon = bytearray(0)
+    return pid
+
+
+def stop_scanner(pid: int, grace_s: float = 5.0) -> None:
+    """SIGTERM, then SIGKILL if the child has not exited within grace_s; always reaps it."""
+    try:
+        os.kill(pid, signal.SIGTERM)
+        end = time.monotonic() + grace_s
+        while os.waitpid(pid, os.WNOHANG) == (0, 0):
+            if time.monotonic() > end:
+                os.kill(pid, signal.SIGKILL)
+                os.waitpid(pid, 0)
+                return
+            time.sleep(0.01)
+    except (ProcessLookupError, ChildProcessError):
+        pass
+
+
 # ------------------------------------------------------------------------------------------------ runtime loops
 class Runner:
     """Control polling, config echo and metrics publication for one run directory."""
@@ -647,42 +700,47 @@ def main(argv=None) -> int:
         stop = threading.Event()
         for sig in (signal.SIGTERM, signal.SIGINT):
             signal.signal(sig, lambda *_: stop.set())
-        listener = socket.create_server((host, int(port)), backlog=128)
-        if a.cmd == "dependency":
-            dependency_loop(listener, dir_fd, stop, a.poll_s)
-            return 0
-        if min(a.pool, a.queue) < 1 or a.cpu_us < 0 or a.lock_hold_us < 0:
-            raise WorkloadError("pool and queue must be >= 1; cpu_us and lock_hold_us >= 0")
-        dep = None
-        if a.dependency:
-            dh, dp = a.dependency.rsplit(":", 1)
-            dep = tcp_dependency(dh, int(dp))
-        cfg = {"pool": a.pool, "queue": a.queue, "cpu_us": a.cpu_us, "lock_hold_us": a.lock_hold_us,
-               "lock_wait_exceeded_ms": a.lock_wait_exceeded_ms, "dependency_timeout_ms": a.dependency_timeout_ms}
-        distractor = None
-        if a.distractor_kind is not None:
-            if a.distractor_seed is None:
-                raise WorkloadError("--distractor-kind needs --distractor-seed")
-            distractor = Distractor(dir_fd, a.distractor_kind, a.distractor_seed)
-            cfg.update(distractor_kind=a.distractor_kind, distractor_lines_per_s=0)
-        if a.metrics == "off":
-            cfg["metrics_writer"] = "off"
-        ws = None
-        if a.ws_file is not None:                        # before the service: "ready" implies the working set exists
+        scanner = None
+        if a.cmd == "serve" and a.ws_file is not None:   # before the listener and any thread: "ready" implies it runs
             try:
                 ws = WorkingSet(a.ws_file, a.ws_file_mib, a.ws_anon_mib, a.ws_pass_s, a.ws_slices)
             except OSError as exc:
                 raise WorkloadError(f"working set: {exc.strerror or exc}") from None
-            cfg.update(ws_file_mib=a.ws_file_mib, ws_anon_mib=a.ws_anon_mib, ws_pass_s=a.ws_pass_s,
-                       ws_slices=a.ws_slices)
-            threading.Thread(target=ws.loop, args=(stop,), daemon=True).start()
-        svc = Service(cfg, dependency=dep)
-        runner = Runner(svc, dir_fd, a.publish_s, a.poll_s, metrics_writer=a.metrics == "on")
-        if distractor is not None:
-            threading.Thread(target=distractor.loop, args=(svc, stop, a.poll_s), daemon=True).start()
-        threading.Thread(target=accept_loop, args=(listener, svc, stop), daemon=True).start()
-        runner.loop(stop)
-        return 0
+            scanner = start_scanner(ws)
+        try:                                             # the scanner child never outlives the service
+            listener = socket.create_server((host, int(port)), backlog=128)
+            if a.cmd == "dependency":
+                dependency_loop(listener, dir_fd, stop, a.poll_s)
+                return 0
+            if min(a.pool, a.queue) < 1 or a.cpu_us < 0 or a.lock_hold_us < 0:
+                raise WorkloadError("pool and queue must be >= 1; cpu_us and lock_hold_us >= 0")
+            dep = None
+            if a.dependency:
+                dh, dp = a.dependency.rsplit(":", 1)
+                dep = tcp_dependency(dh, int(dp))
+            cfg = {"pool": a.pool, "queue": a.queue, "cpu_us": a.cpu_us, "lock_hold_us": a.lock_hold_us,
+                   "lock_wait_exceeded_ms": a.lock_wait_exceeded_ms, "dependency_timeout_ms": a.dependency_timeout_ms}
+            distractor = None
+            if a.distractor_kind is not None:
+                if a.distractor_seed is None:
+                    raise WorkloadError("--distractor-kind needs --distractor-seed")
+                distractor = Distractor(dir_fd, a.distractor_kind, a.distractor_seed)
+                cfg.update(distractor_kind=a.distractor_kind, distractor_lines_per_s=0)
+            if a.metrics == "off":
+                cfg["metrics_writer"] = "off"
+            if scanner is not None:
+                cfg.update(ws_file_mib=a.ws_file_mib, ws_anon_mib=a.ws_anon_mib, ws_pass_s=a.ws_pass_s,
+                           ws_slices=a.ws_slices, ws_scanner="process")
+            svc = Service(cfg, dependency=dep)
+            runner = Runner(svc, dir_fd, a.publish_s, a.poll_s, metrics_writer=a.metrics == "on")
+            if distractor is not None:
+                threading.Thread(target=distractor.loop, args=(svc, stop, a.poll_s), daemon=True).start()
+            threading.Thread(target=accept_loop, args=(listener, svc, stop), daemon=True).start()
+            runner.loop(stop)
+            return 0
+        finally:
+            if scanner is not None:
+                stop_scanner(scanner)
     except WorkloadError as exc:
         print(f"workload: {exc}", file=sys.stderr)
         return 2

@@ -7,6 +7,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import signal
 import socket
 import sys
 import tempfile
@@ -194,31 +195,102 @@ class TestWorkingSet(unittest.TestCase):
             with self.subTest(bad), self.assertRaises(W.WorkloadError):
                 W.WorkingSet(str(self.d / f"b{len(list(self.d.iterdir()))}.bin"), *bad)
 
-    def test_cli_creates_the_working_set_before_the_service_and_records_it(self):
+    def test_cli_forks_the_scanner_before_the_service_and_records_it(self):
         args = ["serve", "--run-id", "CTRL-s1", "--listen", "127.0.0.1:0", "--pool", "1", "--queue", "1",
                 "--cpu-us", "0", "--lock-wait-exceeded-ms", "5", "--dependency-timeout-ms", "100", "--poll-s", "0.05"]
-        seen = {}
+        seen, order = {}, []
 
         class Stop(Exception):
             pass
 
         def runner(svc, dir_fd, publish_s, poll_s, metrics_writer=True):
             seen.update(cfg=dict(svc.cfg), exists=(self.d / "ws.bin").exists())
-            raise Stop
-        with mock.patch.object(W, "Runner", runner), mock.patch.object(W, "check_identity"), \
-                mock.patch.object(W, "open_run_dir", return_value=-1), self.assertRaises(Stop):
-            W.main(args + ["--ws-file", str(self.d / "ws.bin"), "--ws-file-mib", "2", "--ws-anon-mib", "1",
-                           "--ws-pass-s", "0.5", "--ws-slices", "5"])
-        self.assertTrue(seen["exists"])
-        self.assertEqual({k: seen["cfg"][k] for k in seen["cfg"] if k.startswith("ws_")},
-                         {"ws_file_mib": 2, "ws_anon_mib": 1, "ws_pass_s": 0.5, "ws_slices": 5})
-        with mock.patch.object(W, "Runner", runner), mock.patch.object(W, "check_identity"), \
-                mock.patch.object(W, "open_run_dir", return_value=-1), self.assertRaises(Stop):
-            W.main(args)                                                        # no --ws-file: no working set
-        self.assertFalse(any(k.startswith("ws_") for k in seen["cfg"]))
+            return mock.Mock(loop=mock.Mock(side_effect=Stop))
+        real_server = socket.create_server
+        patches = (mock.patch.object(W, "Runner", runner), mock.patch.object(W, "check_identity"),
+                   mock.patch.object(W, "open_run_dir", return_value=-1),
+                   mock.patch.object(W, "start_scanner", side_effect=lambda ws: order.append("scanner") or 4242),
+                   mock.patch.object(W, "stop_scanner", side_effect=lambda pid: order.append(("stop", pid))),
+                   mock.patch.object(W.socket, "create_server",
+                                     side_effect=lambda *a, **k: order.append("listener") or real_server(*a, **k)))
+        for p in patches:
+            p.start()
+        try:
+            with self.assertRaises(Stop):
+                W.main(args + ["--ws-file", str(self.d / "ws.bin"), "--ws-file-mib", "2", "--ws-anon-mib", "1",
+                               "--ws-pass-s", "0.5", "--ws-slices", "5"])
+            self.assertEqual(order, ["scanner", "listener", ("stop", 4242)])   # forked before the listener, stopped
+            order.clear()
+            with self.assertRaises(Stop), mock.patch.object(W.socket, "create_server", side_effect=Stop):
+                W.main(args + ["--ws-file", str(self.d / "ws2.bin"), "--ws-file-mib", "2"])
+            self.assertEqual(order, ["scanner", ("stop", 4242)])               # stopped on any later failure
+            self.assertTrue(seen["exists"])
+            self.assertEqual({k: seen["cfg"][k] for k in seen["cfg"] if k.startswith("ws_")},
+                             {"ws_file_mib": 2, "ws_anon_mib": 1, "ws_pass_s": 0.5, "ws_slices": 5,
+                              "ws_scanner": "process"})
+            order.clear()
+            with self.assertRaises(Stop):
+                W.main(args)                                                    # no --ws-file: no scanner
+            self.assertEqual(order, ["listener"])
+            self.assertFalse(any(k.startswith("ws_") for k in seen["cfg"]))
+        finally:
+            for p in patches:
+                p.stop()
         with mock.patch.object(W, "check_identity"), mock.patch.object(W, "open_run_dir", return_value=-1), \
                 mock.patch("sys.stderr"):
             self.assertEqual(W.main(args + ["--ws-file", str(self.d / "ws.bin"), "--ws-file-mib", "1"]), 2)
+
+    def test_real_scanner_child_runs_and_stops(self):
+        ws = W.WorkingSet(str(self.d / "ws.bin"), 2, 1, 0.2, 2)
+        pid = W.start_scanner(ws)
+        try:
+            self.assertGreater(pid, 0)
+            self.assertTrue(ws.map.closed)                                      # the parent keeps no mapping
+            self.assertEqual(len(ws.anon), 0)
+            time.sleep(0.3)
+            self.assertEqual(os.waitpid(pid, os.WNOHANG), (0, 0))               # still scanning
+            with open(f"/proc/{pid}/stat") as f:
+                self.assertEqual(int(f.read().rsplit(")", 1)[1].split()[1]), os.getpid())   # our child
+        finally:
+            W.stop_scanner(pid)
+        with self.assertRaises(ChildProcessError):
+            os.waitpid(pid, os.WNOHANG)                                         # reaped
+        W.stop_scanner(pid)                                                     # idempotent
+
+    def test_an_immediate_stop_is_never_lost(self):
+        """The service installs its own SIGTERM handler before forking; a stop sent at once still ends the child."""
+        prev = signal.signal(signal.SIGTERM, lambda *_: None)
+        try:
+            for i in range(20):
+                ws = W.WorkingSet(str(self.d / f"ws{i}.bin"), 2, 1, 0.2, 2)
+                pid = W.start_scanner(ws)
+                t = time.monotonic()
+                W.stop_scanner(pid, grace_s=30)
+                self.assertLess(time.monotonic() - t, 5)                         # SIGTERM worked, no escalation
+        finally:
+            signal.signal(signal.SIGTERM, prev)
+
+    def test_stop_escalates_to_kill(self):
+        pid = os.fork()
+        if pid == 0:
+            try:
+                signal.signal(signal.SIGTERM, signal.SIG_IGN)
+                time.sleep(60)
+            finally:
+                os._exit(0)
+        time.sleep(0.2)
+        t = time.monotonic()
+        W.stop_scanner(pid, grace_s=0.3)
+        self.assertLess(time.monotonic() - t, 5)
+        with self.assertRaises(ChildProcessError):
+            os.waitpid(pid, os.WNOHANG)                                         # killed and reaped
+
+    def test_scanner_stops_when_its_parent_is_gone(self):
+        watch = W.ParentWatch(os.getppid())
+        self.assertFalse(watch.is_set())
+        with mock.patch.object(W.os, "getppid", return_value=1):              # reparented: the workload died
+            self.assertTrue(watch.is_set())
+            self.assertTrue(watch.wait(0))
 
 
 class TestPublication(RunDir):
