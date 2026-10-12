@@ -42,6 +42,7 @@ import signal
 import stat
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -54,7 +55,7 @@ from lab import C  # noqa: E402
 FORMAT = "sentinelai.faultlab.pilot.ctrl.v1"
 DECISIONS = ROOT / "docs/PHASE_1C_FREEZE1_DECISIONS.json"
 CAMPAIGN = re.compile(r"[0-9]{8}T[0-9]{6}Z")
-RUN_NAME = r"PI0-[1-5]|(?:CTRL|PI1U|PI6OFF|INSTOFF)-9[0-9]{5}"    # one directory per run (AMD-27 evidence names)
+RUN_NAME = r"PI0-[1-5]|(?:CTRL|PI1U|PI6OFF|INSTOFF|PI8)-9[0-9]{5}"   # one directory per run (AMD-27/28 evidence names)
 EVIDENCE_MAX = 64 << 20                                           # bytes read back from a lab-uid file
 PERIOD_S = 1.0
 WARMUP_S, B_S, W_S, COOLDOWN_S = 15, 45, 90, 20                   # design §6.2 timeline
@@ -73,6 +74,8 @@ PIPELINE_CHECKS = frozenset({"run_completed", "cleanup", "host_compare", "bpf_re
 def pipeline_checks(variant: str) -> frozenset:
     """The exact check set of a variant: collected runs as CTRL; collectors off: no snapshot, so no replay and no app
     features; metrics writer off: no server documents, so the client records are checked on their own."""
+    if variant == "pi8":
+        return PIPELINE_CHECKS | {"injection_verified"}
     if variant in ("ctrl", "pi1u"):
         return PIPELINE_CHECKS
     off = PIPELINE_CHECKS - {"replay_byte_identical", "app_features"}
@@ -345,6 +348,93 @@ def lifecycle(out: Path, cycle: int, commit: str, sysr=None, host_cls=None, slee
     return 0 if R["ok"] else 1
 
 
+# ------------------------------------------------------------------------------------------ faults (PI-8)
+# fault type -> (control key, FZ-INTENSITY-APP candidate list, workload histogram of its wait metric, echo file,
+#                stronger magnitude is: "lower" (pool) or "higher")
+APP_FAULTS = {"app_pool": ("pool", "pool_candidates", "queue_wait", "config.json", "lower"),
+              "app_lock": ("lock_hold_us", "lock_hold_us_candidates", "lock_wait", "config.json", "higher"),
+              "app_dependency_delay": ("dependency_delay_ms", "dependency_delay_ms_candidates", "dependency_latency",
+                                       "dependency_config.json", "higher")}
+T_CAP_S = 30.0                                                    # FZ-TTRANS T_cap: read-back after it = failed
+
+
+def fault_spec(fault: str, magnitude: int, w: dict, decisions=DECISIONS) -> dict:
+    """An application fault at an approved PI-8 candidate magnitude (FZ-INTENSITY-APP); refuses anything else."""
+    if fault not in APP_FAULTS:
+        refuse(f"fault {fault!r} is not implemented (application faults only: {sorted(APP_FAULTS)})")
+    key, cands, hist, echo, stronger = APP_FAULTS[fault]
+    app = approved_value("FZ-INTENSITY-APP", decisions)
+    if type(magnitude) is not int or magnitude not in app[cands]:
+        refuse(f"{fault} magnitude {magnitude!r} is not an approved candidate {app[cands]}")
+    control = {"dependency_delay_ms": int(w["dependency_delay_ms"]), key: magnitude}
+    return {"type": fault, "key": key, "magnitude": magnitude, "candidates": app[cands], "metric_histogram": hist,
+            "echo_file": echo, "stronger": stronger, "control": control, "decision": "FZ-INTENSITY-APP"}
+
+
+class WindowHook:
+    """Wraps the app source of collect(). After tick nB is collected (the B/W boundary, run time 60 s; AMD-10) it
+    reads the raw metrics document and then issues the fault, if any; after tick nB + nW it reads the raw document
+    again. Effect ground truth for application faults is computed from these documents, never from features."""
+
+    def __init__(self, app, nB: int, nW: int, read_raw, inject=None):
+        self.app, self.nB, self.nW, self.read_raw, self.inject = app, nB, nW, read_raw, inject
+        self.k, self.docs = 0, {}
+
+    def sample(self):
+        obs = self.app.sample()
+        if self.k in (self.nB, self.nB + self.nW):
+            self.docs["w_start" if self.k == self.nB else "w_end"] = (time.monotonic_ns(), self.read_raw())
+        if self.k == self.nB and self.inject is not None:
+            self.inject(self.k)
+        self.k += 1
+        return obs
+
+
+class Injector:
+    """Issues one application fault through replace_control and watches its echo (read-back) on a thread."""
+
+    def __init__(self, host, sysr, run_id: str, spec: dict, clock_ns=time.monotonic_ns, poll_s: float = 0.01):
+        self.host, self.sysr, self.run_id, self.spec, self.clock_ns, self.poll_s = \
+            host, sysr, run_id, spec, clock_ns, poll_s
+        self.record = {"type": spec["type"], "magnitude": spec["magnitude"], "issued": False, "verified": False}
+        self.thread = None
+
+    def __call__(self, tick: int):
+        r = self.record
+        r["issue_mono_ns"], r["issue_after_tick"] = self.clock_ns(), tick
+        try:
+            self.host.apply(("replace_control", json.dumps(self.spec["control"], sort_keys=True).encode()))
+            r["issued"] = True
+        except Exception as exc:                                       # noqa: BLE001 -- failed_injection
+            r["issue_error"] = f"{type(exc).__name__}: {exc}"
+            return
+        self.thread = threading.Thread(target=self.watch, daemon=True)
+        self.thread.start()
+
+    def echo_value(self):
+        try:
+            doc = json.loads(self.sysr.read_run(f"{L.run_dir(self.run_id)}/{self.spec['echo_file']}", 1 << 20))
+            return doc["config"].get(self.spec["key"]), doc.get("control_error")
+        except Exception:                                              # noqa: BLE001 -- mid-publish: retry
+            return None, None
+
+    def watch(self):
+        r, end = self.record, self.record["issue_mono_ns"] + int(T_CAP_S * 1e9)
+        while self.clock_ns() < end:
+            value, err = self.echo_value()
+            if value == self.spec["magnitude"] and err is None:
+                r["readback_mono_ns"] = self.clock_ns()
+                r["readback_latency_s"] = (r["readback_mono_ns"] - r["issue_mono_ns"]) / 1e9
+                r["verified"] = True
+                return
+            time.sleep(self.poll_s)
+        r["readback_error"] = f"no echo of {self.spec['key']} = {self.spec['magnitude']} within {T_CAP_S} s"
+
+    def join(self, timeout: float):
+        if self.thread is not None:
+            self.thread.join(timeout)
+
+
 # ------------------------------------------------------------------------------------------ CTRL
 class LoaderTicks:
     """The eBPF source for collect(); keeps every raw loader line."""
@@ -367,6 +457,7 @@ VARIANTS = {
     "pi1u": {"prefix": "PI1U", "collector": "unprivileged", "ebpf": False, "metrics_writer": True},     # PI-1 §6.2
     "pi6off": {"prefix": "PI6OFF", "collector": None, "ebpf": False, "metrics_writer": True},           # PI-6 §6.7
     "instoff": {"prefix": "INSTOFF", "collector": None, "ebpf": False, "metrics_writer": False},        # §5.5
+    "pi8": {"prefix": "PI8", "collector": "root", "ebpf": True, "metrics_writer": True},                 # §6.9
 }
 COLLECTOR_DIR, CHILD_TICKS, CHILD_STATS = "collector", "child_ticks.jsonl", "child_stats.json"
 CHILD_TIMEOUT_S = B_S + W_S + 60                                  # collection (B + W + 1 ticks) plus start-up margin
@@ -414,7 +505,7 @@ def collect_child(run_id: str, out_dir: Path) -> int:
 
 
 def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host_cls=None,
-         sleep=time.sleep, variant: str = "ctrl", child_spawn=None) -> int:
+         sleep=time.sleep, variant: str = "ctrl", child_spawn=None, fault=None) -> int:
     from sentinelai.collectors import LiveReader, SystemClock, build_snapshot, collect, resolve_target
     from sentinelai.collectors import app as appmod
     from sentinelai.diagnostic.contract import Target, canonical_bytes
@@ -427,6 +518,9 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
     check_seed(seed)
     w = approved_value("FZ-WORKLOAD", decisions)
     ws = approved_value("FZ-WORKSET", decisions)["values"]           # D4: always present (approved 2026-10-12)
+    if (variant == "pi8") != (fault is not None):
+        refuse("a pi8 run needs exactly one fault; other variants take none")
+    spec = fault_spec(fault[0], fault[1], w, decisions) if fault is not None else None
     run_id = f"{v['prefix']}-s{seed}"
     load_s = WARMUP_S + B_S + W_S + COOLDOWN_S
     unpriv, writer = v["collector"] == "unprivileged", v["metrics_writer"]
@@ -444,6 +538,7 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
     ev = out / EVIDENCE
     R = {"format": FORMAT, "stage": "CTRL" if variant == "ctrl" else variant.upper(), "variant": variant,
          "collector_mode": v["collector"], "ebpf": v["ebpf"], "metrics_writer": writer, "working_set": ws,
+         "fault": spec,
          "run_id": run_id, "seed": seed, "commit": commit, "workload": w,
          "timeline": {"warmup_s": WARMUP_S, "B_s": B_S, "W_s": W_S, "cooldown_s": COOLDOWN_S, "load_s": load_s,
                       "period_s": PERIOD_S},
@@ -456,7 +551,7 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
     if not R["preflight"]["ok"] or not base["bpf_available"]:
         write_new(ev / "run.json", dump(R))
         refuse(f"pre-setup checks failed: {R['preflight']}; bpf_available={base['bpf_available']}")
-    procs, loader, child, state = {}, None, None, {}
+    procs, loader, child, state, injector, hook = {}, None, None, {}, None, None
     read_app = (lambda: appmod.read_metrics(run_id)) if writer else (lambda: None)
     old = {s: signal.signal(s, on_signal) for s in (signal.SIGINT, signal.SIGTERM)}
     try:
@@ -502,10 +597,19 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
         params = pilot_params()
         ticks = None
         if v["collector"] == "root":
+            if spec is not None:
+                injector = Injector(host, sysr, run_id, spec)
+            hook = WindowHook(appmod.AppSource(run_id), round(B_S / PERIOD_S), round(W_S / PERIOD_S), read_app,
+                              injector)
             evt("collect_start")
-            ticks, stats = collect(target, params, LiveReader(), SystemClock(), PERIOD_S, LoaderTicks(loader),
-                                   appmod.AppSource(run_id))
+            ticks, stats = collect(target, params, LiveReader(), SystemClock(), PERIOD_S, LoaderTicks(loader), hook)
             evt("collect_end")
+            if injector is not None:
+                injector.join(T_CAP_S + 1)
+                R["injection"] = dict(injector.record)
+                if R["injection"]["issued"]:
+                    evt("fault_issued", mono_ns=R["injection"]["issue_mono_ns"])
+            R["w_docs"] = {k: {"mono_ns": t, "valid": isinstance(b, bytes)} for k, (t, b) in hook.docs.items()}
             R["collection"] = {"ticks": stats.ticks, "wall_s": stats.wall_s, "cpu_s": stats.cpu_s,
                                "max_tick_read_s": stats.max_tick_read_s, "loader_cpu_s": proc_cpu_s(loader.proc.pid)}
         elif unpriv:
@@ -554,6 +658,9 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
         if writer:
             write_new(ev / "app_start.json", state["start"]["app"])
             write_new(ev / "app_end.json", state["end"]["app"])
+        for k, (t, b) in (hook.docs.items() if hook is not None else ()):
+            if isinstance(b, bytes):                                  # W-window documents (effect ground truth)
+                write_new(ev / f"app_{k}.json", b)
         write_new(ev / "counters.json", dump({k: {"r": state[k]["r"], "tcp": state[k]["tcp"],
                                                   "mono_ns": state[k]["mono_ns"]} for k in ("start", "end")}))
         write_new(ev / "client.jsonl", read_regular(client_tmp))
@@ -710,8 +817,10 @@ def structural_app_gaps(out: Path, manifest_ok: bool):
     workload observes lock waits only while it holds the lock (workload.py), and FZ-WORKLOAD approves 0 for CTRL
     (register: "no lock contention in CTRL"). Proof: run.json and the workload's own config echo agree on 0, the echo
     is the only configuration of the run (seq 1, no control error) and hashes to its config_sha256, both bracketing
-    metrics documents carry that hash, and the end document holds no lock-wait observation at all. Anything else
-    leaves the feature required (basis.not_applied_because says why)."""
+    metrics documents carry that hash, and the end document holds no lock-wait observation at all. A pi8 run whose one
+    recorded fault changes another service key (app_pool) has exactly one more echo (seq 2): its start document then
+    carries the hash of the pre-fault configuration. A fault on lock_hold_us never qualifies. Anything else leaves the
+    feature required (basis.not_applied_because says why)."""
     from sentinelai.collectors import app as appmod
     failed = []
     basis = {"feature": LOCK_WAIT, "applied": False, "not_applied_because": failed}
@@ -729,19 +838,29 @@ def structural_app_gaps(out: Path, manifest_ok: bool):
                     "config.json is not a workload configuration echo"):
             return {}, basis
         cfg, w = doc["config"], run.get("workload") if isinstance(run.get("workload"), dict) else {}
+        f = run.get("fault") if isinstance(run.get("fault"), dict) else None      # a pi8 run's one recorded fault
         basis["lock_hold_us"] = {"config_json": cfg.get("lock_hold_us"), "run_json": w.get("lock_hold_us")}
         for name, v in (("config.json", cfg.get("lock_hold_us")), ("run.json workload", w.get("lock_hold_us"))):
             need(type(v) is int and v == 0, f"{name} lock_hold_us is {v!r}, not 0")
-        need(all(k in cfg and k in w and type(cfg[k]) is type(w[k]) and cfg[k] == w[k] for k in SERVICE_CONFIG_KEYS),
-             "workload configuration echo differs from run.json workload")
-        need(doc["seq"] == 1 and doc["control_error"] is None,
-             "workload configuration changed during the run or a control error was recorded")
-        sha = hashlib.sha256(json.dumps(cfg, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+        expect = dict(w)
+        if f is not None and f.get("key") in SERVICE_CONFIG_KEYS:       # the fault's own key echoes its new value
+            expect[f["key"]] = f.get("magnitude")
+        need(all(k in cfg and k in expect and type(cfg[k]) is type(expect[k]) and cfg[k] == expect[k]
+                 for k in SERVICE_CONFIG_KEYS),
+             "workload configuration echo differs from run.json workload (and its recorded fault)")
+        changes = 1 if f is not None and f.get("key") in SERVICE_CONFIG_KEYS else 0     # one re-echo per change
+        need(f is None or f.get("key") != "lock_hold_us", "the run's fault changes lock_hold_us")
+        need(doc["seq"] == 1 + changes and doc["control_error"] is None,
+             "workload configuration changed during the run other than by its recorded fault, or a control error was "
+             "recorded")
+        digest = lambda c: hashlib.sha256(json.dumps(c, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+        sha = digest(cfg)
         need(doc["config_sha256"] == sha, "config_sha256 does not hash the recorded configuration")
+        before = dict(cfg, **({f["key"]: w.get(f["key"])} if changes else {}))   # configuration before the fault
         docs = [appmod.parse((out / EVIDENCE / n).read_bytes()) for n in ("app_start.json", "app_end.json")]
         if need(all(isinstance(d, appmod.AppSample) for d in docs), "saved metrics documents invalid"):
-            need(all(d.config_sha256 == doc["config_sha256"] for d in docs),
-                 "metrics documents were not produced under the recorded configuration")
+            need(docs[0].config_sha256 == digest(before) and docs[1].config_sha256 == sha,
+                 "metrics documents were not produced under the recorded configuration (and its recorded fault)")
             need(not any(docs[1].histograms["lock_wait"]) and docs[1].events.get("LOCK_WAIT_EXCEEDED") == 0,
                  "lock waits were observed")
     except (OSError, ValueError, TypeError, KeyError, AttributeError) as exc:
@@ -752,6 +871,37 @@ def structural_app_gaps(out: Path, manifest_ok: bool):
               "records lock waits only while holding the lock; zero lock-wait observations confirmed in the evidence")
     basis.update(applied=True, reason=reason)
     return {LOCK_WAIT: reason}, basis
+
+
+def w_effects(out: Path) -> dict:
+    """W-window wait metrics from the raw metrics documents captured at ticks nB and nB + nW (histogram delta,
+    nearest-rank P99 as bucket upper bound, the collector's own percentile); never from snapshot features."""
+    from sentinelai.collectors import app as appmod
+    a, b = (appmod.parse((out / EVIDENCE / f"app_{k}.json").read_bytes()) for k in ("w_start", "w_end"))
+    if not (isinstance(a, appmod.AppSample) and isinstance(b, appmod.AppSample)):
+        raise ValueError("W-window metrics documents invalid")
+    res = {}
+    for hist in ("queue_wait", "lock_wait", "dependency_latency", "latency"):
+        delta = [y - x for x, y in zip(a.histograms[hist], b.histograms[hist])]
+        if any(d < 0 for d in delta):
+            raise ValueError(f"{hist} histogram decreased in W")
+        p99, why = appmod.percentile(delta, 0.99)
+        res[hist] = {"count": sum(delta), "p99_ms": p99, "missing": why}
+    return res
+
+
+def injection_check(run) -> dict:
+    """AMD-10: issued after tick nB (the B/W boundary), no issue error, read back within T_cap (FZ-TTRANS)."""
+    inj = run.get("injection") or {}
+    problems = []
+    if not inj.get("issued"):
+        problems.append(f"not issued: {inj.get('issue_error', 'no injection record')}")
+    if inj.get("issue_after_tick") != round(B_S / PERIOD_S):
+        problems.append("not issued at the B/W boundary")
+    if not inj.get("verified") or not (inj.get("readback_latency_s") or T_CAP_S + 1) <= T_CAP_S:
+        problems.append(inj.get("readback_error", "read-back not verified within T_cap"))
+    return {"ok": not problems, "problems": problems, "readback_latency_s": inj.get("readback_latency_s"),
+            "label": None if not problems else "failed_injection"}
 
 
 def pi_checks(run, snap, ticks):
@@ -790,9 +940,9 @@ def evaluate(out: Path, live: bool = False, run_result=None) -> dict:
     checks["host_compare"] = {"ok": bool((run.get("host_compare") or {}).get("ok")),
                               "failed": (run.get("host_compare") or {}).get("failed")}
     checks["bpf_released"] = {"ok": bool((run.get("bpf_release") or {}).get("released"))}
-    pis = {}
+    pis, effects = {}, None
     variant = run.get("variant", "ctrl")
-    collected = variant in ("ctrl", "pi1u")
+    collected = VARIANTS.get(variant, VARIANTS["ctrl"])["collector"] is not None
     if not run.get("aborts"):
         m = verify_manifest(out)
         checks["manifest"] = {"ok": not m, "problems": m}
@@ -824,12 +974,17 @@ def evaluate(out: Path, live: bool = False, run_result=None) -> dict:
             if collected:
                 ticks = decode_ticks((out / EVIDENCE / "ticks.jsonl").read_bytes())
                 pis = pi_checks(run, json.loads(live_bytes), ticks)
+            if variant == "pi8":
+                checks["injection_verified"] = injection_check(run)
+            if run.get("w_docs"):                                       # root-collected runs: W-window effects
+                effects = w_effects(out)
         except Exception as exc:                                        # noqa: BLE001 -- recorded, never hidden
             checks["evidence_readable"] = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
             pis = {}
     ok = set(checks) == pipeline_checks(variant) and all(c["ok"] for c in checks.values())
     report = {"format": FORMAT + ".report", "variant": variant, "pipeline_ok": ok,
               "ok": ok and all(p["ok"] for p in pis.values()), "checks": checks, "pi": pis,
+              "w_effects": effects, "fault": run.get("fault"),
               "note": "PI verdicts are measurements against the proposed criteria; a pipeline pass is not a "
                       "scientific validation."}
     if live:
@@ -884,6 +1039,73 @@ def pairs(campaign: Path) -> dict:
     return out
 
 
+# ------------------------------------------------------------------------------------------ PI-8 levels (offline)
+def rep_effect(run_dir: Path, ctrl_max: dict, lock_rule: dict) -> dict:
+    """One pi8 rep: injection verified (AMD-10) and the injected mechanism's wait metric in W above the CTRL maximum
+    (FZ-PI7); for app_lock the approved FZ-PI7-LOCK rule (CTRL maximum 0 ms, P99 measured and > 0.05 ms)."""
+    rep = evaluate(run_dir)
+    run = json.loads((run_dir / EVIDENCE / "run.json").read_bytes())
+    f = run["fault"]
+    eff = (rep.get("w_effects") or {}).get(f["metric_histogram"]) or {}
+    value = eff.get("p99_ms")
+    if f["type"] == "app_lock":
+        bar, basis = float(lock_rule["rep_lock_wait_p99_min_ms"]), "FZ-PI7-LOCK: > 0.05 ms (CTRL maximum 0 ms)"
+    else:
+        bar, basis = ctrl_max.get(f["metric_histogram"]), "FZ-PI7: above the CTRL maximum"
+    gt = bool(rep["pipeline_ok"] and value is not None and bar is not None and value > bar)
+    return {"run": run_dir.name, "seed": run["seed"], "magnitude": f["magnitude"], "pipeline_ok": rep["pipeline_ok"],
+            "injection_verified": (rep["checks"].get("injection_verified") or {}).get("ok", False),
+            "w_p99_ms": value, "w_count": eff.get("count"), "bar_ms": bar, "basis": basis, "ground_truth": gt}
+
+
+def levels(campaign: Path, decisions=DECISIONS) -> dict:
+    """PI-8 (FZ-PI8) for the application faults of one campaign, offline and report-only: CTRL maxima from the
+    campaign's passing CTRL runs; per fault, I1 = weakest candidate with effect ground truth in 2/2 reps, I3 = strongest
+    candidate with ground truth in 2/2 (within the approved ceiling by construction), I2 = geometric mean of I1 and I3
+    in injection units rounded toward I1, I0 = the candidate just weaker than I1; two consecutive verification
+    failures stop the fault. Nothing is frozen here: freezing is the M5 review's (owner)."""
+    import math
+    lock_rule = approved_value("FZ-PI7-LOCK", decisions)
+    runs = sorted((d for d in campaign.iterdir() if d.is_dir() and not d.is_symlink()), key=lambda d: d.name)
+    ctrl_max, ctrl_runs = {}, []
+    for d in runs:
+        if d.name.startswith("CTRL-"):
+            rep = evaluate(d)
+            if rep["pipeline_ok"] and rep.get("w_effects"):
+                ctrl_runs.append(d.name)
+                for h, e in rep["w_effects"].items():
+                    if e["p99_ms"] is not None:
+                        ctrl_max[h] = max(ctrl_max.get(h, 0.0), e["p99_ms"])
+    out = {"campaign": campaign.name, "ctrl_runs": ctrl_runs, "ctrl_max_ms": ctrl_max, "faults": {},
+           "note": "report-only; levels are frozen only by the M5 review; the CTRL maximum of lock_wait is 0 ms by "
+                   "FZ-PI7-LOCK"}
+    pi8 = [(d, json.loads((d / EVIDENCE / "run.json").read_bytes())) for d in runs if d.name.startswith("PI8-")]
+    for fault in sorted({r["fault"]["type"] for _, r in pi8}):
+        reps = sorted((rep_effect(d, ctrl_max, lock_rule) for d, r in pi8 if r["fault"]["type"] == fault),
+                      key=lambda x: x["seed"])
+        spec = next(r["fault"] for _, r in pi8 if r["fault"]["type"] == fault)
+        order = sorted(spec["candidates"], reverse=spec["stronger"] == "lower")       # weakest -> strongest
+        streak, stopped = 0, None
+        for x in reps:                                                              # in run (seed) order
+            streak = 0 if x["injection_verified"] else streak + 1
+            if streak >= 2 and stopped is None:
+                stopped = x["run"]
+        by = {m: [x for x in reps if x["magnitude"] == m] for m in order}
+        established = [m for m in order if len(by[m]) >= 2 and all(x["ground_truth"] for x in by[m][:2])]
+        res = {"reps": reps, "order_weakest_first": order, "established_2of2": established,
+               "stopped_after": stopped, "I1": None, "I2": None, "I3": None, "I0": None}
+        if established and stopped is None:
+            i1, i3 = established[0], established[-1]
+            g = math.sqrt(i1 * i3)
+            i2 = math.ceil(g) if spec["stronger"] == "lower" else math.floor(g)   # rounded toward I1 (weaker)
+            i2 = max(min(i2, max(i1, i3)), min(i1, i3))
+            weaker = order[:order.index(i1)]
+            res.update(I1=i1, I3=i3, I2=i2, I0=weaker[-1] if weaker else None,
+                       i2_needs_confirmation=i2 not in (i1, i3))
+        out["faults"][fault] = res
+    return out
+
+
 # ------------------------------------------------------------------------------------------ cleanup (wrapper trap)
 def cleanup_all(top: Path) -> int:
     sysr = L.Sys()
@@ -914,8 +1136,12 @@ def main(argv=None) -> int:
             p.add_argument("--cycle", type=int, required=True)
         else:
             p.add_argument("--seed", type=int, required=True)
+        if name == "pi8":
+            p.add_argument("--fault", required=True, choices=sorted(APP_FAULTS))
+            p.add_argument("--magnitude", type=int, required=True, help="an approved FZ-INTENSITY-APP candidate")
     sub.add_parser("evaluate").add_argument("dir")
     sub.add_parser("pairs").add_argument("campaign_dir")
+    sub.add_parser("levels").add_argument("campaign_dir")
     sub.add_parser("cleanup").add_argument("dir")
     child = sub.add_parser("collect-child")                       # internal: started by pi1u as the lab uid
     child.add_argument("--run-id", required=True)
@@ -925,6 +1151,10 @@ def main(argv=None) -> int:
         if not L.RUN_ID.fullmatch(a.run_id) or not a.run_id.startswith("PI1U-"):
             refuse(f"collector child run id {a.run_id!r} not allowed")
         return collect_child(a.run_id, Path(a.out_dir))
+    if a.cmd == "levels":
+        rep = levels(Path(a.campaign_dir))
+        print(json.dumps(rep, indent=1, sort_keys=True, default=str))
+        return 0
     if a.cmd == "pairs":
         rep = pairs(Path(a.campaign_dir))
         print(json.dumps(rep, indent=1, sort_keys=True, default=str))
@@ -949,6 +1179,8 @@ def run_stage(a, run_preflight=None) -> int:
         refuse("PI-0 has cycles 1..5")
     if a.cmd != "lifecycle":
         check_seed(a.seed)
+    if a.cmd == "pi8":                                    # refuse an unapproved fault before anything is created
+        fault_spec(a.fault, a.magnitude, approved_value("FZ-WORKLOAD"))
     staging = staging_root()
     out = run_path(staging, a.campaign, f"PI0-{a.cycle}" if a.cmd == "lifecycle" else
                    f"{VARIANTS[a.cmd]['prefix']}-{a.seed}")
@@ -960,7 +1192,12 @@ def run_stage(a, run_preflight=None) -> int:
         out.parent.mkdir(mode=0o755)
         hand_over(out.parent)
     try:
-        rc = lifecycle(out, a.cycle, commit) if a.cmd == "lifecycle" else ctrl(out, a.seed, commit, variant=a.cmd)
+        if a.cmd == "lifecycle":
+            rc = lifecycle(out, a.cycle, commit)
+        elif a.cmd == "pi8":
+            rc = ctrl(out, a.seed, commit, variant="pi8", fault=(a.fault, a.magnitude))
+        else:
+            rc = ctrl(out, a.seed, commit, variant=a.cmd)
     finally:
         if out.is_dir() and not out.is_symlink():
             write_new(out / "preflight.json", dump(rep))

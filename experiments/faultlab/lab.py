@@ -74,7 +74,8 @@ WORKLOAD = str(ROOT / "experiments/faultlab/docker/workload.py")
 LOADGEN = str(ROOT / "experiments/faultlab/docker/loadgen.py")
 HARD_TIMEOUT_S = 900
 RUN_ID = re.compile(r"[A-Z0-9]+(?:-[A-Z0-9]+)*-s[0-9]+")
-RUN_FILES = ("metrics.json", "config.json", "control.json", "dependency_config.json", "distractor.log")
+CONTROL_NEW = ".control.json.new"            # replace_control: written exclusively, then renamed over control.json
+RUN_FILES = ("metrics.json", "config.json", "control.json", "dependency_config.json", "distractor.log", CONTROL_NEW)
 TMP_FILE = re.compile(r"\.(metrics|config|dependency_config)\.json\.tmp\.[0-9]+")   # workload publish() temporaries
 
 _LAUNCH = ("import importlib.util, sys; s = importlib.util.spec_from_file_location('faultlab_workload', sys.argv[1]); "
@@ -592,6 +593,9 @@ class Plan:
             if len(op) != 3 or self.run_id is None or op[1] != f"{run_dir(self.run_id)}/control.json" or \
                     not isinstance(op[2], bytes):
                 raise LabRefused(f"file write not allowed: {op!r}")
+        elif kind == "replace_control":
+            if len(op) != 2 or self.run_id is None or not isinstance(op[1], bytes) or not op[1] or len(op[1]) > 4096:
+                raise LabRefused(f"control replacement not allowed: {op!r}")
         elif kind == "unlink_run":
             name = os.path.basename(op[1]) if len(op) == 2 and isinstance(op[1], str) else ""
             parent = os.path.dirname(op[1]) if len(op) == 2 and isinstance(op[1], str) else ""
@@ -635,6 +639,8 @@ class Host:
 
     @staticmethod
     def _desc(op):
+        if op[0] == "replace_control":
+            return [op[0], op[1].decode("utf-8", "replace")]
         return [op[0], list(op[1]) if op[0] == "cmd" else op[1]] + ([len(op[2])] if op[0] == "write_new" else [])
 
     def apply(self, op, stdout=None, stderr=None):
@@ -689,6 +695,19 @@ class Host:
                 os.write(fd, op[2])
             finally:
                 os.close(fd)
+        elif kind == "replace_control":                 # atomic: exclusive temp in the run directory, fsync, rename
+            dfd = os.open(run_dir(self.plan.run_id), os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC)
+            try:
+                fd = os.open(CONTROL_NEW, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC, 0o644,
+                             dir_fd=dfd)
+                try:
+                    os.write(fd, op[1])
+                    os.fsync(fd)
+                finally:
+                    os.close(fd)
+                os.rename(CONTROL_NEW, "control.json", src_dir_fd=dfd, dst_dir_fd=dfd)
+            finally:
+                os.close(dfd)
         elif kind == "unlink_run":
             st = os.lstat(op[1])
             if not stat.S_ISREG(st.st_mode):

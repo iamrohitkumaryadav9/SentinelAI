@@ -233,8 +233,10 @@ class FakeProc:
 class SimHost(L.Host):
     """Real plan check and op log; the effect is simulated on FakeSys. fail(op) -> True raises OSError there."""
 
-    def __init__(self, plan, oplog, sysr, fail=None, spawn=None, fail_after_mount=False, workload_files=None):
+    def __init__(self, plan, oplog, sysr, fail=None, spawn=None, fail_after_mount=False, workload_files=None,
+                 on_control=None):
         super().__init__(plan, oplog, sysr)
+        self.on_control = on_control                   # the workload's reaction to a replaced control file
         self.fail, self.spawn, self.ops = fail or (lambda op: False), spawn or {}, []
         self.workload_files = workload_files or {}   # what the workload publishes (config echo); default b"{}"
         self.fail_after_mount = fail_after_mount     # the first ip netns add fails after mounting /run/netns
@@ -301,6 +303,10 @@ class SimHost(L.Host):
             s.run[op[1]] = ("file", 0, op[2])
         elif kind == "unlink_run":
             del s.run[op[1]]
+        elif kind == "replace_control":
+            s.run[f"{L.run_dir(self.plan.run_id)}/control.json"] = ("file", 0, op[1])
+            if self.on_control:
+                self.on_control(json.loads(op[1]), s, L.run_dir(self.plan.run_id))
         elif kind == "umount_netns_dir":
             L.umount_owned_netns_dir(s, op[1], s.umount)      # the real checks; only umount2 is simulated
         elif kind == "spawn":
@@ -1192,8 +1198,11 @@ class TestNetnsDirMount(Sandboxed):
 
 
 # ------------------------------------------------------------------------------------------ CTRL orchestration
-def metrics_doc(completed=0, rejected=0, failed=0, busy=0, sha="0" * 64, lock_waits=0):
+def metrics_doc(completed=0, rejected=0, failed=0, busy=0, sha="0" * 64, lock_waits=0, extra=()):
     m = W.Metrics()
+    for hist, ms, count in extra:                      # W-window observations: (histogram, value ms, count)
+        for _ in range(count):
+            m.observe(hist, ms)
     m.counters["requests_completed_total"] = completed
     m.counters["requests_rejected_total"] = rejected
     m.counters["requests_failed_total"] = failed
@@ -1248,6 +1257,8 @@ class CtrlFixture(Sandboxed):
         self.doc_sha = None                          # config_sha256 in the metrics documents; None: the echo's
         self.lock_waits = 0                          # lock-wait observations in the end metrics document
         self.snap = app_snapshot()                   # the run's canonical snapshot (live and replay)
+        self.reads, self.live_sha, self.w_extra = 0, None, ()   # metrics reads; hash after a fault; W observations
+        self.echo = True                             # the simulated workload echoes a replaced control file
         target = Target(name="faultlab-ctrl", cgroup_path=L.TARGET_CGROUP_PATH, pids=(1,), cpuset="18",
                         netns_ref="pid:1", ifaces=())
 
@@ -1257,13 +1268,15 @@ class CtrlFixture(Sandboxed):
 
         def read_metrics(run_id):
             try:
-                sha = self.doc_sha or json.loads(self.config_bytes())["config_sha256"]
+                sha = self.doc_sha or self.live_sha or json.loads(self.config_bytes())["config_sha256"]
             except (ValueError, KeyError, TypeError):            # a deliberately malformed echo
                 sha = "0" * 64
+            self.reads += 1
             if not self.docs:
                 self.docs.append(metrics_doc(sha=sha))
                 return self.docs[0]
-            return metrics_doc(completed=self.n, sha=sha, lock_waits=self.lock_waits)
+            return metrics_doc(completed=self.n, sha=sha, lock_waits=self.lock_waits,
+                               extra=self.w_extra if self.reads >= 3 else ())      # read 3 = the W-end document
 
         def loadgen():
             def finish():
@@ -1297,8 +1310,20 @@ class CtrlFixture(Sandboxed):
         import sentinelai.runtime.pipeline as PIPE
         import sentinelai.runtime.ticks as TICKS
         stats = SimpleNamespace(ticks=136, wall_s=135.0, cpu_s=1.0, max_tick_read_s=0.01)
+        def collect(target, params, reader, clock, period, ebpf, app):   # drives the app source tick by tick
+            for _ in range(P.B_S + P.W_S + 1):
+                app.sample()
+            return ["t"] * 136, stats
+
+        class Quiet:                                                     # the per-tick app source reads nothing
+            def __init__(self, run_id):
+                pass
+
+            def sample(self):
+                return {}
         for p in (mock.patch.object(COL, "resolve_target", side_effect=resolve),
-                  mock.patch.object(COL, "collect", return_value=(["t"] * 136, stats)),
+                  mock.patch.object(COL, "collect", side_effect=collect),
+                  mock.patch.object(APP, "AppSource", Quiet),
                   mock.patch.object(COL, "build_snapshot", return_value="snap"),
                   mock.patch.object(APP, "read_metrics", side_effect=read_metrics),
                   mock.patch.object(EB, "resolve_ebpf_target", return_value="ids"),
@@ -1314,19 +1339,34 @@ class CtrlFixture(Sandboxed):
                   mock.patch.object(P, "pi_checks", return_value={"PI-1": {"ok": True}})):
             p.start()
             self.addCleanup(p.stop)
-        approved = mock.patch.object(P, "approved_value", side_effect=lambda name, rec=None:
-                                     {"FZ-WORKLOAD": self.workload, "FZ-WORKSET": {"values": WORKSET}}[name])
+        approved = mock.patch.object(P, "approved_value", side_effect=lambda name, rec=None:   # the committed record
+                                     {"FZ-WORKLOAD": self.workload}.get(name, _RECORD[name]["value"]))
         approved.start()
         self.addCleanup(approved.stop)
 
     def config_bytes(self):
         return self.config if self.config is not None else config_echo(self.workload)
 
+    def on_control(self, control, s, rdir):
+        """The workload and dependency peer: echo the new control values like workload.Runner / dependency_loop."""
+        if not self.echo:
+            return
+        if "dependency_delay_ms" in control:
+            s.run[f"{rdir}/dependency_config.json"] = ("file", L.LAB_UID, W.canonical(
+                {"seq": 2, "mono_ns": 2, "config": {"dependency_delay_ms": control["dependency_delay_ms"]},
+                 "control_error": None}))
+        service = {k: v for k, v in control.items() if k in W.SERVICE_CONTROL_KEYS}
+        if service and any(self.workload[k] != v for k, v in service.items()):
+            echo = config_echo(self.workload, seq=2, **service)
+            s.run[f"{rdir}/config.json"] = ("file", L.LAB_UID, echo)
+            self.live_sha = json.loads(echo)["config_sha256"]
+
     def run_ctrl(self, **kw):
         hosts = []
         spawn = dict(self.spawn, **kw.pop("spawn", {}))
-        run = {k: kw.pop(k) for k in ("variant", "child_spawn") if k in kw}
+        run = {k: kw.pop(k) for k in ("variant", "child_spawn", "fault") if k in kw}
         kw.setdefault("workload_files", {"config.json": self.config_bytes()})
+        kw.setdefault("on_control", self.on_control)
         with mock.patch.object(P.os, "chown"):
             rc = P.ctrl(self.out, kw.pop("seed", 900001), COMMIT, sysr=self.s,
                         host_cls=host_factory(hosts, spawn=spawn, **kw), sleep=lambda x: None, **run)
@@ -1644,7 +1684,8 @@ class TestVariants(CtrlFixture):
         base = {"run_completed", "cleanup", "host_compare", "bpf_released", "manifest", "across_r_reconciliation"}
         self.assertEqual(P.pipeline_checks("pi6off"), base | {"client_server_reconciliation"})
         self.assertEqual(P.pipeline_checks("instoff"), base | {"client_records"})
-        self.assertEqual({v["prefix"] for v in P.VARIANTS.values()}, {"CTRL", "PI1U", "PI6OFF", "INSTOFF"})
+        self.assertEqual({v["prefix"] for v in P.VARIANTS.values()}, {"CTRL", "PI1U", "PI6OFF", "INSTOFF", "PI8"})
+        self.assertEqual(P.pipeline_checks("pi8"), P.PIPELINE_CHECKS | {"injection_verified"})
 
     def test_collectors_off_runs_no_collector_and_no_loader(self):
         import m3b_r1_validate
@@ -1805,6 +1846,196 @@ class TestVariants(CtrlFixture):
         self.assertIs(bs.call_args.args[4], False)
 
 
+APP = json.loads((ROOT / "docs/PHASE_1C_FREEZE1_DECISIONS.json").read_text())["decisions"]["FZ-INTENSITY-APP"]["value"]
+
+
+class TestFaults(CtrlFixture):
+    """PI-8 application faults (pi8) on the simulated host: AMD-10 timing, read-back, W-window effects, failures."""
+
+    def go(self, fault=None, magnitude=None, seed=900020, variant="pi8", **kw):
+        self.out = self.tmp / f"{P.VARIANTS[variant]['prefix']}-{seed}"
+        self.s, self.docs, self.reads, self.live_sha = FakeSys(), [], 0, None
+        rc, h = self.run_ctrl(variant=variant, seed=seed,
+                              fault=(fault, magnitude) if fault else None, **kw)
+        return rc, h, json.loads((self.out / "report.json").read_text())
+
+    def test_pool_fault_is_issued_at_the_boundary_and_read_back(self):
+        self.w_extra = (("queue_wait", 3.0, 200),)
+        rc, h, rep = self.go("app_pool", 1)
+        self.assertEqual(rc, 0, rep["checks"])
+        run = json.loads((self.out / "evidence" / "run.json").read_text())
+        inj = run["injection"]
+        self.assertTrue(inj["issued"] and inj["verified"], inj)
+        self.assertEqual(inj["issue_after_tick"], P.B_S)                    # after tick nB (run time 60 s)
+        self.assertLessEqual(inj["readback_latency_s"], P.T_CAP_S)
+        self.assertIn(("replace_control", b'{"dependency_delay_ms": 2, "pool": 1}'), h.ops)
+        self.assertTrue(rep["checks"]["injection_verified"]["ok"])
+        self.assertEqual(rep["w_effects"]["queue_wait"]["p99_ms"], 3.2)
+        self.assertEqual(set(rep["checks"]), P.pipeline_checks("pi8"))
+        basis = rep["checks"]["app_features"]["structurally_unavailable"]
+        self.assertTrue(basis["applied"], basis)                            # pool fault leaves lock_hold at 0
+        events = [e["event"] for e in run["events"]]
+        self.assertLess(events.index("collect_start"), events.index("fault_issued"))
+        self.assertTrue((self.out / "evidence" / "app_w_start.json").exists())
+        self.assertTrue(empty(self.s))
+
+    def test_dependency_delay_is_read_back_from_the_dependency_echo(self):
+        self.w_extra = (("dependency_latency", 12.0, 200),)
+        rc, h, rep = self.go("app_dependency_delay", 15)
+        self.assertEqual(rc, 0, rep["checks"])
+        self.assertEqual(rep["w_effects"]["dependency_latency"]["p99_ms"], 12.8)
+        self.assertTrue(rep["checks"]["app_features"]["structurally_unavailable"]["applied"])   # seq stays 1
+
+    def test_lock_fault_needs_the_lock_wait_measured(self):
+        self.w_extra = (("lock_wait", 0.5, 200),)
+        self.snap = app_snapshot(lock="OK")
+        self.lock_waits = 5
+        rc, h, rep = self.go("app_lock", 1000)
+        self.assertEqual(rc, 0, rep["checks"])
+        basis = rep["checks"]["app_features"]["structurally_unavailable"]
+        self.assertFalse(basis["applied"])                                  # a lock fault never qualifies
+        self.assertIn("the run's fault changes lock_hold_us", basis["not_applied_because"])
+        self.snap = app_snapshot()                                          # lock wait MISSING in a lock fault rep
+        rc, h, rep = self.go("app_lock", 1000, seed=900021)
+        self.assertEqual(rc, 1)
+        self.assertFalse(rep["checks"]["app_features"]["ok"])
+
+    def test_missing_read_back_is_a_failed_injection(self):
+        self.echo = False
+        with mock.patch.object(P, "T_CAP_S", 0.2):
+            rc, h, rep = self.go("app_pool", 2)
+        self.assertEqual(rc, 1)
+        c = rep["checks"]["injection_verified"]
+        self.assertEqual((c["ok"], c["label"]), (False, "failed_injection"))
+        self.assertTrue(rep["checks"]["cleanup"]["ok"] and rep["checks"]["host_compare"]["ok"])
+        self.assertTrue(empty(self.s))
+
+    def test_issue_error_is_a_failed_injection_and_the_run_still_cleans_up(self):
+        rc, h, rep = self.go("app_pool", 2, fail=lambda op: op[0] == "replace_control")
+        self.assertEqual(rc, 1)
+        self.assertIn("not issued", rep["checks"]["injection_verified"]["problems"][0])
+        self.assertTrue(rep["checks"]["cleanup"]["ok"])
+        self.assertTrue(empty(self.s))
+
+    def test_only_approved_faults_and_magnitudes(self):
+        for fault, mag in (("app_pool", 4), ("app_pool", 0), ("app_lock", 6000), ("app_lock", 1500),
+                           ("app_dependency_delay", 16), ("app_dependency_delay", 2), ("cpu_quota", 1),
+                           ("netem_loss_a_egress", 1), ("app_lock", 1000.0), ("app_lock", True)):
+            with self.subTest((fault, mag)), self.assertRaises(P.Refused):
+                P.fault_spec(fault, mag, WORKLOAD)
+        self.assertTrue(all(max(APP[k]) <= APP[c] for k, c in (("lock_hold_us_candidates", "lock_hold_us_max"),
+                                                               ("dependency_delay_ms_candidates",
+                                                                "dependency_delay_ms_max"))))
+        for variant, fault in (("pi8", None), ("ctrl", ("app_pool", 1))):
+            with self.subTest(variant), self.assertRaises(P.Refused):
+                self.go(fault[0] if fault else None, fault[1] if fault else None, variant=variant)
+
+    def test_ctrl_runs_record_w_window_effects_without_a_fault(self):
+        self.w_extra = (("queue_wait", 0.04, 200),)
+        rc, h, rep = self.go(variant="ctrl", seed=900030)
+        self.assertEqual(rc, 0, rep["checks"])
+        self.assertIsNone(rep["fault"])
+        self.assertEqual(rep["w_effects"]["queue_wait"]["p99_ms"], 0.05)
+        self.assertFalse(any(op[0] == "replace_control" for op in h.ops))
+
+    def test_levels_apply_the_pi8_rule(self):
+        self.w_extra = (("queue_wait", 0.04, 200),)
+        self.go(variant="ctrl", seed=900030)
+        self.go(variant="ctrl", seed=900031)
+        seed = 900040
+        for mag, eff in ((3, 0.04), (3, 0.04), (2, 3.0), (2, 3.0), (1, 6.0), (1, 6.0)):
+            self.w_extra = (("queue_wait", eff, 200),)
+            self.go("app_pool", mag, seed=seed)
+            seed += 1
+        rep = P.levels(self.tmp)
+        self.assertEqual(rep["ctrl_max_ms"]["queue_wait"], 0.05)
+        pool = rep["faults"]["app_pool"]
+        self.assertEqual(pool["order_weakest_first"], [3, 2, 1])
+        self.assertEqual(pool["established_2of2"], [2, 1])                  # P'=3 shows no wait above CTRL
+        self.assertEqual((pool["I1"], pool["I3"], pool["I2"], pool["I0"]), (2, 1, 2, 3))
+        self.assertIsNone(pool["stopped_after"])
+        self.echo = False                                                   # two consecutive failed read-backs
+        with mock.patch.object(P, "T_CAP_S", 0.1):
+            for k in range(2):
+                self.go("app_lock", 500, seed=900050 + k)
+        self.assertEqual(P.levels(self.tmp)["faults"]["app_lock"]["stopped_after"], "PI8-900051")
+        with mock.patch("builtins.print"):
+            self.assertEqual(P.main(["levels", str(self.tmp)]), 0)
+
+
+class TestFaultRules(CtrlFixture):
+    """The decision rules on their own: AMD-10 issue tick, FZ-PI7-LOCK bar, PI-8 2/2."""
+
+    def test_injection_check_requires_the_boundary_tick_and_a_read_back(self):
+        good = {"injection": {"issued": True, "issue_after_tick": P.B_S, "verified": True, "readback_latency_s": 0.1}}
+        self.assertTrue(P.injection_check(good)["ok"])
+        for name, change in (("late tick", {"issue_after_tick": P.B_S + 1}), ("early tick", {"issue_after_tick": 0}),
+                             ("not verified", {"verified": False}), ("slow read-back", {"readback_latency_s": 31.0}),
+                             ("not issued", {"issued": False})):
+            with self.subTest(name):
+                c = P.injection_check({"injection": dict(good["injection"], **change)})
+                self.assertEqual((c["ok"], c["label"]), (False, "failed_injection"))
+        self.assertFalse(P.injection_check({})["ok"])
+
+    def go(self, fault, mag, seed, eff_ms, hist):
+        self.out = self.tmp / f"PI8-{seed}"
+        self.s, self.docs, self.reads, self.live_sha = FakeSys(), [], 0, None
+        self.w_extra = ((hist, eff_ms, 200),)
+        self.run_ctrl(variant="pi8", seed=seed, fault=(fault, mag))
+
+    def test_lock_reps_need_more_than_the_first_bucket(self):
+        self.snap, self.lock_waits = app_snapshot(lock="OK"), 5
+        self.go("app_lock", 500, 900060, 0.04, "lock_wait")              # P99 0.05 ms: an uncontended acquisition
+        self.go("app_lock", 500, 900061, 0.08, "lock_wait")              # P99 0.1 ms: real waiting
+        rule = _RECORD["FZ-PI7-LOCK"]["value"]
+        a, b = (P.rep_effect(self.tmp / f"PI8-{s}", {"lock_wait": 0.0}, rule) for s in (900060, 900061))
+        self.assertEqual((a["w_p99_ms"], a["ground_truth"]), (0.05, False))
+        self.assertEqual((b["w_p99_ms"], b["ground_truth"]), (0.1, True))
+        self.assertEqual(a["bar_ms"], 0.05)
+
+    def test_a_level_needs_ground_truth_in_both_reps(self):
+        self.w_extra = (("dependency_latency", 3.0, 200),)
+        self.out, self.s, self.docs, self.reads = self.tmp / "CTRL-900070", FakeSys(), [], 0
+        self.run_ctrl(variant="ctrl", seed=900070)
+        for seed, mag, eff in ((900071, 7, 6.0), (900072, 7, 3.0), (900073, 15, 12.0), (900074, 15, 12.0)):
+            self.go("app_dependency_delay", mag, seed, eff, "dependency_latency")
+        d = P.levels(self.tmp)["faults"]["app_dependency_delay"]
+        self.assertEqual(d["established_2of2"], [15])                    # 7 ms: 1 of 2 reps above the CTRL maximum
+        self.assertEqual((d["I1"], d["I3"]), (15, 15))
+
+
+class TestReplaceControl(unittest.TestCase):
+    def test_guard(self):
+        g = L.Plan("PI8-s900020")
+        self.assertEqual(g.check(("replace_control", b'{"pool": 1}')), ("replace_control", b'{"pool": 1}'))
+        for bad in (("replace_control", "text"), ("replace_control", b""), ("replace_control", b"x" * 5000),
+                    ("replace_control", b"{}", "extra")):
+            with self.subTest(bad), self.assertRaises(L.LabRefused):
+                g.check(bad)
+        with self.assertRaises(L.LabRefused):
+            L.Plan(None).check(("replace_control", b"{}"))
+
+    def test_real_replacement_is_atomic_and_never_follows_a_symlink(self):
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(L, "APP_ROOT", d + "/"):
+            run = Path(L.run_dir("PI8-s900020"))
+            run.mkdir()
+            (run / "control.json").write_text('{"dependency_delay_ms": 2}')
+            h = L.Host(L.Plan("PI8-s900020"), str(Path(d) / "ops.jsonl"), FakeSys())
+            REAL_DO(h, ("replace_control", b'{"dependency_delay_ms": 2, "pool": 1}'), None, None)
+            self.assertEqual((run / "control.json").read_bytes(), b'{"dependency_delay_ms": 2, "pool": 1}')
+            self.assertEqual(sorted(p.name for p in run.iterdir()), ["control.json"])     # no temporary left
+            outside = Path(d) / "outside.txt"
+            outside.write_text("keep")
+            (run / "control.json").unlink()
+            (run / "control.json").symlink_to(outside)
+            REAL_DO(h, ("replace_control", b'{"pool": 2}'), None, None)
+            self.assertEqual(outside.read_text(), "keep")                  # the link is replaced, not followed
+            self.assertFalse((run / "control.json").is_symlink())
+            (run / L.CONTROL_NEW).write_text("stale")
+            with self.assertRaises(FileExistsError):                        # exclusive temp: never reused
+                REAL_DO(h, ("replace_control", b'{"pool": 3}'), None, None)
+
+
 # ------------------------------------------------------------------------------------------ evaluation units
 class TestReconciliation(unittest.TestCase):
     def test_client_server(self):
@@ -1873,7 +2104,8 @@ class TestGates(unittest.TestCase):
 
     def args(self, cmd="lifecycle", **kw):
         return SimpleNamespace(cmd=cmd, campaign=kw.get("campaign", "20261012T000000Z"), cycle=kw.get("cycle", 1),
-                               seed=kw.get("seed", 900001), execute=True)
+                               seed=kw.get("seed", 900001), execute=True, fault=kw.get("fault"),
+                               magnitude=kw.get("magnitude"))
 
     def test_not_ready_preflight_refuses_before_anything_is_created(self):
         with mock.patch.object(P, "lifecycle") as lc, self.assertRaises(P.Refused):
@@ -1926,8 +2158,30 @@ class TestGates(unittest.TestCase):
             with self.subTest(f"{cmd} seed range"), mock.patch.object(P, "ctrl") as ct, self.assertRaises(P.Refused):
                 P.run_stage(self.args(cmd, seed=800000), run_preflight=lambda: self.report())
 
+    def test_pi8_refuses_unapproved_faults_first_and_needs_pi0(self):
+        approved = lambda name, rec=None: _RECORD[name]["value"]
+        with mock.patch.object(P, "approved_value", side_effect=approved):
+            for fault, mag in (("app_pool", 4), ("cpu_quota", 1)):
+                with self.subTest((fault, mag)), mock.patch.object(P, "ctrl") as ct, self.assertRaises(P.Refused):
+                    P.run_stage(self.args("pi8", seed=900020, fault=fault, magnitude=mag),
+                                run_preflight=lambda: self.report())
+                ct.assert_not_called()
+            self.assertEqual(list(self.tmp.iterdir()), [])                      # refused before anything exists
+            with mock.patch.object(P, "ctrl") as ct, self.assertRaises(P.Refused):   # no PI-0 yet
+                P.run_stage(self.args("pi8", seed=900020, fault="app_pool", magnitude=1),
+                            run_preflight=lambda: self.report())
+            camp = self.tmp / "20261012T000000Z"
+            for k in range(1, 6):
+                (camp / f"PI0-{k}").mkdir(parents=True, exist_ok=True)
+                (camp / f"PI0-{k}" / "run.json").write_text(json.dumps({"ok": True, "commit": COMMIT}))
+            with mock.patch.object(P, "ctrl", return_value=0) as ct:
+                self.assertEqual(P.run_stage(self.args("pi8", seed=900020, fault="app_lock", magnitude=2000),
+                                             run_preflight=lambda: self.report()), 0)
+            self.assertEqual((ct.call_args.args[0].name, ct.call_args.kwargs),
+                             ("PI8-900020", {"variant": "pi8", "fault": ("app_lock", 2000)}))
+
     def test_run_names_are_exact(self):
-        for ok in ("PI0-1", "CTRL-900001", "PI1U-909999", "PI6OFF-900006", "INSTOFF-900006"):
+        for ok in ("PI0-1", "CTRL-900001", "PI1U-909999", "PI6OFF-900006", "INSTOFF-900006", "PI8-900020"):
             self.assertRegex(ok, f"^(?:{P.RUN_NAME})$")
         for bad in ("PI0-6", "CTRL-800001", "PI1U-90000", "FAULT-900001", "pi1u-900001", "PI6OFF-900006/x"):
             with self.subTest(bad), self.assertRaises(P.Refused):
