@@ -26,7 +26,7 @@
   },
   "FZ-INTENSITY": {
    "status": "pending",
-   "reference": "Register §3 FZ-INTENSITY: rule and R2-evidenced ceilings proposed; UNRESOLVED (no evidence): application P'/lock-hold/dependency-delay, congestion, police, memory M floor, OV-4 pps and OV-5 ceilings"
+   "reference": "Register §3 FZ-INTENSITY and §5: the R2-evidenced ceilings (FZ-INTENSITY-R2), the application ceilings (FZ-INTENSITY-APP), the network rule (FZ-INTENSITY-NET) and the OV-4 level (FZ-OV) are approved separately on 2026-10-12; still UNRESOLVED: memory M floor (needs the FZ-WORKSET working set) and the OV-5 lab cap and sizes"
   },
   "FZ-PI5": {
    "status": "pending",
@@ -246,6 +246,115 @@
    "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §3 FZ-M4-BASELINE",
    "value": {
     "commit": "8cff3b8f6bf85ba9fcd6d416eda45c20b87e75e4"
+   }
+  },
+  "FZ-INTENSITY-R2": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-12",
+   "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply to the pilot decision package, option A of D0; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §5 D0",
+   "value": {
+    "loss_a_egress_max_pct": 5.0,
+    "cpu_quota_min_core": 0.075,
+    "contender_weight_max": 400
+   }
+  },
+  "FZ-INTENSITY-APP": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-12",
+   "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply to the pilot decision package, option A of D2; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §5 D2",
+   "value": {
+    "utilisation_max": 0.5,
+    "pool_min": 1,
+    "pool_candidates": [
+     3,
+     2,
+     1
+    ],
+    "lock_hold_us_max": 5000,
+    "lock_hold_us_candidates": [
+     500,
+     1000,
+     2000,
+     5000
+    ],
+    "dependency_delay_ms_max": 15,
+    "dependency_delay_ms_candidates": [
+     4,
+     7,
+     10,
+     15
+    ]
+   }
+  },
+  "FZ-INTENSITY-NET": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-12",
+   "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply to the pilot decision package, option A of D3; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §5 D3",
+   "value": {
+    "loss_r_egress_max_pct": 5.0,
+    "rate_floor_fraction": 0.5,
+    "rate_floor_basis": "measured CTRL bit rate per direction (byte counters at R); congestion and police may not run before it is measured and reported",
+    "netem_limit_max_packets": 1000,
+    "byte_counters_required": true
+   }
+  },
+  "FZ-PI7-LOCK": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-12",
+   "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply to the pilot decision package, option A of D1; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §5 D1",
+   "value": {
+    "ctrl_max_lock_wait_ms": 0.0,
+    "rep_lock_wait_p99_min_ms": 0.05,
+    "rep_quality": [
+     "OK",
+     "PARTIAL"
+    ]
+   }
+  },
+  "FZ-WORKSET": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-12",
+   "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply to the pilot decision package, option A of D4; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §5 D4",
+   "value": {
+    "approach": "preregistered file-backed working set shaped like R2-F (file scanned at a fixed rate, small fixed anonymous buffer), always present in the workload; an FZ-WORKLOAD amendment",
+    "values": "not yet set: the concrete sizes and rates are proposed from R2-F and need owner approval as the FZ-WORKLOAD amendment before any run",
+    "ctrl_rebaseline": "CTRL, PI-1 and PI-6 are repeated at the commit that adds the working set"
+   }
+  },
+  "FZ-OV": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-12",
+   "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply to the pilot decision package, option A of D5; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §5 D5",
+   "value": {
+    "ov4_n_r": 2,
+    "ov4_tau": 0.1,
+    "ov4_level_pps": 80000,
+    "ov5_r_star": 0.9,
+    "ov5_sizes": "set after the D4 working set exists; pending"
+   }
+  },
+  "FZ-Q5": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-12",
+   "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply to the pilot decision package, option A of D5 (Q-5); recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §5 D5 (Q-5)",
+   "value": {
+    "ctrl_test_runs": 14
+   }
+  },
+  "FZ-Q2": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-12",
+   "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply to the pilot decision package, option A of Q-2; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §5 Q-2",
+   "value": {
+    "collector_mode_m6": "driver-root"
    }
   }
  }

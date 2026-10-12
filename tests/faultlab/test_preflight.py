@@ -41,7 +41,7 @@ def full_record():
     for d, (_, _, keys) in P.DECISIONS.items():
         e = {"status": "approved", "approved_by": "Rohit Kumar", "date": "2026-10-12", "reference": "test fixture"}
         if keys is not None:
-            e["value"] = vals.get(d, "fixture value")
+            e["value"] = vals.get(d, {k: 1 for k in keys} if keys else "fixture value")
         dec[d] = e
     return {"format": P.DECISIONS_FORMAT, "decisions": dec}
 
@@ -659,6 +659,30 @@ class TestStagesAndPrivilege(Base):
                 mock.patch.object(P.subprocess, "run", return_value=bad):
             with self.assertRaises(RuntimeError):
                 P.default_integrity()
+
+    def test_committed_record_holds_the_decision_package_and_keeps_the_rest_pending(self):
+        dec, errs = P.parse_decisions((ROOT / "docs/PHASE_1C_FREEZE1_DECISIONS.json").read_bytes())
+        self.assertEqual(errs, [])
+        for d in ("FZ-INTENSITY", "FZ-PI5"):
+            self.assertEqual(P.decision_state(d, dec[d])[0], False, d)        # still unresolved parts
+        package = {"FZ-INTENSITY-R2", "FZ-INTENSITY-APP", "FZ-INTENSITY-NET", "FZ-PI7-LOCK", "FZ-WORKSET", "FZ-OV",
+                   "FZ-Q5", "FZ-Q2"}
+        self.assertLessEqual(package, P.FULL_ONLY)                         # the ctrl stage does not depend on them
+        for d in package:
+            self.assertEqual(P.decision_state(d, dec[d]), (True, "approved"), d)
+            self.assertEqual((dec[d]["approved_by"], dec[d]["date"]), ("Rohit Kumar", "2026-10-12"), d)
+        v = lambda d: dec[d]["value"]
+        self.assertEqual(v("FZ-INTENSITY-R2"), {"loss_a_egress_max_pct": 5.0, "cpu_quota_min_core": 0.075,
+                                                "contender_weight_max": 400})
+        self.assertEqual((v("FZ-PI7-LOCK")["ctrl_max_lock_wait_ms"], v("FZ-PI7-LOCK")["rep_lock_wait_p99_min_ms"]),
+                         (0.0, 0.05))
+        app = v("FZ-INTENSITY-APP")
+        self.assertEqual((app["pool_min"], app["lock_hold_us_max"], app["dependency_delay_ms_max"]), (1, 5000, 15))
+        self.assertTrue(max(app["lock_hold_us_candidates"]) <= app["lock_hold_us_max"] and
+                        max(app["dependency_delay_ms_candidates"]) <= app["dependency_delay_ms_max"] and
+                        min(app["pool_candidates"]) >= app["pool_min"])
+        self.assertIn("not yet set", v("FZ-WORKSET")["values"])            # D4 sizes still need approval
+        self.assertEqual(v("FZ-Q2")["collector_mode_m6"], "driver-root")
 
     def test_committed_decisions_record_grants_only_what_it_states(self):
         data = (ROOT / "docs/PHASE_1C_FREEZE1_DECISIONS.json").read_bytes()

@@ -118,9 +118,28 @@ DECISIONS: Dict[str, Tuple[str, str, Optional[Tuple[str, ...]]]] = {
     "FZ-SAFETY-CHECKLIST": ("Pilot safety checklist (preflight, protected state, abort conditions)",
                             "draft §9 (preflight prerequisite; not a register item)", None),
     "FZ-M4-BASELINE": ("Approved M4 baseline commit", "draft §9 preflight item 1 (not a register item)", ("commit",)),
+    # decision package of 2026-10-12 (register §5): the parts of FZ-INTENSITY, FZ-PI7, FZ-PI5, AMD-13/15, Q-2 and Q-5
+    # that the owner settled; FZ-INTENSITY and FZ-PI5 stay pending for what is still unresolved
+    "FZ-INTENSITY-R2": ("I3 ceilings with R2 evidence (D0)", f"{REGISTER} §5 D0",
+                        ("loss_a_egress_max_pct", "cpu_quota_min_core", "contender_weight_max")),
+    "FZ-INTENSITY-APP": ("Application I3 ceilings and PI-8 candidates (D2)", f"{REGISTER} §5 D2",
+                         ("utilisation_max", "pool_min", "pool_candidates", "lock_hold_us_max",
+                          "lock_hold_us_candidates", "dependency_delay_ms_max", "dependency_delay_ms_candidates")),
+    "FZ-INTENSITY-NET": ("Path-loss ceiling and the congestion / police rate rule (D3)", f"{REGISTER} §5 D3",
+                         ("loss_r_egress_max_pct", "rate_floor_fraction", "rate_floor_basis",
+                          "netem_limit_max_packets", "byte_counters_required")),
+    "FZ-PI7-LOCK": ("PI-7 fault criterion for lock-hold reps (D1)", f"{REGISTER} §5 D1",
+                    ("ctrl_max_lock_wait_ms", "rep_lock_wait_p99_min_ms", "rep_quality")),
+    "FZ-WORKSET": ("Workload memory working set: approach (D4)", f"{REGISTER} §5 D4",
+                   ("approach", "values", "ctrl_rebaseline")),
+    "FZ-OV": ("OV-4 (AMD-13) and OV-5 (AMD-15) parameters (D5)", f"{REGISTER} §5 D5",
+              ("ov4_n_r", "ov4_tau", "ov4_level_pps", "ov5_r_star", "ov5_sizes")),
+    "FZ-Q5": ("Test-seed provisioning, CTRL test runs (Q-5)", f"{REGISTER} §5 D5", ("ctrl_test_runs",)),
+    "FZ-Q2": ("Collector privilege mode for M6 (Q-2)", f"{REGISTER} §5 Q-2", ("collector_mode_m6",)),
 }
-# Decisions needed only by the fault classes (PI-2/3/5/8, OV-4/5): not mandatory for the `ctrl` stage.
-FULL_ONLY = frozenset({"FZ-INTENSITY", "FZ-PI5", "FZ-PI8", "FZ-TTRANS"})
+# Decisions needed only by the fault classes (PI-2/3/5/8, OV-4/5) or by M6: not mandatory for the `ctrl` stage.
+FULL_ONLY = frozenset({"FZ-INTENSITY", "FZ-PI5", "FZ-PI8", "FZ-TTRANS", "FZ-INTENSITY-R2", "FZ-INTENSITY-APP",
+                       "FZ-INTENSITY-NET", "FZ-PI7-LOCK", "FZ-WORKSET", "FZ-OV", "FZ-Q5", "FZ-Q2"})
 STAGES = ("ctrl", "full")
 # Why each decision is mandatory although no host check consumes its value.
 NOT_CONSUMED = ("Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed "

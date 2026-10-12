@@ -1,7 +1,8 @@
 # Phase 1C Freeze-1 Decision Register
 
-**Status: PARTLY APPROVED.** Rohit Kumar approved 31 of the 33 Freeze-1 decisions on 2026-10-11 (commit `4b6041c`).
-`FZ-INTENSITY` and `FZ-PI5` remain **pending** (§4). Approval is recorded only in
+**Status: PARTLY APPROVED.** Rohit Kumar approved 31 of the 33 Freeze-1 decisions on 2026-10-11 (commit `4b6041c`),
+and on 2026-10-12 the eight items of the pilot decision package (§5). `FZ-INTENSITY` and `FZ-PI5` remain **pending**
+for what is still unresolved (§4, §5). Approval is recorded only in
 [`PHASE_1C_FREEZE1_DECISIONS.json`](PHASE_1C_FREEZE1_DECISIONS.json); this register holds the rationale (§3).
 **Owner approval of a design choice is not scientific validation:** every ENG value is still unvalidated until
 pilot evidence exists. Revision 1 (Gate 1.1, at `8cff3b8`)
@@ -154,6 +155,30 @@ added. PI-6 may fail. If it does, the result is reported and the budget is not c
   working set (PI-5); OV-4 (n_r, τ, level rule); OV-5 thresholds.
 - **Gate 2 privileged steps need root.** `sudo` requires a password, so this session cannot run them. As in R2, the
   owner runs them with `sudo`.
+
+## 5. Pilot decision package (approved 2026-10-12)
+
+After PI-0, CTRL, PI-1 (both modes) and PI-6 had passed (`docs/PHASE_1C_M5_PILOT_REPORT.md`), the owner was given a
+decision package with evidence, options and a recommendation per item, and chose option A for every item. The record
+holds each one under its own ID. Tags as in §1; **ENG** values are arithmetic on approved values, not measurements.
+
+| Item | Record ID | Approved | Basis |
+|---|---|---|---|
+| D0 | `FZ-INTENSITY-R2` | netem loss on A egress ≤ 5 %; CPU quota ≥ 0.075 core; contender weight ≤ 400 | **V** R2-B, R2-D T2, R2-C E2 |
+| D1 | `FZ-PI7-LOCK` | CTRL maximum of `app.lock_wait_ms` = 0 ms (every CTRL run proves zero lock acquisitions with `lock_hold_us 0`); a lock-hold rep needs `app.lock_wait_ms` P99 in W measured (OK/PARTIAL) and > 0.05 ms, the first histogram bucket bound, so an uncontended acquisition does not count | **V** CTRL evidence; threshold **ENG** |
+| D2 | `FZ-INTENSITY-APP` | Worker utilisation ≤ 0.5 at λ = 100 /s and service time ≈ 4.4 ms (CTRL client p50 4.38–4.43 ms): pool P′ ≥ 1, candidates 3, 2, 1 (only three exist with P = 4; accepted); lock hold ≤ 5,000 µs, candidates 500, 1,000, 2,000, 5,000; dependency delay ≤ 15 ms, candidates 4, 7, 10, 15 | **V** CTRL; ceilings **ENG** |
+| D3 | `FZ-INTENSITY-NET` | Path loss (netem on R toward B) ≤ 5 %; congestion and police rate floor = 0.5 × the measured CTRL bit rate in that direction; netem limit ≤ 1,000 packets. Byte counters at R are added first; congestion and police do not run until the bit rate is measured and reported | local loss **V** (R2-B); rates **OPEN** until measured |
+| D4 | `FZ-WORKSET` | A preregistered file-backed working set shaped like R2-F (a file scanned at a fixed rate, a small fixed anonymous buffer), always present in the workload, as an FZ-WORKLOAD amendment; CTRL, PI-1 and PI-6 are repeated at that commit. **The concrete sizes and rates are not yet approved**: they are proposed from R2-F and need owner approval before any run | **V** R2-F mechanism |
+| D5 | `FZ-OV` | OV-4: n_r = 2, τ = ±10 %, level 80,000 pps (a quarter of R2-E's loss-free maximum of about 320k pps on its topology); OV-5: r* = 0.9, sizes after D4 | **V** R2-E (other topology); **ENG** |
+| D5 (Q-5) | `FZ-Q5` | 14 CTRL test runs, so G-Q3 stays gate-valid if OV-4 proves infeasible | pilot design §8.1 |
+| Q-2 | `FZ-Q2` | Driver-root collector mode for M6 (keeps M3B eBPF, the validated configuration); unprivileged mode recorded as feasible for M3A + app (PI-1) | **V** PI-1 |
+
+Still pending after §5:
+
+- `FZ-INTENSITY`: the memory M floor (needs the D4 working set) and the OV-5 lab cap and sizes.
+- `FZ-PI5`: PI-5 stays unauthorised until the working set exists and its values are approved.
+- The FZ-WORKLOAD amendment with the working-set values (D4).
+- Design-level items outside this package: U-1, U-1b, U-7 (before M6) and U-6 raw-data storage (AMD-17 covers staging).
 
 ## Appendix A. AMD-1 … AMD-17 (Stage 3H text, verbatim; adopted by the owner's approval of `FZ-AMD-01` … `FZ-AMD-17`, `4b6041c`)
 
