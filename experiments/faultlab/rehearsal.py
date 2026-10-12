@@ -284,9 +284,15 @@ def replay(out: Path) -> bytes:
     return validate_snapshot(canonical_bytes(snap))[1]
 
 
-def app_feature_report(snap_bytes: bytes):
-    """(rows, problems): every registry app.* measurement with quality OK or PARTIAL, at app:<target>."""
+def app_feature_report(snap_bytes: bytes, structural=None):
+    """(rows, problems): every registry app.* measurement with quality OK or PARTIAL, at app:<target>.
+
+    structural {feature_id: reason}: features the caller has proven, from the run's verified evidence, that its
+    configuration cannot produce (pilot CTRL: app.lock_wait_ms with lock_hold_us 0). For those only, a MISSING
+    measurement without a value at the right scope, and their missing entry at the right scope, are accepted and noted
+    on the row; never measured, any other quality or another scope still fail. Default: nothing is exempt."""
     from sentinelai.diagnostic.contract import load_contract
+    structural = dict(structural or {})
     snap = json.loads(snap_bytes)
     scope = f"app:{snap['target']['name']}"
     want = set()
@@ -303,12 +309,15 @@ def app_feature_report(snap_bytes: bytes):
         seen.add(key)
         rows.append({"feature": key[0], "aggregation": key[1], "qualifier": key[2], "quality": m["quality"],
                      "value": m["value"], "coverage": m["coverage"], "scope": m["scope"]})
-        if m["quality"] not in ("OK", "PARTIAL"):
+        if key[0] in structural and m["quality"] == "MISSING" and m["value"] is None and m["scope"] == scope:
+            rows[-1]["structurally_unavailable"] = structural[key[0]]
+        elif m["quality"] not in ("OK", "PARTIAL"):
             problems.append(f"{key}: quality {m['quality']}")
         if m["scope"] != scope:
             problems.append(f"{key}: scope {m['scope']}")
     problems += [f"not measured: {k}" for k in sorted(want - seen, key=str)]
-    missing = [mm for mm in snap["missing_measurements"] if mm["feature_id"].startswith("app.")]
+    missing = [mm for mm in snap["missing_measurements"] if mm["feature_id"].startswith("app.")
+               and not (mm["feature_id"] in structural and mm.get("scope") == scope)]
     problems += [f"listed as missing: {mm['feature_id']} ({mm['reason']})" for mm in missing]
     if {"APP_METRICS", "APP_EVENTS"} & set(snap["data_quality"]["sources_unavailable"]):
         problems.append("application sources reported unavailable")

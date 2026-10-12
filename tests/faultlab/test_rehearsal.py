@@ -290,6 +290,39 @@ class TestFeatureReport(unittest.TestCase):
         _, problems = R.app_feature_report(self.snapshot())   # wrong aggregations and no event codes: not measured
         self.assertTrue(any(p.startswith("not measured") for p in problems))
 
+    def test_structural_exemption_covers_only_a_valueless_missing_measurement_of_that_feature(self):
+        def snap(quality="MISSING", value=None, scope="app:t", listed_scope="app:t"):
+            ms = [{"feature_id": "app.lock_wait_ms", "aggregation": "P99", "qualifier": None, "quality": quality,
+                   "value": value, "coverage": 1.0, "scope": scope},
+                  {"feature_id": "app.throughput", "aggregation": "RATE", "qualifier": None, "quality": "MISSING",
+                   "value": None, "coverage": 1.0, "scope": "app:t"}]
+            return json.dumps({"target": {"name": "t"}, "measurements": ms, "data_quality": {"sources_unavailable": []},
+                               "missing_measurements": [{"feature_id": f, "reason": "r", "scope": listed_scope}
+                                                        for f in ("app.lock_wait_ms", "app.throughput")]}).encode()
+        lock = ("app.lock_wait_ms", "P99", None)
+        ex = {"app.lock_wait_ms": "why"}
+        rows, problems = R.app_feature_report(snap(), ex)
+        self.assertNotIn(f"{lock}: quality MISSING", problems)
+        self.assertNotIn("listed as missing: app.lock_wait_ms (r)", problems)
+        self.assertEqual([r["feature"] for r in rows if r.get("structurally_unavailable") == "why"],
+                         ["app.lock_wait_ms"])
+        self.assertIn("('app.throughput', 'RATE', None): quality MISSING", problems)   # never another feature
+        self.assertIn("listed as missing: app.throughput (r)", problems)
+        _, default = R.app_feature_report(snap())                                       # default: nothing exempt
+        self.assertIn(f"{lock}: quality MISSING", default)
+        self.assertIn("listed as missing: app.lock_wait_ms (r)", default)
+        for name, kw, needle in (("INVALID", {"quality": "INVALID"}, f"{lock}: quality INVALID"),
+                                 ("STALE", {"quality": "STALE"}, f"{lock}: quality STALE"),
+                                 ("MISSING with a value", {"value": 0.0}, f"{lock}: quality MISSING"),
+                                 ("other scope", {"scope": "app:x", "listed_scope": "app:x"}, f"{lock}: scope app:x"),
+                                 ("listed at another scope", {"listed_scope": "app:x"},
+                                  "listed as missing: app.lock_wait_ms (r)")):
+            with self.subTest(name):
+                self.assertIn(needle, R.app_feature_report(snap(**kw), ex)[1])
+        absent = json.loads(snap())
+        absent["measurements"] = absent["measurements"][1:]
+        self.assertIn(f"not measured: {lock}", R.app_feature_report(json.dumps(absent).encode(), ex)[1])
+
 
 class TestProcesses(unittest.TestCase):
     def setUp(self):

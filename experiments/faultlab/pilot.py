@@ -567,6 +567,61 @@ def reconcile_r(counters):
     return summary, sorted(k for k, v in c.items() if not v)
 
 
+LOCK_WAIT = "app.lock_wait_ms"
+CONFIG_DOC_KEYS = {"seq", "mono_ns", "config", "config_sha256", "control_error"}
+SERVICE_CONFIG_KEYS = ("cpu_us", "dependency_timeout_ms", "lock_hold_us", "lock_wait_exceeded_ms", "pool", "queue")
+
+
+def structural_app_gaps(out: Path, manifest_ok: bool):
+    """({feature: reason}, basis): the app.* features this run's own configuration cannot produce, for
+    app_feature_report. Only app.lock_wait_ms, and only if the manifest-verified evidence proves lock_hold_us == 0: the
+    workload observes lock waits only while it holds the lock (workload.py), and FZ-WORKLOAD approves 0 for CTRL
+    (register: "no lock contention in CTRL"). Proof: run.json and the workload's own config echo agree on 0, the echo
+    is the only configuration of the run (seq 1, no control error) and hashes to its config_sha256, both bracketing
+    metrics documents carry that hash, and the end document holds no lock-wait observation at all. Anything else
+    leaves the feature required (basis.not_applied_because says why)."""
+    from sentinelai.collectors import app as appmod
+    failed = []
+    basis = {"feature": LOCK_WAIT, "applied": False, "not_applied_because": failed}
+
+    def need(cond, why):
+        if not cond:
+            failed.append(why)
+        return cond
+    try:
+        if not need(manifest_ok, "manifest not verified"):
+            return {}, basis
+        run = json.loads((out / EVIDENCE / "run.json").read_bytes())
+        doc = json.loads((out / EVIDENCE / "config.json").read_bytes())
+        if not need(isinstance(doc, dict) and set(doc) == CONFIG_DOC_KEYS and isinstance(doc["config"], dict),
+                    "config.json is not a workload configuration echo"):
+            return {}, basis
+        cfg, w = doc["config"], run.get("workload") if isinstance(run.get("workload"), dict) else {}
+        basis["lock_hold_us"] = {"config_json": cfg.get("lock_hold_us"), "run_json": w.get("lock_hold_us")}
+        for name, v in (("config.json", cfg.get("lock_hold_us")), ("run.json workload", w.get("lock_hold_us"))):
+            need(type(v) is int and v == 0, f"{name} lock_hold_us is {v!r}, not 0")
+        need(all(k in cfg and k in w and type(cfg[k]) is type(w[k]) and cfg[k] == w[k] for k in SERVICE_CONFIG_KEYS),
+             "workload configuration echo differs from run.json workload")
+        need(doc["seq"] == 1 and doc["control_error"] is None,
+             "workload configuration changed during the run or a control error was recorded")
+        sha = hashlib.sha256(json.dumps(cfg, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+        need(doc["config_sha256"] == sha, "config_sha256 does not hash the recorded configuration")
+        docs = [appmod.parse((out / EVIDENCE / n).read_bytes()) for n in ("app_start.json", "app_end.json")]
+        if need(all(isinstance(d, appmod.AppSample) for d in docs), "saved metrics documents invalid"):
+            need(all(d.config_sha256 == doc["config_sha256"] for d in docs),
+                 "metrics documents were not produced under the recorded configuration")
+            need(not any(docs[1].histograms["lock_wait"]) and docs[1].events.get("LOCK_WAIT_EXCEEDED") == 0,
+                 "lock waits were observed")
+    except (OSError, ValueError, TypeError, KeyError, AttributeError) as exc:
+        failed.append(f"evidence unreadable: {type(exc).__name__}: {exc}")
+    if failed:
+        return {}, basis
+    reason = ("structurally unavailable: the approved CTRL workload (FZ-WORKLOAD) has lock_hold_us 0, and the workload "
+              "records lock waits only while holding the lock; zero lock-wait observations confirmed in the evidence")
+    basis.update(applied=True, reason=reason)
+    return {LOCK_WAIT: reason}, basis
+
+
 def pi_checks(run, snap, ticks):
     ms = snap["measurements"]
     net = [m for m in ms if m["feature_id"].startswith(("tcp.", "net."))]
@@ -610,8 +665,10 @@ def evaluate(out: Path, live: bool = False, run_result=None) -> dict:
         except Exception as exc:                                        # noqa: BLE001 -- recorded, never hidden
             checks["replay_byte_identical"] = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
         try:                                                            # malformed evidence fails, never crashes
-            rows, problems = app_feature_report(live_bytes)
-            checks["app_features"] = {"ok": not problems, "problems": problems}
+            gaps, basis = structural_app_gaps(out, checks["manifest"]["ok"])
+            rows, problems = app_feature_report(live_bytes, gaps)
+            checks["app_features"] = {"ok": not problems, "problems": problems, "structurally_unavailable": basis,
+                                      "rows": rows}
             recs = [json.loads(x) for x in (out / EVIDENCE / "client.jsonl").read_text().splitlines()]
             a, b = (app_flat((out / EVIDENCE / n).read_bytes()) for n in ("app_start.json", "app_end.json"))
             summary, problems = reconcile_clients(run, recs, a, b)

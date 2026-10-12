@@ -34,7 +34,6 @@ _spec.loader.exec_module(W)
 
 COMMIT = "c" * 40
 REAL_DO = L.Host._do                    # the real mutation dispatcher, for the one test that runs it on FakeSys
-SNAP = b'{"measurements": [], "missing_measurements": []}\n'
 WORKLOAD = json.loads((ROOT / "docs/PHASE_1C_FREEZE1_DECISIONS.json").read_text())["decisions"]["FZ-WORKLOAD"]["value"]
 
 
@@ -226,9 +225,10 @@ class FakeProc:
 class SimHost(L.Host):
     """Real plan check and op log; the effect is simulated on FakeSys. fail(op) -> True raises OSError there."""
 
-    def __init__(self, plan, oplog, sysr, fail=None, spawn=None, fail_after_mount=False):
+    def __init__(self, plan, oplog, sysr, fail=None, spawn=None, fail_after_mount=False, workload_files=None):
         super().__init__(plan, oplog, sysr)
         self.fail, self.spawn, self.ops = fail or (lambda op: False), spawn or {}, []
+        self.workload_files = workload_files or {}   # what the workload publishes (config echo); default b"{}"
         self.fail_after_mount = fail_after_mount     # the first ip netns add fails after mounting /run/netns
 
     def _do(self, op, stdout, stderr):
@@ -306,7 +306,7 @@ class SimHost(L.Host):
                 s.run[f"{L.run_dir(self.plan.run_id)}/dependency_config.json"] = ("file", L.LAB_UID, b"{}")
             if role == "workload":
                 for n in ("metrics.json", "config.json"):
-                    s.run[f"{L.run_dir(self.plan.run_id)}/{n}"] = ("file", L.LAB_UID, b"{}")
+                    s.run[f"{L.run_dir(self.plan.run_id)}/{n}"] = ("file", L.LAB_UID, self.workload_files.get(n, b"{}"))
             return p
         return None
 
@@ -1111,15 +1111,50 @@ class TestNetnsDirMount(Sandboxed):
 
 
 # ------------------------------------------------------------------------------------------ CTRL orchestration
-def metrics_doc(completed=0, rejected=0, failed=0, busy=0):
+def metrics_doc(completed=0, rejected=0, failed=0, busy=0, sha="0" * 64, lock_waits=0):
     m = W.Metrics()
     m.counters["requests_completed_total"] = completed
     m.counters["requests_rejected_total"] = rejected
     m.counters["requests_failed_total"] = failed
-    return m.document(4, busy, "0" * 64)
+    for _ in range(lock_waits):
+        m.observe("lock_wait", 1.0)
+    return m.document(4, busy, sha)
 
 
-class TestCtrl(Sandboxed):
+def config_echo(workload, seq=1, control_error=None, **over):
+    """config.json as the workload publishes it (Runner.echo_config, its own canonical encoding and hash)."""
+    cfg = dict({k: workload[k] for k in P.SERVICE_CONFIG_KEYS}, **over)
+    return W.canonical({"seq": seq, "mono_ns": 1, "config": cfg, "control_error": control_error,
+                        "config_sha256": hashlib.sha256(W.canonical(cfg)).hexdigest()})
+
+
+def app_snapshot(lock="MISSING", scope="app:faultlab-ctrl", quality=None, drop=(), unavailable=(), lock_scope=None):
+    """A snapshot with every registry app.* measurement (OK, at scope) as the collector emits it; app.lock_wait_ms is
+    MISSING without a value and listed as missing (lock="MISSING", as with lock_hold_us 0) or OK (lock="OK")."""
+    from sentinelai.diagnostic.contract import load_contract
+    ms, missing = [], []
+    for f in load_contract().registry.features:
+        if f.family != "application" or f.id in drop:
+            continue
+        for a in f.aggregations:
+            for q in (sorted(f.dimension.values) if f.dimension else [None]):
+                m = {"feature_id": f.id, "aggregation": str(getattr(a, "value", a)), "quality": "OK", "value": 1.0,
+                     "coverage": 1.0, "scope": scope}
+                if q is not None:
+                    m["qualifier"] = {"dimension": f.dimension.name, "value": q}
+                if f.id == P.LOCK_WAIT and lock == "MISSING":
+                    m.update(quality="MISSING", value=None, scope=lock_scope or scope)
+                    missing.append({"feature_id": f.id, "reason": "no requests in the window, or the rank is in "
+                                    "the +Inf bucket", "scope": lock_scope or scope})
+                m["quality"] = (quality or {}).get(f.id, m["quality"])
+                ms.append(m)
+    return (json.dumps({"target": {"name": "faultlab-ctrl"}, "measurements": ms, "missing_measurements": missing,
+                        "data_quality": {"sources_unavailable": list(unavailable)}}, sort_keys=True) + "\n").encode()
+
+
+class CtrlFixture(Sandboxed):
+    """The simulated CTRL run (no tests here)."""
+
     def setUp(self):
         super().setUp()
         from sentinelai.diagnostic.contract import Target
@@ -1127,6 +1162,11 @@ class TestCtrl(Sandboxed):
         self.out = self.tmp / "CTRL-900001"
         self.n = P.scheduled_arrivals(WORKLOAD, P.WARMUP_S + P.B_S + P.W_S + P.COOLDOWN_S, 900001)
         self.docs = []
+        self.workload = WORKLOAD                     # run.json workload (the approved FZ-WORKLOAD value)
+        self.config = None                           # config.json bytes; None: the echo of self.workload
+        self.doc_sha = None                          # config_sha256 in the metrics documents; None: the echo's
+        self.lock_waits = 0                          # lock-wait observations in the end metrics document
+        self.snap = app_snapshot()                   # the run's canonical snapshot (live and replay)
         target = Target(name="faultlab-ctrl", cgroup_path=L.TARGET_CGROUP_PATH, pids=(1,), cpuset="18",
                         netns_ref="pid:1", ifaces=())
 
@@ -1135,10 +1175,14 @@ class TestCtrl(Sandboxed):
             return target.model_copy(update={"pids": (pid,), "netns_ref": f"pid:{pid}"})
 
         def read_metrics(run_id):
+            try:
+                sha = self.doc_sha or json.loads(self.config_bytes())["config_sha256"]
+            except (ValueError, KeyError, TypeError):            # a deliberately malformed echo
+                sha = "0" * 64
             if not self.docs:
-                self.docs.append(metrics_doc())
+                self.docs.append(metrics_doc(sha=sha))
                 return self.docs[0]
-            return metrics_doc(completed=self.n)
+            return metrics_doc(completed=self.n, sha=sha, lock_waits=self.lock_waits)
 
         def loadgen():
             def finish():
@@ -1180,28 +1224,33 @@ class TestCtrl(Sandboxed):
                   mock.patch.object(EB, "loader_argv", return_value=["loader"]),
                   mock.patch.object(m3b_r1_validate, "Recording", Loader),
                   mock.patch.object(CON, "canonical_bytes", return_value=b"snap"),
-                  mock.patch.object(PIPE, "validate_snapshot", return_value=(None, SNAP)),
+                  mock.patch.object(PIPE, "validate_snapshot", side_effect=lambda b: (None, self.snap)),
                   mock.patch.object(TICKS, "encode_ticks", return_value=b"TICKS\n"),
                   mock.patch.object(TICKS, "decode_ticks", return_value=[]),
                   mock.patch.object(P, "proc_cpu_s", return_value=0.5),
                   mock.patch.object(P.C, "wait_bpf_released", return_value={"released": True}),
-                  mock.patch.object(P, "replay", return_value=SNAP),
-                  mock.patch.object(RH, "app_feature_report", return_value=([], [])),
+                  mock.patch.object(P, "replay", side_effect=lambda out: self.snap),
                   mock.patch.object(P, "pi_checks", return_value={"PI-1": {"ok": True}})):
             p.start()
             self.addCleanup(p.stop)
-        approved = mock.patch.object(P, "approved_value", side_effect=lambda name, rec=None: WORKLOAD)
+        approved = mock.patch.object(P, "approved_value", side_effect=lambda name, rec=None: self.workload)
         approved.start()
         self.addCleanup(approved.stop)
+
+    def config_bytes(self):
+        return self.config if self.config is not None else config_echo(self.workload)
 
     def run_ctrl(self, **kw):
         hosts = []
         spawn = dict(self.spawn, **kw.pop("spawn", {}))
+        kw.setdefault("workload_files", {"config.json": self.config_bytes()})
         with mock.patch.object(P.os, "chown"):
             rc = P.ctrl(self.out, 900001, COMMIT, sysr=self.s, host_cls=host_factory(hosts, spawn=spawn, **kw),
                         sleep=lambda x: None)
         return rc, hosts[0]
 
+
+class TestCtrl(CtrlFixture):
     def test_ctrl_run_produces_verified_reconciled_evidence(self):
         rc, h = self.run_ctrl()
         rep = json.loads((self.out / "report.json").read_text())
@@ -1238,7 +1287,7 @@ class TestCtrl(Sandboxed):
 
     def test_replay_mismatch_fails(self):
         self.run_ctrl()
-        with mock.patch.object(P, "replay", return_value=SNAP + b" "):
+        with mock.patch.object(P, "replay", return_value=self.snap + b" "):
             rep = P.evaluate(self.out)
         self.assertFalse(rep["checks"]["replay_byte_identical"]["ok"])
         self.assertFalse(rep["pipeline_ok"])
@@ -1295,6 +1344,164 @@ class TestCtrl(Sandboxed):
         c["end"]["r"][L.IF_RB]["tx_packets"] = c["start"]["r"][L.IF_RB]["tx_packets"]
         _, failed = P.reconcile_r(c)
         self.assertIn("a_out_left_r", failed)
+
+
+class TestCtrlAppFeatures(CtrlFixture):
+    """app_features through the real ctrl() -> evaluate() -> app_feature_report path (no mock of the checker).
+    app.lock_wait_ms may be MISSING only when the run's manifest-verified evidence proves lock_hold_us == 0."""
+
+    def app(self, rep=None):
+        rep = rep or json.loads((self.out / "report.json").read_text())
+        return rep["checks"]["app_features"]
+
+    def assert_fails(self, needle, basis_needle=None):
+        rc, _ = self.run_ctrl()
+        rep = json.loads((self.out / "report.json").read_text())
+        a = self.app(rep)
+        self.assertEqual(rc, 1)
+        self.assertFalse(a["ok"])
+        self.assertFalse(rep["pipeline_ok"])
+        self.assertTrue(any(needle in p for p in a["problems"]), a["problems"])
+        if basis_needle is not None:
+            self.assertFalse(a["structurally_unavailable"]["applied"])
+            self.assertTrue(any(basis_needle in w for w in a["structurally_unavailable"]["not_applied_because"]),
+                            a["structurally_unavailable"])
+        return a
+
+    def test_zero_lock_hold_accepts_only_the_missing_lock_wait(self):
+        """The CTRL-900001 shape: everything measured except app.lock_wait_ms P99 (MISSING, listed as missing)."""
+        rc, _ = self.run_ctrl()
+        rep = json.loads((self.out / "report.json").read_text())
+        a = self.app(rep)
+        self.assertEqual(rc, 0, a)
+        self.assertTrue(a["ok"] and rep["pipeline_ok"], a)
+        self.assertEqual(a["problems"], [])
+        basis = a["structurally_unavailable"]
+        self.assertTrue(basis["applied"])
+        self.assertEqual(basis["lock_hold_us"], {"config_json": 0, "run_json": 0})
+        self.assertIn("lock_hold_us 0", basis["reason"])
+        noted = [r for r in a["rows"] if "structurally_unavailable" in r]
+        self.assertEqual([(r["feature"], r["aggregation"], r["quality"]) for r in noted],
+                         [(P.LOCK_WAIT, "P99", "MISSING")])
+        self.assertEqual(P.evaluate(self.out)["checks"]["app_features"], a)       # offline recomputation agrees
+
+    def test_the_unpatched_checker_rejects_this_run(self):
+        """Regression anchor: without the evidence-proven exemption the same evidence fails exactly as CTRL-900001."""
+        self.run_ctrl()
+        with mock.patch.object(P, "structural_app_gaps", return_value=({}, {"applied": False})):
+            a = self.app(P.evaluate(self.out))
+        self.assertFalse(a["ok"])
+        self.assertEqual(sorted(a["problems"]), sorted([f"('{P.LOCK_WAIT}', 'P99', None): quality MISSING",
+                         f"listed as missing: {P.LOCK_WAIT} (no requests in the window, or the rank is in the +Inf "
+                         "bucket)"]))
+
+    def test_zero_lock_hold_never_excuses_another_feature(self):
+        for name, snap, needle in (
+                ("unrelated feature not measured", app_snapshot(drop=("app.queue_wait_ms",)), "not measured"),
+                ("unrelated feature MISSING", app_snapshot(quality={"app.throughput": "MISSING"}), "quality MISSING"),
+                ("unrelated feature STALE", app_snapshot(quality={"app.latency_ms": "STALE"}), "quality STALE"),
+                ("wrong scope everywhere", app_snapshot(scope="app:other"), "scope app:other"),
+                ("lock wait at another scope", app_snapshot(lock_scope="app:other"), "scope app:other"),
+                ("lock wait INVALID", app_snapshot(quality={P.LOCK_WAIT: "INVALID"}), "quality INVALID"),
+                ("lock wait not measured at all", app_snapshot(drop=(P.LOCK_WAIT,)), "not measured"),
+                ("app metrics unavailable", app_snapshot(unavailable=("APP_METRICS",)), "sources reported"),
+                ("app events unavailable", app_snapshot(unavailable=("APP_EVENTS",)), "sources reported")):
+            with self.subTest(name):
+                self.out, self.s, self.docs, self.snap = self.tmp / f"CTRL-9{len(list(self.tmp.iterdir())):05d}", \
+                    FakeSys(), [], snap
+                a = self.assert_fails(needle)
+                self.assertTrue(a["structurally_unavailable"]["applied"])      # the proof held; the snapshot did not
+
+    def test_positive_lock_hold_requires_the_lock_wait(self):
+        self.workload = dict(WORKLOAD, lock_hold_us=200)
+        self.lock_waits = 5
+        a = self.assert_fails("quality MISSING", "lock_hold_us is 200, not 0")
+        self.assertIn(f"listed as missing: {P.LOCK_WAIT} (no requests in the window, or the rank is in the +Inf "
+                      "bucket)", a["problems"])
+
+    def test_positive_lock_hold_with_a_measured_lock_wait_passes(self):
+        self.workload = dict(WORKLOAD, lock_hold_us=200)
+        self.lock_waits = 5
+        self.snap = app_snapshot(lock="OK")
+        rc, _ = self.run_ctrl()
+        a = self.app()
+        self.assertEqual(rc, 0, a)
+        self.assertTrue(a["ok"])
+        self.assertFalse(a["structurally_unavailable"]["applied"])
+        self.assertFalse([r for r in a["rows"] if "structurally_unavailable" in r])
+        for bad in ("INVALID", "STALE", "MISSING"):                     # a present lock wait keeps its normal checks
+            with self.subTest(bad):
+                self.snap = app_snapshot(lock="OK", quality={P.LOCK_WAIT: bad})
+                (self.out / "snapshot.json").write_bytes(self.snap)          # the live snapshot app_features reads
+                a = self.app(P.evaluate(self.out))
+                self.assertFalse(a["ok"])
+                self.assertIn(f"('{P.LOCK_WAIT}', 'P99', None): quality {bad}", a["problems"])
+
+    def test_recorded_configuration_must_prove_zero_lock_hold(self):
+        echo = lambda **kw: config_echo(WORKLOAD, **kw)
+        good = json.loads(echo())
+        cases = (
+            ("config.json not JSON", b"{not json", None, "evidence unreadable"),
+            ("config.json not an echo", b'{"lock_hold_us": 0}', None, "not a workload configuration echo"),
+            ("config.json missing config", W.canonical(dict(good, config=None)), None,
+             "not a workload configuration echo"),
+            ("config lock_hold_us 200", echo(lock_hold_us=200), None, "config.json lock_hold_us is 200"),
+            ("config lock_hold_us false", echo(lock_hold_us=False), None, "config.json lock_hold_us is False"),
+            ("config lock_hold_us '0'", echo(lock_hold_us="0"), None, "config.json lock_hold_us is '0'"),
+            ("config lock_hold_us 0.0", echo(lock_hold_us=0.0), None, "config.json lock_hold_us is 0.0"),
+            ("config lock_hold_us absent", W.canonical(dict(good, config={k: v for k, v in good["config"].items()
+                                                                           if k != "lock_hold_us"})), None,
+             "config.json lock_hold_us is None"),
+            ("echo differs from run.json", echo(pool=8), None, "differs from run.json workload"),
+            ("reconfigured during the run", echo(seq=2), None, "changed during the run"),
+            ("control error recorded", echo(control_error="bad control"), None, "changed during the run"),
+            ("hash does not match", W.canonical(dict(good, config_sha256="1" * 64)), None,
+             "does not hash the recorded configuration"),
+            ("metrics under another configuration", echo(), "2" * 64, "not produced under the recorded"))
+        for name, config, doc_sha, why in cases:
+            with self.subTest(name):
+                self.out, self.s, self.docs = self.tmp / f"CTRL-9{len(list(self.tmp.iterdir())):05d}", FakeSys(), []
+                self.config, self.doc_sha = config, doc_sha
+                self.assert_fails("quality MISSING", why)
+
+    def test_run_json_must_record_zero_lock_hold(self):
+        for v in (200, None, True):
+            with self.subTest(v):
+                self.out, self.s, self.docs = self.tmp / f"CTRL-9{len(list(self.tmp.iterdir())):05d}", FakeSys(), []
+                self.workload = dict(WORKLOAD, lock_hold_us=v)
+                self.config = config_echo(WORKLOAD)
+                self.assert_fails("quality MISSING", f"run.json workload lock_hold_us is {v!r}")
+
+    def test_observed_lock_waits_contradict_zero_lock_hold(self):
+        self.lock_waits = 1
+        self.assert_fails("quality MISSING", "lock waits were observed")
+
+    def test_provenance_requires_a_verified_manifest(self):
+        self.run_ctrl()
+        self.assertTrue(self.app()["ok"])
+        f = self.out / "evidence" / "config.json"
+        f.write_bytes(f.read_bytes() + b" ")                           # same content, changed bytes: not verified
+        rep = P.evaluate(self.out)
+        self.assertFalse(rep["checks"]["manifest"]["ok"])
+        a = self.app(rep)
+        self.assertFalse(a["ok"])
+        self.assertEqual(a["structurally_unavailable"]["not_applied_because"], ["manifest not verified"])
+        (self.out / "evidence" / "config.json").unlink()
+        self.assertFalse(self.app(P.evaluate(self.out))["ok"])
+
+    def test_missing_evidence_files_never_grant_the_exemption(self):
+        self.run_ctrl()
+        for n in ("run.json", "config.json", "app_start.json", "app_end.json"):
+            with self.subTest(n):
+                f = self.out / "evidence" / n
+                data = f.read_bytes()
+                f.unlink()
+                gaps, basis = P.structural_app_gaps(self.out, True)
+                f.write_bytes(data)
+                self.assertEqual(gaps, {})
+                self.assertFalse(basis["applied"])
+                self.assertTrue(basis["not_applied_because"])
+        self.assertEqual(P.structural_app_gaps(self.out, True)[0], {P.LOCK_WAIT: mock.ANY})
 
 
 # ------------------------------------------------------------------------------------------ evaluation units
