@@ -258,6 +258,8 @@ def echo_argvs() -> Dict[str, List[str]]:
 CPU_PERIOD_US = 100000
 QUOTA_PATH, CONTENDER_WEIGHT_PATH = f"{TARGET_DIR}/cpu.max", f"{CONTENDER_DIR}/cpu.weight"
 QUOTA_RESTORE = ("write", QUOTA_PATH, f"max {CPU_PERIOD_US}")      # always allowed: the kernel default
+MEMORY_PATH = f"{TARGET_DIR}/memory.max"                             # memory_pressure (FZ-PI5, AMD-12)
+MEMORY_RESTORE = ("write", MEMORY_PATH, "max")                       # always allowed: the kernel default
 CONTENDER_CODE = "i = 0\nwhile True:\n    i += 1\n"               # one SCHED_OTHER busy thread (R2-C contender)
 POLICE_BURST_BYTES = 3000                                            # two MTU-sized packets (ENG)
 
@@ -268,6 +270,10 @@ def contender_argv() -> List[str]:
 
 def quota_ops(quota_us: int) -> List[tuple]:
     return [("write", QUOTA_PATH, f"{int(quota_us)} {CPU_PERIOD_US}")]
+
+
+def memory_ops(mib: int) -> List[tuple]:
+    return [("write", MEMORY_PATH, str(int(mib) * 1024 * 1024))]
 
 
 def contender_ops(weight: int) -> List[tuple]:
@@ -630,9 +636,9 @@ class Plan:
     def __init__(self, run_id: Optional[str] = None, spawns: Iterable[tuple] = (), fault_ops: Iterable[tuple] = ()):
         fault_ops = list(fault_ops)
         self.writes = {(op[1], op[2]) for op in cgroup_plan() if op[0] == "write"} | \
-            {(f"{LAB_DIR}/cgroup.kill", "1"), QUOTA_RESTORE[1:]}
+            {(f"{LAB_DIR}/cgroup.kill", "1"), QUOTA_RESTORE[1:], MEMORY_RESTORE[1:]}
         for op in fault_ops:                                        # the run's declared fault, exactly
-            if op[0] == "write" and op[1] in (QUOTA_PATH, CONTENDER_WEIGHT_PATH):
+            if op[0] == "write" and op[1] in (QUOTA_PATH, CONTENDER_WEIGHT_PATH, MEMORY_PATH):
                 self.writes.add((op[1], op[2]))
             elif op[0] == "spawn" and op[1] == "contender":
                 spawns = list(spawns) + [(op[1], op[2])]
@@ -867,12 +873,13 @@ def cleanup(host: Host, sysr, entries: List[dict], run_id: Optional[str], wait_s
         sleep(0.05)
     if after_procs is not None:
         step("after_procs", after_procs)
-    wrote_quota = any(e.get("phase") == "result" and e.get("ok") and e["op"][0] == "write" and e["op"][1] == QUOTA_PATH
-                      and (len(e["op"]) < 3 or e["op"][2] != QUOTA_RESTORE[2]) for e in entries)
-    if wrote_quota and TARGET_DIR in st["dirs"] and sysr.exists(TARGET_DIR):     # design §5.9 step 1, read back
-        step("restore cpu.max", lambda: host.apply(QUOTA_RESTORE))
-        if (sysr.read(QUOTA_PATH) or "").strip() != QUOTA_RESTORE[2]:
-            errors.append(f"cpu.max not restored: {(sysr.read(QUOTA_PATH) or '').strip()!r}")
+    for name, restore in (("cpu.max", QUOTA_RESTORE), ("memory.max", MEMORY_RESTORE)):   # design §5.9, read back
+        wrote = any(e.get("phase") == "result" and e.get("ok") and e["op"][0] == "write" and e["op"][1] == restore[1]
+                    and (len(e["op"]) < 3 or e["op"][2] != restore[2]) for e in entries)
+        if wrote and TARGET_DIR in st["dirs"] and sysr.exists(TARGET_DIR):
+            step(f"restore {name}", lambda restore=restore: host.apply(restore))
+            if (sysr.read(restore[1]) or "").strip() != restore[2]:
+                errors.append(f"{name} not restored: {(sysr.read(restore[1]) or '').strip()!r}")
     if run_id is not None and run_dir(run_id) in st["dirs"]:
         for name in sysr.listdir_run(run_dir(run_id)):   # only run files and publish temporaries; anything else stays
             path = f"{run_dir(run_id)}/{name}"

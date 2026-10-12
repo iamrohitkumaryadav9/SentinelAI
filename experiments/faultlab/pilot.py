@@ -32,7 +32,8 @@ is handed to the invoking user at the end.
 Values come only from approved decisions (docs/PHASE_1C_FREEZE1_DECISIONS.json); the driver refuses otherwise. M2 is
 never invoked on pilot data (design §13 decision 7). Lab operations go through lab.Host only. Faults (pi8): the
 application faults (FZ-INTENSITY-APP) and the CPU and network faults (FZ-INTENSITY-CPUNET, refused until approved);
-memory pressure (FZ-INTENSITY memory floor, FZ-PI5 pending) is not implemented here.
+memory pressure (memory_max: FZ-INTENSITY-MEM, FZ-PI5) with per-tick MemAvailable / OOM aborts; the OV-5
+generator (FZ-INTENSITY OV-5 sizes pending) is not implemented here.
 """
 import argparse
 import hashlib
@@ -366,7 +367,9 @@ OP_FAULTS = {"cpu_contender": ("contender_weight_candidates", "higher", "cpu_con
              "netem_loss_a_egress": ("loss_a_pct_candidates", "higher", "network_packet_loss"),
              "police_a_ingress": ("police_kbit_candidates", "lower", "network_packet_loss"),
              "netem_loss_r_egress": ("loss_r_pct_candidates", "higher", "tcp_retransmissions"),
-             "netem_rate_r": ("congestion_kbit_candidates", "lower", "tcp_retransmissions")}
+             "netem_rate_r": ("congestion_kbit_candidates", "lower", "tcp_retransmissions"),
+             "memory_max": ("memory_max_mib_candidates", "lower", "memory_pressure")}
+MEM_AVAILABLE_MIN_KB, SWAP_PAGES_MAX = 4 * 1024 * 1024, 25.0     # memory-run abort; PI-5 swap bound (FZ-PI5)
 QUOTA_TOLERANCE = 1.05                       # usage <= quota x 1.05 (window edges are not CFS period edges; ENG)
 THROTTLE_RATIO_MIN, IDLE_MAX = 0.9, 0.05     # design §5.8 (R2-D GT, R2-C G2/G3/G6)
 
@@ -375,7 +378,8 @@ def op_fault_spec(fault: str, magnitude, decisions=DECISIONS) -> dict:
     """A CPU or network fault at an approved candidate (FZ-INTENSITY-CPUNET), re-checked against the approved
     ceilings and floors (FZ-INTENSITY-R2, FZ-INTENSITY-NET); its exact lab operations; refuses anything else."""
     key, stronger, cls = OP_FAULTS[fault]
-    cand = approved_value("FZ-INTENSITY-CPUNET", decisions)
+    decision = "FZ-INTENSITY-MEM" if fault == "memory_max" else "FZ-INTENSITY-CPUNET"
+    cand = approved_value(decision, decisions)
     r2, net = approved_value("FZ-INTENSITY-R2", decisions), approved_value("FZ-INTENSITY-NET", decisions)
     if isinstance(magnitude, bool) or not isinstance(magnitude, (int, float)) or magnitude not in cand[key]:
         refuse(f"{fault} magnitude {magnitude!r} is not an approved candidate {cand[key]}")
@@ -384,16 +388,18 @@ def op_fault_spec(fault: str, magnitude, decisions=DECISIONS) -> dict:
                   "netem_loss_a_egress": lambda m: 0 < m <= r2["loss_a_egress_max_pct"],
                   "netem_loss_r_egress": lambda m: 0 < m <= net["loss_r_egress_max_pct"],
                   "netem_rate_r": lambda m: m >= cand["congestion_floor_kbit"],
-                  "police_a_ingress": lambda m: m >= cand["police_floor_kbit"]}[fault]
-    if not ceiling_ok(magnitude) or cand["netem_limit_packets"] > net["netem_limit_max_packets"]:
+                  "police_a_ingress": lambda m: m >= cand["police_floor_kbit"],
+                  "memory_max": lambda m: m >= cand["floor_mib"]}[fault]
+    if not ceiling_ok(magnitude) or cand.get("netem_limit_packets", 0) > net["netem_limit_max_packets"]:
         refuse(f"{fault} magnitude {magnitude!r} violates its approved ceiling or floor")
     ops = {"cpu_contender": lambda m: L.contender_ops(int(m)), "cpu_quota": lambda m: L.quota_ops(int(m)),
            "netem_loss_a_egress": lambda m: L.netem_loss_ops("a", m),
            "netem_loss_r_egress": lambda m: L.netem_loss_ops("r", m),
            "netem_rate_r": lambda m: L.netem_rate_ops(int(m), cand["netem_limit_packets"]),
-           "police_a_ingress": lambda m: L.police_ops(int(m))}[fault](magnitude)
+           "police_a_ingress": lambda m: L.police_ops(int(m)),
+           "memory_max": lambda m: L.memory_ops(int(m))}[fault](magnitude)
     return {"type": fault, "class": cls, "magnitude": magnitude, "candidates": cand[key], "stronger": stronger,
-            "ops": ops, "decision": "FZ-INTENSITY-CPUNET"}
+            "ops": ops, "decision": decision}
 
 
 _TC_RATE = re.compile(r"\brate ([0-9.]+)([KMG]?)bit")
@@ -412,6 +418,8 @@ def op_readback(spec: dict, sysr) -> bool:
         return (sysr.read(L.QUOTA_PATH) or "").strip() == f"{int(m)} {L.CPU_PERIOD_US}"
     if t == "cpu_contender":
         return (sysr.read(L.CONTENDER_WEIGHT_PATH) or "").strip() == str(int(m)) and bool(leaf_pids(sysr, "contender"))
+    if t == "memory_max":
+        return (sysr.read(L.MEMORY_PATH) or "").strip() == str(int(m) * 1024 * 1024)
     probe = lambda k: (lambda r: r[1] if r and r[0] == 0 else "")(sysr.probe(L.TC_READS[k]))
     if t in ("netem_loss_a_egress", "netem_loss_r_egress"):
         text = probe("a_qdisc_text" if t == "netem_loss_a_egress" else "r_qdisc_text")
@@ -442,11 +450,30 @@ def qdisc_drops(sysr) -> Optional[dict]:
     return out
 
 
+def memory_guard(sysr):
+    """FZ-INTENSITY-MEM aborts, checked every tick of a memory run: host MemAvailable below 4 GiB, or any OOM kill in
+    the target cgroup (design §9 proposed additions)."""
+    def check():
+        info = {l.split(":")[0]: l.split()[1] for l in (sysr.read("/proc/meminfo") or "").splitlines() if ":" in l}
+        avail = int(info["MemAvailable"]) if info.get("MemAvailable", "").isdigit() else None
+        if avail is None or avail < MEM_AVAILABLE_MIN_KB:
+            return f"memory abort: host MemAvailable {avail} kB below {MEM_AVAILABLE_MIN_KB} kB (or unreadable)"
+        ev = {p[0]: p[1] for p in (l.split() for l in (sysr.read(f"{L.TARGET_DIR}/memory.events") or "").splitlines())
+              if len(p) == 2}
+        if ev.get("oom_kill", "0") != "0":
+            return f"memory abort: oom_kill {ev['oom_kill']} in the target cgroup"
+        return None
+    return check
+
+
 def gt_snapshot(sysr, tpid: int) -> dict:
     """Raw ground-truth sources at a window edge, read directly from the kernel (never through the collector)."""
     probe = lambda argv: (lambda r: r[1] if r and r[0] == 0 else None)(sysr.probe(argv))
     return {"mono_ns": time.monotonic_ns(), "proc_stat": sysr.read("/proc/stat"),
             "target_cpu_stat": sysr.read(f"{L.TARGET_DIR}/cpu.stat"), "a_snmp": sysr.read(f"/proc/{tpid}/net/snmp"),
+            "target_mem_events": sysr.read(f"{L.TARGET_DIR}/memory.events"),
+            "target_mem_stat": sysr.read(f"{L.TARGET_DIR}/memory.stat"),
+            "target_mem_pressure": sysr.read(f"{L.TARGET_DIR}/memory.pressure"), "vmstat": sysr.read("/proc/vmstat"),
             "a_links": probe(L.LAB_READS["a_links"]), "a_qdisc": probe(L.TC_READS["a_qdisc_json"]),
             "r_qdisc": probe(L.TC_READS["r_qdisc_json"])}
 
@@ -465,14 +492,29 @@ def gt_parse(g: dict) -> dict:
     qa = json.loads(g.get("a_qdisc") or "[]")
     out["a_root_drops"] = sum(q.get("drops", 0) for q in qa if q.get("kind") != "ingress")
     out["a_ingress_drops"] = sum(q.get("drops", 0) for q in qa if q.get("kind") == "ingress")
+    kv = lambda text: {p[0]: int(p[1]) for p in (l.split() for l in (text or "").splitlines())
+                       if len(p) == 2 and p[1].isdigit()}
+    ev, ms, vm = kv(g.get("target_mem_events")), kv(g.get("target_mem_stat")), kv(g.get("vmstat"))
+    if ev:
+        out["mem_max_events"], out["oom_kill"] = ev.get("max", 0), ev.get("oom_kill", 0)
+    if ms:
+        out["mem_refaults"] = ms.get("workingset_refault_anon", 0) + ms.get("workingset_refault_file", 0)
+    some = re.search(r"^some .*\btotal=([0-9]+)", g.get("target_mem_pressure") or "", re.M)
+    if some:
+        out["mem_psi_some_us"] = int(some.group(1))
+    if vm:
+        out["swap_pages"] = vm.get("pswpin", 0) + vm.get("pswpout", 0)
     links = json.loads(g.get("a_links") or "[]")
     st64 = next((l["stats64"] for l in links if l.get("ifname") == L.IF_A), {})
     out["a_if_drops"] = sum(st64.get(d, {}).get("dropped", 0) for d in ("rx", "tx"))
     return out
 
 
-def fault_ground_truth(fault: str, magnitude, a: dict, b: dict, ctrl_retrans_max) -> dict:
-    """Effect ground truth of a CPU / network fault over W (design §5.8), from two gt_parse results."""
+def fault_ground_truth(fault: str, magnitude, a: dict, b: dict, ctrl) -> dict:
+    """Effect ground truth of a CPU / network / memory fault over W (design §5.8), from two gt_parse results and
+    the campaign's CTRL maxima (ctrl: retrans, mem_refaults, mem_psi_some_us; a number = the retrans maximum)."""
+    ctrl = ctrl if isinstance(ctrl, dict) else {"retrans": ctrl}
+    ctrl_retrans_max = ctrl.get("retrans")
     d = lambda k: (b.get(k) or 0) - (a.get(k) or 0)
     dt_s = (b["mono_ns"] - a["mono_ns"]) / 1e9
     m = {"window_s": dt_s}
@@ -494,6 +536,15 @@ def fault_ground_truth(fault: str, magnitude, a: dict, b: dict, ctrl_retrans_max
         m.update(retrans=d("retrans"), ctrl_retrans_max=ctrl_retrans_max,
                  a_local_drops=d("a_root_drops") + d("a_if_drops"))
         ok = ctrl_retrans_max is not None and m["retrans"] > ctrl_retrans_max and m["a_local_drops"] == 0
+    elif fault == "memory_max":                                              # design §5.8 and PI-5 (FZ-PI5)
+        m.update(max_events=d("mem_max_events"), refaults=d("mem_refaults"), oom_kill=d("oom_kill"),
+                 psi_some_us=d("mem_psi_some_us"), swap_pages_per_s=d("swap_pages") / dt_s if dt_s > 0 else None,
+                 ctrl_refaults_max=ctrl.get("mem_refaults"), ctrl_psi_some_us_max=ctrl.get("mem_psi_some_us"))
+        ok = m["max_events"] > 0 and m["oom_kill"] == 0 and ctrl.get("mem_refaults") is not None and \
+            m["refaults"] > ctrl["mem_refaults"]
+        m["pi5"] = bool(ok and ctrl.get("mem_psi_some_us") is not None and
+                        m["psi_some_us"] > ctrl["mem_psi_some_us"] and m["swap_pages_per_s"] is not None and
+                        m["swap_pages_per_s"] <= SWAP_PAGES_MAX)
     else:
         raise ValueError(f"no ground truth for {fault!r}")
     return dict(m, established=bool(ok))
@@ -520,12 +571,17 @@ class WindowHook:
     reads the raw metrics document and then issues the fault, if any; after tick nB + nW it reads the raw document
     again. Effect ground truth for application faults is computed from these documents, never from features."""
 
-    def __init__(self, app, nB: int, nW: int, read_raw, inject=None, read_gt=None):
+    def __init__(self, app, nB: int, nW: int, read_raw, inject=None, read_gt=None, guard=None):
         self.app, self.nB, self.nW, self.read_raw, self.inject, self.read_gt = app, nB, nW, read_raw, inject, read_gt
+        self.guard = guard                     # per-tick safety check: a message aborts the run (then cleanup)
         self.k, self.docs, self.gt = 0, {}, {}
 
     def sample(self):
         obs = self.app.sample()
+        if self.guard is not None:
+            why = self.guard()
+            if why:
+                raise L.LabAbort(why)
         if self.k in (self.nB, self.nB + self.nW):
             edge = "w_start" if self.k == self.nB else "w_end"
             self.docs[edge] = (time.monotonic_ns(), self.read_raw())
@@ -763,7 +819,8 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
             if spec is not None:
                 injector = Injector(host, sysr, run_id, spec)
             hook = WindowHook(appmod.AppSource(run_id), round(B_S / PERIOD_S), round(W_S / PERIOD_S), read_app,
-                              injector, lambda: gt_snapshot(sysr, tpids[0]))
+                              injector, lambda: gt_snapshot(sysr, tpids[0]),
+                              memory_guard(sysr) if (spec or {}).get("type") == "memory_max" else None)
             evt("collect_start")
             ticks, stats = collect(target, params, LiveReader(), SystemClock(), PERIOD_S, LoaderTicks(loader), hook)
             evt("collect_end")
@@ -1264,7 +1321,7 @@ def rep_effect(run_dir: Path, ctrl_max: dict, lock_rule: dict) -> dict:
     verified = (rep["checks"].get("injection_verified") or {}).get("ok", False)
     if f["type"] in OP_FAULTS:                                       # kernel-side ground truth (design §5.8)
         a, b = (gt_parse(json.loads((run_dir / EVIDENCE / f"gt_{k}.json").read_bytes())) for k in ("w_start", "w_end"))
-        g = fault_ground_truth(f["type"], f["magnitude"], a, b, ctrl_max.get("retrans"))
+        g = fault_ground_truth(f["type"], f["magnitude"], a, b, ctrl_max)
         return {"run": run_dir.name, "seed": run["seed"], "magnitude": f["magnitude"], "pipeline_ok": rep["pipeline_ok"],
                 "injection_verified": verified, "measure": g, "basis": "design §5.8",
                 "ground_truth": bool(rep["pipeline_ok"] and g["established"])}
@@ -1302,6 +1359,9 @@ def levels(campaign: Path, decisions=DECISIONS) -> dict:
                     a, b = (gt_parse(json.loads((d / EVIDENCE / f"gt_{k}.json").read_bytes()))
                             for k in ("w_start", "w_end"))
                     ctrl_max["retrans"] = max(ctrl_max.get("retrans", 0), (b["retrans"] or 0) - (a["retrans"] or 0))
+                    for k in ("mem_refaults", "mem_psi_some_us"):                 # CTRL memory maxima (PI-5)
+                        if k in a and k in b:
+                            ctrl_max[k] = max(ctrl_max.get(k, 0), b[k] - a[k])
     out = {"campaign": campaign.name, "ctrl_runs": ctrl_runs, "ctrl_max_ms": ctrl_max, "faults": {},
            "note": "report-only; levels are frozen only by the M5 review; the CTRL maximum of lock_wait is 0 ms by "
                    "FZ-PI7-LOCK"}

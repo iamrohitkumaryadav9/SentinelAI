@@ -1964,7 +1964,7 @@ class TestFaults(CtrlFixture):
         for fault, mag in (("app_pool", 4), ("app_pool", 0), ("app_lock", 6000), ("app_lock", 1500),
                            ("app_dependency_delay", 16), ("app_dependency_delay", 2), ("cpu_quota", 1),
                            ("netem_loss_a_egress", 3), ("cpu_contender", 800), ("netem_rate_r", 100),
-                           ("memory_max", 512), ("app_lock", 1000.0), ("app_lock", True)):
+                           ("memory_max", 300), ("memory_max", 128), ("app_lock", 1000.0), ("app_lock", True)):
             with self.subTest((fault, mag)), self.assertRaises(P.Refused):
                 P.fault_spec(fault, mag, WORKLOAD)
         self.assertTrue(all(max(APP[k]) <= APP[c] for k, c in (("lock_hold_us_candidates", "lock_hold_us_max"),
@@ -2073,8 +2073,8 @@ def cpu_stat(periods, throttled, usage):
     return f"usage_usec {usage}\nuser_usec 0\nsystem_usec 0\nnr_periods {periods}\nnr_throttled {throttled}\n"
 
 
-class TestOpFaults(CtrlFixture):
-    """CPU and network faults (pi8) on the simulated host: exact ops, kernel read-back, design §5.8 ground truth."""
+class OpFaultFixture(CtrlFixture):
+    """A simulated host with CPU / network / memory kernel sources (no tests here)."""
 
     def setUp(self):
         super().setUp()
@@ -2091,7 +2091,12 @@ class TestOpFaults(CtrlFixture):
         return rc, h, json.loads((self.out / "report.json").read_text())
 
     def rep(self, seed, ctrl_retrans=0):
-        return P.rep_effect(self.tmp / f"PI8-{seed}", {"retrans": ctrl_retrans}, _RECORD["FZ-PI7-LOCK"]["value"])
+        return P.rep_effect(self.tmp / f"PI8-{seed}", {"retrans": ctrl_retrans, "mem_refaults": 0,
+                                                       "mem_psi_some_us": 0}, _RECORD["FZ-PI7-LOCK"]["value"])
+
+
+class TestOpFaults(OpFaultFixture):
+    """CPU and network faults (pi8) on the simulated host: exact ops, kernel read-back, design §5.8 ground truth."""
 
     def test_each_fault_issues_its_exact_ops_and_reads_back(self):
         busy = lambda s: s.files.update({"/proc/stat": proc_stat(1000 + 9000, 9000 + 100)})      # idle 1 %
@@ -2379,6 +2384,116 @@ class TestClientAccountingUnderNetworkFaults(unittest.TestCase):
                 self.assertEqual(self.check(fault, {"200": 100, "503": 3}, (100, 3, 0)), [])
 
 
+def mem_files(max_events=0, oom=0, refaults=0, psi_us=0, swap=0, avail_kb=13 * 1024 * 1024):
+    return {"/proc/meminfo": f"MemTotal: 16053920 kB\nMemAvailable: {avail_kb} kB\n",
+            f"{L.TARGET_DIR}/memory.events": f"low 0\nhigh 0\nmax {max_events}\noom 0\noom_kill {oom}\n",
+            f"{L.TARGET_DIR}/memory.stat": f"anon 23000000\nfile 1073741824\nworkingset_refault_anon 0\n"
+                                          f"workingset_refault_file {refaults}\n",
+            f"{L.TARGET_DIR}/memory.pressure": f"some avg10=0.00 avg60=0.00 avg300=0.00 total={psi_us}\n"
+                                              f"full avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+            "/proc/vmstat": f"pgfault 1\npswpin {swap}\npswpout 0\n"}
+
+
+class TestMemoryFault(OpFaultFixture):
+    """memory_max (FZ-INTENSITY-MEM, FZ-PI5) on the simulated host."""
+
+    def setUp(self):
+        super().setUp()
+        cpu = self.base
+        self.base = lambda s: (cpu(s), s.files.update(mem_files()))
+        self.pressure = lambda s: s.files.update(mem_files(max_events=500, refaults=40000, psi_us=5_000_000))
+
+    def test_memory_limit_is_written_read_back_and_restored(self):
+        rc, h, rep = self.go("memory_max", 512, 900300, self.pressure)
+        self.assertEqual(rc, 0, rep["checks"])
+        self.assertIn(("write", L.MEMORY_PATH, str(512 * 1024 * 1024)), h.ops)
+        self.assertTrue(rep["checks"]["injection_verified"]["ok"])
+        self.assertIn(L.MEMORY_RESTORE, h.ops)                                 # restored before the cgroup goes
+        self.assertLess(h.ops.index(L.MEMORY_RESTORE), h.ops.index(("rmdir", L.TARGET_DIR)))
+        g = self.rep(900300)
+        self.assertTrue(g["ground_truth"], g)
+        self.assertTrue(g["measure"]["pi5"], g)
+        self.assertTrue(empty(self.s))
+
+    def test_no_pressure_no_ground_truth(self):
+        self.go("memory_max", 960, 900301)
+        g = self.rep(900301)
+        self.assertEqual((g["ground_truth"], g["measure"]["pi5"]), (False, False))
+
+    def test_swap_breaks_pi5_but_not_ground_truth(self):
+        self.go("memory_max", 512, 900302,
+                lambda s: s.files.update(mem_files(max_events=500, refaults=40000, psi_us=5_000_000, swap=10 ** 9)))
+        g = self.rep(900302)
+        self.assertEqual((g["ground_truth"], g["measure"]["pi5"]), (True, False))
+
+    def test_oom_kill_or_low_host_memory_aborts_and_still_restores(self):
+        for seed, effect, why in ((900303, lambda s: s.files.update(mem_files(max_events=5, oom=1)), "oom_kill"),
+                                  (900304, lambda s: s.files.update(mem_files(avail_kb=3 * 1024 * 1024)),
+                                   "MemAvailable")):
+            with self.subTest(why):
+                rc, h, rep = self.go("memory_max", 256, seed, effect)
+                run = json.loads((self.out / "evidence" / "run.json").read_text())
+                self.assertEqual(rc, 1)
+                self.assertTrue(any(why in a for a in run["aborts"]), run["aborts"])
+                self.assertIn(L.MEMORY_RESTORE, h.ops)
+                self.assertTrue(run["cleanup"]["ok"] and run["host_compare"]["ok"])
+                self.assertTrue(empty(self.s))
+
+    def test_guard_only_in_memory_runs(self):
+        rc, h, rep = self.go("cpu_quota", 10000, 900305, lambda s: s.files.update(mem_files(avail_kb=1)))
+        self.assertNotIn("memory abort", " ".join(json.loads((self.out / "evidence" / "run.json").read_text())["aborts"]))
+
+    def test_floor_and_candidates(self):
+        self.assertEqual(P.op_fault_spec("memory_max", 256)["ops"], L.memory_ops(256))
+        bad = dict(_RECORD["FZ-INTENSITY-MEM"]["value"], memory_max_mib_candidates=[256, 128])
+        approved = lambda name, rec=None: bad if name == "FZ-INTENSITY-MEM" else _RECORD[name]["value"]
+        with mock.patch.object(P, "approved_value", side_effect=approved), self.assertRaises(P.Refused):
+            P.op_fault_spec("memory_max", 128)                                  # in a list, below the floor
+        g = L.Plan("PI8-s900306", fault_ops=L.memory_ops(512))
+        self.assertEqual(g.check(L.memory_ops(512)[0]), L.memory_ops(512)[0])
+        for bad_op in (("write", L.MEMORY_PATH, str(128 * 1024 * 1024)), ("write", f"{L.LAB_DIR}/memory.max", "1")):
+            with self.subTest(bad_op), self.assertRaises(L.LabRefused):
+                g.check(bad_op)
+        self.assertEqual(L.Plan("PI8-s900306").check(L.MEMORY_RESTORE), L.MEMORY_RESTORE)
+
+    def test_each_ground_truth_ingredient_is_required(self):
+        a = {"mono_ns": 0, "mem_max_events": 0, "oom_kill": 0, "mem_refaults": 0, "mem_psi_some_us": 0, "swap_pages": 0}
+        b = dict(a, mono_ns=90 * 10 ** 9, mem_max_events=500, mem_refaults=40000, mem_psi_some_us=5_000_000)
+        ctrl = {"mem_refaults": 0, "mem_psi_some_us": 0}
+        g = P.fault_ground_truth("memory_max", 512, a, b, ctrl)
+        self.assertEqual((g["established"], g["pi5"]), (True, True))
+        for name, change, ctrl_change, gt, pi5 in (
+                ("no max events", {"mem_max_events": 0}, {}, False, False),
+                ("an OOM kill", {"oom_kill": 1}, {}, False, False),
+                ("refaults not above CTRL", {}, {"mem_refaults": 40000}, False, False),
+                ("PSI not above CTRL", {}, {"mem_psi_some_us": 5_000_000}, True, False),
+                ("no CTRL reference", {}, {"mem_refaults": None}, False, False)):
+            with self.subTest(name):
+                g = P.fault_ground_truth("memory_max", 512, a, dict(b, **change), dict(ctrl, **ctrl_change))
+                self.assertEqual((g["established"], g["pi5"]), (gt, pi5))
+
+    def test_read_back_needs_the_exact_limit(self):
+        s = FakeSys()
+        spec = {"type": "memory_max", "magnitude": 512}
+        s.files[L.MEMORY_PATH] = str(512 * 1024 * 1024)
+        self.assertTrue(P.op_readback(spec, s))
+        for other in ("max", str(768 * 1024 * 1024), ""):
+            with self.subTest(other):
+                s.files[L.MEMORY_PATH] = other
+                self.assertFalse(P.op_readback(spec, s))
+
+    def test_levels_for_memory(self):
+        self.go(None, None, 900310, variant="ctrl")
+        seed = 900311
+        for mag, eff in ((960, None), (960, None), (768, self.pressure), (768, self.pressure),
+                         (512, self.pressure), (512, self.pressure), (256, self.pressure), (256, self.pressure)):
+            self.go("memory_max", mag, seed, eff)
+            seed += 1
+        lv = P.levels(self.tmp)["faults"]["memory_max"]
+        self.assertEqual(lv["established_2of2"], [768, 512, 256])
+        self.assertEqual((lv["I1"], lv["I3"], lv["I0"]), (768, 256, 960))
+
+
 class TestReplaceControl(unittest.TestCase):
     def test_guard(self):
         g = L.Plan("PI8-s900020")
@@ -2597,9 +2712,9 @@ class TestGates(unittest.TestCase):
             rec = json.loads((ROOT / "docs/PHASE_1C_FREEZE1_DECISIONS.json").read_text())
             f = Path(d) / "r.json"
             f.write_text(json.dumps(rec))
-            for name in ("FZ-INTENSITY", "FZ-PI5"):
-                with self.subTest(name), self.assertRaises(P.Refused):
-                    P.approved_value(name, f)
+            with self.assertRaises(P.Refused):                       # pending (OV-5)
+                P.approved_value("FZ-INTENSITY", f)
+            self.assertIn("criterion", P.approved_value("FZ-PI5", f))  # approved 2026-10-12 (M-1)
             self.assertEqual(P.approved_value("FZ-WORKLOAD", f), WORKLOAD)
             rec["decisions"]["FZ-WORKLOAD"]["status"] = "proposed"
             f.write_text(json.dumps(rec))
@@ -2637,7 +2752,7 @@ class TestStatic(unittest.TestCase):
                     self.assertEqual(node.module, "sentinelai.diagnostic.rules.params", f)
             self.assertNotIn('"FZ-INTENSITY"', src.replace("FZ-INTENSITY, FZ-PI5 pending", ""))   # pending: unused
             self.assertNotIn('"FZ-PI5"', src)
-            for memory_fault in ("TARGET_DIR}/memory", "memory.high", "memory_high"):   # FZ-PI5 pending
+            for memory_fault in ("memory.high", "memory_high"):              # AMD-12b fallback: not implemented
                 self.assertNotIn(memory_fault, src, f)
 
     def test_no_protected_name_in_any_plan_or_argv(self):
