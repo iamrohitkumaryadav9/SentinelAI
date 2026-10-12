@@ -25,6 +25,7 @@ Evidence lives in `results/phase1c_m5_pilot/<campaign>/<run>/` and is committed 
 | `20261012T030504Z` | `7f6eac7` | PI0-1…5, CTRL-900001 | PI-0 5/5 passed. CTRL-900001 **FAILED** (`app_features`, §3). |
 | `20261012T040045Z` | `af2a4e7` | PI0-1…5, CTRL-900002…900005 | PI-0 5/5 passed. CTRL 4/4 passed. |
 | `20261012T045417Z` | `29d652f` | PI0-1…5; CTRL, PI6OFF, INSTOFF at seeds 900006 and 900007; PI1U-900008, PI1U-900009 | PI-0 5/5 passed. All 8 runs passed (§3a). |
+| `20261012T165705Z` | `c874aa4` | PI0-1…5; CTRL-900170, 900171; PI8-900320 (`memory.max` 960 MiB) | PI-0 5/5, CTRL 2/2 passed. **PI8-900320 FAILED** (app features, client/server reconciliation): the workload stalled under memory pressure (§3f). Campaign closed; an owner decision is pending. |
 | `20261012T141516Z` | `dc5b3d5` | PI0-1…5; CTRL-900160…900163; PI8-900240…900271 (network faults) | All 41 passed their pipeline checks (§3e). Every network fault has an effect at every candidate. |
 | `20261012T133839Z` | `a0b0aaa` | PI0-1…5; CTRL-900150…900153; PI8-900200 (loss 0.5 % on A egress) | PI-0 5/5 and CTRL 4/4 passed. **PI8-900200 FAILED** across-R reconciliation again: segments are not packets under retransmission (§3d note). Fixed in the next commit; the network runs moved to a new campaign. |
 | `20261012T104753Z` | `2280a18` | PI0-1…5; CTRL-900050…900053 under Poisson arrivals; PI8-900060…900082 (application faults, repeated); PI8-900100…900116 (CPU faults; one local-loss run) | 64 of 66 runs passed their pipeline checks (§3d). **PI8-900081 FAILED** (host comparison: an external SSH login change). **PI8-900116 FAILED** (across-R reconciliation under local loss; fixed in `6320943`). Quota runs miss PI-6 coverage on throttle features. |
@@ -46,6 +47,7 @@ Criterion: 5/5 cycles with all lab checks passing, cleanup verified, and the hos
 | `20261012T104753Z` | 5/5 | pass | pass | verified, working-set directory removed | ok | yes |
 | `20261012T133839Z` | 5/5 | pass | pass | verified, working-set directory removed | ok | yes |
 | `20261012T141516Z` | 5/5 | pass | pass | verified, working-set directory removed | ok | yes |
+| `20261012T165705Z` | 5/5 | pass | pass | verified, working-set directory removed | ok | yes |
 
 Lab setup plus teardown (op-log span): 1.3–1.4 s per cycle.
 
@@ -288,6 +290,32 @@ because less traffic gets through. At 400 kbit/s one rep meets the bar (CTRL max
 retransmissions. The rule is met, but the signal is thin; whether it is robust enough for a `tcp_retransmissions`
 claim is for the M5 review.
 
+## 3f. Memory pressure, first run (campaign `20261012T165705Z`, `c874aa4`)
+
+PI-0 5/5 and CTRL 2/2 passed; CTRL memory pressure, refaults and OOM all 0.
+
+**PI8-900320 (`memory.max` = 960 MiB, the weakest candidate): FAILED.**
+- **What passed:** injection read back in 22 ms; cleanup restored `memory.max` to `max`; host comparison clean; host
+  MemAvailable stayed about 13 GiB.
+- **The kernel effect is strong:**
+  - 103,908 `max` events and 6.68 million refaults in W (about 74,000/s);
+  - memory PSI some 3.45 s;
+  - `oom_kill` 0, swap 0.
+  - Ground truth and PI-5 are both met.
+- **The workload stalled:**
+  - only 5,932 requests got 200;
+  - 1,262 client timeouts;
+  - 8,763 arrivals never sent (`client_saturated`);
+  - 87 of 136 app ticks valid, so the app features are MISSING.
+  - This failed `app_features` and client/server reconciliation.
+
+**Cause.** The FZ-WORKSET scanner is a thread inside the Python workload that touches the file through `mmap`. Below
+the working set, the kernel evicts the file in a loop: about 1 GiB is re-read every pass. Each touch is a major fault
+taken while the thread holds the interpreter lock, so every request thread waits with it. R2-F's scanner was its own
+process, so its target could not stall this way. The stall is an artifact of the in-process scanner, not the
+mechanism the class claims (requests slowed by memory pressure). The run is kept as failed; the remaining memory runs
+were not started.
+
 ## 4. PI verdicts so far
 
 | PI | Status | Basis |
@@ -331,6 +359,9 @@ Re-check from a clean checkout:
 
 - **Application pool shrink and lock hold (§3c): resolved.** The owner chose Poisson arrivals (FZ-ARRIVALS); §3d
   shows all three mechanisms producing waiting.
+- **Memory working-set scanner (§3f), new.** The in-process scanner stalls the whole workload under memory pressure.
+  An owner choice is needed on the scanner's process structure or access method before the memory class can be
+  piloted.
 - **PI-6 under throttling (§3d), for the M5 review:** whether features whose source exists only after the fault
   starts count towards PI-6 coverage.
 
