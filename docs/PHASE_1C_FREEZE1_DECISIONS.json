@@ -26,11 +26,18 @@
   },
   "FZ-INTENSITY": {
    "status": "pending",
-   "reference": "Register §3 FZ-INTENSITY and §5: the R2-evidenced ceilings (FZ-INTENSITY-R2), the application ceilings (FZ-INTENSITY-APP), the network rule (FZ-INTENSITY-NET) and the OV-4 level (FZ-OV) are approved separately on 2026-10-12; still UNRESOLVED: memory M floor (needs the FZ-WORKSET working set) and the OV-5 lab cap and sizes"
+   "reference": "Register §3 FZ-INTENSITY and §5: R2 ceilings (FZ-INTENSITY-R2), application (FZ-INTENSITY-APP), network (FZ-INTENSITY-NET), CPU/network candidates (FZ-INTENSITY-CPUNET), memory (FZ-INTENSITY-MEM) and the OV-4 level (FZ-OV) are approved separately on 2026-10-12; still UNRESOLVED: the OV-5 lab cap and sizes"
   },
   "FZ-PI5": {
-   "status": "pending",
-   "reference": "Register §3 FZ-PI5: criterion and mechanism proposed (memory.max, AMD-12/12b); UNRESOLVED: the M4 workload has no memory working set (WS_anon, WS_file, scan rate), so PI-5 cannot be run"
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-12",
+   "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply \"approve memory\" to the memory floor proposal; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §5 M-1",
+   "value": {
+    "mechanism": "target memory.max = M at the B/W boundary (AMD-12), read back; restored to max with read-back at cleanup; AMD-12b memory.high fallback only if no M meets PI-5",
+    "criterion": "in every rep: memory PSI some in W above the CTRL maximum, oom_kill delta 0, swap <= 25 pages/s",
+    "working_set": "FZ-WORKSET (1 GiB file, 16 MiB anon)"
+   }
   },
   "FZ-PI7": {
    "status": "approved",
@@ -423,6 +430,23 @@
     "police_floor_kbit": 292,
     "netem_limit_packets": 1000,
     "basis": "within the approved ceilings: contender weight <= 400 and quota >= 0.075 core (FZ-INTENSITY-R2; R2-C weights 100/400, R2-D quotas 0.15/0.075 core), loss <= 5 % (R2-B 1 %/5 %; path loss FZ-INTENSITY-NET); congestion (R toward B) and police (A ingress) floors = 0.5 x the CTRL bit rate measured in campaign 20261012T074028Z (A->B ~638, B->A ~585 kbit/s); netem limit 1000 packets (the approved maximum); police burst 3000 bytes"
+   }
+  },
+  "FZ-INTENSITY-MEM": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-12",
+   "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply \"approve memory\" to the memory floor proposal; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §5 M-1",
+   "value": {
+    "memory_max_mib_candidates": [
+     960,
+     768,
+     512,
+     256
+    ],
+    "floor_mib": 256,
+    "basis": "CTRL workload cgroup ~1,080 MiB with the 1 GiB file resident, non-file ~56 MiB (process anon 22 MiB measured); floor ~4.5x the non-file memory; 768/512 = R2-F validated levels; 960 just below the working set",
+    "aborts": "host MemAvailable < 4 GiB or any oom_kill aborts the run"
    }
   }
  }
