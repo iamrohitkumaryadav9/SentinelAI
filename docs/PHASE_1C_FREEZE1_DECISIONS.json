@@ -376,6 +376,52 @@
     "rate_per_s": 100,
     "replaces": "FZ-WORKLOAD jitter (bounded uniform arrivals, minimum gap 5 ms) for every run from the next campaign on; CTRL and the application PI-8 runs are repeated under it"
    }
+  },
+  "FZ-INTENSITY-CPUNET": {
+   "status": "proposed",
+   "reference": "Register §5 C-1: proposed 2026-10-12, NOT APPROVED; the pilot refuses these faults until the owner approves",
+   "value": {
+    "contender_weight_candidates": [
+     50,
+     100,
+     200,
+     400
+    ],
+    "quota_us_candidates": [
+     20000,
+     15000,
+     10000,
+     7500
+    ],
+    "loss_a_pct_candidates": [
+     0.5,
+     1,
+     2,
+     5
+    ],
+    "loss_r_pct_candidates": [
+     0.5,
+     1,
+     2,
+     5
+    ],
+    "congestion_kbit_candidates": [
+     600,
+     500,
+     400,
+     320
+    ],
+    "police_kbit_candidates": [
+     550,
+     450,
+     350,
+     300
+    ],
+    "congestion_floor_kbit": 319,
+    "police_floor_kbit": 292,
+    "netem_limit_packets": 1000,
+    "basis": "within the approved ceilings: contender weight <= 400 and quota >= 0.075 core (FZ-INTENSITY-R2; R2-C weights 100/400, R2-D quotas 0.15/0.075 core), loss <= 5 % (R2-B 1 %/5 %; path loss FZ-INTENSITY-NET); congestion (R toward B) and police (A ingress) floors = 0.5 x the CTRL bit rate measured in campaign 20261012T074028Z (A->B ~638, B->A ~585 kbit/s); netem limit 1000 packets (the approved maximum); police burst 3000 bytes"
+   }
   }
  }
 }

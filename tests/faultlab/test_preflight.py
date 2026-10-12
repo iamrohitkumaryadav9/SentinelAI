@@ -688,6 +688,9 @@ class TestStagesAndPrivilege(Base):
         self.assertEqual(P.decision_state("FZ-ARRIVALS", dec["FZ-ARRIVALS"]), (True, "approved"))   # A-1
         self.assertNotIn("FZ-ARRIVALS", P.FULL_ONLY)                       # every run uses it, CTRL included
         self.assertEqual((v("FZ-ARRIVALS")["process"], v("FZ-ARRIVALS")["rate_per_s"]), ("poisson", 100))
+        cpunet = dec["FZ-INTENSITY-CPUNET"]                                # C-1: proposed only, never assumed approved
+        self.assertEqual((cpunet["status"], P.decision_state("FZ-INTENSITY-CPUNET", cpunet)[0]), ("proposed", False))
+        self.assertIn("FZ-INTENSITY-CPUNET", P.FULL_ONLY)
 
     def test_committed_decisions_record_grants_only_what_it_states(self):
         data = (ROOT / "docs/PHASE_1C_FREEZE1_DECISIONS.json").read_bytes()

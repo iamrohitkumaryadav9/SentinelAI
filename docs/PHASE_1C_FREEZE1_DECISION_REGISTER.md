@@ -175,9 +175,12 @@ holds each one under its own ID. Tags as in §1; **ENG** values are arithmetic o
 
 | A-1 | `FZ-ARRIVALS` | Poisson arrivals at 100 /s (exponential gaps from the run seed) replace FZ-WORKLOAD's bounded jitter for every run from the next campaign; CTRL and the application PI-8 runs are repeated under it. Reason: in campaign `20261012T074028Z` the bounded jitter kept arrivals at least 5.03 ms apart, longer than a request's worker occupancy (about 4.4 ms) and every approved lock hold, so pool shrink and lock hold could not produce any waiting (pilot report §3c). Option A of three (B: raise the ceilings; C: dependency delay only) | **V** campaign `20261012T074028Z` |
 
+| C-1 | `FZ-INTENSITY-CPUNET` | **PROPOSED, not approved.** PI-8 candidates within the approved ceilings: contender weight 50, 100, 200, 400 (≤ 400; R2-C 100/400); CPU quota 20,000, 15,000, 10,000, 7,500 µs per 100,000 µs, i.e. 0.20 to 0.075 core (≥ 0.075; R2-D 0.15/0.075); loss on A egress and on R toward B 0.5, 1, 2, 5 % (≤ 5 %; R2-B 1/5 %); congestion (netem rate on R toward B) 600, 500, 400, 320 kbit/s; police on A ingress 550, 450, 350, 300 kbit/s, burst 3,000 bytes (ENG); floors 319 and 292 kbit/s = 0.5 × the CTRL bit rate measured in campaign `20261012T074028Z`; netem limit 1,000 packets. The pilot refuses these faults until approval | ceilings **V** (R2), floors **V** (byte counters); candidates and burst **ENG** |
+
 Still pending after §5:
 
 - `FZ-INTENSITY`: the memory M floor (needs the D4 working set) and the OV-5 lab cap and sizes.
+- `FZ-INTENSITY-CPUNET` (C-1): the CPU and network candidates, proposed.
 - `FZ-PI5`: PI-5 stays unauthorised until the working set exists and its values are approved.
 - Design-level items outside this package: U-1, U-1b, U-7 (before M6) and U-6 raw-data storage (AMD-17 covers staging).
 

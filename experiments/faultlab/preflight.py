@@ -139,10 +139,15 @@ DECISIONS: Dict[str, Tuple[str, str, Optional[Tuple[str, ...]]]] = {
     "FZ-Q2": ("Collector privilege mode for M6 (Q-2)", f"{REGISTER} §5 Q-2", ("collector_mode_m6",)),
     "FZ-ARRIVALS": ("Load arrival process (amends FZ-WORKLOAD jitter)", f"{REGISTER} §5 A-1",
                     ("process", "rate_per_s", "replaces")),
+    "FZ-INTENSITY-CPUNET": ("PI-8 candidates of the CPU and network faults", f"{REGISTER} §5 C-1",
+                            ("contender_weight_candidates", "quota_us_candidates", "loss_a_pct_candidates",
+                             "loss_r_pct_candidates", "congestion_kbit_candidates", "police_kbit_candidates",
+                             "congestion_floor_kbit", "police_floor_kbit", "netem_limit_packets", "basis")),
 }
 # Decisions needed only by the fault classes (PI-2/3/5/8, OV-4/5) or by M6: not mandatory for the `ctrl` stage.
 FULL_ONLY = frozenset({"FZ-INTENSITY", "FZ-PI5", "FZ-PI8", "FZ-TTRANS", "FZ-INTENSITY-R2", "FZ-INTENSITY-APP",
-                       "FZ-INTENSITY-NET", "FZ-PI7-LOCK", "FZ-WORKSET", "FZ-OV", "FZ-Q5", "FZ-Q2"})
+                       "FZ-INTENSITY-NET", "FZ-PI7-LOCK", "FZ-WORKSET", "FZ-OV", "FZ-Q5", "FZ-Q2",
+                       "FZ-INTENSITY-CPUNET"})
 STAGES = ("ctrl", "full")
 # Why each decision is mandatory although no host check consumes its value.
 NOT_CONSUMED = ("Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed "
