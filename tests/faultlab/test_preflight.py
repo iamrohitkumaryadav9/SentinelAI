@@ -676,7 +676,10 @@ class TestStagesAndPrivilege(Base):
     def test_committed_record_holds_the_decision_package_and_keeps_the_rest_pending(self):
         dec, errs = P.parse_decisions((ROOT / "docs/PHASE_1C_FREEZE1_DECISIONS.json").read_bytes())
         self.assertEqual(errs, [])
-        self.assertEqual(P.decision_state("FZ-INTENSITY", dec["FZ-INTENSITY"])[0], False)   # level freeze still open
+        self.assertEqual(P.decision_state("FZ-INTENSITY", dec["FZ-INTENSITY"]), (True, "approved"))   # R-8, closed
+        lv = dec["FZ-INTENSITY"]["value"]["levels"]
+        self.assertEqual((lv["app_lock_hold_us"]["I2"], lv["cpu_quota_us"]["I2"], lv["netem_rate_r_kbit"]["I2"],
+                          lv["memory_max_mib"]["single"]), (1581, 12248, 439, 768))
         self.assertEqual(P.decision_state("FZ-PI5", dec["FZ-PI5"]), (True, "approved"))      # M-1, 2026-10-12
         self.assertEqual(dec["FZ-INTENSITY-MEM"]["value"]["memory_max_mib_candidates"], [960, 768, 512, 256])
         package = {"FZ-INTENSITY-R2", "FZ-INTENSITY-APP", "FZ-INTENSITY-NET", "FZ-PI7-LOCK", "FZ-WORKSET", "FZ-OV",

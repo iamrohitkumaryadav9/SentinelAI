@@ -3142,7 +3142,10 @@ class TestGates(unittest.TestCase):
             rec = json.loads((ROOT / "docs/PHASE_1C_FREEZE1_DECISIONS.json").read_text())
             f = Path(d) / "r.json"
             f.write_text(json.dumps(rec))
-            with self.assertRaises(P.Refused):                       # pending (OV-5)
+            self.assertIn("levels", P.approved_value("FZ-INTENSITY", f))   # closed 2026-10-13 (R-8)
+            rec["decisions"]["FZ-INTENSITY"]["status"] = "pending"
+            f.write_text(json.dumps(rec))
+            with self.assertRaises(P.Refused):                       # pending is refused
                 P.approved_value("FZ-INTENSITY", f)
             self.assertIn("criterion", P.approved_value("FZ-PI5", f))  # approved 2026-10-12 (M-1)
             self.assertEqual(P.approved_value("FZ-WORKLOAD", f), WORKLOAD)
@@ -3180,7 +3183,7 @@ class TestStatic(unittest.TestCase):
             for node in ast.walk(tree):
                 if isinstance(node, ast.ImportFrom) and node.module and "diagnostic.rules" in node.module:
                     self.assertEqual(node.module, "sentinelai.diagnostic.rules.params", f)
-            self.assertNotIn('"FZ-INTENSITY"', src.replace("FZ-INTENSITY, FZ-PI5 pending", ""))   # pending: unused
+            self.assertNotIn('"FZ-INTENSITY"', src.replace("FZ-INTENSITY, FZ-PI5 pending", ""))   # the parts are read
             self.assertNotIn('"FZ-PI5"', src)
             for memory_fault in ("memory.high", "memory_high"):              # AMD-12b fallback: not implemented
                 self.assertNotIn(memory_fault, src, f)

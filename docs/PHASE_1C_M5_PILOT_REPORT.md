@@ -482,8 +482,8 @@ Re-check from a clean checkout:
 - **PI-6 under throttling (§3d), for the M5 review:** whether features whose source exists only after the fault
   starts count towards PI-6 coverage.
 
-- **FZ-INTENSITY: pending only for the PI-8 level freeze**, which is the M5 review's. Every candidate set and
-  ceiling is approved (C-1, D2, D3, M-1, FZ-OV, O-1), and every class has run (§3c–§3h).
+- **FZ-INTENSITY: closed** (R-8, 2026-10-13) after the five interpolated I2 levels were confirmed (§3i, §3j); the
+  record holds the final level table for M6.
 - **FZ-PI5: resolved** (M-1, approved 2026-10-12); PI-5 met in every memory run (§3g).
 - **AMD-13 / AMD-15: resolved.** n_r, τ and the OV-4 level (D5) and the OV-5 sizes (O-1) are approved; OV-4 and OV-5
   ran and are feasible (§3h).

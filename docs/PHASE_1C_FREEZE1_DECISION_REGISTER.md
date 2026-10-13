@@ -2,7 +2,7 @@
 
 **Status: PARTLY APPROVED.** Rohit Kumar approved 31 of the 33 Freeze-1 decisions on 2026-10-11 (commit `4b6041c`),
 and on 2026-10-12 the eight items of the pilot decision package, the arrival-process amendment A-1, the CPU/network candidates C-1
-the memory items M-1, the working-set scanner amendment M-2, the memory decisions M-3 and M-4, the OV-5 sizes O-1 and, on 2026-10-13, the M5 review decisions R-1 … R-7 (§5). `FZ-INTENSITY` remains **pending** (the AMD-13 confirmation of the interpolated I2 levels only)
+the memory items M-1, the working-set scanner amendment M-2, the memory decisions M-3 and M-4, the OV-5 sizes O-1 and, on 2026-10-13, the M5 review decisions R-1 … R-7 (§5). `FZ-INTENSITY` was closed on 2026-10-13 (R-8)
 for what is still unresolved (§4, §5). Approval is recorded only in
 [`PHASE_1C_FREEZE1_DECISIONS.json`](PHASE_1C_FREEZE1_DECISIONS.json); this register holds the rationale (§3).
 **Owner approval of a design choice is not scientific validation:** every ENG value is still unvalidated until
@@ -200,10 +200,13 @@ holds each one under its own ID. Tags as in §1; **ENG** values are arithmetic o
 | R-6 | `FZ-M5-REVIEW` (memory) | M-3 and M-4 confirmed for M6; memory single level 768 MiB (R2-F's validated level) | **V** §3g |
 | R-7 | `FZ-M5-REVIEW`, `FZ-STAGING` | U-1 A (G-Q1 over 7 outcomes, 0.80 kept), U-1b A (softirq's G-Q2 waived, basis R2-E), U-7 A (G-Q1/G-Q4 over single-fault plus CTRL test runs), U-6 A (M6 raw data committed compressed with a SHA-256 manifest) | pilot design §4.5.5, §10 |
 
+| R-8 | `FZ-INTENSITY` | Closed (owner reply "close FZ-Intensity", 2026-10-13) once all five interpolated I2 levels were confirmed 2 of 2 under AMD-13 (campaigns `20261013T035747Z`, `20261013T044701Z`, no tie-break). The record holds the final M6 level table: I1/I2/I3 per fault, single levels for pool (P′ = 1), memory (768 MiB), OV-4 (80,000 pps) and OV-5 (768 MiB) | **V** pilot report §3i, §3j |
+
 Still pending after §5:
 
-- `FZ-INTENSITY`: the AMD-13 confirmation of the interpolated I2 levels (R-1).
-- Design-level items outside this package: U-1, U-1b, U-7 (before M6) and U-6 raw-data storage (AMD-17 covers staging).
+- No Freeze-1 parameter decision.
+- Design-level items: U-1, U-1b, U-7 and U-6 were decided in R-7. Still open in the pilot design (§10) and outside this
+  record: U-4 (PI-3 third quota level), U-5 (M3A-only ablation) and U-8 (G-R2 traceability, before any G-R2 claim).
 
 ## Appendix A. AMD-1 … AMD-17 (Stage 3H text, verbatim; adopted by the owner's approval of `FZ-AMD-01` … `FZ-AMD-17`, `4b6041c`)
 

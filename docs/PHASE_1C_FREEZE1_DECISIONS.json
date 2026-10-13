@@ -25,8 +25,69 @@
    }
   },
   "FZ-INTENSITY": {
-   "status": "pending",
-   "reference": "Register §3 FZ-INTENSITY and §5: R2 ceilings (FZ-INTENSITY-R2), application (FZ-INTENSITY-APP), network (FZ-INTENSITY-NET), CPU/network candidates (FZ-INTENSITY-CPUNET), memory (FZ-INTENSITY-MEM) and the OV-4 level (FZ-OV) are approved separately on 2026-10-12, the OV-5 sizes and lab cap (FZ-OV) on 2026-10-13; I1/I3 frozen in FZ-M5-REVIEW on 2026-10-13; still UNRESOLVED: the AMD-13 confirmation of the interpolated I2 levels"
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-13",
+   "reference": "Approved by Rohit Kumar on 2026-10-13 (owner reply \"close FZ-Intensity\" after all five interpolated I2 levels were confirmed; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §5 R-1, R-8; pilot report §3i, §3j, §7.2. Parts approved earlier: R2 ceilings (FZ-INTENSITY-R2), application (FZ-INTENSITY-APP), network (FZ-INTENSITY-NET), CPU/network candidates (FZ-INTENSITY-CPUNET), memory (FZ-INTENSITY-MEM) and the OV-4 level (FZ-OV) are approved separately on 2026-10-12, the OV-5 sizes and lab cap (FZ-OV) on 2026-10-13",
+   "value": {
+    "levels": {
+     "app_dependency_delay_ms": {
+      "I1": 4,
+      "I2": 7,
+      "I3": 15
+     },
+     "app_lock_hold_us": {
+      "I1": 500,
+      "I2": 1581,
+      "I3": 5000
+     },
+     "app_pool_size": {
+      "single": 1
+     },
+     "cpu_contender_weight": {
+      "I1": 50,
+      "I2": 141,
+      "I3": 400
+     },
+     "cpu_quota_us": {
+      "I1": 20000,
+      "I2": 12248,
+      "I3": 7500
+     },
+     "netem_loss_a_egress_pct": {
+      "I1": 0.5,
+      "I2": 1,
+      "I3": 5
+     },
+     "police_a_ingress_kbit": {
+      "I1": 550,
+      "I2": 407,
+      "I3": 300
+     },
+     "netem_loss_r_egress_pct": {
+      "I1": 0.5,
+      "I2": 1,
+      "I3": 5
+     },
+     "netem_rate_r_kbit": {
+      "I1": 600,
+      "I2": 439,
+      "I3": 320
+     },
+     "memory_max_mib": {
+      "single": 768
+     },
+     "ov4_udp_flood_pps": {
+      "single": 80000
+     },
+     "ov5_page_cache_fill_mib": {
+      "single": 768
+     }
+    },
+    "i2_confirmation": "AMD-13, 2 of 2 each, no tie-break: lock, contention, quota in campaign 20261013T035747Z; police, congestion in campaign 20261013T044701Z; dependency delay and both losses were tested candidates (2 of 2 in campaigns 20261012T104753Z, 20261012T141516Z)",
+    "ceilings": "FZ-INTENSITY-R2, FZ-INTENSITY-APP, FZ-INTENSITY-NET, FZ-INTENSITY-CPUNET, FZ-INTENSITY-MEM, FZ-OV",
+    "limitations": "congestion retransmission signal thin below 600 kbit/s (R-4); pool and memory single level (R-3, R-6, M-3)"
+   }
   },
   "FZ-PI5": {
    "status": "approved",
