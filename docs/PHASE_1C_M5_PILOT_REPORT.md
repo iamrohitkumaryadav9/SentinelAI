@@ -493,12 +493,15 @@ N_att = 2) is still to run once I1 and I3 are frozen.
 T_TRANS = ceil(max_c (R̂_c + K_c)) s; the K_c (or the fallback T_fb) are the review's. With every R̂_c below 0.5 s,
 T_TRANS is set by K_c.
 
-**7.4 Decisions for the review:**
-1. Freeze the PI-8 levels of §7.2 (FZ-INTENSITY, FZ-PI8), then run the I2 confirmations.
-2. Pool shrink has an effect only at P′ = 1: accept a single level, or change the candidates.
-3. Congestion: the retransmission signal is thin below 600 kbit/s (§3e).
-4. PI-6 under throttling: whether features whose source exists only after the fault starts count towards coverage
-   (quota runs, §3d, §3g).
-5. Memory: graded levels (M-3) and the `mem.util.target` overshoot (M-4).
-6. Q-2: collector mode for M6 (both modes pass PI-1, §3a).
-7. Design-level items outside the pilot: U-1, U-1b, U-7 (before M6) and U-6 raw-data storage.
+**7.4 Decisions of the review (owner, 2026-10-13, "all A"; register §5 R-1 … R-7, `FZ-M5-REVIEW`):**
+1. R-1: the levels of §7.2 are frozen; the five interpolated I2s are confirmed under AMD-13 in the next campaign
+   (`levels` reports `i2_confirmation`).
+2. R-2: T_TRANS = 16 s (K_c accepted where derivable; contention and congestion take T_fb = 15 s); W = 24 s.
+3. R-3: pool shrink is a single level, P′ = 1.
+4. R-4: congestion levels kept; the thin signal below 600 kbit/s is a recorded limitation.
+5. R-5: in quota runs the throttle features with no source before the fault are listed under PI-6, not scored.
+6. R-6: M-3 and M-4 confirmed for M6; memory single level 768 MiB.
+7. R-7: U-1, U-1b, U-7 and U-6 option A.
+
+Q-2 (collector mode for M6) was already decided on 2026-10-12: driver-root (`FZ-Q2`). An earlier version of this
+list showed it as open by mistake.

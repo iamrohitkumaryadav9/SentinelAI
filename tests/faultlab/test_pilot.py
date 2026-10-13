@@ -2803,6 +2803,88 @@ class TestOv5Fill(OpFaultFixture):
         self.assertFalse(P.ov5_check(under, a, b, self.CTRL)["criteria"]["residency"])
 
 
+class TestM5Review(OpFaultFixture):
+    """FZ-M5-REVIEW (2026-10-13): frozen I2 runs and their AMD-13 confirmation (R-1); PI-6 under throttling (R-5)."""
+
+    police = staticmethod(lambda s: s.qd[L.IF_A][0].update(drops=40))
+
+    def test_only_the_frozen_i2_joins_the_candidates(self):
+        w = P.approved_value("FZ-WORKLOAD", P.DECISIONS)
+        for fault, i2 in (("app_lock", 1581), ("cpu_contender", 141), ("cpu_quota", 12248),
+                          ("police_a_ingress", 407), ("netem_rate_r", 439)):
+            with self.subTest(fault):
+                self.assertEqual(P.frozen_i2(fault, P.DECISIONS), i2)
+                self.assertEqual(P.fault_spec(fault, i2, w, P.DECISIONS)["magnitude"], i2)
+                for bad in (i2 + 1, float(i2)):
+                    with self.assertRaises(P.Refused):
+                        P.fault_spec(fault, bad, w, P.DECISIONS)
+        for fault in ("app_dependency_delay", "netem_loss_a_egress", "netem_loss_r_egress", "app_pool",
+                      "memory_max", "ov4_udp_flood"):                         # tested candidates or single levels
+            self.assertIsNone(P.frozen_i2(fault, P.DECISIONS), fault)
+        with self.assertRaises(P.Refused):
+            P.fault_spec("app_dependency_delay", 8, w, P.DECISIONS)
+
+    def test_i2_confirmed_in_two_valid_reps(self):
+        self.go(None, None, 900500, variant="ctrl")
+        for seed in (900501, 900502):
+            rc, h, rep = self.go("police_a_ingress", 407, seed, self.police)
+            self.assertEqual(rc, 0, rep["checks"])
+        c = P.levels(self.tmp)["faults"]["police_a_ingress"]["i2_confirmation"]
+        self.assertEqual((c["I2"], c["confirmed"], c["valid_reps"], c["tie_break_next"]),
+                         (407, True, ["PI8-900501", "PI8-900502"], None))
+
+    def test_i2_not_confirmed_without_effect_or_with_one_rep(self):
+        self.go(None, None, 900510, variant="ctrl")
+        self.go("police_a_ingress", 407, 900511, self.police)
+        self.assertIsNone(P.levels(self.tmp)["faults"]["police_a_ingress"]["i2_confirmation"]["confirmed"])
+        self.go("police_a_ingress", 407, 900512)                                 # no drops: no ground truth
+        self.assertFalse(P.levels(self.tmp)["faults"]["police_a_ingress"]["i2_confirmation"]["confirmed"])
+
+    def test_failed_injection_names_the_tie_break_toward_i1(self):
+        self.go(None, None, 900520, variant="ctrl")
+        for seed in (900521, 900522):
+            self.go("police_a_ingress", 407, seed, self.police)
+        real = P.rep_effect
+
+        def first_unverified(d, *a):
+            r = real(d, *a)
+            return dict(r, injection_verified=False, pipeline_ok=False) if d.name == "PI8-900521" else r
+        with mock.patch.object(P, "rep_effect", side_effect=first_unverified):
+            c = P.levels(self.tmp)["faults"]["police_a_ingress"]["i2_confirmation"]
+        self.assertEqual((c["injection_failures"], c["tie_break_next"], c["confirmed"]), (1, 450, None))
+        busy = lambda s: s.files.update({"/proc/stat": proc_stat(1000 + 9000, 9000 + 100)})
+        for seed in (900523, 900524):                                           # higher is stronger: 141 -> 100
+            self.go("cpu_contender", 141, seed, busy)
+
+        def unverified(d, *a):
+            r = real(d, *a)
+            return dict(r, injection_verified=False, pipeline_ok=False) if d.name == "PI8-900523" else r
+        with mock.patch.object(P, "rep_effect", side_effect=unverified):
+            c = P.levels(self.tmp)["faults"]["cpu_contender"]["i2_confirmation"]
+        self.assertEqual((c["I2"], c["tie_break_next"]), (141, 100))
+
+
+class TestPi6UnderThrottling(unittest.TestCase):
+    """FZ-M5-REVIEW R-5 on the real pi_checks."""
+
+    def test_pi6_lists_quota_only_features_without_scoring_them(self):
+        def snap(low):
+            ms = [{"feature_id": f, "coverage": 0.5 if f in low else 1.0, "aggregation": "MEAN", "quality": "OK"}
+                  for f in ("throttle.quota_cores", "throttle.quota_saturation", "cpu.util.cpuset", "tcp.retrans")]
+            ms.append({"feature_id": "app.latency_ms", "coverage": 1.0, "aggregation": "P99", "quality": "OK"})
+            return {"measurements": ms, "missing_measurements": []}
+        ticks = [SimpleNamespace(obs={"app": {}})] * 136
+        run = lambda t: {"fault": {"type": t} if t else None, "collection": {"cpu_s": 0.2, "wall_s": 135.0}}
+        q = P.pi_checks(run("cpu_quota"), snap({"throttle.quota_cores", "throttle.quota_saturation"}), ticks)["PI-6"]
+        self.assertTrue(q["ok"], q)
+        self.assertEqual(q["post_fault_only"], {"throttle.quota_cores": 0.5, "throttle.quota_saturation": 0.5})
+        for t in ("cpu_contender", None):                                       # only quota runs, only these two
+            with self.subTest(t):
+                self.assertFalse(P.pi_checks(run(t), snap({"throttle.quota_cores"}), ticks)["PI-6"]["ok"])
+        self.assertFalse(P.pi_checks(run("cpu_quota"), snap({"throttle.quota_cores", "cpu.util.cpuset"}),
+                                     ticks)["PI-6"]["ok"])
+
+
 class TestTargetProcesses(unittest.TestCase):
     """FZ-WORKSET M-2: the target leaf holds exactly the workload and the scanner it forked."""
 

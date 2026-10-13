@@ -379,6 +379,15 @@ QUOTA_TOLERANCE = 1.05                       # usage <= quota x 1.05 (window edg
 THROTTLE_RATIO_MIN, IDLE_MAX = 0.9, 0.05     # design §5.8 (R2-D GT, R2-C G2/G3/G6)
 
 
+def frozen_i2(fault: str, decisions=DECISIONS):
+    """The interpolated I2 of a fault frozen by the M5 review and still to be confirmed (AMD-13, R-1), or None."""
+    try:
+        lv = approved_value("FZ-M5-REVIEW", decisions)["levels"].get(fault)
+    except Refused:
+        return None
+    return lv["I2"] if lv and lv.get("i2", "").startswith("to confirm") else None
+
+
 def op_fault_spec(fault: str, magnitude, decisions=DECISIONS, run_id: Optional[str] = None) -> dict:
     """A CPU or network fault at an approved candidate (FZ-INTENSITY-CPUNET), re-checked against the approved
     ceilings and floors (FZ-INTENSITY-R2, FZ-INTENSITY-NET); its exact lab operations; refuses anything else."""
@@ -389,8 +398,10 @@ def op_fault_spec(fault: str, magnitude, decisions=DECISIONS, run_id: Optional[s
     cands = [ov5["fill_file_mib"]] if ov5 else cand[key] if isinstance(cand[key], list) else [cand[key]]   # FZ-OV:
     # the one preregistered OV-4 level and OV-5 file size
     r2, net = approved_value("FZ-INTENSITY-R2", decisions), approved_value("FZ-INTENSITY-NET", decisions)
-    if isinstance(magnitude, bool) or not isinstance(magnitude, (int, float)) or magnitude not in cands:
-        refuse(f"{fault} magnitude {magnitude!r} is not an approved candidate {cands}")
+    i2 = frozen_i2(fault, decisions)
+    if isinstance(magnitude, bool) or not isinstance(magnitude, (int, float)) or \
+            (magnitude not in cands and not (i2 is not None and type(magnitude) is type(i2) and magnitude == i2)):
+        refuse(f"{fault} magnitude {magnitude!r} is not an approved candidate {cands} or the frozen I2 {i2}")
     ceiling_ok = {"cpu_contender": lambda m: m <= r2["contender_weight_max"],
                   "cpu_quota": lambda m: m >= r2["cpu_quota_min_core"] * L.CPU_PERIOD_US,
                   "netem_loss_a_egress": lambda m: 0 < m <= r2["loss_a_egress_max_pct"],
@@ -715,8 +726,9 @@ def fault_spec(fault: str, magnitude: int, w: dict, decisions=DECISIONS, run_id:
         refuse(f"fault {fault!r} is not implemented ({sorted(APP_FAULTS) + sorted(OP_FAULTS)})")
     key, cands, hist, echo, stronger = APP_FAULTS[fault]
     app = approved_value("FZ-INTENSITY-APP", decisions)
-    if type(magnitude) is not int or magnitude not in app[cands]:
-        refuse(f"{fault} magnitude {magnitude!r} is not an approved candidate {app[cands]}")
+    i2 = frozen_i2(fault, decisions)
+    if type(magnitude) is not int or (magnitude not in app[cands] and magnitude != i2):
+        refuse(f"{fault} magnitude {magnitude!r} is not an approved candidate {app[cands]} or the frozen I2 {i2}")
     control = {"dependency_delay_ms": int(w["dependency_delay_ms"]), key: magnitude}
     return {"type": fault, "key": key, "magnitude": magnitude, "candidates": app[cands], "metric_histogram": hist,
             "echo_file": echo, "stronger": stronger, "control": control, "decision": "FZ-INTENSITY-APP"}
@@ -1398,6 +1410,16 @@ def injection_check(run) -> dict:
             "label": None if not problems else "failed_injection"}
 
 
+def post_fault_only(fault_type, decisions=DECISIONS) -> tuple:
+    """Features with no source before the fault starts (FZ-M5-REVIEW R-5): listed under PI-6, not scored."""
+    if fault_type is None:
+        return ()
+    try:
+        return tuple(approved_value("FZ-M5-REVIEW", decisions)["pi6_post_fault_only"].get(fault_type, ()))
+    except Refused:
+        return ()
+
+
 def pi_checks(run, snap, ticks):
     ms = snap["measurements"]
     net = [m for m in ms if m["feature_id"].startswith(("tcp.", "net."))]
@@ -1410,9 +1432,11 @@ def pi_checks(run, snap, ticks):
         pi1["ok"] = pi1["ok"] and pi1["netns_verified"]
     col = run.get("collection") or {}
     cpu = (col.get("cpu_s", 0) + col.get("loader_cpu_s", 0)) / col["wall_s"] if col.get("wall_s") else None
-    low = sorted({m["feature_id"] for m in ms if m["coverage"] < COVERAGE_MIN})
+    post = set(post_fault_only((run.get("fault") or {}).get("type")))    # R-5: listed, not scored
+    low = sorted({m["feature_id"] for m in ms if m["coverage"] < COVERAGE_MIN} - post)
     pi6 = {"ok": cpu is not None and cpu <= CPU_BUDGET_CORE and not low, "collector_cpu_core": cpu,
            "budget_core": CPU_BUDGET_CORE, "features_below_coverage": low,
+           "post_fault_only": {m["feature_id"]: m["coverage"] for m in ms if m["feature_id"] in post},
            "not_collected": sorted({m["feature_id"] for m in snap["missing_measurements"]}),
            "note": "coverage over collected measurements; structurally unavailable sources listed, not scored"}
     valid = sum(1 for t in ticks if isinstance(t.obs.get("app"), dict))
@@ -1628,6 +1652,19 @@ def levels(campaign: Path, decisions=DECISIONS) -> dict:
             weaker = order[:order.index(i1)]
             res.update(I1=i1, I3=i3, I2=i2, I0=weaker[-1] if weaker else None,
                        i2_needs_confirmation=i2 not in (i1, i3))
+        i2 = frozen_i2(fault, decisions)
+        if i2 is not None and any(x["magnitude"] == i2 for x in reps):         # AMD-13 I2 confirmation (R-1)
+            at = [x for x in reps if x["magnitude"] == i2]
+            valid = [x for x in at if x["pipeline_ok"]][:2]
+            failed_inj = [x for x in at if not x["injection_verified"]]
+            toward_i1 = sorted((c for c in spec["candidates"] if (c > i2) == (spec["stronger"] == "lower")),
+                               key=lambda c: abs(c - i2))
+            res["i2_confirmation"] = {
+                "I2": i2, "reps": [x["run"] for x in at], "valid_reps": [x["run"] for x in valid],
+                "confirmed": None if len(valid) < 2 else all(x["ground_truth"] for x in valid),
+                "injection_failures": len(failed_inj),
+                "tie_break_next": toward_i1[0] if failed_inj and toward_i1 else None,
+                "rule": "AMD-13: n_I2 = 2; on failed injection the next candidate toward I1, at most N_att = 2"}
         out["faults"][fault] = res
     return out
 
