@@ -720,6 +720,7 @@ class TestStagesAndPrivilege(Base):
         self.assertIn("deferred", m6["ood"])
         self.assertIn("FZ-M6-PLAN", P.FULL_ONLY)
         self.assertIn("sentlab-a0", v("FZ-Q2")["collector_netns"])        # P-7, 2026-10-13
+        self.assertIn("netem on A only (P-8)", m6["mechanisms"])          # P-8, 2026-10-13
         ov5 = v("FZ-OV")["ov5_sizes"]                                      # O-1, 2026-10-13
         self.assertEqual((ov5["target_memory_max_mib"], ov5["fill_file_mib"], ov5["lab_cap_mib"], ov5["reps"]),
                          (2048, 768, 2560, 2))

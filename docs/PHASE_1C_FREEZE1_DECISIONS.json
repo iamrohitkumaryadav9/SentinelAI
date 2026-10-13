@@ -611,7 +611,7 @@
    "status": "approved",
    "approved_by": "Rohit Kumar",
    "date": "2026-10-13",
-   "reference": "Approved by Rohit Kumar on 2026-10-13 (owner reply \"all A\" to the M6 plan; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §5 P-1..P-6; design §6.4, §6.6, §6.7; pilot design §8",
+   "reference": "Approved by Rohit Kumar on 2026-10-13 (owner reply \"all A\" to the M6 plan; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §5 P-1..P-6; design §6.4, §6.6, §6.7; pilot design §8; P-8 (police not used in M6) by Rohit Kumar on 2026-10-13 (owner reply \"A\")",
    "value": {
     "matrix": {
      "single_fault_train": "6 classes x {I1, I3} x 4 seeds = 48",
@@ -622,7 +622,7 @@
      "ood": "deferred, reported as not run",
      "total_runs": 196
     },
-    "mechanisms": "P-1 A: a class's seeds are split evenly across its mechanisms (application: dependency delay / lock hold / pool shrink; packet loss: netem on A / police; retransmissions: path loss / congestion)",
+    "mechanisms": "P-1 A: a class's seeds are split evenly across its mechanisms (application: dependency delay / lock hold / pool shrink; packet loss: netem on A only (P-8); retransmissions: path loss / congestion); P-8 A (2026-10-13): police is not used in M6 because net.drop.qdisc is unverifiable with its ingress qdisc and its kfree_skb reason TC_INGRESS depends on the undeclared KFREE_REASONS_LOSS; its frozen levels stay recorded",
     "single_level_classes": "P-2 A: memory (768 MiB) and pool (P' = 1) run their test seeds at the single level; the I2 test-only rule cannot apply to them (recorded limitation)",
     "sens_i0": "P-3 A: I0 = 0.5 x I1 in injection units (weaker than I1, so within every ceiling); single-level faults use 0.5 x their level where a weaker direction exists",
     "ood": "P-4 A: deferred; not run in M6",

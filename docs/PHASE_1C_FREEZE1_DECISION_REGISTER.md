@@ -212,6 +212,7 @@ holds each one under its own ID. Tags as in §1; **ENG** values are arithmetic o
 | P-4 | OOD deferred; reported as not run |
 | P-5 | AMD-29 admits the matrix generator, the M6 batch runner, their tests, `docs/PHASE_1C_M6_*.md` and `datasets/faultlab/v1/matrix.json` (add-only) |
 | P-6 | U-8 traceability audit now (read-only); U-5 offline rebuild; U-4 the 6 PI-3 runs in batch 1 |
+| P-8 | `FZ-M6-PLAN` (mechanisms) amended (owner reply "A", 2026-10-13, after campaign `20261013T063118Z`): the packet-loss class uses netem on A only. Police is not used in M6: its ingress qdisc next to the root qdisc makes `net.drop.qdisc` unverifiable under the contract, and its eBPF drop reason `TC_INGRESS` counts as loss only if the undeclared `KFREE_REASONS_LOSS` includes it. Police's frozen levels stay recorded |
 | P-7 | `FZ-Q2` amended (owner reply "A", 2026-10-13): A's interface `sentlab-a0` is declared on the target and read in A's network namespace, so the minimum local drop set is measured. Every pilot run had `ifaces: []` and a host-namespace collector, so `net.drop.qdisc` / `iface_rx` / `iface_tx` were never collected and RT.R2 could never be evaluated. Frozen collector code unchanged; a validation campaign precedes M6 |
 
 Matrix: 48 single-fault train + 72 test (12 per class, Q-5) + 40 overlap/distractor + 24 CTRL (10 / 14) + 12 SENS =
