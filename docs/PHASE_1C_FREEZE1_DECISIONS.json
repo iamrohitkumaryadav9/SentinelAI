@@ -450,9 +450,10 @@
    "status": "approved",
    "approved_by": "Rohit Kumar",
    "date": "2026-10-12",
-   "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply to the pilot decision package, option A of Q-2; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §5 Q-2",
+   "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply to the pilot decision package, option A of Q-2; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §5 Q-2; collection in A's network namespace (target interface sentlab-a0, minimum local drop set measured) approved by Rohit Kumar on 2026-10-13 (owner reply \"A\"; Register §5 P-7), subject to a validation campaign",
    "value": {
-    "collector_mode_m6": "driver-root"
+    "collector_mode_m6": "driver-root",
+    "collector_netns": "P-7 A: A's interface sentlab-a0 is declared on the target and its sysfs statistics and tc qdisc are read in A's network namespace, so the minimum local drop set (net.drop.qdisc, net.drop.iface_rx, net.drop.iface_tx) is measured; frozen collector code unchanged; validated by PI-0, 2 CTRL, 2 local-loss, 2 path-loss and 1 police run before M6"
    }
   },
   "FZ-ARRIVALS": {

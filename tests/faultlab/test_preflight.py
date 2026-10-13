@@ -37,7 +37,8 @@ def full_record():
             "FZ-TTRANS": {"T_TRANS_rule": "rule", "T_cap": 1, "T_fb": 1, "K_c_s": 1, "R_hat_max_s": 1, "T_TRANS_s": 1,
                           "W_s": 1, "basis": "fixture"},
             "FZ-DATA-QUALITY": {"U-2": "A", "COV_MIN": 1, "N_BASE_MIN": 1, "SEG_MIN": 1},
-            "FZ-CB-B": {"c_B": 1, "b": 1}, "FZ-STAGING": {"path": STAGING, "m6_raw_retention": "fixture"}, "FZ-M4-BASELINE": {"commit": "a" * 40}}
+            "FZ-CB-B": {"c_B": 1, "b": 1}, "FZ-Q2": {"collector_mode_m6": "driver-root", "collector_netns": "x"},
+            "FZ-STAGING": {"path": STAGING, "m6_raw_retention": "fixture"}, "FZ-M4-BASELINE": {"commit": "a" * 40}}
     dec = {}
     for d, (_, _, keys) in P.DECISIONS.items():
         e = {"status": "approved", "approved_by": "Rohit Kumar", "date": "2026-10-12", "reference": "test fixture"}
@@ -718,6 +719,7 @@ class TestStagesAndPrivilege(Base):
         self.assertEqual(m6["matrix"]["total_runs"], 196)
         self.assertIn("deferred", m6["ood"])
         self.assertIn("FZ-M6-PLAN", P.FULL_ONLY)
+        self.assertIn("sentlab-a0", v("FZ-Q2")["collector_netns"])        # P-7, 2026-10-13
         ov5 = v("FZ-OV")["ov5_sizes"]                                      # O-1, 2026-10-13
         self.assertEqual((ov5["target_memory_max_mib"], ov5["fill_file_mib"], ov5["lab_cap_mib"], ov5["reps"]),
                          (2048, 768, 2560, 2))

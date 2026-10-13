@@ -137,7 +137,7 @@ DECISIONS: Dict[str, Tuple[str, str, Optional[Tuple[str, ...]]]] = {
     "FZ-OV": ("OV-4 (AMD-13) and OV-5 (AMD-15) parameters (D5)", f"{REGISTER} §5 D5",
               ("ov4_n_r", "ov4_tau", "ov4_level_pps", "ov5_r_star", "ov5_sizes")),
     "FZ-Q5": ("Test-seed provisioning, CTRL test runs (Q-5)", f"{REGISTER} §5 D5", ("ctrl_test_runs",)),
-    "FZ-Q2": ("Collector privilege mode for M6 (Q-2)", f"{REGISTER} §5 Q-2", ("collector_mode_m6",)),
+    "FZ-Q2": ("Collector privilege mode for M6 (Q-2)", f"{REGISTER} §5 Q-2, P-7", ("collector_mode_m6", "collector_netns")),
     "FZ-ARRIVALS": ("Load arrival process (amends FZ-WORKLOAD jitter)", f"{REGISTER} §5 A-1",
                     ("process", "rate_per_s", "replaces")),
     "FZ-INTENSITY-CPUNET": ("PI-8 candidates of the CPU and network faults", f"{REGISTER} §5 C-1",
