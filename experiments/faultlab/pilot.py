@@ -1222,7 +1222,7 @@ def reconcile_clients(run, recs, a, b):
         outcomes[r["outcome"]] = outcomes.get(r["outcome"], 0) + 1
     network = (run.get("fault") or {}).get("type") in NETWORK_FAULTS
     net_fail = {k: v for k, v in outcomes.items() if network and NET_FAILURE.fullmatch(k)}
-    unexplained = set(outcomes) - {"200", "503", "504", "client_saturated"} - set(net_fail)
+    unexplained = set(outcomes) - {"200", "400", "503", "504", "client_saturated"} - set(net_fail)
     if unexplained:
         problems.append(f"client outcomes without a server counterpart: { {k: outcomes[k] for k in unexplained} }")
     sent = [r["sent_ns"] for r in recs if r["sent_ns"] is not None]
@@ -1238,7 +1238,9 @@ def reconcile_clients(run, recs, a, b):
         problems.append("end document does not postdate the last completion")
     keys = ("requests_completed_total", "requests_rejected_total", "requests_failed_total")
     delta = {k: b[k] - a[k] for k in keys}
-    expect = dict(zip(keys, (outcomes.get("200", 0), outcomes.get("503", 0), outcomes.get("504", 0))))
+    # the workload's accounting: failed = 400 (request not read within its read timeout, or malformed) + 504
+    expect = dict(zip(keys, (outcomes.get("200", 0), outcomes.get("503", 0),
+                             outcomes.get("504", 0) + outcomes.get("400", 0))))
     failures = sum(net_fail.values())
     if not network:
         problems += [f"{k}: server delta {delta[k]:g} != client {expect[k]}" for k in keys if delta[k] != expect[k]]
@@ -1254,7 +1256,7 @@ def reconcile_clients(run, recs, a, b):
 
 def client_records(run, recs):
     """Metrics writer off: the client side alone. Every scheduled arrival recorded exactly once, sent, and answered
-    with a server outcome (200 / 503 / 504); a client timeout or saturation is a problem here, because no server
+    with a server outcome (200 / 400 / 503 / 504); a client timeout or saturation is a problem here, because no server
     document can explain it."""
     problems, outcomes = [], {}
     n = run["load"]["arrivals"]
@@ -1262,10 +1264,10 @@ def client_records(run, recs):
         problems.append(f"client records do not cover the {n} scheduled arrivals exactly once")
     for r in recs:
         outcomes[r["outcome"]] = outcomes.get(r["outcome"], 0) + 1
-    other = set(outcomes) - {"200", "503", "504"}
+    other = set(outcomes) - {"200", "400", "503", "504"}
     if other:
         problems.append(f"client outcomes without a server answer: { {k: outcomes[k] for k in other} }")
-    if any(r["sent_ns"] is None or r["latency_ms"] is None for r in recs if r["outcome"] in ("200", "503", "504")):
+    if any(r["sent_ns"] is None or r["latency_ms"] is None for r in recs if r["outcome"] in ("200", "400", "503", "504")):
         problems.append("an answered request has no send time or latency")
     return {"client_outcomes": dict(sorted(outcomes.items())), "scheduled": n}, problems
 

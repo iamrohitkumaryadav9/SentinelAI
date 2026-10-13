@@ -2403,7 +2403,7 @@ class TestClientAccountingUnderNetworkFaults(unittest.TestCase):
         for o, c in outcomes.items():
             for _ in range(c):
                 recs.append({"k": k, "outcome": o, "sent_ns": 2_000_000_000 + k,
-                             "latency_ms": 1.0 if o in ("200", "503", "504") else None})
+                             "latency_ms": 1.0 if o in ("200", "400", "503", "504") else None})
                 k += 1
         run = {"load": {"arrivals": k}, "fault": {"type": fault} if fault else None}
         a = {"mono_s": 1.0, "pool_util": 0.0, "requests_completed_total": 0, "requests_rejected_total": 0,
@@ -2421,6 +2421,19 @@ class TestClientAccountingUnderNetworkFaults(unittest.TestCase):
                 self.assertTrue(self.check(fault, out, (107, 0, 2)))             # 7 > 6 failures: unexplained
                 self.assertTrue(self.check(fault, out, (99, 0, 2)))              # client got more than served
                 self.assertTrue(self.check(fault, dict(out, malformed_response=1), (100, 0, 2)))
+
+    def test_a_400_is_a_server_failure_exactly(self):
+        """PI8-900617: a request the workload could not read within 2 s gets 400 and requests_failed_total (its
+        documented accounting); the reconciliation counts it there, exactly, with or without a network fault."""
+        out = {"200": 100, "504": 2, "400": 1}
+        for fault in (None, "police_a_ingress", "app_lock"):
+            with self.subTest(fault):
+                self.assertEqual(self.check(fault, out, (100, 0, 3)), [])
+                self.assertTrue(self.check(fault, out, (100, 0, 2)))             # the 400 not counted: wrong
+                self.assertTrue(self.check(fault, {"200": 100, "504": 2}, (100, 0, 3)))  # unexplained server fail
+        recs = [{"k": 0, "outcome": "400", "sent_ns": 1, "latency_ms": 5.0}]
+        self.assertEqual(P.client_records({"load": {"arrivals": 1}}, recs)[1], [])
+        self.assertTrue(P.client_records({"load": {"arrivals": 1}}, [dict(recs[0], latency_ms=None)])[1])
 
     def test_without_a_network_fault_everything_stays_exact(self):
         out = {"200": 100, "TimeoutError": 1}
