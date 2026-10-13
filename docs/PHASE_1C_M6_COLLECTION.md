@@ -1,7 +1,6 @@
 # Phase 1C M6 collection
 
-Status: **ready to collect.** The matrix is committed (this commit is the code pin); no matrix run has been collected
-yet.
+Status: **collecting.** The matrix is committed (`9918b83`, the code pin). Batch 1 of 6 collected and packed.
 
 This document records how the M6 matrix is collected and what each batch produced. It is a runbook and a ledger; it
 validates nothing. M2 is never run on M6 data before M7 locks the parameters and the model (design §6.6).
@@ -70,9 +69,18 @@ stay stable while a batch runs (a login session appearing or ending fails the ho
 
 | Batch | Campaign | Commit | Runs | Passed | Failed (kept) | Packed in |
 |---|---|---|---|---|---|---|
-| 1 | — | — | 34 | — | — | — |
+| 1 | `20261013T094920Z` | `9918b83` | 34 (+ PI0-1…5) | 34 pipeline; 32 every PI | 0 | this commit |
 | 2 | — | — | 34 | — | — | — |
 | 3 | — | — | 34 | — | — | — |
 | 4 | — | — | 34 | — | — | — |
 | 5 | — | — | 34 | — | — | — |
 | 6 | — | — | 32 | — | — | — |
+
+## 6. Notes per batch
+
+**Batch 1.** PI-0 5/5; all 34 runs passed their pipeline checks; nothing excluded. Two training runs at the strongest
+quota (I3, 0.075 core: M6-s100026, M6-s100032) missed PI-6 coverage on `psi.cpu.some.target` (0.989 and 0.978). The
+target is CPU-stalled almost all of the time there, and in 1–2 of the 90 W ticks the PSI `some` delta came out a hair
+longer than the tick (fractions 1.000048, 1.000133, 1.000021), which the frozen normaliser rejects as a fraction above 1.
+Same class as M-4 (`mem.util.target`); report-only, the raw ticks are kept, and it is listed for M7. Packed: 34 runs and
+5 PI-0 cycles, 44 MB; every packed run unpacks with every SHA-256 intact and its snapshot replays byte-identically.
