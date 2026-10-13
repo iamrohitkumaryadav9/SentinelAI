@@ -1673,9 +1673,15 @@ class TestStaticAndIntegrity(unittest.TestCase):
                             or re.fullmatch(r"results/phase1c_m5_pilot/[0-9]{8}T[0-9]{6}Z/(?:PI0-[1-5]|(?:CTRL|PI1U|"
                                             r"PI6OFF|INSTOFF|PI8)-9[0-9]{5})/(?:(?:evidence|logs)/)?[a-z0-9_]+\.(?:json|jsonl|"
                                             r"stderr)", p) is not None)
+            # AMD-29: the M6 matrix generator, the M6 batch runner, their tests, the M6 documents and the matrix file
+            # (add-only; the raw dataset and its manifest are already admitted under AMD-18)
+            m6 = lambda p: (p in ("experiments/faultlab/matrix.py", "tests/faultlab/test_matrix.py",
+                                  "experiments/faultlab/m6.py", "tests/faultlab/test_m6.py",
+                                  "datasets/faultlab/v1/matrix.json")
+                            or re.fullmatch(r"docs/PHASE_1C_M6_[A-Z0-9_]+\.md", p) is not None)
             changed = git("diff", "--name-only", base, "HEAD").stdout.split()
             others = sorted(p for p in changed if p not in E.TOOLING)
-            self.assertTrue(others and all(closeout(p) or r2f(p) or p2a6(p) or p1c(p) or m4(p) or m5(p)
+            self.assertTrue(others and all(closeout(p) or r2f(p) or p2a6(p) or p1c(p) or m4(p) or m5(p) or m6(p)
                                            for p in others), others)
             self.assertFalse(res["ok"])
             self.assertEqual(res["reason"], f"changed since {base[:7]} beyond R2-E tooling: {others}")

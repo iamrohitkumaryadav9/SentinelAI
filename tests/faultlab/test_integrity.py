@@ -42,7 +42,12 @@ M4_PATHS = frozenset({
     "tests/faultlab/test_pilot.py",          # AMD-26: their tests (simulated host)
     "tests/runtime/test_corpus.py",          # AMD-27: committed pilot snapshots verified, never given to M2
     "tests/runtime/test_raw_replay.py",      # AMD-27: committed pilot ticks replayed byte-identically
+    "experiments/faultlab/matrix.py",        # AMD-29: the M6 matrix generator (design §6.6, pilot design §5.3)
+    "tests/faultlab/test_matrix.py",         # AMD-29: its tests
+    "experiments/faultlab/m6.py",            # AMD-29: the M6 batch runner and dataset writer
+    "tests/faultlab/test_m6.py",             # AMD-29: its tests
 })
+M6_ADD_ONLY = frozenset({"datasets/faultlab/v1/matrix.json"})   # AMD-29: committed once, before any collection
 # AMD-27: recorded failed evaluations, pinned so that they can never be edited or relabelled as passing
 FAILED_PILOT_PINS = {
     "results/phase1c_m5_pilot/20261011T175343Z/PI0-1/run.json":
@@ -51,10 +56,11 @@ FAILED_PILOT_PINS = {
         "dd79326c5951f87e6dd69c20ce039b4c23f938e49eef6073ae7221c94fc56519",       # pipeline_ok false (app_features)
 }
 PINS = {
-    "tests/faultlab/test_r2e.py": "a57baf39133988b20fc1dcb5036e63b9977e12fb8d5f57c6e8ac250f6a531fa3",
-    "tests/faultlab/test_r2f.py": "17b0e4474a4b90768ee1b73348c513551e43277ba2c5d6a1f02cc1922a5a27e9",
+    "tests/faultlab/test_r2e.py": "c1307f7db74c4aefea836a7f2c3f78c95b201c372b4c68cc6e50ad9d9b4fe190",
+    "tests/faultlab/test_r2f.py": "33ea8d660b4e900b0db5ebabc3dc728e20d9d65f6231b1b338fac287ebda6fbe",
 }
-LIVE = I.Policy(anchor=ANCHOR, add_or_modify=M4_PATHS | CHECKER_FILES, pinned=PINS)   # checker: see test_r2f
+LIVE = I.Policy(anchor=ANCHOR, add_or_modify=M4_PATHS | CHECKER_FILES, add_only=M6_ADD_ONLY,
+                pinned=PINS)                                                            # checker: see test_r2f
 
 
 class TestLiveRepository(unittest.TestCase):
@@ -73,9 +79,10 @@ class TestLiveRepository(unittest.TestCase):
             self.assertFalse(doc.get("ok") or doc.get("pipeline_ok"), path)
 
     def test_policy_paths_are_exact(self):
-        for p in M4_PATHS | CHECKER_FILES | set(PINS):
+        for p in M4_PATHS | CHECKER_FILES | set(PINS) | M6_ADD_ONLY:
             self.assertFalse(p.endswith("/") or any(c in p for c in "*?[ \t\n"), p)
         self.assertFalse(M4_PATHS & CHECKER_FILES or M4_PATHS & set(PINS) or CHECKER_FILES & set(PINS))
+        self.assertFalse(M6_ADD_ONLY & (M4_PATHS | CHECKER_FILES | set(PINS)))
 
 
 # ---------------------------------------------------------------------------------------------- disposable repos
