@@ -1,0 +1,6199 @@
+{
+ "basis": "FZ-INTENSITY (R-8), FZ-M6-PLAN (P-1..P-8), FZ-OV, FZ-Q5; design \u00a76.4, \u00a76.6, \u00a76.7",
+ "batches": 6,
+ "classes": {
+  "application_bottleneck": [
+   "app_dependency_delay",
+   "app_lock",
+   "app_pool"
+  ],
+  "cpu_contention": [
+   "cpu_contender"
+  ],
+  "cpu_throttling": [
+   "cpu_quota"
+  ],
+  "memory_pressure": [
+   "memory_max"
+  ],
+  "network_packet_loss": [
+   "netem_loss_a_egress"
+  ],
+  "tcp_retransmissions": [
+   "netem_loss_r_egress",
+   "netem_rate_r"
+  ]
+ },
+ "counts": {
+  "by_family": {
+   "CTRL": 24,
+   "OV-1": 4,
+   "OV-10": 4,
+   "OV-2": 4,
+   "OV-3": 4,
+   "OV-4": 4,
+   "OV-5": 4,
+   "OV-6": 4,
+   "OV-7": 4,
+   "OV-8": 4,
+   "OV-9": 4,
+   "PI3": 6,
+   "SENS": 12,
+   "SF": 120
+  },
+  "by_split": {
+   "pi3": 6,
+   "sens": 12,
+   "test": 106,
+   "train": 78
+  },
+  "test_by_class": {
+   "application_bottleneck": 12,
+   "cpu_contention": 12,
+   "cpu_throttling": 12,
+   "memory_pressure": 12,
+   "network_packet_loss": 12,
+   "tcp_retransmissions": 12
+  },
+  "total": 202,
+  "train_by_class": {
+   "application_bottleneck": 8,
+   "cpu_contention": 8,
+   "cpu_throttling": 8,
+   "memory_pressure": 8,
+   "network_packet_loss": 8,
+   "tcp_retransmissions": 8
+  }
+ },
+ "engineering_values": {
+  "bulk_flow_mbit": 40,
+  "distractor_lines_per_s": 5,
+  "stress_cpus": [
+   19,
+   20
+  ]
+ },
+ "format": "sentinelai.faultlab.m6.matrix.v1",
+ "levels": {
+  "app_dependency_delay": {
+   "I1": 4,
+   "I2": 7,
+   "I3": 15,
+   "single": null,
+   "stronger": "higher"
+  },
+  "app_lock": {
+   "I1": 500,
+   "I2": 1581,
+   "I3": 5000,
+   "single": null,
+   "stronger": "higher"
+  },
+  "app_pool": {
+   "single": 1,
+   "stronger": "lower"
+  },
+  "cpu_contender": {
+   "I1": 50,
+   "I2": 141,
+   "I3": 400,
+   "single": null,
+   "stronger": "higher"
+  },
+  "cpu_quota": {
+   "I1": 20000,
+   "I2": 12248,
+   "I3": 7500,
+   "single": null,
+   "stronger": "lower"
+  },
+  "memory_max": {
+   "single": 768,
+   "stronger": "lower"
+  },
+  "netem_loss_a_egress": {
+   "I1": 0.5,
+   "I2": 1,
+   "I3": 5,
+   "single": null,
+   "stronger": "higher"
+  },
+  "netem_loss_r_egress": {
+   "I1": 0.5,
+   "I2": 1,
+   "I3": 5,
+   "single": null,
+   "stronger": "higher"
+  },
+  "netem_rate_r": {
+   "I1": 600,
+   "I2": 439,
+   "I3": 320,
+   "single": null,
+   "stronger": "lower"
+  },
+  "ov4_udp_flood": {
+   "single": 80000,
+   "stronger": "higher"
+  },
+  "ov5_page_cache_fill": {
+   "single": 768,
+   "stronger": "higher"
+  },
+  "police_a_ingress": {
+   "I1": 550,
+   "I2": 407,
+   "I3": 300,
+   "single": null,
+   "stronger": "lower"
+  }
+ },
+ "master_seed": 20261013,
+ "runs": [
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "PI3",
+   "faults": [
+    {
+     "magnitude": 20000,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100001",
+   "seed": 100001,
+   "split": "pi3",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "PI3",
+   "faults": [
+    {
+     "magnitude": 12248,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I2",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100002",
+   "seed": 100002,
+   "split": "pi3",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "PI3",
+   "faults": [
+    {
+     "magnitude": 7500,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100003",
+   "seed": 100003,
+   "split": "pi3",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "PI3",
+   "faults": [
+    {
+     "magnitude": 20000,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100004",
+   "seed": 100004,
+   "split": "pi3",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "PI3",
+   "faults": [
+    {
+     "magnitude": 12248,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I2",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100005",
+   "seed": 100005,
+   "split": "pi3",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "PI3",
+   "faults": [
+    {
+     "magnitude": 7500,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100006",
+   "seed": 100006,
+   "split": "pi3",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "network_packet_loss",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "network_packet_loss"
+   },
+   "family": "SENS",
+   "faults": [
+    {
+     "magnitude": 0.25,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": "I0",
+   "mechanism": "netem_loss_a_egress",
+   "run_id": "M6-s100007",
+   "seed": 100007,
+   "split": "sens",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "application_bottleneck",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "application_bottleneck"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 1,
+     "type": "app_pool"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "app_pool",
+   "run_id": "M6-s100008",
+   "seed": 100008,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "SENS",
+   "faults": [
+    {
+     "magnitude": 40000,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I0",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100009",
+   "seed": 100009,
+   "split": "sens",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "application_bottleneck",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "application_bottleneck"
+   },
+   "family": "SENS",
+   "faults": [
+    {
+     "magnitude": 2,
+     "type": "app_dependency_delay"
+    }
+   ],
+   "intensity": "I0",
+   "mechanism": "app_dependency_delay",
+   "run_id": "M6-s100010",
+   "seed": 100010,
+   "split": "sens",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "network_packet_loss",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "network_packet_loss"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 5,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "netem_loss_a_egress",
+   "run_id": "M6-s100011",
+   "seed": 100011,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "CTRL",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100012",
+   "seed": 100012,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "tcp_retransmissions",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "tcp_retransmissions"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 0.5,
+     "type": "netem_loss_r_egress"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "netem_loss_r_egress",
+   "run_id": "M6-s100013",
+   "seed": 100013,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "cpu_contention",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 400,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "cpu_contender",
+   "run_id": "M6-s100014",
+   "seed": 100014,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "application_bottleneck",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "application_bottleneck"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 15,
+     "type": "app_dependency_delay"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "app_dependency_delay",
+   "run_id": "M6-s100015",
+   "seed": 100015,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": false,
+    "ifaces": []
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "OV-8",
+   "faults": [
+    {
+     "magnitude": 1,
+     "type": "netem_loss_r_egress"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100016",
+   "seed": 100016,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "cpu_contention",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 400,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "cpu_contender",
+   "run_id": "M6-s100017",
+   "seed": 100017,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "memory_pressure",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "memory_pressure"
+   },
+   "family": "SENS",
+   "faults": [
+    {
+     "magnitude": 1536,
+     "type": "memory_max"
+    }
+   ],
+   "intensity": "I0",
+   "mechanism": "memory_max",
+   "run_id": "M6-s100018",
+   "seed": 100018,
+   "split": "sens",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "CTRL",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100019",
+   "seed": 100019,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 12248,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I2",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100020",
+   "seed": 100020,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "SENS",
+   "faults": [
+    {
+     "magnitude": 40000,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I0",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100021",
+   "seed": 100021,
+   "split": "sens",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "application_bottleneck",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "application_bottleneck"
+   },
+   "family": "SENS",
+   "faults": [
+    {
+     "magnitude": 250,
+     "type": "app_lock"
+    }
+   ],
+   "intensity": "I0",
+   "mechanism": "app_lock",
+   "run_id": "M6-s100022",
+   "seed": 100022,
+   "split": "sens",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "tcp_retransmissions",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "tcp_retransmissions"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 600,
+     "type": "netem_rate_r"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "netem_rate_r",
+   "run_id": "M6-s100023",
+   "seed": 100023,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "CTRL",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100024",
+   "seed": 100024,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": 40,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "OV-1",
+   "faults": [
+    {
+     "magnitude": 141,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100025",
+   "seed": 100025,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 7500,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100026",
+   "seed": 100026,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 20000,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100027",
+   "seed": 100027,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "memory_pressure",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "memory_pressure"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 768,
+     "type": "memory_max"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "memory_max",
+   "run_id": "M6-s100028",
+   "seed": 100028,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "cpu_contention",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 50,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "cpu_contender",
+   "run_id": "M6-s100029",
+   "seed": 100029,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": false,
+    "ifaces": []
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "OV-8",
+   "faults": [
+    {
+     "magnitude": 1,
+     "type": "netem_loss_r_egress"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100030",
+   "seed": 100030,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": {
+    "kind": "generic",
+    "lines_per_s": 5
+   },
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "OV-10",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100031",
+   "seed": 100031,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 7500,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100032",
+   "seed": 100032,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": "tcp_retransmissions",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "tcp_retransmissions"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 0.5,
+     "type": "netem_loss_r_egress"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "netem_loss_r_egress",
+   "run_id": "M6-s100033",
+   "seed": 100033,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 1,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "CTRL",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100034",
+   "seed": 100034,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "application_bottleneck",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "application_bottleneck"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 5000,
+     "type": "app_lock"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "app_lock",
+   "run_id": "M6-s100035",
+   "seed": 100035,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "CTRL",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100036",
+   "seed": 100036,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "CTRL",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100037",
+   "seed": 100037,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 7500,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100038",
+   "seed": 100038,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 20000,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100039",
+   "seed": 100039,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "tcp_retransmissions",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "tcp_retransmissions"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 1,
+     "type": "netem_loss_r_egress"
+    }
+   ],
+   "intensity": "I2",
+   "mechanism": "netem_loss_r_egress",
+   "run_id": "M6-s100040",
+   "seed": 100040,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "cpu_contention",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 400,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "cpu_contender",
+   "run_id": "M6-s100041",
+   "seed": 100041,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": false,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "OV-9",
+   "faults": [
+    {
+     "magnitude": 1,
+     "type": "app_pool"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100042",
+   "seed": 100042,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 12248,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I2",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100043",
+   "seed": 100043,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 7500,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100044",
+   "seed": 100044,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "application_bottleneck",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "application_bottleneck"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 1,
+     "type": "app_pool"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "app_pool",
+   "run_id": "M6-s100045",
+   "seed": 100045,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "memory_pressure",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "memory_pressure"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 768,
+     "type": "memory_max"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "memory_max",
+   "run_id": "M6-s100046",
+   "seed": 100046,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "memory_pressure",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "memory_pressure"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 768,
+     "type": "memory_max"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "memory_max",
+   "run_id": "M6-s100047",
+   "seed": 100047,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "tcp_retransmissions",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "tcp_retransmissions"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 600,
+     "type": "netem_rate_r"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "netem_rate_r",
+   "run_id": "M6-s100048",
+   "seed": 100048,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "tcp_retransmissions",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "tcp_retransmissions"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 0.5,
+     "type": "netem_loss_r_egress"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "netem_loss_r_egress",
+   "run_id": "M6-s100049",
+   "seed": 100049,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "tcp_retransmissions",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "tcp_retransmissions"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 320,
+     "type": "netem_rate_r"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "netem_rate_r",
+   "run_id": "M6-s100050",
+   "seed": 100050,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "cpu_contention",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 400,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "cpu_contender",
+   "run_id": "M6-s100051",
+   "seed": 100051,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "memory_pressure",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "memory_pressure"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 768,
+     "type": "memory_max"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "memory_max",
+   "run_id": "M6-s100052",
+   "seed": 100052,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": {
+    "kind": "slow_request",
+    "lines_per_s": 5
+   },
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "OV-6",
+   "faults": [
+    {
+     "magnitude": 141,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100053",
+   "seed": 100053,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "network_packet_loss",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "network_packet_loss"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 1,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": "I2",
+   "mechanism": "netem_loss_a_egress",
+   "run_id": "M6-s100054",
+   "seed": 100054,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "CTRL",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100055",
+   "seed": 100055,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "network_packet_loss",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "network_packet_loss"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 5,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "netem_loss_a_egress",
+   "run_id": "M6-s100056",
+   "seed": 100056,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "cpu_contention",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "SENS",
+   "faults": [
+    {
+     "magnitude": 25,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": "I0",
+   "mechanism": "cpu_contender",
+   "run_id": "M6-s100057",
+   "seed": 100057,
+   "split": "sens",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "OV-5",
+   "faults": [
+    {
+     "magnitude": 768,
+     "type": "ov5_page_cache_fill"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100058",
+   "seed": 100058,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 7500,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100059",
+   "seed": 100059,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "cpu_contention",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 50,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "cpu_contender",
+   "run_id": "M6-s100060",
+   "seed": 100060,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "cpu_contention",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 141,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": "I2",
+   "mechanism": "cpu_contender",
+   "run_id": "M6-s100061",
+   "seed": 100061,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [
+     "tcp_retransmissions"
+    ],
+    "primary": "network_packet_loss"
+   },
+   "family": "OV-2",
+   "faults": [
+    {
+     "magnitude": 1,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100062",
+   "seed": 100062,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 12248,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I2",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100063",
+   "seed": 100063,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "tcp_retransmissions",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "tcp_retransmissions"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 5,
+     "type": "netem_loss_r_egress"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "netem_loss_r_egress",
+   "run_id": "M6-s100064",
+   "seed": 100064,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "network_packet_loss",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "network_packet_loss"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 0.5,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "netem_loss_a_egress",
+   "run_id": "M6-s100065",
+   "seed": 100065,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "network_packet_loss",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "network_packet_loss"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 0.5,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "netem_loss_a_egress",
+   "run_id": "M6-s100066",
+   "seed": 100066,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": false,
+    "ifaces": []
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "OV-8",
+   "faults": [
+    {
+     "magnitude": 1,
+     "type": "netem_loss_r_egress"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100067",
+   "seed": 100067,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 2,
+   "bulk_flow_mbit": null,
+   "class": "tcp_retransmissions",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "tcp_retransmissions"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 320,
+     "type": "netem_rate_r"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "netem_rate_r",
+   "run_id": "M6-s100068",
+   "seed": 100068,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": "application_bottleneck",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "application_bottleneck"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 4,
+     "type": "app_dependency_delay"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "app_dependency_delay",
+   "run_id": "M6-s100069",
+   "seed": 100069,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": "network_packet_loss",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "network_packet_loss"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 5,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "netem_loss_a_egress",
+   "run_id": "M6-s100070",
+   "seed": 100070,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": "cpu_contention",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "SENS",
+   "faults": [
+    {
+     "magnitude": 25,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": "I0",
+   "mechanism": "cpu_contender",
+   "run_id": "M6-s100071",
+   "seed": 100071,
+   "split": "sens",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": {
+    "kind": "generic",
+    "lines_per_s": 5
+   },
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "OV-10",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100072",
+   "seed": 100072,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": "tcp_retransmissions",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "tcp_retransmissions"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 320,
+     "type": "netem_rate_r"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "netem_rate_r",
+   "run_id": "M6-s100073",
+   "seed": 100073,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": "memory_pressure",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "memory_pressure"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 768,
+     "type": "memory_max"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "memory_max",
+   "run_id": "M6-s100074",
+   "seed": 100074,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": 40,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "OV-1",
+   "faults": [
+    {
+     "magnitude": 141,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100075",
+   "seed": 100075,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 20000,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100076",
+   "seed": 100076,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": "application_bottleneck",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "application_bottleneck"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 1581,
+     "type": "app_lock"
+    }
+   ],
+   "intensity": "I2",
+   "mechanism": "app_lock",
+   "run_id": "M6-s100077",
+   "seed": 100077,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": false,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "OV-9",
+   "faults": [
+    {
+     "magnitude": 1,
+     "type": "app_pool"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100078",
+   "seed": 100078,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [
+     "tcp_retransmissions"
+    ],
+    "primary": "network_packet_loss"
+   },
+   "family": "OV-2",
+   "faults": [
+    {
+     "magnitude": 1,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100079",
+   "seed": 100079,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "CTRL",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100080",
+   "seed": 100080,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": "application_bottleneck",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "application_bottleneck"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 1,
+     "type": "app_pool"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "app_pool",
+   "run_id": "M6-s100081",
+   "seed": 100081,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": "application_bottleneck",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "application_bottleneck"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 4,
+     "type": "app_dependency_delay"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "app_dependency_delay",
+   "run_id": "M6-s100082",
+   "seed": 100082,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": "network_packet_loss",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "network_packet_loss"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 0.5,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "netem_loss_a_egress",
+   "run_id": "M6-s100083",
+   "seed": 100083,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": "tcp_retransmissions",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "tcp_retransmissions"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 5,
+     "type": "netem_loss_r_egress"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "netem_loss_r_egress",
+   "run_id": "M6-s100084",
+   "seed": 100084,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": "application_bottleneck",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "application_bottleneck"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 4,
+     "type": "app_dependency_delay"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "app_dependency_delay",
+   "run_id": "M6-s100085",
+   "seed": 100085,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [
+     "tcp_retransmissions"
+    ],
+    "primary": "network_packet_loss"
+   },
+   "family": "OV-2",
+   "faults": [
+    {
+     "magnitude": 1,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100086",
+   "seed": 100086,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 7500,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100087",
+   "seed": 100087,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "acceptable": [
+     {
+      "contributing": [],
+      "primary": "INSUFFICIENT_EVIDENCE"
+     },
+     {
+      "contributing": [
+       "cpu_contention"
+      ],
+      "primary": "cpu_throttling"
+     },
+     {
+      "contributing": [
+       "cpu_throttling"
+      ],
+      "primary": "cpu_contention"
+     }
+    ],
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "OV-7",
+   "faults": [
+    {
+     "magnitude": 12248,
+     "type": "cpu_quota"
+    },
+    {
+     "magnitude": 141,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100088",
+   "seed": 100088,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": "tcp_retransmissions",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "tcp_retransmissions"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 439,
+     "type": "netem_rate_r"
+    }
+   ],
+   "intensity": "I2",
+   "mechanism": "netem_rate_r",
+   "run_id": "M6-s100089",
+   "seed": 100089,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "CTRL",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100090",
+   "seed": 100090,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": "cpu_contention",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 141,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": "I2",
+   "mechanism": "cpu_contender",
+   "run_id": "M6-s100091",
+   "seed": 100091,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": "application_bottleneck",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "application_bottleneck"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 1581,
+     "type": "app_lock"
+    }
+   ],
+   "intensity": "I2",
+   "mechanism": "app_lock",
+   "run_id": "M6-s100092",
+   "seed": 100092,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": "memory_pressure",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "memory_pressure"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 768,
+     "type": "memory_max"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "memory_max",
+   "run_id": "M6-s100093",
+   "seed": 100093,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": "tcp_retransmissions",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "tcp_retransmissions"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 600,
+     "type": "netem_rate_r"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "netem_rate_r",
+   "run_id": "M6-s100094",
+   "seed": 100094,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": "cpu_contention",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 50,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "cpu_contender",
+   "run_id": "M6-s100095",
+   "seed": 100095,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "OV-3",
+   "faults": [
+    {
+     "magnitude": 12248,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100096",
+   "seed": 100096,
+   "split": "train",
+   "stress_cpus": [
+    19,
+    20
+   ]
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": "tcp_retransmissions",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "tcp_retransmissions"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 439,
+     "type": "netem_rate_r"
+    }
+   ],
+   "intensity": "I2",
+   "mechanism": "netem_rate_r",
+   "run_id": "M6-s100097",
+   "seed": 100097,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "CTRL",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100098",
+   "seed": 100098,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": false,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "OV-9",
+   "faults": [
+    {
+     "magnitude": 1,
+     "type": "app_pool"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100099",
+   "seed": 100099,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": "memory_pressure",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "memory_pressure"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 768,
+     "type": "memory_max"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "memory_max",
+   "run_id": "M6-s100100",
+   "seed": 100100,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": "cpu_contention",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 400,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "cpu_contender",
+   "run_id": "M6-s100101",
+   "seed": 100101,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 3,
+   "bulk_flow_mbit": null,
+   "class": "memory_pressure",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "memory_pressure"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 768,
+     "type": "memory_max"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "memory_max",
+   "run_id": "M6-s100102",
+   "seed": 100102,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "memory_pressure",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "memory_pressure"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 768,
+     "type": "memory_max"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "memory_max",
+   "run_id": "M6-s100103",
+   "seed": 100103,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "tcp_retransmissions",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "tcp_retransmissions"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 320,
+     "type": "netem_rate_r"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "netem_rate_r",
+   "run_id": "M6-s100104",
+   "seed": 100104,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "memory_pressure",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "memory_pressure"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 768,
+     "type": "memory_max"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "memory_max",
+   "run_id": "M6-s100105",
+   "seed": 100105,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "tcp_retransmissions",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "tcp_retransmissions"
+   },
+   "family": "SENS",
+   "faults": [
+    {
+     "magnitude": 1200,
+     "type": "netem_rate_r"
+    }
+   ],
+   "intensity": "I0",
+   "mechanism": "netem_rate_r",
+   "run_id": "M6-s100106",
+   "seed": 100106,
+   "split": "sens",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "tcp_retransmissions",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "tcp_retransmissions"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 5,
+     "type": "netem_loss_r_egress"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "netem_loss_r_egress",
+   "run_id": "M6-s100107",
+   "seed": 100107,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "memory_pressure",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "memory_pressure"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 768,
+     "type": "memory_max"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "memory_max",
+   "run_id": "M6-s100108",
+   "seed": 100108,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "OV-3",
+   "faults": [
+    {
+     "magnitude": 12248,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100109",
+   "seed": 100109,
+   "split": "train",
+   "stress_cpus": [
+    19,
+    20
+   ]
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "tcp_retransmissions",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "tcp_retransmissions"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 5,
+     "type": "netem_loss_r_egress"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "netem_loss_r_egress",
+   "run_id": "M6-s100110",
+   "seed": 100110,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "application_bottleneck",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "application_bottleneck"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 500,
+     "type": "app_lock"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "app_lock",
+   "run_id": "M6-s100111",
+   "seed": 100111,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "memory_pressure",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "memory_pressure"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 768,
+     "type": "memory_max"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "memory_max",
+   "run_id": "M6-s100112",
+   "seed": 100112,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [
+     "tcp_retransmissions"
+    ],
+    "primary": "network_packet_loss"
+   },
+   "family": "OV-2",
+   "faults": [
+    {
+     "magnitude": 1,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100113",
+   "seed": 100113,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "application_bottleneck",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "application_bottleneck"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 5000,
+     "type": "app_lock"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "app_lock",
+   "run_id": "M6-s100114",
+   "seed": 100114,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": {
+    "kind": "generic",
+    "lines_per_s": 5
+   },
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "OV-10",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100115",
+   "seed": 100115,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": false,
+    "ifaces": []
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "OV-8",
+   "faults": [
+    {
+     "magnitude": 1,
+     "type": "netem_loss_r_egress"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100116",
+   "seed": 100116,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "tcp_retransmissions",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "tcp_retransmissions"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 0.5,
+     "type": "netem_loss_r_egress"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "netem_loss_r_egress",
+   "run_id": "M6-s100117",
+   "seed": 100117,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "memory_pressure",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "memory_pressure"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 768,
+     "type": "memory_max"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "memory_max",
+   "run_id": "M6-s100118",
+   "seed": 100118,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "CTRL",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100119",
+   "seed": 100119,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "memory_pressure",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "memory_pressure"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 768,
+     "type": "memory_max"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "memory_max",
+   "run_id": "M6-s100120",
+   "seed": 100120,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "network_packet_loss",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "network_packet_loss"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 0.5,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "netem_loss_a_egress",
+   "run_id": "M6-s100121",
+   "seed": 100121,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "CTRL",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100122",
+   "seed": 100122,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "network_packet_loss",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "network_packet_loss"
+   },
+   "family": "SENS",
+   "faults": [
+    {
+     "magnitude": 0.25,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": "I0",
+   "mechanism": "netem_loss_a_egress",
+   "run_id": "M6-s100123",
+   "seed": 100123,
+   "split": "sens",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "cpu_contention",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 400,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "cpu_contender",
+   "run_id": "M6-s100124",
+   "seed": 100124,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "application_bottleneck",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "application_bottleneck"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 1,
+     "type": "app_pool"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "app_pool",
+   "run_id": "M6-s100125",
+   "seed": 100125,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 7500,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100126",
+   "seed": 100126,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "cpu_contention",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 400,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "cpu_contender",
+   "run_id": "M6-s100127",
+   "seed": 100127,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "memory_pressure",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "memory_pressure"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 768,
+     "type": "memory_max"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "memory_max",
+   "run_id": "M6-s100128",
+   "seed": 100128,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "OV-4",
+   "faults": [
+    {
+     "magnitude": 80000,
+     "type": "ov4_udp_flood"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100129",
+   "seed": 100129,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "cpu_contention",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 141,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": "I2",
+   "mechanism": "cpu_contender",
+   "run_id": "M6-s100130",
+   "seed": 100130,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "network_packet_loss",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "network_packet_loss"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 0.5,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "netem_loss_a_egress",
+   "run_id": "M6-s100131",
+   "seed": 100131,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "memory_pressure",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "memory_pressure"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 768,
+     "type": "memory_max"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "memory_max",
+   "run_id": "M6-s100132",
+   "seed": 100132,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "CTRL",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100133",
+   "seed": 100133,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "network_packet_loss",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "network_packet_loss"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 1,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": "I2",
+   "mechanism": "netem_loss_a_egress",
+   "run_id": "M6-s100134",
+   "seed": 100134,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "network_packet_loss",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "network_packet_loss"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 0.5,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "netem_loss_a_egress",
+   "run_id": "M6-s100135",
+   "seed": 100135,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 4,
+   "bulk_flow_mbit": null,
+   "class": "memory_pressure",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "memory_pressure"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 768,
+     "type": "memory_max"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "memory_max",
+   "run_id": "M6-s100136",
+   "seed": 100136,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": "network_packet_loss",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "network_packet_loss"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 0.5,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "netem_loss_a_egress",
+   "run_id": "M6-s100137",
+   "seed": 100137,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "OV-4",
+   "faults": [
+    {
+     "magnitude": 80000,
+     "type": "ov4_udp_flood"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100138",
+   "seed": 100138,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": 40,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "OV-1",
+   "faults": [
+    {
+     "magnitude": 141,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100139",
+   "seed": 100139,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": "memory_pressure",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "memory_pressure"
+   },
+   "family": "SENS",
+   "faults": [
+    {
+     "magnitude": 1536,
+     "type": "memory_max"
+    }
+   ],
+   "intensity": "I0",
+   "mechanism": "memory_max",
+   "run_id": "M6-s100140",
+   "seed": 100140,
+   "split": "sens",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": "cpu_contention",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 50,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "cpu_contender",
+   "run_id": "M6-s100141",
+   "seed": 100141,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": 40,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "OV-1",
+   "faults": [
+    {
+     "magnitude": 141,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100142",
+   "seed": 100142,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 20000,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100143",
+   "seed": 100143,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": {
+    "kind": "generic",
+    "lines_per_s": 5
+   },
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "OV-10",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100144",
+   "seed": 100144,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "CTRL",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100145",
+   "seed": 100145,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": "cpu_contention",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 50,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "cpu_contender",
+   "run_id": "M6-s100146",
+   "seed": 100146,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": "application_bottleneck",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "application_bottleneck"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 1,
+     "type": "app_pool"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "app_pool",
+   "run_id": "M6-s100147",
+   "seed": 100147,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": false,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "OV-9",
+   "faults": [
+    {
+     "magnitude": 1,
+     "type": "app_pool"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100148",
+   "seed": 100148,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "CTRL",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100149",
+   "seed": 100149,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "CTRL",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100150",
+   "seed": 100150,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": "memory_pressure",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "memory_pressure"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 768,
+     "type": "memory_max"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "memory_max",
+   "run_id": "M6-s100151",
+   "seed": 100151,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 12248,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I2",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100152",
+   "seed": 100152,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": "cpu_contention",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 50,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "cpu_contender",
+   "run_id": "M6-s100153",
+   "seed": 100153,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": "tcp_retransmissions",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "tcp_retransmissions"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 1,
+     "type": "netem_loss_r_egress"
+    }
+   ],
+   "intensity": "I2",
+   "mechanism": "netem_loss_r_egress",
+   "run_id": "M6-s100154",
+   "seed": 100154,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": "network_packet_loss",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "network_packet_loss"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 1,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": "I2",
+   "mechanism": "netem_loss_a_egress",
+   "run_id": "M6-s100155",
+   "seed": 100155,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "CTRL",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100156",
+   "seed": 100156,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "CTRL",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100157",
+   "seed": 100157,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": "application_bottleneck",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "application_bottleneck"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 4,
+     "type": "app_dependency_delay"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "app_dependency_delay",
+   "run_id": "M6-s100158",
+   "seed": 100158,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "CTRL",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100159",
+   "seed": 100159,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "CTRL",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100160",
+   "seed": 100160,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "OV-3",
+   "faults": [
+    {
+     "magnitude": 12248,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100161",
+   "seed": 100161,
+   "split": "test",
+   "stress_cpus": [
+    19,
+    20
+   ]
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "OV-5",
+   "faults": [
+    {
+     "magnitude": 768,
+     "type": "ov5_page_cache_fill"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100162",
+   "seed": 100162,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": "application_bottleneck",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "application_bottleneck"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 1,
+     "type": "app_pool"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "app_pool",
+   "run_id": "M6-s100163",
+   "seed": 100163,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": "tcp_retransmissions",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "tcp_retransmissions"
+   },
+   "family": "SENS",
+   "faults": [
+    {
+     "magnitude": 0.25,
+     "type": "netem_loss_r_egress"
+    }
+   ],
+   "intensity": "I0",
+   "mechanism": "netem_loss_r_egress",
+   "run_id": "M6-s100164",
+   "seed": 100164,
+   "split": "sens",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "CTRL",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100165",
+   "seed": 100165,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": "memory_pressure",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "memory_pressure"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 768,
+     "type": "memory_max"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "memory_max",
+   "run_id": "M6-s100166",
+   "seed": 100166,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "CTRL",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100167",
+   "seed": 100167,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": {
+    "kind": "slow_request",
+    "lines_per_s": 5
+   },
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "OV-6",
+   "faults": [
+    {
+     "magnitude": 141,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100168",
+   "seed": 100168,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "OV-5",
+   "faults": [
+    {
+     "magnitude": 768,
+     "type": "ov5_page_cache_fill"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100169",
+   "seed": 100169,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 5,
+   "bulk_flow_mbit": null,
+   "class": "network_packet_loss",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "network_packet_loss"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 0.5,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "netem_loss_a_egress",
+   "run_id": "M6-s100170",
+   "seed": 100170,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": "network_packet_loss",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "network_packet_loss"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 5,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "netem_loss_a_egress",
+   "run_id": "M6-s100171",
+   "seed": 100171,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 7500,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100172",
+   "seed": 100172,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": "cpu_contention",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 50,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "cpu_contender",
+   "run_id": "M6-s100173",
+   "seed": 100173,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 20000,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100174",
+   "seed": 100174,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": "application_bottleneck",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "application_bottleneck"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 7,
+     "type": "app_dependency_delay"
+    }
+   ],
+   "intensity": "I2",
+   "mechanism": "app_dependency_delay",
+   "run_id": "M6-s100175",
+   "seed": 100175,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": "application_bottleneck",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "application_bottleneck"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 15,
+     "type": "app_dependency_delay"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "app_dependency_delay",
+   "run_id": "M6-s100176",
+   "seed": 100176,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": "network_packet_loss",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "network_packet_loss"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 5,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "netem_loss_a_egress",
+   "run_id": "M6-s100177",
+   "seed": 100177,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 20000,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100178",
+   "seed": 100178,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": {
+    "kind": "slow_request",
+    "lines_per_s": 5
+   },
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "OV-6",
+   "faults": [
+    {
+     "magnitude": 141,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100179",
+   "seed": 100179,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": "network_packet_loss",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "network_packet_loss"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 5,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "netem_loss_a_egress",
+   "run_id": "M6-s100180",
+   "seed": 100180,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 20000,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100181",
+   "seed": 100181,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "OV-3",
+   "faults": [
+    {
+     "magnitude": 12248,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100182",
+   "seed": 100182,
+   "split": "test",
+   "stress_cpus": [
+    19,
+    20
+   ]
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "OV-4",
+   "faults": [
+    {
+     "magnitude": 80000,
+     "type": "ov4_udp_flood"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100183",
+   "seed": 100183,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": "network_packet_loss",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "network_packet_loss"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 1,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": "I2",
+   "mechanism": "netem_loss_a_egress",
+   "run_id": "M6-s100184",
+   "seed": 100184,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": "cpu_contention",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 50,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "cpu_contender",
+   "run_id": "M6-s100185",
+   "seed": 100185,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": "cpu_contention",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 141,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": "I2",
+   "mechanism": "cpu_contender",
+   "run_id": "M6-s100186",
+   "seed": 100186,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "OV-5",
+   "faults": [
+    {
+     "magnitude": 768,
+     "type": "ov5_page_cache_fill"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100187",
+   "seed": 100187,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": "network_packet_loss",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "network_packet_loss"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 5,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "netem_loss_a_egress",
+   "run_id": "M6-s100188",
+   "seed": 100188,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": "cpu_contention",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 400,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "cpu_contender",
+   "run_id": "M6-s100189",
+   "seed": 100189,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": {
+    "kind": "slow_request",
+    "lines_per_s": 5
+   },
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_contention"
+   },
+   "family": "OV-6",
+   "faults": [
+    {
+     "magnitude": 141,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100190",
+   "seed": 100190,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "CTRL",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100191",
+   "seed": 100191,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "acceptable": [
+     {
+      "contributing": [],
+      "primary": "INSUFFICIENT_EVIDENCE"
+     },
+     {
+      "contributing": [
+       "cpu_contention"
+      ],
+      "primary": "cpu_throttling"
+     },
+     {
+      "contributing": [
+       "cpu_throttling"
+      ],
+      "primary": "cpu_contention"
+     }
+    ],
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "OV-7",
+   "faults": [
+    {
+     "magnitude": 12248,
+     "type": "cpu_quota"
+    },
+    {
+     "magnitude": 141,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100192",
+   "seed": 100192,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "acceptable": [
+     {
+      "contributing": [],
+      "primary": "INSUFFICIENT_EVIDENCE"
+     },
+     {
+      "contributing": [
+       "cpu_contention"
+      ],
+      "primary": "cpu_throttling"
+     },
+     {
+      "contributing": [
+       "cpu_throttling"
+      ],
+      "primary": "cpu_contention"
+     }
+    ],
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "OV-7",
+   "faults": [
+    {
+     "magnitude": 12248,
+     "type": "cpu_quota"
+    },
+    {
+     "magnitude": 141,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100193",
+   "seed": 100193,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": "memory_pressure",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "memory_pressure"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 768,
+     "type": "memory_max"
+    }
+   ],
+   "intensity": "single",
+   "mechanism": "memory_max",
+   "run_id": "M6-s100194",
+   "seed": 100194,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": "cpu_throttling",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "cpu_throttling"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 20000,
+     "type": "cpu_quota"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "cpu_quota",
+   "run_id": "M6-s100195",
+   "seed": 100195,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": "application_bottleneck",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "application_bottleneck"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 500,
+     "type": "app_lock"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "app_lock",
+   "run_id": "M6-s100196",
+   "seed": 100196,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": "tcp_retransmissions",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "tcp_retransmissions"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 600,
+     "type": "netem_rate_r"
+    }
+   ],
+   "intensity": "I1",
+   "mechanism": "netem_rate_r",
+   "run_id": "M6-s100197",
+   "seed": 100197,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "CTRL",
+   "faults": [],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100198",
+   "seed": 100198,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "OV-4",
+   "faults": [
+    {
+     "magnitude": 80000,
+     "type": "ov4_udp_flood"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100199",
+   "seed": 100199,
+   "split": "test",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": "network_packet_loss",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "network_packet_loss"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 5,
+     "type": "netem_loss_a_egress"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "netem_loss_a_egress",
+   "run_id": "M6-s100200",
+   "seed": 100200,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": "application_bottleneck",
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "contributing": [],
+    "primary": "application_bottleneck"
+   },
+   "family": "SF",
+   "faults": [
+    {
+     "magnitude": 5000,
+     "type": "app_lock"
+    }
+   ],
+   "intensity": "I3",
+   "mechanism": "app_lock",
+   "run_id": "M6-s100201",
+   "seed": 100201,
+   "split": "train",
+   "stress_cpus": null
+  },
+  {
+   "batch": 6,
+   "bulk_flow_mbit": null,
+   "class": null,
+   "collectors": {
+    "app_metrics": true,
+    "ebpf": true,
+    "ifaces": [
+     "sentlab-a0"
+    ]
+   },
+   "distractor": null,
+   "expected": {
+    "acceptable": [
+     {
+      "contributing": [],
+      "primary": "INSUFFICIENT_EVIDENCE"
+     },
+     {
+      "contributing": [
+       "cpu_contention"
+      ],
+      "primary": "cpu_throttling"
+     },
+     {
+      "contributing": [
+       "cpu_throttling"
+      ],
+      "primary": "cpu_contention"
+     }
+    ],
+    "contributing": [],
+    "primary": "INSUFFICIENT_EVIDENCE"
+   },
+   "family": "OV-7",
+   "faults": [
+    {
+     "magnitude": 12248,
+     "type": "cpu_quota"
+    },
+    {
+     "magnitude": 141,
+     "type": "cpu_contender"
+    }
+   ],
+   "intensity": null,
+   "mechanism": null,
+   "run_id": "M6-s100202",
+   "seed": 100202,
+   "split": "train",
+   "stress_cpus": null
+  }
+ ],
+ "seed_base": 100001
+}
