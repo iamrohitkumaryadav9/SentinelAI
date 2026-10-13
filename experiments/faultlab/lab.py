@@ -210,9 +210,11 @@ def ws_args(run_id: str, ws: Optional[dict]) -> List[str]:
             "--ws-slices", str(int(ws["slices_per_pass"]))]
 
 
-def workload_argv(run_id: str, w: dict, metrics_writer: bool = True, ws: Optional[dict] = None) -> List[str]:
+def workload_argv(run_id: str, w: dict, metrics_writer: bool = True, ws: Optional[dict] = None,
+                  distractor: Optional[tuple] = None) -> List[str]:
     """metrics_writer False (instrumentation-off pilot runs) appends --metrics off; ws (FZ-WORKSET values) appends the
-    working set; otherwise the argv is unchanged."""
+    working set; distractor (kind, seed) appends the OV-6 / OV-10 free-text log source (0 lines/s until switched on
+    through the control file); otherwise the argv is unchanged."""
     return placed("target", NS_A, [PYTHON, "-I", "-c", _LAUNCH, WORKLOAD, APP_ROOT, "serve", "--run-id", run_id,
                                    "--listen", f"{IP_A}:{PORT_WORKLOAD}", "--pool", str(w["pool"]),
                                    "--queue", str(w["queue"]), "--cpu-us", str(w["cpu_us"]),
@@ -221,7 +223,9 @@ def workload_argv(run_id: str, w: dict, metrics_writer: bool = True, ws: Optiona
                                    "--dependency", f"{IP_B}:{PORT_DEPENDENCY}",
                                    "--dependency-timeout-ms", str(w["dependency_timeout_ms"]),
                                    "--publish-s", str(w["publish_s"]), "--poll-s", str(w["poll_s"])]
-                  + ([] if metrics_writer else ["--metrics", "off"]) + ws_args(run_id, ws))
+                  + ([] if metrics_writer else ["--metrics", "off"]) + ws_args(run_id, ws)
+                  + ([] if distractor is None else ["--distractor-kind", str(distractor[0]),
+                                                    "--distractor-seed", str(int(distractor[1]))]))
 
 
 def dependency_argv(run_id: str, w: dict) -> List[str]:
@@ -286,6 +290,30 @@ def flood_client_argv(pps: int, seconds: int) -> List[str]:
 
 def flood_ops(pps: int, seconds: int) -> List[tuple]:
     return [("spawn", "flood_client", flood_client_argv(pps, seconds))]
+
+
+def bulk_client_argv(mbit: int, seconds: int) -> List[str]:
+    """OV-1: a TCP bulk flow A -> B at a fixed rate (the same one-off server in B as the OV-4 flood)."""
+    return placed("support", NS_A, [IPERF3, "-c", IP_B, "-B", IP_A, "-p", str(FLOOD_PORT), "-b", f"{int(mbit)}M",
+                                    "-t", str(int(seconds)), "-A", str(FLOOD_CLIENT_CPU), "-J"])
+
+
+def bulk_ops(mbit: int, seconds: int) -> List[tuple]:
+    return [("spawn", "bulk_client", bulk_client_argv(mbit, seconds))]
+
+
+TASKSET = "/usr/bin/taskset"
+
+
+def stress_argv(cpu: int) -> List[str]:
+    """OV-3: one busy loop pinned to a support CPU (never the target's)."""
+    if int(cpu) not in SUPPORT_CPUS:
+        raise LabRefused(f"stress CPU {cpu} is not a support CPU {SUPPORT_CPUS}")
+    return placed("support", NS_B, [TASKSET, "-c", str(int(cpu)), PYTHON, "-I", "-c", CONTENDER_CODE])
+
+
+def stress_ops(cpus) -> List[tuple]:
+    return [("spawn", "stress", stress_argv(c)) for c in cpus]
 
 
 # OV-5 (AMD-15, FZ-OV O-1): A's memory.max = M for the whole run; after the B/W boundary a writer in A's cgroup
@@ -726,7 +754,7 @@ class Plan:
         for op in fault_ops:                                        # the run's declared fault, exactly
             if op[0] == "write" and op[1] in (QUOTA_PATH, CONTENDER_WEIGHT_PATH, MEMORY_PATH):
                 self.writes.add((op[1], op[2]))
-            elif op[0] == "spawn" and op[1] in ("contender", "flood_client", "ov5_writer"):
+            elif op[0] == "spawn" and op[1] in ("contender", "flood_client", "ov5_writer", "bulk_client", "stress"):
                 spawns = list(spawns) + [(op[1], op[2])]
             elif op[0] != "tc":
                 raise LabRefused(f"not a fault operation: {op!r}")

@@ -25,3 +25,5 @@ ebpf/build/
 # manifest-covered evidence/client.jsonl; collector/ is the unprivileged collector's output, copied into evidence/
 results/phase1c_m5_pilot/*/*/lg/
 results/phase1c_m5_pilot/*/*/collector/
+# M6 staging (FZ-M6-PLAN): run directories before `m6.py pack`; only the packed raw dataset is committed
+results/phase1c_m6/

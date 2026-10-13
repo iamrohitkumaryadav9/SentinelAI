@@ -64,6 +64,7 @@ EVIDENCE_MAX = 64 << 20                                           # bytes read b
 PERIOD_S = 1.0
 WARMUP_S, B_S, W_S, COOLDOWN_S = 15, 45, 90, 20                   # design §6.2 timeline
 SEED_MIN, SEED_MAX = 900000, 909999                               # pilot seed range (draft §7)
+M6_SEED_MIN, M6_SEED_MAX = 100000, 899999                         # M6 matrix seeds (matrix.py), disjoint
 EVIDENCE, MANIFEST = "evidence", "manifest.json"
 READY_TIMEOUT_S, LAB_SETTLE_MAX_S, DRAIN_MAX_S = 10.0, 3.0, 15.0
 WORKLOAD_READY_TIMEOUT_S = 60.0                                   # writes and fsyncs its 1 GiB working set first
@@ -75,9 +76,17 @@ PIPELINE_CHECKS = frozenset({"run_completed", "cleanup", "host_compare", "bpf_re
                              "across_r_reconciliation"})            # every one present and ok, nothing else
 
 
-def pipeline_checks(variant: str) -> frozenset:
+def pipeline_checks(variant: str, run=None) -> frozenset:
     """The exact check set of a variant: collected runs as CTRL; collectors off: no snapshot, so no replay and no app
-    features; metrics writer off: no server documents, so the client records are checked on their own."""
+    features; metrics writer off: no server documents, so the client records are checked on their own. An M6 run
+    takes its set from its own scenario: metrics off as above, and injection_verified whenever it injects anything."""
+    if variant == "m6":
+        sc = (run or {}).get("scenario") or {}
+        checks = PIPELINE_CHECKS
+        if not sc.get("collectors", {}).get("app_metrics", True):
+            checks = checks - {"client_server_reconciliation", "app_features"} | {"client_records"}
+        return checks | ({"injection_verified"} if sc.get("faults") or sc.get("distractor") or
+                         sc.get("bulk_flow_mbit") or sc.get("stress_cpus") else set())
     if variant == "pi8":
         return PIPELINE_CHECKS | {"injection_verified"}
     if variant in ("ctrl", "pi1u"):
@@ -116,9 +125,10 @@ def approved_value(name, record=DECISIONS):
     return (dec[name] or {}).get("value")
 
 
-def check_seed(seed: int):
-    if not SEED_MIN <= seed <= SEED_MAX:
-        refuse(f"pilot seed {seed} outside {SEED_MIN}..{SEED_MAX}")
+def check_seed(seed: int, variant: str = "ctrl"):
+    lo, hi = (M6_SEED_MIN, M6_SEED_MAX) if variant == "m6" else (SEED_MIN, SEED_MAX)
+    if not lo <= seed <= hi:
+        refuse(f"{'M6' if variant == 'm6' else 'pilot'} seed {seed} outside {lo}..{hi}")
 
 
 def staging_root(record=DECISIONS) -> Path:
@@ -388,7 +398,7 @@ def frozen_i2(fault: str, decisions=DECISIONS):
     return lv["I2"] if lv and lv.get("i2", "").startswith("to confirm") else None
 
 
-def op_fault_spec(fault: str, magnitude, decisions=DECISIONS, run_id: Optional[str] = None) -> dict:
+def op_fault_spec(fault: str, magnitude, decisions=DECISIONS, run_id: Optional[str] = None, extra=()) -> dict:
     """A CPU or network fault at an approved candidate (FZ-INTENSITY-CPUNET), re-checked against the approved
     ceilings and floors (FZ-INTENSITY-R2, FZ-INTENSITY-NET); its exact lab operations; refuses anything else."""
     key, stronger, cls = OP_FAULTS[fault]
@@ -400,7 +410,8 @@ def op_fault_spec(fault: str, magnitude, decisions=DECISIONS, run_id: Optional[s
     r2, net = approved_value("FZ-INTENSITY-R2", decisions), approved_value("FZ-INTENSITY-NET", decisions)
     i2 = frozen_i2(fault, decisions)
     if isinstance(magnitude, bool) or not isinstance(magnitude, (int, float)) or \
-            (magnitude not in cands and not (i2 is not None and type(magnitude) is type(i2) and magnitude == i2)):
+            (magnitude not in cands and not (i2 is not None and type(magnitude) is type(i2) and magnitude == i2) and
+             not any(type(magnitude) is type(x) and magnitude == x for x in extra)):
         refuse(f"{fault} magnitude {magnitude!r} is not an approved candidate {cands} or the frozen I2 {i2}")
     ceiling_ok = {"cpu_contender": lambda m: m <= r2["contender_weight_max"],
                   "cpu_quota": lambda m: m >= r2["cpu_quota_min_core"] * L.CPU_PERIOD_US,
@@ -452,6 +463,10 @@ def op_readback(spec: dict, sysr) -> bool:
         return (sysr.read(L.MEMORY_PATH) or "").strip() == str(int(m) * 1024 * 1024)
     if t == "ov4_udp_flood":
         return flood_client_pid(sysr) is not None
+    if t == "bulk_flow":
+        return bulk_client_pid(sysr) is not None
+    if t == "host_stress":
+        return sum(1 for _, c in _support_cmds(sysr) if c[:2] == [L.TASKSET, "-c"]) == len(m)
     if t == "ov5_page_cache_fill":                                     # written in full and fsynced: the writer is gone
         st = sysr.lstat_run(spec["path"])
         return st is not None and st.st_size == int(m) << 20 and len(leaf_pids(sysr, "target")) == 2
@@ -501,12 +516,39 @@ def memory_guard(sysr):
     return check
 
 
+def _support_cmds(sysr):
+    return [(pid, (sysr.read(f"/proc/{pid}/cmdline") or "").split("\0")) for pid in leaf_pids(sysr, "support")]
+
+
 def flood_client_pid(sysr) -> Optional[int]:
-    """The OV-4 iperf3 client: the support-leaf process whose command line is the approved client's (L.IPERF3 -c)."""
-    for pid in leaf_pids(sysr, "support"):
-        if (sysr.read(f"/proc/{pid}/cmdline") or "").split("\0")[:2] == [L.IPERF3, "-c"]:
-            return pid
-    return None
+    """The OV-4 iperf3 client: the support-leaf process whose command line is the approved UDP client's."""
+    return next((pid for pid, c in _support_cmds(sysr) if c[:2] == [L.IPERF3, "-c"] and "-u" in c), None)
+
+
+def bulk_client_pid(sysr) -> Optional[int]:
+    """The OV-1 iperf3 TCP client."""
+    return next((pid for pid, c in _support_cmds(sysr) if c[:2] == [L.IPERF3, "-c"] and "-u" not in c), None)
+
+
+def aux_specs(sc: dict, w: dict) -> list:
+    """The scenario's non-fault elements (FZ-M6-PLAN engineering values), issued after its faults: OV-1 bulk flow,
+    OV-3 host stress, then the OV-6 / OV-10 distractor (AMD-10: faults, then distractors)."""
+    out = []
+    if sc.get("bulk_flow_mbit"):
+        out.append({"type": "bulk_flow", "class": "ov1_bulk_load", "magnitude": int(sc["bulk_flow_mbit"]),
+                    "ops": L.bulk_ops(int(sc["bulk_flow_mbit"]), FLOOD_S), "decision": "FZ-M6-PLAN"})
+    if sc.get("stress_cpus"):
+        cpus = [int(c) for c in sc["stress_cpus"]]
+        out.append({"type": "host_stress", "class": "ov3_host_stress", "magnitude": cpus, "ops": L.stress_ops(cpus),
+                    "decision": "FZ-M6-PLAN"})
+    if sc.get("distractor"):
+        d = sc["distractor"]
+        n = int(d["lines_per_s"])
+        out.append({"type": "distractor", "class": f"distractor_{d['kind']}", "kind": d["kind"],
+                    "key": "distractor_lines_per_s", "magnitude": n, "echo_file": "config.json",
+                    "control": {"dependency_delay_ms": int(w["dependency_delay_ms"]), "distractor_lines_per_s": n},
+                    "decision": "FZ-M6-PLAN"})
+    return out
 
 
 def flood_observer(sysr):
@@ -717,17 +759,19 @@ def ov5_check(run: dict, a: dict, b: dict, ctrl: dict) -> dict:
     return dict(m, criteria=crit, established=all(crit.values()))
 
 
-def fault_spec(fault: str, magnitude: int, w: dict, decisions=DECISIONS, run_id: Optional[str] = None) -> dict:
+def fault_spec(fault: str, magnitude: int, w: dict, decisions=DECISIONS, run_id: Optional[str] = None,
+               extra=()) -> dict:
     """An application fault at an approved PI-8 candidate magnitude (FZ-INTENSITY-APP), or a CPU / network fault
     (op_fault_spec); refuses anything else."""
     if fault in OP_FAULTS:
-        return op_fault_spec(fault, magnitude, decisions, run_id)
+        return op_fault_spec(fault, magnitude, decisions, run_id, extra)
     if fault not in APP_FAULTS:
         refuse(f"fault {fault!r} is not implemented ({sorted(APP_FAULTS) + sorted(OP_FAULTS)})")
     key, cands, hist, echo, stronger = APP_FAULTS[fault]
     app = approved_value("FZ-INTENSITY-APP", decisions)
     i2 = frozen_i2(fault, decisions)
-    if type(magnitude) is not int or (magnitude not in app[cands] and magnitude != i2):
+    if type(magnitude) is not int or (magnitude not in app[cands] and magnitude != i2 and
+                                      not any(type(x) is int and magnitude == x for x in extra)):
         refuse(f"{fault} magnitude {magnitude!r} is not an approved candidate {app[cands]} or the frozen I2 {i2}")
     control = {"dependency_delay_ms": int(w["dependency_delay_ms"]), key: magnitude}
     return {"type": fault, "key": key, "magnitude": magnitude, "candidates": app[cands], "metric_histogram": hist,
@@ -826,6 +870,39 @@ class Injector:
             self.thread.join(timeout)
 
 
+class MultiInjector:
+    """Several injected elements issued at the same B/W boundary in their declared order (AMD-10); each is read back
+    on its own; the run's injection record is verified only when every part is."""
+
+    def __init__(self, parts):
+        self.parts = list(parts)
+
+    def __call__(self, tick: int):
+        for p in self.parts:
+            p(tick)
+
+    @property
+    def procs(self):
+        return [x for p in self.parts for x in p.procs]
+
+    def join(self, timeout: float):
+        for p in self.parts:
+            p.join(timeout)
+
+    @property
+    def record(self):
+        rs = [dict(p.record) for p in self.parts]
+        lat = [r.get("readback_latency_s") for r in rs]
+        rec = {"issued": all(r.get("issued") for r in rs), "verified": all(r.get("verified") for r in rs),
+               "issue_after_tick": rs[0].get("issue_after_tick"), "issue_mono_ns": rs[0].get("issue_mono_ns"),
+               "readback_latency_s": max(lat) if None not in lat else None, "parts": rs}
+        for key in ("issue_error", "readback_error"):
+            errs = [f"{r['type']}: {r[key]}" for r in rs if r.get(key)]
+            if errs:
+                rec[key] = "; ".join(errs)
+        return rec
+
+
 # ------------------------------------------------------------------------------------------ CTRL
 class LoaderTicks:
     """The eBPF source for collect(); keeps every raw loader line."""
@@ -868,6 +945,7 @@ VARIANTS = {
     "pi6off": {"prefix": "PI6OFF", "collector": None, "ebpf": False, "metrics_writer": True},           # PI-6 §6.7
     "instoff": {"prefix": "INSTOFF", "collector": None, "ebpf": False, "metrics_writer": False},        # §5.5
     "pi8": {"prefix": "PI8", "collector": "root", "ebpf": True, "metrics_writer": True},                 # §6.9
+    "m6": {"prefix": "M6", "collector": "root", "ebpf": True, "metrics_writer": True},                   # M6 matrix run
 }
 COLLECTOR_DIR, CHILD_TICKS, CHILD_STATS = "collector", "child_ticks.jsonl", "child_stats.json"
 CHILD_TIMEOUT_S = B_S + W_S + 60                                  # collection (B + W + 1 ticks) plus start-up margin
@@ -1026,7 +1104,8 @@ def collect_child(run_id: str, out_dir: Path) -> int:
 
 
 def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host_cls=None,
-         sleep=time.sleep, variant: str = "ctrl", child_spawn=None, fault=None, reader_spawn=None) -> int:
+         sleep=time.sleep, variant: str = "ctrl", child_spawn=None, fault=None, reader_spawn=None,
+         scenario=None) -> int:
     from sentinelai.collectors import LiveReader, SystemClock, build_snapshot, collect, resolve_target
     from sentinelai.collectors import app as appmod
     from sentinelai.diagnostic.contract import Target, canonical_bytes
@@ -1036,16 +1115,31 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
     from m3b_r1_validate import Recording
 
     v = VARIANTS[variant]
-    check_seed(seed)
+    check_seed(seed, variant)
     w = approved_value("FZ-WORKLOAD", decisions)
     ws = approved_value("FZ-WORKSET", decisions)["values"]           # D4: always present (approved 2026-10-12)
     arr = approved_value("FZ-ARRIVALS", decisions)                   # Poisson arrivals (approved 2026-10-12)
     if (variant == "pi8") != (fault is not None):
         refuse("a pi8 run needs exactly one fault; other variants take none")
+    if (variant == "m6") != (scenario is not None):
+        refuse("an m6 run needs its matrix scenario; other variants take none")
     run_id = f"{v['prefix']}-s{seed}"
-    spec = fault_spec(fault[0], fault[1], w, decisions, run_id) if fault is not None else None
+    sc = scenario or {}
+    if scenario is not None and scenario.get("run_id") != run_id:
+        refuse(f"scenario {scenario.get('run_id')!r} is not run {run_id}")
+    if scenario is not None:      # magnitudes from the committed matrix (m6.py verifies it regenerates from the record)
+        specs = [fault_spec(f["type"], f["magnitude"], w, decisions, run_id, extra=(f["magnitude"],))
+                 for f in sc["faults"]] + aux_specs(sc, w)
+    else:
+        specs = [fault_spec(fault[0], fault[1], w, decisions, run_id)] if fault is not None else []
+    spec = specs[0] if specs else None
+    types = [x["type"] for x in specs]
+    cols = sc.get("collectors", {})
     load_s = WARMUP_S + B_S + W_S + COOLDOWN_S
-    unpriv, writer = v["collector"] == "unprivileged", v["metrics_writer"]
+    unpriv = v["collector"] == "unprivileged"
+    writer = v["metrics_writer"] and cols.get("app_metrics", True)
+    use_ebpf = v["ebpf"] and cols.get("ebpf", True)
+    ifaces = tuple(cols.get("ifaces", (L.IF_A,)))
     out.mkdir(mode=0o755)
     for d in (EVIDENCE, "logs", "lg") + ((COLLECTOR_DIR,) if unpriv else ()):
         (out / d).mkdir(mode=0o755)
@@ -1053,19 +1147,22 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
     if unpriv:
         os.chown(out / COLLECTOR_DIR, C.LAB_UID, C.LAB_GID)           # the unprivileged collector writes here
     client_tmp = out / "lg" / "client.jsonl"
-    argv = {"dependency": L.dependency_argv(run_id, w), "workload": L.workload_argv(run_id, w, writer, ws),
+    dis = sc.get("distractor")
+    argv = {"dependency": L.dependency_argv(run_id, w),
+            "workload": L.workload_argv(run_id, w, writer, ws, (dis["kind"], seed) if dis else None),
             "loadgen": L.loadgen_argv(w, load_s, seed, str(client_tmp), arr)}
-    flood = (spec or {}).get("type") == "ov4_udp_flood"
-    if flood:
+    flood, bulk = "ov4_udp_flood" in types, "bulk_flow" in types
+    iperf = [r for r, on in (("flood_client", flood), ("bulk_client", bulk)) if on]
+    if iperf:
         argv["flood_server"] = L.flood_server_argv()                  # idle in B until the client connects
     sysr = sysr or L.Sys()
-    fault_ops = list((spec or {}).get("setup_ops", ())) + list((spec or {}).get("ops", ()))
+    fault_ops = [op for x in specs for op in list(x.get("setup_ops", ())) + list(x.get("ops", ()))]
     host = (host_cls or L.Host)(L.Plan(run_id, spawns=argv.items(), fault_ops=fault_ops), str(out / "ops.jsonl"), sysr)
-    ov5 = (spec or {}).get("type") == "ov5_page_cache_fill"
+    ov5 = next((x for x in specs if x["type"] == "ov5_page_cache_fill"), None)
     ev = out / EVIDENCE
     R = {"format": FORMAT, "stage": "CTRL" if variant == "ctrl" else variant.upper(), "variant": variant,
-         "collector_mode": v["collector"], "ebpf": v["ebpf"], "metrics_writer": writer, "working_set": ws,
-         "fault": spec, "arrivals": arr,
+         "collector_mode": v["collector"], "ebpf": use_ebpf, "metrics_writer": writer, "working_set": ws,
+         "fault": spec, "arrivals": arr, **({"scenario": scenario, "faults": specs} if scenario is not None else {}),
          "run_id": run_id, "seed": seed, "commit": commit, "workload": w,
          "timeline": {"warmup_s": WARMUP_S, "B_s": B_S, "W_s": W_S, "cooldown_s": COOLDOWN_S, "load_s": load_s,
                       "period_s": PERIOD_S},
@@ -1084,7 +1181,7 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
     try:
         setup_lab(host, sysr, R, run_id)
         rdir = L.run_dir(run_id)
-        for op in (spec or {}).get("setup_ops", ()):                # OV-5: A's memory.max = M before the workload
+        for op in [op for x in specs for op in x.get("setup_ops", ())]:   # OV-5: A's memory.max = M first
             host.apply(op)
             if (sysr.read(op[1]) or "").strip() != op[2]:
                 raise L.LabAbort(f"setup write not read back: {op[1]}")
@@ -1102,14 +1199,14 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
         wpid, spid = target_processes(sysr, tpids)                     # the workload and its scanner (FZ-WORKSET M-2)
         R["target_processes"] = {"workload": wpid, "scanner": spid}
         root = v["collector"] == "root"                                # P-7: A's interface, read in A's netns
-        target = resolve_target(LiveReader(), "faultlab-ctrl", L.TARGET_CGROUP_PATH, (L.IF_A,) if root else ())
+        target = resolve_target(LiveReader(), "faultlab-ctrl", L.TARGET_CGROUP_PATH, ifaces if root else ())
         ns_a = sysr.netns_inode(L.NS_A)
         R["target"] = {"pids": list(target.pids), "cpuset": target.cpuset,
                        "netns_inode": sysr.pid_netns_inode(wpid), "lab_a_inode": ns_a}
         if list(target.pids) != tpids or ns_a is None or R["target"]["netns_inode"] != ns_a or \
                 target.cpuset != str(L.TARGET_CPU):
             raise L.LabAbort(f"target not in {L.NS_A} on CPU {L.TARGET_CPU}: {R['target']}")
-        if v["ebpf"]:
+        if use_ebpf:
             ids = resolve_ebpf_target(target)
             loader = Recording(loader_argv(ids, load_s + 120), ids, 5.0)
             err = loader.start()
@@ -1125,7 +1222,7 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
                                                                                   state["start"]["ip"],
                                                                                   state["start"]["qdisc"]):
             raise L.LabAbort("start counters unavailable")
-        if flood:
+        if iperf:
             procs["flood_server"] = host.apply(("spawn", "flood_server", argv["flood_server"]),
                                                stdout=(out / "lg" / "flood_server.json").open("xb"),
                                                stderr=(out / "logs" / "flood_server.stderr").open("wb"))
@@ -1137,19 +1234,20 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
         params = pilot_params()
         ticks = None
         if v["collector"] == "root":
-            if spec is not None:
-                injector = Injector(host, sysr, run_id, spec,
-                                    stdout_files={"flood_client": out / "lg" / "flood_client.json"} if flood else None)
+            if specs:
+                files = {r: out / "lg" / f"{r}.json" for r in iperf}
+                parts = [Injector(host, sysr, run_id, x, stdout_files=files or None) for x in specs]
+                injector = parts[0] if len(parts) == 1 else MultiInjector(parts)
             hook = WindowHook(appmod.AppSource(run_id), round(B_S / PERIOD_S), round(W_S / PERIOD_S), read_app,
                               injector, lambda: gt_snapshot(sysr, wpid),
-                              memory_guard(sysr) if (spec or {}).get("type") in ("memory_max", "ov5_page_cache_fill")
-                              else None,
-                              flood_observer(sysr) if flood else ov5_observer(sysr, spec["path"]) if ov5 else None)
+                              memory_guard(sysr) if {"memory_max", "ov5_page_cache_fill"} & set(types) else None,
+                              flood_observer(sysr) if flood else ov5_observer(sysr, ov5["path"]) if ov5 else None)
             rs = (reader_spawn or spawn_read_server)(read_server_argv(), (out / "logs" / "read_server.stderr").open("wb"))
             proxy = ProxyReader(rs)
             R["read_server"] = {"pid": rs.pid, "ready": proxy.ready}
             evt("collect_start")
-            ticks, stats = collect(target, params, proxy, SystemClock(), PERIOD_S, LoaderTicks(loader), hook)
+            ticks, stats = collect(target, params, proxy, SystemClock(), PERIOD_S,
+                                   LoaderTicks(loader) if loader is not None else None, hook)
             evt("collect_end")
             R["read_server"]["cpu_s"] = proc_cpu_s(rs.pid)
             if injector is not None:
@@ -1158,15 +1256,18 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
                 if R["injection"]["issued"]:
                     evt("fault_issued", mono_ns=R["injection"]["issue_mono_ns"])
             if ov5:
-                R["ov5"] = {"observations": hook.observed, "path": spec["path"]}
-                if injector.procs:                                     # the writer exits once written and fsynced
+                R["ov5"] = {"observations": hook.observed, "path": ov5["path"]}
+                writer_procs = [p for x, p in zip(specs, getattr(injector, "parts", [injector]))
+                                if x is ov5 for p in p.procs]
+                if writer_procs:                                       # the writer exits once written and fsynced
                     try:
-                        R["exit_codes"]["ov5_writer"] = injector.procs[0].wait(T_CAP_S)
+                        R["exit_codes"]["ov5_writer"] = writer_procs[0].wait(T_CAP_S)
                     except subprocess.TimeoutExpired:
                         raise L.LabAbort("OV-5 writer did not finish") from None
             R["w_docs"] = {k: {"mono_ns": t, "valid": isinstance(b, bytes)} for k, (t, b) in hook.docs.items()}
             R["collection"] = {"ticks": stats.ticks, "wall_s": stats.wall_s, "cpu_s": stats.cpu_s,
-                               "max_tick_read_s": stats.max_tick_read_s, "loader_cpu_s": proc_cpu_s(loader.proc.pid),
+                               "max_tick_read_s": stats.max_tick_read_s,
+                               "loader_cpu_s": proc_cpu_s(loader.proc.pid) if loader is not None else 0.0,
                                "read_server_cpu_s": R["read_server"]["cpu_s"]}
         elif unpriv:
             evt("collect_start")
@@ -1195,19 +1296,22 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
         if R["exit_codes"]["loadgen"] != 0:
             raise L.LabAbort(f"load generator exited with {R['exit_codes']['loadgen']}")
         evt("loadgen_finished")
-        if flood:                                                     # both iperf3 ends report, then exit
-            if not (injector and injector.procs):
-                raise L.LabAbort("OV-4 flood client was not started")
+        if iperf:                                                     # both iperf3 ends report, then exit
+            clients = [p for x, p in zip(specs, getattr(injector, "parts", [injector]) if injector else [])
+                       if x["type"] in ("ov4_udp_flood", "bulk_flow") for p in p.procs]
+            if len(clients) != 1:
+                raise L.LabAbort(f"iperf3 client not started ({iperf})")
             try:
-                R["exit_codes"]["flood_client"] = injector.procs[0].wait(FLOOD_S + 30)
+                R["exit_codes"][iperf[0]] = clients[0].wait(FLOOD_S + 30)
                 R["exit_codes"]["flood_server"] = procs["flood_server"].wait(30)
             except subprocess.TimeoutExpired:
-                raise L.LabAbort("OV-4 flood did not finish") from None
-            R["flood"] = {"observations": hook.observed, "duration_s": FLOOD_S,
-                          "client_cpu": L.FLOOD_CLIENT_CPU, "server_cpu": L.FLOOD_SERVER_CPU,
-                          "support_cpus_effective": sysr.read(f"{L.SUPPORT_DIR}/cpuset.cpus.effective"),
-                          "target_cpus_effective": sysr.read(f"{L.TARGET_DIR}/cpuset.cpus.effective")}
-            for role in ("flood_client", "flood_server"):
+                raise L.LabAbort("iperf3 flow did not finish") from None
+            if flood:
+                R["flood"] = {"observations": hook.observed, "duration_s": FLOOD_S,
+                              "client_cpu": L.FLOOD_CLIENT_CPU, "server_cpu": L.FLOOD_SERVER_CPU,
+                              "support_cpus_effective": sysr.read(f"{L.SUPPORT_DIR}/cpuset.cpus.effective"),
+                              "target_cpus_effective": sysr.read(f"{L.TARGET_DIR}/cpuset.cpus.effective")}
+            for role in (iperf[0], "flood_server"):
                 write_new(ev / f"{role}.json", read_regular(out / "lg" / f"{role}.json"))
             evt("flood_finished")
 
@@ -1248,7 +1352,7 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
                 write_new(ev / "collector_stats.json", read_regular(out / COLLECTOR_DIR / CHILD_STATS, 1 << 20))
             R["target_doc"], R["parameter_set"] = target.model_dump(mode="json"), params.model_dump(mode="json")
             R["nB"], R["nW"] = round(B_S / PERIOD_S), round(W_S / PERIOD_S)
-            snap = build_snapshot(ticks, target, params, PERIOD_S, v["ebpf"], True)
+            snap = build_snapshot(ticks, target, params, PERIOD_S, use_ebpf, True)
             write_new(out / "snapshot.json", validate_snapshot(canonical_bytes(snap))[1])
     except (L.LabAbort, L.LabRefused, Interrupted, Exception) as exc:     # noqa: BLE001 -- abort, then cleanup
         R["aborts"].append(f"{type(exc).__name__}: {exc}")
@@ -1344,7 +1448,7 @@ def reconcile_clients(run, recs, a, b):
         problems.append(f"client records do not cover the {n} scheduled arrivals exactly once")
     for r in recs:
         outcomes[r["outcome"]] = outcomes.get(r["outcome"], 0) + 1
-    network = (run.get("fault") or {}).get("type") in NETWORK_FAULTS
+    network = any(t in NETWORK_FAULTS for t in fault_types(run))
     net_fail = {k: v for k, v in outcomes.items() if network and NET_FAILURE.fullmatch(k)}
     unexplained = set(outcomes) - {"200", "400", "503", "504", "client_saturated"} - set(net_fail)
     if unexplained:
@@ -1443,6 +1547,9 @@ CONFIG_DOC_KEYS = {"seq", "mono_ns", "config", "config_sha256", "control_error"}
 SERVICE_CONFIG_KEYS = ("cpu_us", "dependency_timeout_ms", "lock_hold_us", "lock_wait_exceeded_ms", "pool", "queue")
 
 
+DISTRACTOR_KEY = "distractor_lines_per_s"                          # starts at 0 (workload.py), set at the boundary
+
+
 def structural_app_gaps(out: Path, manifest_ok: bool):
     """({feature: reason}, basis): the app.* features this run's own configuration cannot produce, for
     app_feature_report. Only app.lock_wait_ms, and only if the manifest-verified evidence proves lock_hold_us == 0: the
@@ -1451,8 +1558,10 @@ def structural_app_gaps(out: Path, manifest_ok: bool):
     is the only configuration of the run (seq 1, no control error) and hashes to its config_sha256, both bracketing
     metrics documents carry that hash, and the end document holds no lock-wait observation at all. A pi8 run whose one
     recorded fault changes another service key (app_pool) has exactly one more echo (seq 2): its start document then
-    carries the hash of the pre-fault configuration. A fault on lock_hold_us never qualifies. Anything else leaves the
-    feature required (basis.not_applied_because says why)."""
+    carries the hash of the pre-fault configuration. An M6 run counts every recorded element that sets a control key
+    (an application fault, the OV-6 / OV-10 distractor rate, which starts at 0): one re-echo each, its value echoed.
+    A fault on lock_hold_us never qualifies. Anything else leaves the feature required (basis.not_applied_because
+    says why)."""
     from sentinelai.collectors import app as appmod
     failed = []
     basis = {"feature": LOCK_WAIT, "applied": False, "not_applied_because": failed}
@@ -1470,25 +1579,32 @@ def structural_app_gaps(out: Path, manifest_ok: bool):
                     "config.json is not a workload configuration echo"):
             return {}, basis
         cfg, w = doc["config"], run.get("workload") if isinstance(run.get("workload"), dict) else {}
-        f = run.get("fault") if isinstance(run.get("fault"), dict) else None      # a pi8 run's one recorded fault
+        if isinstance(run.get("faults"), list):                          # an M6 run: every recorded element
+            elements = [e for e in run["faults"] if isinstance(e, dict)]
+        else:                                                            # a pi8 run's one recorded fault
+            elements = [run["fault"]] if isinstance(run.get("fault"), dict) else []
+        keyed = [e for e in elements if e.get("key") in SERVICE_CONFIG_KEYS + (DISTRACTOR_KEY,)]
         basis["lock_hold_us"] = {"config_json": cfg.get("lock_hold_us"), "run_json": w.get("lock_hold_us")}
         for name, v in (("config.json", cfg.get("lock_hold_us")), ("run.json workload", w.get("lock_hold_us"))):
             need(type(v) is int and v == 0, f"{name} lock_hold_us is {v!r}, not 0")
         expect = dict(w)
-        if f is not None and f.get("key") in SERVICE_CONFIG_KEYS:       # the fault's own key echoes its new value
-            expect[f["key"]] = f.get("magnitude")
+        for e in keyed:                                                  # each element's key echoes its new value
+            if e["key"] in SERVICE_CONFIG_KEYS:
+                expect[e["key"]] = e.get("magnitude")
+            else:
+                need(cfg.get(DISTRACTOR_KEY) == e.get("magnitude"), "distractor rate not echoed as recorded")
         need(all(k in cfg and k in expect and type(cfg[k]) is type(expect[k]) and cfg[k] == expect[k]
                  for k in SERVICE_CONFIG_KEYS),
              "workload configuration echo differs from run.json workload (and its recorded fault)")
-        changes = 1 if f is not None and f.get("key") in SERVICE_CONFIG_KEYS else 0     # one re-echo per change
-        need(f is None or f.get("key") != "lock_hold_us", "the run's fault changes lock_hold_us")
+        changes = len(keyed)                                             # one re-echo per change
+        need(all(e.get("key") != "lock_hold_us" for e in elements), "the run's fault changes lock_hold_us")
         need(doc["seq"] == 1 + changes and doc["control_error"] is None,
              "workload configuration changed during the run other than by its recorded fault, or a control error was "
              "recorded")
         digest = lambda c: hashlib.sha256(json.dumps(c, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
         sha = digest(cfg)
         need(doc["config_sha256"] == sha, "config_sha256 does not hash the recorded configuration")
-        before = dict(cfg, **({f["key"]: w.get(f["key"])} if changes else {}))   # configuration before the fault
+        before = dict(cfg, **{e["key"]: w.get(e["key"], 0) for e in keyed})   # configuration before the elements
         docs = [appmod.parse((out / EVIDENCE / n).read_bytes()) for n in ("app_start.json", "app_end.json")]
         if need(all(isinstance(d, appmod.AppSample) for d in docs), "saved metrics documents invalid"):
             need(docs[0].config_sha256 == digest(before) and docs[1].config_sha256 == sha,
@@ -1520,6 +1636,13 @@ def w_effects(out: Path) -> dict:
         p99, why = appmod.percentile(delta, 0.99)
         res[hist] = {"count": sum(delta), "p99_ms": p99, "missing": why}
     return res
+
+
+def fault_types(run) -> list:
+    """Every injected element of a run: the M6 scenario's list, or the pilot's single fault."""
+    if run.get("faults") is not None:
+        return [f["type"] for f in run["faults"]]
+    return [run["fault"]["type"]] if run.get("fault") else []
 
 
 def injection_check(run) -> dict:
@@ -1559,7 +1682,7 @@ def pi_checks(run, snap, ticks):
     col = run.get("collection") or {}
     cpu = (col.get("cpu_s", 0) + col.get("loader_cpu_s", 0) + col.get("read_server_cpu_s", 0)) / col["wall_s"] \
         if col.get("wall_s") else None
-    post = set(post_fault_only((run.get("fault") or {}).get("type")))    # R-5: listed, not scored
+    post = {f for t in fault_types(run) for f in post_fault_only(t)}   # R-5: listed, not scored
     low = sorted({m["feature_id"] for m in ms if m["coverage"] < COVERAGE_MIN} - post)
     pi6 = {"ok": cpu is not None and cpu <= CPU_BUDGET_CORE and not low, "collector_cpu_core": cpu,
            "budget_core": CPU_BUDGET_CORE, "features_below_coverage": low,
@@ -1600,7 +1723,7 @@ def evaluate(out: Path, live: bool = False, run_result=None) -> dict:
             except Exception as exc:                                    # noqa: BLE001 -- recorded, never hidden
                 checks["replay_byte_identical"] = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
         try:                                                            # malformed evidence fails, never crashes
-            if collected:
+            if collected and run.get("metrics_writer", True):
                 gaps, basis = structural_app_gaps(out, checks["manifest"]["ok"])
                 rows, problems = app_feature_report(live_bytes, gaps)
                 checks["app_features"] = {"ok": not problems, "problems": problems,
@@ -1614,24 +1737,24 @@ def evaluate(out: Path, live: bool = False, run_result=None) -> dict:
                 summary, problems = client_records(run, recs)
                 checks["client_records"] = dict(summary, ok=not problems, problems=problems)
             counters = json.loads((out / EVIDENCE / "counters.json").read_bytes())
-            summary, failed = reconcile_r(counters, (run.get("fault") or {}).get("type"))
+            summary, failed = reconcile_r(counters, next((t for t in fault_types(run) if t in DROP_HOP), None))
             checks["across_r_reconciliation"] = dict(summary, ok=not failed, failed=failed)
             if collected:
                 ticks = decode_ticks((out / EVIDENCE / "ticks.jsonl").read_bytes())
                 pis = pi_checks(run, json.loads(live_bytes), ticks)
-            if variant == "pi8":
+            if variant == "pi8" or (variant == "m6" and "injection_verified" in pipeline_checks(variant, run)):
                 checks["injection_verified"] = injection_check(run)
-            if (run.get("fault") or {}).get("type") == "ov4_udp_flood":   # AMD-13 (report; levels decides)
+            if "ov4_udp_flood" in fault_types(run):                   # AMD-13 (report; levels decides)
                 ov4 = ov4_check(run, *((out / EVIDENCE / f"{r}.json").read_bytes()
                                        for r in ("flood_client", "flood_server")))
                 a, b = (json.loads((out / EVIDENCE / f"gt_{k}.json").read_bytes()) for k in ("w_start", "w_end"))
                 ov4["softirq_frac_w"] = softirq_frac(a, b, (L.TARGET_CPU, L.FLOOD_CLIENT_CPU, L.FLOOD_SERVER_CPU))
-            if run.get("w_docs"):                                       # root-collected runs: W-window effects
+            if run.get("w_docs") and run.get("metrics_writer", True):   # root-collected runs: W-window effects
                 effects = w_effects(out)
         except Exception as exc:                                        # noqa: BLE001 -- recorded, never hidden
             checks["evidence_readable"] = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
             pis = {}
-    ok = set(checks) == pipeline_checks(variant) and all(c["ok"] for c in checks.values())
+    ok = set(checks) == pipeline_checks(variant, run) and all(c["ok"] for c in checks.values())
     report = {"format": FORMAT + ".report", "variant": variant, "pipeline_ok": ok,
               "ok": ok and all(p["ok"] for p in pis.values()), "checks": checks, "pi": pis,
               "w_effects": effects, "fault": run.get("fault"), **({"ov4": ov4} if ov4 is not None else {}),
@@ -1826,7 +1949,7 @@ def magnitude_arg(text: str):
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
-    for name in ("lifecycle",) + tuple(VARIANTS):
+    for name in ("lifecycle",) + tuple(v for v in VARIANTS if v != "m6"):   # M6 runs only through m6.py
         p = sub.add_parser(name)
         p.add_argument("--campaign", required=True, help="UTC stamp YYYYMMDDTHHMMSSZ (one directory per campaign)")
         p.add_argument("--execute", action="store_true", help="required: this mutates the host")

@@ -321,7 +321,8 @@ class SimHost(L.Host):
                  on_control=None, flood=None, flood_cpus="22"):
         super().__init__(plan, oplog, sysr)
         self.on_control = on_control                   # the workload's reaction to a replaced control file
-        self.flood = flood if flood is not None else {"flood_client": iperf_doc(), "flood_server": iperf_doc(False)}
+        self.flood = flood if flood is not None else {"flood_client": iperf_doc(), "flood_server": iperf_doc(False),
+                                                      "bulk_client": iperf_doc()}
         self.flood_cpus = flood_cpus                   # the flood client's Cpus_allowed_list
         self.fail, self.spawn, self.ops = fail or (lambda op: False), spawn or {}, []
         self.workload_files = workload_files or {}   # what the workload publishes (config echo); default b"{}"
@@ -417,13 +418,17 @@ class SimHost(L.Host):
             p = (self.spawn.get(role) or (lambda: FakeProc()))()
             leaf = {"echo_server": "support", "echo_client": "target", "workload": "target",
                     "dependency": "support", "loadgen": "support", "contender": "contender",
-                    "flood_server": "support", "flood_client": "support", "ov5_writer": "target"}[role]
-            if role in ("echo_server", "dependency", "loadgen", "workload", "contender", "flood_server", "flood_client"):
+                    "flood_server": "support", "flood_client": "support", "ov5_writer": "target",
+                    "bulk_client": "support", "stress": "support"}[role]
+            if role in ("echo_server", "dependency", "loadgen", "workload", "contender", "flood_server", "flood_client",
+                        "bulk_client", "stress"):
                 s.procs[p.pid] = f"/{L.LAB}/{leaf}"
             if role == "ov5_writer":                          # written in full, fsynced, exited (never in the leaf)
                 path, mib = op[2][-2], int(op[2][-1])
                 s.run[path], s.sizes[path] = ("file", L.LAB_UID, b""), mib << 20
-            if role.startswith("flood_"):                     # iperf3: its own argv, affinity and JSON report
+            if role == "stress":                              # taskset -c <cpu> python3 -I -c <busy loop>
+                s.files[f"/proc/{p.pid}/cmdline"] = "\0".join(op[2][op[2].index(L.TASKSET):]) + "\0"
+            if role.startswith("flood_") or role == "bulk_client":   # iperf3: argv, affinity and JSON report
                 prog = list(op[2][op[2].index(L.IPERF3):])
                 s.files[f"/proc/{p.pid}/cmdline"] = "\0".join(prog) + "\0"
                 s.files[f"/proc/{p.pid}/status"] = f"Name:\tiperf3\nCpus_allowed_list:\t" \
@@ -1477,8 +1482,11 @@ class CtrlFixture(Sandboxed):
                 {"seq": 2, "mono_ns": 2, "config": {"dependency_delay_ms": control["dependency_delay_ms"]},
                  "control_error": None}))
         service = {k: v for k, v in control.items() if k in W.SERVICE_CONTROL_KEYS}
-        if service and any(self.workload[k] != v for k, v in service.items()):
-            echo = config_echo(self.workload, seq=2, **service)
+        if service and any(self.workload.get(k, 0) != v for k, v in service.items()):   # distractor starts at 0
+            cur = json.loads(s.run[f"{rdir}/config.json"][2])["config"]   # like Runner: the current config, changed
+            cfg = dict(cur, **service)
+            echo = W.canonical({"seq": 2, "mono_ns": 2, "config": cfg, "control_error": None,
+                                "config_sha256": hashlib.sha256(W.canonical(cfg)).hexdigest()})
             s.run[f"{rdir}/config.json"] = ("file", L.LAB_UID, echo)
             self.live_sha = json.loads(echo)["config_sha256"]
 
@@ -1486,7 +1494,7 @@ class CtrlFixture(Sandboxed):
         kw.setdefault("reader_spawn", fake_read_server)
         hosts = []
         spawn = dict(self.spawn, **kw.pop("spawn", {}))
-        run = {k: kw.pop(k) for k in ("variant", "child_spawn", "fault", "reader_spawn") if k in kw}
+        run = {k: kw.pop(k) for k in ("variant", "child_spawn", "fault", "reader_spawn", "scenario") if k in kw}
         kw.setdefault("workload_files", {"config.json": self.config_bytes()})
         kw.setdefault("on_control", self.on_control)
         with mock.patch.object(P.os, "chown"):
@@ -1814,7 +1822,7 @@ class TestVariants(CtrlFixture):
         base = {"run_completed", "cleanup", "host_compare", "bpf_released", "manifest", "across_r_reconciliation"}
         self.assertEqual(P.pipeline_checks("pi6off"), base | {"client_server_reconciliation"})
         self.assertEqual(P.pipeline_checks("instoff"), base | {"client_records"})
-        self.assertEqual({v["prefix"] for v in P.VARIANTS.values()}, {"CTRL", "PI1U", "PI6OFF", "INSTOFF", "PI8"})
+        self.assertEqual({v["prefix"] for v in P.VARIANTS.values()}, {"CTRL", "PI1U", "PI6OFF", "INSTOFF", "PI8", "M6"})
         self.assertEqual(P.pipeline_checks("pi8"), P.PIPELINE_CHECKS | {"injection_verified"})
 
     def test_collectors_off_runs_no_collector_and_no_loader(self):
@@ -3012,6 +3020,141 @@ class TestReadsInTargetNetns(CtrlFixture):
     def test_read_server_cli_needs_root(self):
         with mock.patch.object(P.os, "geteuid", return_value=1000), self.assertRaises(P.Refused):
             P.main(["read-server", "--netns", L.NS_A])
+
+
+_MSPEC = importlib.util.spec_from_file_location("faultlab_matrix_for_pilot", ROOT / "experiments/faultlab/matrix.py")
+MX = importlib.util.module_from_spec(_MSPEC)
+_MSPEC.loader.exec_module(MX)
+MATRIX = MX.generate(MX.load())
+
+
+class TestM6Scenarios(OpFaultFixture):
+    """Matrix entries (FZ-M6-PLAN) run through ctrl(variant="m6") on the simulated host."""
+
+    def entry(self, family, **match):
+        return next(r for r in MATRIX["runs"] if r["family"] == family and all(r[k] == v for k, v in match.items()))
+
+    def m6(self, e, effect=None, **kw):
+        self.out = self.tmp / f"M6-{e['seed']}"
+        d = e.get("distractor")                                      # the workload's start config with a distractor
+        self.config = config_echo(self.workload, distractor_kind=d["kind"], distractor_lines_per_s=0) if d else None
+        self.live_sha = None
+        self.s, self.docs, self.reads, self.live_sha = FakeSys(), [], 0, None
+        self.base(self.s)
+        self.effect = effect
+        rc, h = self.run_ctrl(variant="m6", seed=e["seed"], scenario=e, **kw)
+        return rc, h, json.loads((self.out / "report.json").read_text()), \
+            json.loads((self.out / "evidence" / "run.json").read_text())
+
+    def setUp(self):
+        super().setUp()
+        cpu = self.base
+        self.base = lambda s: (cpu(s), s.files.update(mem_files()))
+
+    def test_every_family_runs_with_its_exact_check_set(self):
+        for fam in ["CTRL", "SF", "SENS"] + [f"OV-{k}" for k in range(1, 11)]:
+            e = self.entry(fam)
+            with self.subTest(fam):
+                rc, h, rep, run = self.m6(e)
+                self.assertEqual(rc, 0, (fam, rep["checks"]))
+                self.assertEqual(set(rep["checks"]), P.pipeline_checks("m6", run))
+                self.assertEqual(run["scenario"], e)
+                self.assertEqual(run["run_id"], e["run_id"])
+                self.assertTrue(empty(self.s))
+
+    def test_two_faults_are_issued_in_order_and_both_read_back(self):
+        rc, h, rep, run = self.m6(self.entry("OV-7"))
+        parts = run["injection"]["parts"]
+        self.assertEqual([p["type"] for p in parts], ["cpu_quota", "cpu_contender"])
+        self.assertTrue(run["injection"]["verified"] and all(p["verified"] for p in parts))
+        ops = [o for o in h.ops if o[0] in ("write", "spawn") and o[1] in (L.QUOTA_PATH, "contender",
+                                                                           L.CONTENDER_WEIGHT_PATH)]
+        self.assertEqual(ops[0][1], L.QUOTA_PATH)                                    # declared order
+        self.assertTrue(rep["checks"]["injection_verified"]["ok"])
+
+    def test_collector_switches(self):
+        import m3b_r1_validate
+        rc, h, rep, run = self.m6(self.entry("OV-8"))                                 # drop collectors disabled
+        self.assertEqual((run["ebpf"], run["target_doc"]["ifaces"]), (False, []))
+        self.assertEqual(run["collection"]["loader_cpu_s"], 0.0)
+        rc, h, rep, run = self.m6(self.entry("OV-9"))                                 # app metrics disabled
+        self.assertFalse(run["metrics_writer"])
+        self.assertIn("client_records", rep["checks"])
+        self.assertNotIn("app_features", rep["checks"])
+        self.assertIn("--metrics", [o for o in h.ops if o[0] == "spawn" and o[1] == "workload"][0][2])
+        rc, h, rep, run = self.m6(self.entry("SF"))
+        self.assertEqual((run["ebpf"], run["target_doc"]["ifaces"]), (True, [L.IF_A]))
+
+    def test_load_and_distractor_elements(self):
+        rc, h, rep, run = self.m6(self.entry("OV-1"))
+        self.assertEqual([p["type"] for p in run["injection"]["parts"]], ["cpu_contender", "bulk_flow"])
+        self.assertIn(("spawn", "bulk_client", L.bulk_client_argv(40, P.FLOOD_S)), h.ops)
+        self.assertTrue((self.out / "evidence" / "bulk_client.json").exists())
+        rc, h, rep, run = self.m6(self.entry("OV-3"))
+        stress = [o[2] for o in h.ops if o[0] == "spawn" and o[1] == "stress"]
+        self.assertEqual(stress, [L.stress_argv(19), L.stress_argv(20)])
+        rc, h, rep, run = self.m6(self.entry("OV-6"))
+        wl = [o for o in h.ops if o[0] == "spawn" and o[1] == "workload"][0][2]
+        self.assertEqual(wl[-4:], ["--distractor-kind", "slow_request", "--distractor-seed", str(run["seed"])])
+        self.assertEqual([p["type"] for p in run["injection"]["parts"]], ["cpu_contender", "distractor"])
+        rc, h, rep, run = self.m6(self.entry("OV-10"))
+        self.assertEqual(run["injection"]["type"], "distractor")
+        self.assertTrue(run["injection"]["verified"])
+
+    def test_sens_magnitudes_only_through_the_matrix(self):
+        e = self.entry("SENS", mechanism="cpu_quota")
+        rc, h, rep, run = self.m6(e)
+        self.assertEqual(rc, 0, rep["checks"])
+        self.assertIn(("write", L.QUOTA_PATH, "40000 100000"), h.ops)
+        with self.assertRaises(P.Refused):                                           # not via the pilot path
+            P.fault_spec("cpu_quota", 40000, WORKLOAD)
+        bad = dict(e, faults=[{"type": "cpu_quota", "magnitude": 5000}])            # below the approved floor
+        with self.assertRaises(P.Refused):
+            self.m6(bad)
+
+    def test_distractor_rate_must_be_echoed_as_recorded(self):
+        rc, h, rep, run = self.m6(self.entry("OV-10"))
+        self.assertTrue(rep["checks"]["app_features"]["structurally_unavailable"]["applied"])
+        ev = self.out / "evidence" / "run.json"
+        run["faults"][0]["magnitude"] = 4                                           # recorded 4, echoed 5
+        ev.write_text(json.dumps(run))
+        gaps, basis = P.structural_app_gaps(self.out, True)
+        self.assertEqual(gaps, {})
+        self.assertEqual(basis["not_applied_because"], ["distractor rate not echoed as recorded"])
+
+    def test_composite_injection_is_verified_only_when_every_part_is(self):
+        part = lambda ok, t: SimpleNamespace(record={"type": t, "issued": True, "verified": ok, "issue_after_tick": 45,
+                                                     "issue_mono_ns": 1, "readback_latency_s": 0.1 if ok else None,
+                                                     **({} if ok else {"readback_error": "not read back"})},
+                                             procs=[], join=lambda t: None)
+        rec = P.MultiInjector([part(True, "cpu_quota"), part(False, "cpu_contender")]).record
+        self.assertEqual((rec["issued"], rec["verified"], rec["readback_latency_s"]), (True, False, None))
+        self.assertEqual(rec["readback_error"], "cpu_contender: not read back")
+        self.assertFalse(P.injection_check({"injection": rec})["ok"])
+        self.assertTrue(P.MultiInjector([part(True, "a"), part(True, "b")]).record["verified"])
+
+    def test_every_element_counts_for_the_evaluation(self):
+        run = {"fault": {"type": "cpu_contender"}, "faults": [{"type": "cpu_contender"}, {"type": "cpu_quota"}]}
+        self.assertEqual(P.fault_types(run), ["cpu_contender", "cpu_quota"])
+        ms = [{"feature_id": f, "coverage": 0.5, "aggregation": "MEAN", "quality": "OK"}
+              for f in ("throttle.quota_cores", "throttle.quota_saturation")]
+        ms.append({"feature_id": "app.latency_ms", "coverage": 1.0, "aggregation": "P99", "quality": "OK"})
+        pi6 = PI_CHECKS(dict(run, collection={"cpu_s": 0.2, "wall_s": 135.0}),
+                        {"measurements": ms, "missing_measurements": []},
+                        [SimpleNamespace(obs={"app": {}})] * 136)["PI-6"]
+        self.assertTrue(pi6["ok"], pi6)                                             # quota is the second element
+        self.assertEqual(P.fault_types({"fault": {"type": "app_lock"}}), ["app_lock"])
+        self.assertEqual(P.fault_types({"fault": None}), [])
+
+    def test_m6_needs_its_scenario_and_its_seed_range(self):
+        with self.assertRaises(P.Refused):
+            self.run_ctrl(variant="m6", seed=100001)
+        e = self.entry("CTRL")
+        with self.assertRaises(P.Refused):
+            self.run_ctrl(variant="m6", seed=e["seed"] + 1, scenario=e)               # another run's scenario
+        with self.assertRaises(P.Refused):
+            self.run_ctrl(variant="ctrl", seed=e["seed"])                             # M6 seed on a pilot variant
+        self.assertNotIn("m6", P.main.__code__.co_consts)
 
 
 class TestTargetProcesses(unittest.TestCase):
