@@ -689,6 +689,16 @@ class TestStagesAndPrivilege(Base):
         mem = v("FZ-INTENSITY-MEM")                                        # M-3, M-4, 2026-10-13
         self.assertIn("single severity", mem["grading"])
         self.assertIn("collector is not changed", mem["mem_util_overshoot"])
+        rv = v("FZ-M5-REVIEW")                                             # R-1..R-7, 2026-10-13
+        self.assertEqual({f: (x["I1"], x["I2"], x["I3"]) for f, x in rv["levels"].items()},
+                         {"app_dependency_delay": (4, 7, 15), "app_lock": (500, 1581, 5000),
+                          "cpu_contender": (50, 141, 400), "cpu_quota": (20000, 12248, 7500),
+                          "netem_loss_a_egress": (0.5, 1, 5), "police_a_ingress": (550, 407, 300),
+                          "netem_loss_r_egress": (0.5, 1, 5), "netem_rate_r": (600, 439, 320)})
+        self.assertEqual(rv["single_levels"], {"app_pool": 1, "memory_max": 768})
+        self.assertEqual((v("FZ-TTRANS")["T_TRANS_s"], v("FZ-TTRANS")["W_s"]), (16, 24))
+        self.assertIn("compressed", v("FZ-STAGING")["m6_raw_retention"])
+        self.assertIn("FZ-M5-REVIEW", P.FULL_ONLY)
         ov5 = v("FZ-OV")["ov5_sizes"]                                      # O-1, 2026-10-13
         self.assertEqual((ov5["target_memory_max_mib"], ov5["fill_file_mib"], ov5["lab_cap_mib"], ov5["reps"]),
                          (2048, 768, 2560, 2))

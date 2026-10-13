@@ -2,7 +2,7 @@
 
 **Status: PARTLY APPROVED.** Rohit Kumar approved 31 of the 33 Freeze-1 decisions on 2026-10-11 (commit `4b6041c`),
 and on 2026-10-12 the eight items of the pilot decision package, the arrival-process amendment A-1, the CPU/network candidates C-1
-the memory items M-1, the working-set scanner amendment M-2, the memory decisions M-3 and M-4 and the OV-5 sizes O-1 (§5). `FZ-INTENSITY` remains **pending** (the PI-8 level freeze at the M5 review only)
+the memory items M-1, the working-set scanner amendment M-2, the memory decisions M-3 and M-4, the OV-5 sizes O-1 and, on 2026-10-13, the M5 review decisions R-1 … R-7 (§5). `FZ-INTENSITY` remains **pending** (the AMD-13 confirmation of the interpolated I2 levels only)
 for what is still unresolved (§4, §5). Approval is recorded only in
 [`PHASE_1C_FREEZE1_DECISIONS.json`](PHASE_1C_FREEZE1_DECISIONS.json); this register holds the rationale (§3).
 **Owner approval of a design choice is not scientific validation:** every ENG value is still unvalidated until
@@ -188,9 +188,21 @@ holds each one under its own ID. Tags as in §1; **ENG** values are arithmetic o
 
 | O-1 | `FZ-OV` (OV-5 sizes) | OV-5 (AMD-15): A's `memory.max` M = 2,048 MiB for the whole run, a fresh 768 MiB file written and `fsync`ed in A's cgroup after tick 60, lab cap 2,560 MiB (design §9, unchanged), 2 reps. Basis: in CTRL the target holds ≈ 1,080 MiB with the 1 GiB working set resident; with the file resident ≈ 1,848 MiB, utilisation ≈ 0.90 of M with ≈ 200 MiB below M, so the cache fills without reaching the limit. r* = 0.9 and the F1 criteria as approved (D5, AMD-15) | **V** CTRL (campaign `20261012T175020Z`); **ENG** |
 
+**M5 review (owner reply "all A" to the decision sheet, 2026-10-13; pilot report §7):**
+
+| Item | Decision ID | Decision | Basis |
+|---|---|---|---|
+| R-1 | `FZ-M5-REVIEW` (levels) | PI-8 levels frozen as found (report §7.2). I2 = 7 ms (delay) and 1 % (both losses) are tested candidates, 2 of 2; the interpolated I2s (lock 1,581 µs, contention 141, quota 12,248 µs, police 407 kbit/s, congestion 439 kbit/s) are confirmed under AMD-13 (n_I2 = 2, tie-break toward I1, N_att = 2) | **V** campaigns `20261012T104753Z`, `20261012T141516Z` |
+| R-2 | `FZ-TTRANS` (amended) | K_c: throttling 0.1 s, local and path loss 0 s, memory 1 s, application 0.065 s; contention and congestion take T_fb = 15 s. T_TRANS = ⌈15 + 0.021⌉ = 16 s; scored window W = ⌊(90 − 16)/3⌋ = 24 s | **V** read-back latencies (report §7.3); **INF** K_c |
+| R-3 | `FZ-M5-REVIEW` (single levels) | Pool shrink: single level P′ = 1 (P′ 2, 3 had no effect) | **V** §3d |
+| R-4 | `FZ-M5-REVIEW` (congestion) | Congestion levels kept; the thin retransmission signal below 600 kbit/s is a recorded limitation | **V** §3e |
+| R-5 | `FZ-M5-REVIEW` (PI-6) | In quota runs `throttle.quota_cores` and `throttle.quota_saturation` (no source before the fault) are listed, not scored, for PI-6 coverage | **V** §3d, §3g |
+| R-6 | `FZ-M5-REVIEW` (memory) | M-3 and M-4 confirmed for M6; memory single level 768 MiB (R2-F's validated level) | **V** §3g |
+| R-7 | `FZ-M5-REVIEW`, `FZ-STAGING` | U-1 A (G-Q1 over 7 outcomes, 0.80 kept), U-1b A (softirq's G-Q2 waived, basis R2-E), U-7 A (G-Q1/G-Q4 over single-fault plus CTRL test runs), U-6 A (M6 raw data committed compressed with a SHA-256 manifest) | pilot design §4.5.5, §10 |
+
 Still pending after §5:
 
-- `FZ-INTENSITY`: the freeze of the PI-8 levels (the M5 review's).
+- `FZ-INTENSITY`: the AMD-13 confirmation of the interpolated I2 levels (R-1).
 - Design-level items outside this package: U-1, U-1b, U-7 (before M6) and U-6 raw-data storage (AMD-17 covers staging).
 
 ## Appendix A. AMD-1 … AMD-17 (Stage 3H text, verbatim; adopted by the owner's approval of `FZ-AMD-01` … `FZ-AMD-17`, `4b6041c`)

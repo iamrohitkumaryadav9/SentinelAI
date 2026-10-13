@@ -26,7 +26,7 @@
   },
   "FZ-INTENSITY": {
    "status": "pending",
-   "reference": "Register §3 FZ-INTENSITY and §5: R2 ceilings (FZ-INTENSITY-R2), application (FZ-INTENSITY-APP), network (FZ-INTENSITY-NET), CPU/network candidates (FZ-INTENSITY-CPUNET), memory (FZ-INTENSITY-MEM) and the OV-4 level (FZ-OV) are approved separately on 2026-10-12, the OV-5 sizes and lab cap (FZ-OV) on 2026-10-13; still UNRESOLVED: the freeze of the PI-8 levels, which is the M5 review's"
+   "reference": "Register §3 FZ-INTENSITY and §5: R2 ceilings (FZ-INTENSITY-R2), application (FZ-INTENSITY-APP), network (FZ-INTENSITY-NET), CPU/network candidates (FZ-INTENSITY-CPUNET), memory (FZ-INTENSITY-MEM) and the OV-4 level (FZ-OV) are approved separately on 2026-10-12, the OV-5 sizes and lab cap (FZ-OV) on 2026-10-13; I1/I3 frozen in FZ-M5-REVIEW on 2026-10-13; still UNRESOLVED: the AMD-13 confirmation of the interpolated I2 levels"
   },
   "FZ-PI5": {
    "status": "approved",
@@ -70,11 +70,24 @@
    "status": "approved",
    "approved_by": "Rohit Kumar",
    "date": "2026-10-11",
-   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §3 FZ-TTRANS; AMD-9. T_TRANS itself is computed after the pilot (F2)",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §3 FZ-TTRANS; AMD-9. T_TRANS itself is computed after the pilot (F2); K_c values and T_TRANS approved by Rohit Kumar on 2026-10-13 (owner reply \"all A\"; Register §5 R-2)",
    "value": {
     "T_TRANS_rule": "AMD-9: ceil(max over evaluated classes of (R_hat_c + K_c)) s; R_hat_c = maximum read-back latency observed in the pilot runs of class c; a class without an accepted K_c contributes T_fb",
     "T_cap": 30,
-    "T_fb": 15
+    "T_fb": 15,
+    "K_c_s": {
+     "cpu_throttling": 0.1,
+     "network_packet_loss": 0.0,
+     "tcp_retransmissions_path_loss": 0.0,
+     "memory_pressure": 1.0,
+     "application": 0.065,
+     "cpu_contention": "T_fb (inference only)",
+     "tcp_retransmissions_congestion": "T_fb (no accepted bound)"
+    },
+    "R_hat_max_s": 0.098,
+    "T_TRANS_s": 16,
+    "W_s": 24,
+    "basis": "AMD-9 with the pilot read-back latencies (report §7.3): contention and congestion contribute T_fb = 15 s, so T_TRANS = ceil(15 + 0.021) = 16 s; W = floor((90 - 16) / 3) = 24 s"
    }
   },
   "FZ-DATA-QUALITY": {
@@ -103,9 +116,10 @@
    "status": "approved",
    "approved_by": "Rohit Kumar",
    "date": "2026-10-11",
-   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §3 FZ-STAGING (draft §7 item 2; AMD-17 for M6)",
+   "reference": "Approved by Rohit Kumar on 2026-10-11 (owner instruction to approve the concrete Freeze-1 proposals; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §3 FZ-STAGING (draft §7 item 2; AMD-17 for M6); M6 raw retention (U-6 A) approved by Rohit Kumar on 2026-10-13 (owner reply \"all A\"; Register §5 R-7)",
    "value": {
-    "path": "/home/iiitd/sentinelai/results/phase1c_m5_pilot"
+    "path": "/home/iiitd/sentinelai/results/phase1c_m5_pilot",
+    "m6_raw_retention": "U-6 A: M6 raw data committed to Git compressed (*.jsonl.gz, append-only, SHA-256 manifest), so a clean checkout regenerates results byte-identically (G-P1)"
    }
   },
   "FZ-AMD-01": {
@@ -456,6 +470,79 @@
     "aborts": "host MemAvailable < 4 GiB or any oom_kill aborts the run",
     "grading": "single severity (owner, 2026-10-13, M-3): every candidate lies below the 1 GiB working set and campaign 20261012T175020Z showed the same effect at all four (refaults ~5.46 M, PSI ~3.1 s); no further memory campaigns in the pilot; graded levels are left to the M5 review",
     "mem_util_overshoot": "known limitation (owner, 2026-10-13, M-4): the frozen collector (m3a-1.1.0) rejects mem.util.target above 1 when memory.current briefly exceeds memory.max at the limit, which costs 1-2 W ticks of coverage; the collector is not changed in the pilot"
+   }
+  },
+  "FZ-M5-REVIEW": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-13",
+   "reference": "Approved by Rohit Kumar on 2026-10-13 (owner reply \"all A\" to the M5 decision sheet; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §5 R-1..R-7; pilot report §7",
+   "value": {
+    "levels": {
+     "app_dependency_delay": {
+      "I1": 4,
+      "I2": 7,
+      "I3": 15,
+      "i2": "tested candidate, 2 of 2 (campaign 20261012T104753Z)"
+     },
+     "app_lock": {
+      "I1": 500,
+      "I2": 1581,
+      "I3": 5000,
+      "i2": "to confirm (AMD-13)"
+     },
+     "cpu_contender": {
+      "I1": 50,
+      "I2": 141,
+      "I3": 400,
+      "i2": "to confirm (AMD-13)"
+     },
+     "cpu_quota": {
+      "I1": 20000,
+      "I2": 12248,
+      "I3": 7500,
+      "i2": "to confirm (AMD-13)"
+     },
+     "netem_loss_a_egress": {
+      "I1": 0.5,
+      "I2": 1,
+      "I3": 5,
+      "i2": "tested candidate, 2 of 2 (campaign 20261012T141516Z)"
+     },
+     "police_a_ingress": {
+      "I1": 550,
+      "I2": 407,
+      "I3": 300,
+      "i2": "to confirm (AMD-13)"
+     },
+     "netem_loss_r_egress": {
+      "I1": 0.5,
+      "I2": 1,
+      "I3": 5,
+      "i2": "tested candidate, 2 of 2 (campaign 20261012T141516Z)"
+     },
+     "netem_rate_r": {
+      "I1": 600,
+      "I2": 439,
+      "I3": 320,
+      "i2": "to confirm (AMD-13)"
+     }
+    },
+    "single_levels": {
+     "app_pool": 1,
+     "memory_max": 768
+    },
+    "congestion": "levels kept (ground truth 2 of 2 under the approved rule); the thin retransmission signal below 600 kbit/s is a recorded limitation for M6 interpretation",
+    "pi6_post_fault_only": {
+     "cpu_quota": [
+      "throttle.quota_cores",
+      "throttle.quota_saturation"
+     ]
+    },
+    "memory": "M-3 (single severity, frozen at 768 MiB) and M-4 (mem.util.target overshoot, known limitation) confirmed for M6",
+    "U-1": "A: G-Q1 over 7 outcomes (6 classes + INSUFFICIENT_EVIDENCE), threshold 0.80 kept, meaningful with >= 10 test runs per evaluated class, softirq predictions counted as errors",
+    "U-1b": "A: design §10's waiver covers softirq's G-Q2, basis R2-E",
+    "U-7": "A: G-Q1 and G-Q4 over single-fault test runs plus CTRL test runs; OV runs scored only under robustness"
    }
   }
  }
