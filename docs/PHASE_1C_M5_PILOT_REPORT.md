@@ -25,6 +25,7 @@ Evidence lives in `results/phase1c_m5_pilot/<campaign>/<run>/` and is committed 
 | `20261012T030504Z` | `7f6eac7` | PI0-1…5, CTRL-900001 | PI-0 5/5 passed. CTRL-900001 **FAILED** (`app_features`, §3). |
 | `20261012T040045Z` | `af2a4e7` | PI0-1…5, CTRL-900002…900005 | PI-0 5/5 passed. CTRL 4/4 passed. |
 | `20261012T045417Z` | `29d652f` | PI0-1…5; CTRL, PI6OFF, INSTOFF at seeds 900006 and 900007; PI1U-900008, PI1U-900009 | PI-0 5/5 passed. All 8 runs passed (§3a). |
+| `20261013T024805Z` | `9934ca0` | PI0-1…5; CTRL-900190, 900191; PI8-900430, 900431 (OV-4 flood, 80,000 pps); PI8-900440, 900441 (OV-5 fill, 768 MiB under M = 2,048 MiB) | All 11 passed their pipeline checks and every PI (§3h). OV-4 producible 2 of 2 (AMD-13); OV-5 feasible 2 of 2 (AMD-15 F1). |
 | `20261012T175020Z` | `c4e10d8` | PI0-1…5; CTRL-900180…900183; one re-check per earlier fault PI8-900340…900348; PI8-900360…900367 (`memory.max` 960 / 768 / 512 / 256 MiB, 2 each) | All 26 passed their pipeline checks (§3g); the separate scanner process removes the stall. PI-6 missed in PI8-900344 (throttle features, known) and in 3 memory runs, PI8-900361, 900366 and 900367 (`mem.util.target` coverage 0.978–0.989). Memory effect saturated at every level. |
 | `20261012T165705Z` | `c874aa4` | PI0-1…5; CTRL-900170, 900171; PI8-900320 (`memory.max` 960 MiB) | PI-0 5/5, CTRL 2/2 passed. **PI8-900320 FAILED** (app features, client/server reconciliation): the workload stalled under memory pressure (§3f). Campaign closed; an owner decision is pending. |
 | `20261012T141516Z` | `dc5b3d5` | PI0-1…5; CTRL-900160…900163; PI8-900240…900271 (network faults) | All 41 passed their pipeline checks (§3e). Every network fault has an effect at every candidate. |
@@ -355,7 +356,32 @@ listener opens; the pilot aborts unless the target holds exactly the workload an
   fell to 0.978–0.989, below PI-6's 0.99. The collector is frozen code; whether to cap the ratio at 1.0, accept the
   overshoot, or keep the gap is an owner decision.
 
-## 4. PI verdicts so far
+## 3h. OV-4 and OV-5 feasibility (campaign `20261013T024805Z`, `9934ca0`)
+
+PI-0 5/5 and CTRL 2/2 passed (CTRL memory refaults, reclaim scans and PSI all 0). Every run met PI-1, PI-6 and
+PI-7 (CTRL part).
+
+**OV-4 (AMD-13, FZ-OV): producible in both reps (PI8-900430, PI8-900431).**
+- (a) sender and receiver both reported 79,965 pps against the 80,000 pps level (τ = 10 %);
+- (b) receiver loss 0;
+- (c) the flood client alive at all 90 W ticks by read-back;
+- (d) the client allowed only CPU 22, in A's namespace; support and target cpusets disjoint;
+- (e) cleanup and the host comparison passed, and across-R reconciliation held with the flood on the path.
+- Report-only: softirq share over W was 0.0034–0.0036 on CPU 18 (A) and ≤ 0.0014 on CPUs 22/23, and A's W p99
+  latency stayed at the CTRL value (12.8 ms). The increase is far below overload, as OV-4 intends.
+
+**OV-5 (AMD-15 F1, FZ-OV O-1): feasible in both reps (PI8-900440, PI8-900441).**
+- fill: 768 MiB written and fsynced, read back in 0.43 s and 0.47 s, writer exit 0 (judged against T_TRANS once
+  T_TRANS is frozen; T_cap 30 s met);
+- residency 1.0 at every W tick after the fill (r* = 0.9), all 90 W ticks observed;
+- `memory.events` high, max and oom_kill deltas 0;
+- refaults, reclaim scans and memory PSI 0, equal to the CTRL maxima (labelled non-independent);
+- MemAvailable stayed above 4 GiB (no abort);
+- utilisation at the W end 0.915 of M; A's W p99 latency at the CTRL value (12.8 ms).
+- Note: PI-6 collector CPU in the OV-5 runs was 0.011 core (0.002 in every other run), within the 0.02 budget. The
+  figure includes the driver's own per-tick residency read (pilot instrumentation, not a production collector).
+
+
 
 | PI | Status | Basis |
 |---|---|---|
@@ -370,7 +396,9 @@ listener opens; the pilot aborts unless the target holds exactly the workload an
 | PI-2 | **pass**: path loss shows A retransmissions above the CTRL maximum while A's local drop counters stay 0, in every rep (§3e) | design §6.3 |
 | PI-8 (memory) | Every candidate established 2 of 2, but the effect is saturated (same refaults and PSI at 960…256 MiB) (§3g). Not frozen. | FZ-PI8 |
 | PI-5 | **met** in all 8 memory runs: PSI above CTRL, no OOM kills, swap 0 (§3g) | FZ-PI5 |
-| PI-3, OV-4, OV-5 | not run | §6 |
+| OV-4 | **producible** 2 of 2 at 80,000 pps (AMD-13 (a)–(e)) (§3h) | FZ-OV |
+| OV-5 | **feasible** 2 of 2 (AMD-15 F1; fill timing judged again once T_TRANS is frozen) (§3h) | FZ-OV O-1 |
+| PI-3 | not run | §6 |
 
 ## 5. Evidence and integrity (AMD-27)
 
@@ -409,11 +437,10 @@ Re-check from a clean checkout:
 - **PI-6 under throttling (§3d), for the M5 review:** whether features whose source exists only after the fault
   starts count towards PI-6 coverage.
 
-- **FZ-INTENSITY (pending).** Ceilings for application (P′, lock hold, dependency delay), congestion, police, memory,
-  OV-4 and OV-5 have no evidence, so those classes cannot run.
-- **FZ-PI5 (pending).** The workload has no memory working set, so PI-5 cannot run.
-- **AMD-13 / AMD-15.** Approved as unresolved, so OV-4 and OV-5 cannot run.
-- **FZ-PI7, lock-hold comparison undefined.** The fault criterion requires "the injected mechanism's wait metric (W
-  value) above the maximum of the same metric over the CTRL runs". For a lock-hold fault that metric is
-  `app.lock_wait_ms`, which is structurally MISSING in every CTRL run (`lock_hold_us 0`), so no CTRL maximum exists.
-  Until the owner resolves this explicitly, no lock-hold fault result can be evaluated or claimed.
+- **FZ-INTENSITY: pending only for the PI-8 level freeze**, which is the M5 review's. Every candidate set and
+  ceiling is approved (C-1, D2, D3, M-1, FZ-OV, O-1), and every class has run (§3c–§3h).
+- **FZ-PI5: resolved** (M-1, approved 2026-10-12); PI-5 met in every memory run (§3g).
+- **AMD-13 / AMD-15: resolved.** n_r, τ and the OV-4 level (D5) and the OV-5 sizes (O-1) are approved; OV-4 and OV-5
+  ran and are feasible (§3h).
+- **FZ-PI7, lock-hold comparison: resolved** by FZ-PI7-LOCK (approved 2026-10-12): the CTRL maximum of
+  `app.lock_wait_ms` is 0 ms by rule and a rep needs a measured P99 above 0.05 ms; `levels` applies it (§3d).
