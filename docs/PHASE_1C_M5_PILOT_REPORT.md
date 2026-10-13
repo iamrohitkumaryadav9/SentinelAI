@@ -1,13 +1,14 @@
 # Phase 1C M5 pilot report
 
-Status: **in progress.**
+Status: **pilot complete; ready for the M5 review (§7).**
 
 - **Complete:** PI-0, CTRL, PI-1 in both privilege modes, the PI-6 collectors-on/off pairs and the workload
   instrumentation on/off pairs. All were repeated under the approved working set (§3b).
 - **Application and CPU fault classes (PI-8, §3d):** levels found for all five mechanisms under Poisson arrivals
   (not frozen).
 - **Network fault class (PI-8, §3e):** levels found for all four faults; PI-2 passes.
-- **Not yet built:** memory pressure (floor pending) and OV-4/OV-5.
+- **Memory (§3g):** ground truth and PI-5 met at every candidate; single severity (M-3).
+- **OV-4 and OV-5 (§3h):** both feasible, 2 of 2.
 
 What this report shows: the A–R–B lab, the collection pipeline and the CTRL-stage pilot criteria work on this host. It
 does **not** validate any fault class, and it does not support any diagnostic claim. M2 was never run on pilot data
@@ -444,3 +445,60 @@ Re-check from a clean checkout:
   ran and are feasible (§3h).
 - **FZ-PI7, lock-hold comparison: resolved** by FZ-PI7-LOCK (approved 2026-10-12): the CTRL maximum of
   `app.lock_wait_ms` is 0 ms by rule and a rep needs a measured P99 above 0.05 ms; `levels` applies it (§3d).
+
+## 7. M5 review package
+
+Everything the M5 review needs to decide, in one place. Nothing here is frozen or validated by the pilot itself;
+freezing is the review's (FZ-INTENSITY, FZ-PI8).
+
+**7.1 Runs.** 211 run directories over 10 campaigns, all committed (§5). 6 failed and are kept as failed:
+
+| Run | Failure | Resolution |
+|---|---|---|
+| `20261011T175343Z/PI0-1` | lab forwarding and the `/run/netns` mount (§1) | fixed `6c0030d`, `7f6eac7` |
+| `20261012T030504Z/CTRL-900001` | `app_features` lock-wait defect (§3) | fixed `af2a4e7` |
+| `20261012T104753Z/PI8-900081` | host comparison: an external SSH login change | external; repeated |
+| `20261012T104753Z/PI8-900116` | across-R reconciliation under local loss | fixed `6320943` |
+| `20261012T133839Z/PI8-900200` | across-R: segments are not packets under retransmission | fixed `caf5ff0` |
+| `20261012T165705Z/PI8-900320` | in-process scanner stalled the workload under `memory.max` | scanner process, M-2 (`c4e10d8`) |
+
+**7.2 PI-8 levels proposed for freezing** (`levels`, first two pipeline-valid reps per candidate, 2 of 2):
+
+| Class | Fault | I1 | I2 | I3 | Campaign |
+|---|---|---|---|---|---|
+| application | dependency delay (ms) | 4 | 7 | 15 | `20261012T104753Z` |
+| application | lock hold (µs) | 500 | 1,581 * | 5,000 | `20261012T104753Z` |
+| application | pool shrink (P′) | 1 | — | 1 | `20261012T104753Z` (P′ 2, 3: no effect) |
+| CPU contention | contender weight | 50 | 141 * | 400 | `20261012T104753Z` |
+| CPU throttling | quota (core) | 0.20 | 0.122 * | 0.075 | `20261012T104753Z` |
+| packet loss | netem loss on A (%) | 0.5 | 1 | 5 | `20261012T141516Z` |
+| packet loss | police on A (kbit/s) | 550 | 407 * | 300 | `20261012T141516Z` |
+| retransmissions | path loss on R (%) | 0.5 | 1 | 5 | `20261012T141516Z` |
+| retransmissions | congestion on R (kbit/s) | 600 | 439 * | 320 | `20261012T141516Z` |
+| memory pressure | `memory.max` (MiB) | single severity (M-3); effect identical at 960…256 | | | `20261012T175020Z` |
+
+\* interpolated (geometric mean, rounded toward I1): AMD-13 I2 confirmation (n_I2 = 2, tie-break toward I1,
+N_att = 2) is still to run once I1 and I3 are frozen.
+
+**7.3 T_TRANS inputs (AMD-9).** Maximum read-back latency R̂_c over the pipeline-valid pilot runs of each class:
+
+| Class | Runs | R̂_c (s) |
+|---|---|---|
+| application (delay / lock / pool) | 17 / 17 / 13 | 0.041 / 0.052 / 0.051 |
+| CPU contention / throttling | 9 / 9 | 0.021 / 0.001 |
+| packet loss / retransmissions | 18 / 18 | 0.019 / 0.002 |
+| memory pressure | 8 | 0.098 |
+| OV-4 / OV-5 (fill) | 2 / 2 | 0.021 / 0.468 |
+
+T_TRANS = ceil(max_c (R̂_c + K_c)) s; the K_c (or the fallback T_fb) are the review's. With every R̂_c below 0.5 s,
+T_TRANS is set by K_c.
+
+**7.4 Decisions for the review:**
+1. Freeze the PI-8 levels of §7.2 (FZ-INTENSITY, FZ-PI8), then run the I2 confirmations.
+2. Pool shrink has an effect only at P′ = 1: accept a single level, or change the candidates.
+3. Congestion: the retransmission signal is thin below 600 kbit/s (§3e).
+4. PI-6 under throttling: whether features whose source exists only after the fault starts count towards coverage
+   (quota runs, §3d, §3g).
+5. Memory: graded levels (M-3) and the `mem.util.target` overshoot (M-4).
+6. Q-2: collector mode for M6 (both modes pass PI-1, §3a).
+7. Design-level items outside the pilot: U-1, U-1b, U-7 (before M6) and U-6 raw-data storage.
