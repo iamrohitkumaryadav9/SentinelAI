@@ -26,6 +26,7 @@ Evidence lives in `results/phase1c_m5_pilot/<campaign>/<run>/` and is committed 
 | `20261012T030504Z` | `7f6eac7` | PI0-1…5, CTRL-900001 | PI-0 5/5 passed. CTRL-900001 **FAILED** (`app_features`, §3). |
 | `20261012T040045Z` | `af2a4e7` | PI0-1…5, CTRL-900002…900005 | PI-0 5/5 passed. CTRL 4/4 passed. |
 | `20261012T045417Z` | `29d652f` | PI0-1…5; CTRL, PI6OFF, INSTOFF at seeds 900006 and 900007; PI1U-900008, PI1U-900009 | PI-0 5/5 passed. All 8 runs passed (§3a). |
+| `20261013T063118Z` | `88ce1d7` | PI0-1…5; CTRL-900630, 900631; PI8-900632, 900633 (local loss 1 %); PI8-900634, 900635 (path loss 1 %); PI8-900636 (police 407) | P-7 validation (§3k): all 12 passed their pipeline checks; the collector now measures A's local drop set; PI-2 holds at collector level. Police: PI-1/PI-6 miss on `net.drop.qdisc` (two qdiscs), as predicted. |
 | `20261013T044701Z` | `190b9d9` | PI0-1…5; CTRL-900620, 900621; PI8-900622, 900623 (police 407); PI8-900624…900626 (congestion 439) | PI-0 5/5, CTRL 2/2 passed. Police and congestion I2 confirmed 2 of 2 (§3j). **PI8-900624 FAILED** the host comparison: a new login session scope appeared during the run (the owner's connection dropped and reconnected); repeated as PI8-900626. |
 | `20261013T035747Z` | `9e7e14c` | PI0-1…5; CTRL-900600, 900601; I2 confirmation PI8-900610…900617 | PI-0 5/5, CTRL 2/2 passed. Lock, contention and quota I2 confirmed 2 of 2 (§3i). **PI8-900617 FAILED** client/server reconciliation: one HTTP 400 the reconciliation did not map. Campaign stopped; police and congestion move to the next campaign. |
 | `20261013T024805Z` | `9934ca0` | PI0-1…5; CTRL-900190, 900191; PI8-900430, 900431 (OV-4 flood, 80,000 pps); PI8-900440, 900441 (OV-5 fill, 768 MiB under M = 2,048 MiB) | All 11 passed their pipeline checks and every PI (§3h). OV-4 producible 2 of 2 (AMD-13); OV-5 feasible 2 of 2 (AMD-15 F1). |
@@ -425,6 +426,26 @@ is again small (7 retransmissions), as recorded under R-4.
 
 **With §3i, all five interpolated I2 levels are confirmed under AMD-13**: lock hold 1,581 µs, contention 141, quota
 12,248 µs, police 407 kbit/s, congestion 439 kbit/s. No tie-break was needed.
+
+## 3k. Collection in A's network namespace (P-7; campaign `20261013T063118Z`, `88ce1d7`)
+
+Every earlier run declared the target with no interfaces and collected in the host's network namespace, so A's
+minimum local drop set (`net.drop.qdisc`, `net.drop.iface_rx`, `net.drop.iface_tx`) was never collected (P-7). From
+`88ce1d7` the collector reads through a read server in A's namespace. In all 12 runs it came up ready (netns inode
+4026532750, interfaces exactly `lo`, `sentlab-a0`) and exited 0; collector CPU 0.005 core (budget 0.02).
+
+| Run | `net.drop.qdisc` | `iface_rx` / `iface_tx` / `err` | `tcp.retrans_frac` | PI-1 / PI-6 |
+|---|---|---|---|---|
+| CTRL-900630, 900631 | 0 (coverage 1.0) | 0 / 0 / 0 | 0 | pass |
+| local loss 1 % (900632, 900633) | **10.2 / 10.9 per s**, equal to eBPF `kfree_skb` `QDISC_DROP` | 0 / 0 / 0 | 0.59 % / 0.62 % | pass |
+| path loss 1 % (900634, 900635) | **0** | 0 / 0 / 0 | 0.59 % / 0.61 % | pass |
+| police 407 kbit/s (900636) | **MISSING**: "2 qdiscs on sentlab-a0: the contract defines no aggregation for a qdisc tree" | 0 / 0 / 0 | 5.3 % | **miss** (coverage 0 on `net.drop.qdisc`) |
+
+- **PI-2 now holds at collector level:** path loss shows retransmissions at A while the measured local drop set is 0,
+  and local loss shows the drops in the collector's own qdisc feature.
+- **Police:** the ingress qdisc next to the root qdisc makes `net.drop.qdisc` structurally unverifiable under the
+  contract. eBPF sees the drops as `kfree_skb` reason `TC_INGRESS` (137 per s); whether that reason is loss
+  evidence depends on `KFREE_REASONS_LOSS`, a declared list not yet set (contract §6, M7). Owner decision pending.
 
 ## 4. PI verdicts so far
 
