@@ -1,6 +1,6 @@
 # Phase 1C M6 collection
 
-Status: **collecting.** The matrix is committed (`9918b83`, the code pin). Batches 1–3 of 6 collected and packed (102 of 202 runs).
+Status: **collecting.** The matrix is committed (`9918b83`, the code pin). Batches 1–4 of 6 collected and packed (136 of 202 runs).
 
 This document records how the M6 matrix is collected and what each batch produced. It is a runbook and a ledger; it
 validates nothing. M2 is never run on M6 data before M7 locks the parameters and the model (design §6.6).
@@ -71,8 +71,8 @@ stay stable while a batch runs (a login session appearing or ending fails the ho
 |---|---|---|---|---|---|---|
 | 1 | `20261013T094920Z` | `9918b83` | 34 (+ PI0-1…5) | 34 pipeline; 32 every PI | 0 | `e7473f8` |
 | 2 | `20261013T113304Z` | `e7473f8` | 34 (+ PI0-1…5) | 34 pipeline; 29 every PI | 0 | `59a85c9` |
-| 3 | `20261013T141328Z` | `59a85c9` | 34 (+ PI0-1…5) | 34 pipeline; 29 every PI | 0 | this commit |
-| 4 | — | — | 34 | — | — | — |
+| 3 | `20261013T141328Z` | `59a85c9` | 34 (+ PI0-1…5) | 34 pipeline; 29 every PI | 0 | `08d6f23` |
+| 4 | `20261013T160129Z` | `08d6f23` | 34 (+ PI0-1…5) | 34 pipeline; 28 every PI | 0 | this commit |
 | 5 | — | — | 34 | — | — | — |
 | 6 | — | — | 32 | — | — | — |
 
@@ -94,3 +94,7 @@ every packed run unpacks with every SHA-256 intact and replays byte-identically.
 known kinds: two OV-9 runs (app metrics off by design), one I3 quota run on `psi.cpu.some.target`, two memory runs on
 `mem.util.target` (M-4). Packed: 34 runs and 5 PI-0 cycles; every packed run unpacks with every SHA-256 intact and
 replays byte-identically.
+
+**Batch 4.** PI-0 5/5; all 34 runs passed their pipeline checks; nothing excluded. Six report-only PI misses, all of
+known kinds: five memory runs on `mem.util.target` (M-4) and one I3 quota run on `psi.cpu.some.target`. Packed: 34 runs
+and 5 PI-0 cycles; every packed run unpacks with every SHA-256 intact and replays byte-identically.
