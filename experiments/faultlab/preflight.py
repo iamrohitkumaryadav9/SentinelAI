@@ -99,11 +99,12 @@ DECISIONS: Dict[str, Tuple[str, str, Optional[Tuple[str, ...]]]] = {
     "FZ-PI7": ("PI-7 registration and acceptance criterion", f"{REGISTER} §1 item 3b, §2 item 4; draft §6.8", ()),
     "FZ-PI8": ("PI-8 registration and acceptance criterion", f"{REGISTER} §1 item 3b, §2 item 4; draft §6.9", ()),
     "FZ-TTRANS": ("T_TRANS rule, T_cap and T_fb", f"{REGISTER} §1 item 4; draft §6.11; AMD-9/AMD-10 (not in repo)",
-                  ("T_TRANS_rule", "T_cap", "T_fb")),
+                  ("T_TRANS_rule", "T_cap", "T_fb", "K_c_s", "R_hat_max_s", "T_TRANS_s", "W_s", "basis")),   # R-2
     "FZ-DATA-QUALITY": ("U-2 and COV_MIN, N_BASE_MIN, SEG_MIN", f"{REGISTER} §1 item 5; contract §6; draft §6.10",
                         ("U-2", "COV_MIN", "N_BASE_MIN", "SEG_MIN")),
     "FZ-CB-B": ("c_B and b", f"{REGISTER} §1 item 6; draft §6.10, §6.11", ("c_B", "b")),
-    "FZ-STAGING": ("Persistent raw-data staging path (U-6)", f"{REGISTER} §1 item 7; design §8; draft U-6", ("path",)),
+    "FZ-STAGING": ("Persistent raw-data staging path (U-6)", f"{REGISTER} §1 item 7; design §8; draft U-6",
+                   ("path", "m6_raw_retention")),                                                       # R-7
     **{f"FZ-AMD-{n:02d}": (f"AMD-{n} design text", f"{REGISTER} §1 item 8 (Stage 3H reports; not in repo)", None)
        for n in range(1, 18)},
     "FZ-MANIFEST": ("Manifest format for pilot/M6 raw data", f"{REGISTER} §1 item 9; tests/faultlab/_integrity.py:61",
@@ -144,7 +145,8 @@ DECISIONS: Dict[str, Tuple[str, str, Optional[Tuple[str, ...]]]] = {
                              "loss_r_pct_candidates", "congestion_kbit_candidates", "police_kbit_candidates",
                              "congestion_floor_kbit", "police_floor_kbit", "netem_limit_packets", "basis")),
     "FZ-INTENSITY-MEM": ("Memory floor and PI-8 candidates (memory.max)", f"{REGISTER} §5 M-1",
-                         ("memory_max_mib_candidates", "floor_mib", "basis", "aborts")),
+                         ("memory_max_mib_candidates", "floor_mib", "basis", "aborts", "grading",
+                          "mem_util_overshoot")),                                                       # M-3, M-4
     "FZ-M5-REVIEW": ("M5 review: frozen PI-8 levels, single levels, PI-6 under throttling, U-1/U-1b/U-7",
                      f"{REGISTER} §5 R-1..R-7", ("levels", "single_levels", "congestion", "pi6_post_fault_only",
                                                  "memory", "U-1", "U-1b", "U-7")),

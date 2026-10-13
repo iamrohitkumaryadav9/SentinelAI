@@ -34,9 +34,10 @@ DIR = stat.S_IFDIR | 0o750
 
 def full_record():
     vals = {"FZ-WORKLOAD": {k: 1 for k in P.WORKLOAD_KEYS} | {"connection_model": "one request per connection"},
-            "FZ-TTRANS": {"T_TRANS_rule": "rule", "T_cap": 1, "T_fb": 1},
+            "FZ-TTRANS": {"T_TRANS_rule": "rule", "T_cap": 1, "T_fb": 1, "K_c_s": 1, "R_hat_max_s": 1, "T_TRANS_s": 1,
+                          "W_s": 1, "basis": "fixture"},
             "FZ-DATA-QUALITY": {"U-2": "A", "COV_MIN": 1, "N_BASE_MIN": 1, "SEG_MIN": 1},
-            "FZ-CB-B": {"c_B": 1, "b": 1}, "FZ-STAGING": {"path": STAGING}, "FZ-M4-BASELINE": {"commit": "a" * 40}}
+            "FZ-CB-B": {"c_B": 1, "b": 1}, "FZ-STAGING": {"path": STAGING, "m6_raw_retention": "fixture"}, "FZ-M4-BASELINE": {"commit": "a" * 40}}
     dec = {}
     for d, (_, _, keys) in P.DECISIONS.items():
         e = {"status": "approved", "approved_by": "Rohit Kumar", "date": "2026-10-12", "reference": "test fixture"}
@@ -355,7 +356,9 @@ class TestApprovals(Base):
         required |= {f"FZ-AMD-{n:02d}" for n in range(1, 18)}
         self.assertLessEqual(required, set(P.DECISIONS))
         self.assertLessEqual({f"APPR-{d}" for d in P.DECISIONS}, P.MANDATORY_IDS)
-        self.assertEqual(P.DECISIONS["FZ-TTRANS"][2], ("T_TRANS_rule", "T_cap", "T_fb"))
+        self.assertEqual(P.DECISIONS["FZ-TTRANS"][2], ("T_TRANS_rule", "T_cap", "T_fb", "K_c_s", "R_hat_max_s",
+                                                       "T_TRANS_s", "W_s", "basis"))          # R-2 values
+        self.assertEqual(P.DECISIONS["FZ-STAGING"][2], ("path", "m6_raw_retention"))      # R-7 (U-6)
         self.assertEqual(P.DECISIONS["FZ-DATA-QUALITY"][2], ("U-2", "COV_MIN", "N_BASE_MIN", "SEG_MIN"))
         self.assertEqual(P.DECISIONS["FZ-CB-B"][2], ("c_B", "b"))
 
@@ -660,6 +663,15 @@ class TestStagesAndPrivilege(Base):
                 mock.patch.object(P.subprocess, "run", return_value=bad):
             with self.assertRaises(RuntimeError):
                 P.default_integrity()
+
+    def test_every_approved_decision_in_the_committed_record_passes_the_parser(self):
+        """The runner reads decisions through decision_state; an approved entry it would refuse is a broken record
+        (a value key added without registering it refused every run of campaign 20261013T034623Z)."""
+        dec, errs = P.parse_decisions((ROOT / "docs/PHASE_1C_FREEZE1_DECISIONS.json").read_bytes())
+        self.assertEqual(errs, [])
+        broken = {k: P.decision_state(k, d)[1] for k, d in dec.items()
+                  if d.get("status") == "approved" and not P.decision_state(k, d)[0]}
+        self.assertEqual(broken, {})
 
     def test_committed_record_holds_the_decision_package_and_keeps_the_rest_pending(self):
         dec, errs = P.parse_decisions((ROOT / "docs/PHASE_1C_FREEZE1_DECISIONS.json").read_bytes())
