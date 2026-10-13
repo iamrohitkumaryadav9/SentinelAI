@@ -2,7 +2,7 @@
 
 **Status: PARTLY APPROVED.** Rohit Kumar approved 31 of the 33 Freeze-1 decisions on 2026-10-11 (commit `4b6041c`),
 and on 2026-10-12 the eight items of the pilot decision package, the arrival-process amendment A-1, the CPU/network candidates C-1
-the memory items M-1, the working-set scanner amendment M-2 and the memory decisions M-3 and M-4 (§5). `FZ-INTENSITY` remains **pending** (OV-5 only)
+the memory items M-1, the working-set scanner amendment M-2, the memory decisions M-3 and M-4 and the OV-5 sizes O-1 (§5). `FZ-INTENSITY` remains **pending** (the PI-8 level freeze at the M5 review only)
 for what is still unresolved (§4, §5). Approval is recorded only in
 [`PHASE_1C_FREEZE1_DECISIONS.json`](PHASE_1C_FREEZE1_DECISIONS.json); this register holds the rationale (§3).
 **Owner approval of a design choice is not scientific validation:** every ENG value is still unvalidated until
@@ -186,9 +186,11 @@ holds each one under its own ID. Tags as in §1; **ENG** values are arithmetic o
 
 | M-4 | `FZ-INTENSITY-MEM` (amended) | `mem.util.target` above 1 at the limit is a known limitation; the collector stays frozen. At the limit `memory.current` briefly exceeds `memory.max` by a few pages (ratio up to 1.0004); the frozen normaliser (`m3a-1.1.0`) rejects fractions above 1, so 1–2 W ticks lose the feature and PI-6 coverage falls to 0.978–0.989 in some memory runs. A cap at 1.0 would change committed snapshots' byte-identical replay under the same collector version, so it would need a new collector version and an integrity amendment; that is left to the M5 review | **V** PI8-900361, 900366, 900367 |
 
+| O-1 | `FZ-OV` (OV-5 sizes) | OV-5 (AMD-15): A's `memory.max` M = 2,048 MiB for the whole run, a fresh 768 MiB file written and `fsync`ed in A's cgroup after tick 60, lab cap 2,560 MiB (design §9, unchanged), 2 reps. Basis: in CTRL the target holds ≈ 1,080 MiB with the 1 GiB working set resident; with the file resident ≈ 1,848 MiB, utilisation ≈ 0.90 of M with ≈ 200 MiB below M, so the cache fills without reaching the limit. r* = 0.9 and the F1 criteria as approved (D5, AMD-15) | **V** CTRL (campaign `20261012T175020Z`); **ENG** |
+
 Still pending after §5:
 
-- `FZ-INTENSITY`: the OV-5 lab cap and sizes.
+- `FZ-INTENSITY`: the freeze of the PI-8 levels (the M5 review's).
 - Design-level items outside this package: U-1, U-1b, U-7 (before M6) and U-6 raw-data storage (AMD-17 covers staging).
 
 ## Appendix A. AMD-1 … AMD-17 (Stage 3H text, verbatim; adopted by the owner's approval of `FZ-AMD-01` … `FZ-AMD-17`, `4b6041c`)

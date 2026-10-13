@@ -26,7 +26,7 @@
   },
   "FZ-INTENSITY": {
    "status": "pending",
-   "reference": "Register §3 FZ-INTENSITY and §5: R2 ceilings (FZ-INTENSITY-R2), application (FZ-INTENSITY-APP), network (FZ-INTENSITY-NET), CPU/network candidates (FZ-INTENSITY-CPUNET), memory (FZ-INTENSITY-MEM) and the OV-4 level (FZ-OV) are approved separately on 2026-10-12; still UNRESOLVED: the OV-5 lab cap and sizes"
+   "reference": "Register §3 FZ-INTENSITY and §5: R2 ceilings (FZ-INTENSITY-R2), application (FZ-INTENSITY-APP), network (FZ-INTENSITY-NET), CPU/network candidates (FZ-INTENSITY-CPUNET), memory (FZ-INTENSITY-MEM) and the OV-4 level (FZ-OV) are approved separately on 2026-10-12, the OV-5 sizes and lab cap (FZ-OV) on 2026-10-13; still UNRESOLVED: the freeze of the PI-8 levels, which is the M5 review's"
   },
   "FZ-PI5": {
    "status": "approved",
@@ -347,13 +347,19 @@
    "status": "approved",
    "approved_by": "Rohit Kumar",
    "date": "2026-10-12",
-   "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply to the pilot decision package, option A of D5; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §5 D5",
+   "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply to the pilot decision package, option A of D5; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §5 D5; OV-5 sizes approved by Rohit Kumar on 2026-10-13 (owner reply \"approve OV-5A\"; Register §5 O-1)",
    "value": {
     "ov4_n_r": 2,
     "ov4_tau": 0.1,
     "ov4_level_pps": 80000,
     "ov5_r_star": 0.9,
-    "ov5_sizes": "set after the D4 working set exists; pending"
+    "ov5_sizes": {
+     "target_memory_max_mib": 2048,
+     "fill_file_mib": 768,
+     "lab_cap_mib": 2560,
+     "reps": 2,
+     "basis": "owner option A, 2026-10-13: CTRL target ~1,080 MiB with the 1 GiB working set resident; with the 768 MiB file resident ~1,848 MiB, utilisation ~0.90 of M, ~200 MiB below M; the lab cap is design §9's 2.5 GiB, unchanged; memory.high unset, swap 0, the file written and fsynced in A's cgroup after tick 60 (AMD-15)"
+    }
    }
   },
   "FZ-Q5": {

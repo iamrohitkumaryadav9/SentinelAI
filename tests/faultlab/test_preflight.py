@@ -664,7 +664,7 @@ class TestStagesAndPrivilege(Base):
     def test_committed_record_holds_the_decision_package_and_keeps_the_rest_pending(self):
         dec, errs = P.parse_decisions((ROOT / "docs/PHASE_1C_FREEZE1_DECISIONS.json").read_bytes())
         self.assertEqual(errs, [])
-        self.assertEqual(P.decision_state("FZ-INTENSITY", dec["FZ-INTENSITY"])[0], False)   # OV-5 still open
+        self.assertEqual(P.decision_state("FZ-INTENSITY", dec["FZ-INTENSITY"])[0], False)   # level freeze still open
         self.assertEqual(P.decision_state("FZ-PI5", dec["FZ-PI5"]), (True, "approved"))      # M-1, 2026-10-12
         self.assertEqual(dec["FZ-INTENSITY-MEM"]["value"]["memory_max_mib_candidates"], [960, 768, 512, 256])
         package = {"FZ-INTENSITY-R2", "FZ-INTENSITY-APP", "FZ-INTENSITY-NET", "FZ-PI7-LOCK", "FZ-WORKSET", "FZ-OV",
@@ -689,6 +689,9 @@ class TestStagesAndPrivilege(Base):
         mem = v("FZ-INTENSITY-MEM")                                        # M-3, M-4, 2026-10-13
         self.assertIn("single severity", mem["grading"])
         self.assertIn("collector is not changed", mem["mem_util_overshoot"])
+        ov5 = v("FZ-OV")["ov5_sizes"]                                      # O-1, 2026-10-13
+        self.assertEqual((ov5["target_memory_max_mib"], ov5["fill_file_mib"], ov5["lab_cap_mib"], ov5["reps"]),
+                         (2048, 768, 2560, 2))
         self.assertEqual(v("FZ-Q2")["collector_mode_m6"], "driver-root")
         self.assertEqual(P.decision_state("FZ-ARRIVALS", dec["FZ-ARRIVALS"]), (True, "approved"))   # A-1
         self.assertNotIn("FZ-ARRIVALS", P.FULL_ONLY)                       # every run uses it, CTRL included
