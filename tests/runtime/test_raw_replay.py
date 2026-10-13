@@ -211,7 +211,8 @@ class TestCommittedTickRuns(unittest.TestCase):
         AMD-27: an M5 pilot run (results/phase1c_m5_pilot/<campaign>/<run>/evidence/ticks.jsonl) is not a runtime run
         directory; its snapshot.json must be rebuilt byte-identically from the committed ticks by the pilot's own
         replay (experiments/faultlab/pilot.py), without M2."""
-        found = sorted(p.parent for p in (ROOT / "results").rglob("ticks.jsonl"))
+        staging = ROOT / "results" / "phase1c_m6"           # M6 staging, ignored by git (replayed via the dataset)
+        found = sorted(p.parent for p in (ROOT / "results").rglob("ticks.jsonl") if staging not in p.parents)
         if IN_GIT:
             tracked = subprocess.run(["git", "-C", str(ROOT), "ls-files", "*ticks.jsonl"], capture_output=True,
                                      text=True, check=True).stdout.split()

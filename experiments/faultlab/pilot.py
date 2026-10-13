@@ -465,8 +465,8 @@ def op_readback(spec: dict, sysr) -> bool:
         return flood_client_pid(sysr) is not None
     if t == "bulk_flow":
         return bulk_client_pid(sysr) is not None
-    if t == "host_stress":
-        return sum(1 for _, c in _support_cmds(sysr) if c[:2] == [L.TASKSET, "-c"]) == len(m)
+    if t == "host_stress":                     # taskset execs the busy loop: match it, and its allowed CPUs
+        return sorted(stress_cpus(sysr)) == sorted(str(c) for c in m)
     if t == "ov5_page_cache_fill":                                     # written in full and fsynced: the writer is gone
         st = sysr.lstat_run(spec["path"])
         return st is not None and st.st_size == int(m) << 20 and len(leaf_pids(sysr, "target")) == 2
@@ -528,6 +528,19 @@ def flood_client_pid(sysr) -> Optional[int]:
 def bulk_client_pid(sysr) -> Optional[int]:
     """The OV-1 iperf3 TCP client."""
     return next((pid for pid, c in _support_cmds(sysr) if c[:2] == [L.IPERF3, "-c"] and "-u" not in c), None)
+
+
+def stress_cpus(sysr) -> list:
+    """Allowed-CPU lists of the OV-3 stress loops: support-leaf processes running exactly the busy loop (taskset has
+    already exec'd it), read from /proc/<pid>/status."""
+    loop = [L.PYTHON, "-I", "-c", L.CONTENDER_CODE]
+    out = []
+    for pid, c in _support_cmds(sysr):
+        if c[:4] == loop:
+            status = sysr.read(f"/proc/{pid}/status") or ""
+            out.append(next((l.split(":", 1)[1].strip() for l in status.splitlines()
+                             if l.startswith("Cpus_allowed_list:")), ""))
+    return out
 
 
 def aux_specs(sc: dict, w: dict) -> list:

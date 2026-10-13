@@ -426,8 +426,10 @@ class SimHost(L.Host):
             if role == "ov5_writer":                          # written in full, fsynced, exited (never in the leaf)
                 path, mib = op[2][-2], int(op[2][-1])
                 s.run[path], s.sizes[path] = ("file", L.LAB_UID, b""), mib << 20
-            if role == "stress":                              # taskset -c <cpu> python3 -I -c <busy loop>
-                s.files[f"/proc/{p.pid}/cmdline"] = "\0".join(op[2][op[2].index(L.TASKSET):]) + "\0"
+            if role == "stress":                              # taskset sets the CPU, then execs the busy loop
+                i = op[2].index(L.TASKSET)
+                s.files[f"/proc/{p.pid}/cmdline"] = "\0".join(op[2][i + 3:]) + "\0"
+                s.files[f"/proc/{p.pid}/status"] = f"Name:\tpython3\nCpus_allowed_list:\t{op[2][i + 2]}\n"
             if role.startswith("flood_") or role == "bulk_client":   # iperf3: argv, affinity and JSON report
                 prog = list(op[2][op[2].index(L.IPERF3):])
                 s.files[f"/proc/{p.pid}/cmdline"] = "\0".join(prog) + "\0"
@@ -3093,6 +3095,23 @@ class TestM6Scenarios(OpFaultFixture):
         rc, h, rep, run = self.m6(self.entry("OV-3"))
         stress = [o[2] for o in h.ops if o[0] == "spawn" and o[1] == "stress"]
         self.assertEqual(stress, [L.stress_argv(19), L.stress_argv(20)])
+        self.assertTrue(rep["checks"]["injection_verified"]["ok"])
+        self.assertEqual(sorted(P.stress_cpus(self.s)), [])                           # gone after cleanup
+
+    def test_stress_readback_needs_the_loop_on_its_cpus(self):
+        spec = {"type": "host_stress", "magnitude": [19, 20]}
+        s = FakeSys()
+        s.dirs.add(L.SUPPORT_DIR)
+        loop = "\0".join([L.PYTHON, "-I", "-c", L.CONTENDER_CODE]) + "\0"
+        for pid, cpus, cmd in ((10, "19", loop), (11, "20", loop), (12, "22", "/usr/bin/iperf3\0-s\0")):
+            s.procs[pid] = f"/{L.LAB}/support"
+            s.files[f"/proc/{pid}/cmdline"], s.files[f"/proc/{pid}/status"] = cmd, f"Cpus_allowed_list:\t{cpus}\n"
+        self.assertTrue(P.op_readback(spec, s))
+        s.files["/proc/11/status"] = "Cpus_allowed_list:\t18-20\n"                 # not pinned as declared
+        self.assertFalse(P.op_readback(spec, s))
+        s.files["/proc/11/status"] = "Cpus_allowed_list:\t20\n"
+        del s.procs[10]                                                              # one loop missing
+        self.assertFalse(P.op_readback(spec, s))
         rc, h, rep, run = self.m6(self.entry("OV-6"))
         wl = [o for o in h.ops if o[0] == "spawn" and o[1] == "workload"][0][2]
         self.assertEqual(wl[-4:], ["--distractor-kind", "slow_request", "--distractor-seed", str(run["seed"])])

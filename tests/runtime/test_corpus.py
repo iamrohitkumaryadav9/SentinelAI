@@ -40,8 +40,13 @@ from r2f_driver import clause_items  # noqa: E402
 IN_GIT = (ROOT / ".git").exists()
 
 
+M6_STAGING = "results/phase1c_m6/"   # FZ-M6-PLAN: ignored by git; the committed form is datasets/faultlab/v1/raw,
+#                                    whose snapshots tests/faultlab/test_m6.py replays byte-identically
+
+
 def discover():
-    found = sorted(str(p.relative_to(ROOT)) for p in (ROOT / "results").rglob("*snapshot.json"))
+    found = sorted(str(p.relative_to(ROOT)) for p in (ROOT / "results").rglob("*snapshot.json")
+                   if not str(p.relative_to(ROOT)).startswith(M6_STAGING))
     if IN_GIT:
         tracked = sorted(subprocess.run(["git", "-C", str(ROOT), "ls-files", "results/*snapshot.json"],
                                         capture_output=True, text=True, check=True).stdout.split())

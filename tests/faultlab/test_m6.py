@@ -152,6 +152,36 @@ class TestGate(Sandbox):
             X.smoke_entry(MATRIX, "OV-11")
 
 
+class TestCommittedDataset(unittest.TestCase):
+    """Every committed M6 run in datasets/faultlab/v1/raw unpacks with every SHA-256 intact, and its snapshot is rebuilt
+    byte-identically from its own ticks by the pilot's replay (the staging copies are not tested: ignored by git)."""
+
+    def test_every_committed_run_replays(self):
+        raw = ROOT / "datasets" / "faultlab" / "v1" / "raw"
+        runs = sorted(d for d in raw.iterdir() if d.name.startswith("M6-")) if raw.is_dir() else []
+        for d in runs:
+            with self.subTest(d.name), tempfile.TemporaryDirectory() as t:
+                out = Path(t) / d.name
+                X.unpack(d, out)
+                self.assertEqual(P.replay(out), (out / "snapshot.json").read_bytes())
+
+    def test_replay_of_a_packed_run(self):
+        with tempfile.TemporaryDirectory() as t:
+            src = Path(t) / "src"
+            (src / "evidence").mkdir(parents=True)
+            for n, b in (("evidence/run.json", b'{"a": 1}\n'), ("evidence/ticks.jsonl", b'{"t": 1}\n'),
+                         ("snapshot.json", b"SNAP")):
+                (src / n).write_bytes(b)
+            files = X.raw_files(src)
+            (Path(t) / "raw").mkdir()
+            for n, b in files.items():
+                (Path(t) / "raw" / n).write_bytes(b)
+            X.unpack(Path(t) / "raw", Path(t) / "out")
+            with mock.patch.object(P, "replay", side_effect=lambda out: (out / "snapshot.json").read_bytes()) as rp:
+                self.assertEqual(P.replay(Path(t) / "out"), b"SNAP")
+            rp.assert_called_once()
+
+
 class TestPin(unittest.TestCase):
     def test_only_dataset_paths_and_m6_documents_may_change_after_the_matrix(self):
         out = {("log",): "abc\n", ("diff",): "datasets/faultlab/v1/raw/M6-s100001/ticks.jsonl.gz\n"
