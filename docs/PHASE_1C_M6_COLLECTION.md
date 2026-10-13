@@ -1,6 +1,6 @@
 # Phase 1C M6 collection
 
-Status: **collecting.** The matrix is committed (`9918b83`, the code pin). Batches 1–2 of 6 collected and packed (68 of 202 runs).
+Status: **collecting.** The matrix is committed (`9918b83`, the code pin). Batches 1–3 of 6 collected and packed (102 of 202 runs).
 
 This document records how the M6 matrix is collected and what each batch produced. It is a runbook and a ledger; it
 validates nothing. M2 is never run on M6 data before M7 locks the parameters and the model (design §6.6).
@@ -70,8 +70,8 @@ stay stable while a batch runs (a login session appearing or ending fails the ho
 | Batch | Campaign | Commit | Runs | Passed | Failed (kept) | Packed in |
 |---|---|---|---|---|---|---|
 | 1 | `20261013T094920Z` | `9918b83` | 34 (+ PI0-1…5) | 34 pipeline; 32 every PI | 0 | `e7473f8` |
-| 2 | `20261013T113304Z` | `e7473f8` | 34 (+ PI0-1…5) | 34 pipeline; 29 every PI | 0 | this commit |
-| 3 | — | — | 34 | — | — | — |
+| 2 | `20261013T113304Z` | `e7473f8` | 34 (+ PI0-1…5) | 34 pipeline; 29 every PI | 0 | `59a85c9` |
+| 3 | `20261013T141328Z` | `59a85c9` | 34 (+ PI0-1…5) | 34 pipeline; 29 every PI | 0 | this commit |
 | 4 | — | — | 34 | — | — | — |
 | 5 | — | — | 34 | — | — | — |
 | 6 | — | — | 32 | — | — | — |
@@ -89,3 +89,8 @@ Same class as M-4 (`mem.util.target`); report-only, the raw ticks are kept, and 
 known kinds: two I3 quota runs on `psi.cpu.some.target` (as in batch 1), two memory runs on `mem.util.target` (M-4),
 and OV-9 on the app features (app metrics off by design). Packed: 34 runs and 5 PI-0 cycles; the dataset is 89 MB, and
 every packed run unpacks with every SHA-256 intact and replays byte-identically.
+
+**Batch 3.** PI-0 5/5; all 34 runs passed their pipeline checks; nothing excluded. Five report-only PI misses, all of
+known kinds: two OV-9 runs (app metrics off by design), one I3 quota run on `psi.cpu.some.target`, two memory runs on
+`mem.util.target` (M-4). Packed: 34 runs and 5 PI-0 cycles; every packed run unpacks with every SHA-256 intact and
+replays byte-identically.
