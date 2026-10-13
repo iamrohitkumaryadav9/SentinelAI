@@ -256,6 +256,44 @@ def iperf_doc(sender=True, packets=80000 * 95, seconds=95.0, lost=0, error=None)
                        "intervals": [], "end": {"streams": [{"udp": s}], "sum": s}}).encode()
 
 
+PI_CHECKS = P.pi_checks                                                  # the real one (fixtures replace it)
+
+
+class FakeReadServer:
+    """The real read_server loop on a thread over pipes; only entering A's netns view is simulated."""
+
+    def __init__(self, view=None, enter=lambda ns: None):
+        import threading
+        r1, w1 = os.pipe()
+        r2, w2 = os.pipe()
+        self.stdin, self.stdout = os.fdopen(w1, "w"), os.fdopen(r2, "r")
+        self._r, self._w = os.fdopen(r1, "r"), os.fdopen(w2, "w")
+        self.pid, self.rc = 4141, None
+        self.view = view or {"ino": 7, "self_ino": 7, "ifs": ["lo", L.IF_A]}
+        self.t = threading.Thread(target=self._serve, args=(enter,), daemon=True)
+        self.t.start()
+
+    def _serve(self, enter):
+        try:
+            self.rc = P.read_server(L.NS_A, self._r, self._w, enter=enter, view=self.view)
+        finally:
+            self._w.close()
+            self._r.close()
+
+    def wait(self, timeout=None):
+        self.t.join(timeout)
+        self.stdout.close()
+        return self.rc
+
+    def kill(self):
+        pass
+
+
+def fake_read_server(argv, stderr):
+    assert argv == P.read_server_argv()
+    return FakeReadServer()
+
+
 class FakeProc:
     _next = 4242
 
@@ -1342,9 +1380,9 @@ class CtrlFixture(Sandboxed):
         target = Target(name="faultlab-ctrl", cgroup_path=L.TARGET_CGROUP_PATH, pids=(1,), cpuset="18",
                         netns_ref="pid:1", ifaces=())
 
-        def resolve(reader, name, path):                   # like collectors.resolve_target: every pid, sorted
+        def resolve(reader, name, path, ifaces=()):        # like collectors.resolve_target: every pid, sorted
             pids = tuple(sorted(p for p, cg in self.s.procs.items() if cg == L.TARGET_CGROUP_PATH))
-            return target.model_copy(update={"pids": pids, "netns_ref": f"pid:{pids[0]}"})
+            return target.model_copy(update={"pids": pids, "netns_ref": f"pid:{pids[0]}", "ifaces": tuple(ifaces)})
 
         def read_metrics(run_id):
             try:
@@ -1391,6 +1429,7 @@ class CtrlFixture(Sandboxed):
         import sentinelai.runtime.ticks as TICKS
         stats = SimpleNamespace(ticks=136, wall_s=135.0, cpu_s=1.0, max_tick_read_s=0.01)
         def collect(target, params, reader, clock, period, ebpf, app):   # drives the app source tick by tick
+            self.reader = reader
             for k in range(P.B_S + P.W_S + 1):
                 app.sample()
                 if k == P.B_S and self.effect is not None:               # the fault acts during W
@@ -1444,9 +1483,10 @@ class CtrlFixture(Sandboxed):
             self.live_sha = json.loads(echo)["config_sha256"]
 
     def run_ctrl(self, **kw):
+        kw.setdefault("reader_spawn", fake_read_server)
         hosts = []
         spawn = dict(self.spawn, **kw.pop("spawn", {}))
-        run = {k: kw.pop(k) for k in ("variant", "child_spawn", "fault") if k in kw}
+        run = {k: kw.pop(k) for k in ("variant", "child_spawn", "fault", "reader_spawn") if k in kw}
         kw.setdefault("workload_files", {"config.json": self.config_bytes()})
         kw.setdefault("on_control", self.on_control)
         with mock.patch.object(P.os, "chown"):
@@ -2896,6 +2936,82 @@ class TestPi6UnderThrottling(unittest.TestCase):
                 self.assertFalse(P.pi_checks(run(t), snap({"throttle.quota_cores"}), ticks)["PI-6"]["ok"])
         self.assertFalse(P.pi_checks(run("cpu_quota"), snap({"throttle.quota_cores", "cpu.util.cpuset"}),
                                      ticks)["PI-6"]["ok"])
+
+
+class TestReadsInTargetNetns(CtrlFixture):
+    """P-7: the collector reads through the read server in A's netns; the target declares A's interface."""
+
+    def test_proxy_returns_exactly_what_the_live_reader_returns(self):
+        from sentinelai.collectors import LiveReader
+        from sentinelai.collectors.errors import Bad, CollectorError, Status
+        srv = FakeReadServer()
+        px, lr = P.ProxyReader(srv), LiveReader()
+        self.assertEqual(px.ready, {"ready": True, "netns": 7, "ifs": ["lo", L.IF_A]})
+        self.assertEqual(px.read("/proc/sys/kernel/ostype"), lr.read("/proc/sys/kernel/ostype"))
+        self.assertEqual(px.readlink("/proc/self/exe"), lr.readlink("/proc/self/exe"))
+        self.assertEqual(px.listdir("/proc/sys/kernel/random"), lr.listdir("/proc/sys/kernel/random"))
+        self.assertEqual(px.read("/proc/no-such-file"), Bad(Status.ABSENT, lr.read("/proc/no-such-file").detail))
+        self.assertIsInstance(px.tc_qdisc("enp0s31f6"), Bad)                       # protected: refused, as live
+        self.assertEqual(px.tc_qdisc("enp0s31f6").status, lr.tc_qdisc("enp0s31f6").status)
+        with self.assertRaises(CollectorError):                                     # outside the allowlist
+            px.read("/etc/passwd")
+        px.close()
+        self.assertEqual(srv.wait(5), 0)
+
+    def test_a_wrong_view_is_refused(self):
+        for view in ({"ino": 7, "self_ino": 8, "ifs": ["lo", L.IF_A]},                  # another netns
+                     {"ino": 7, "self_ino": 7, "ifs": ["docker0", "enp0s31f6", "lo"]},   # the host's view
+                     {"ino": 7, "self_ino": 7, "ifs": ["lo", L.IF_A, "x"]}):              # an extra interface
+            with self.subTest(view), self.assertRaises(L.LabAbort):
+                P.ProxyReader(FakeReadServer(view=view))
+        with self.assertRaises(P.Refused):
+            P.read_server(L.NS_B, None, None, enter=lambda ns: None, view={})
+
+    def test_entering_the_view_order_and_flags(self):
+        calls = []
+
+        class Libc:
+            def __getattr__(self, name):
+                return lambda *a: calls.append((name,) + a) or 0
+        with mock.patch("ctypes.CDLL", return_value=Libc()), mock.patch.object(P.os, "open", return_value=99), \
+                mock.patch.object(P.os, "close"):
+            P.enter_netns_view(L.NS_A)
+        self.assertEqual([c[0] for c in calls], ["unshare", "mount", "setns", "mount", "mount"])
+        self.assertEqual(calls[0][1], P.CLONE_NEWNS)
+        self.assertEqual(calls[1][1:], (None, b"/", None, P.MS_REC | P.MS_SLAVE, None))   # nothing reaches the host
+        self.assertEqual(calls[2][1:], (99, P.CLONE_NEWNET))
+        self.assertEqual(calls[3][1:4], (b"sysfs", b"/sys", b"sysfs"))
+        self.assertEqual(calls[4][1:4], (b"cgroup2", b"/sys/fs/cgroup", b"cgroup2"))
+
+        tried = []
+
+        class Failing:
+            def __getattr__(self, name):
+                return lambda *a: tried.append(name) or -1
+        with mock.patch("ctypes.CDLL", return_value=Failing()), mock.patch.object(P.os, "open", return_value=99), \
+                mock.patch.object(P.os, "close"), self.assertRaises(OSError):
+            P.enter_netns_view(L.NS_A)
+        self.assertEqual(tried, ["unshare"])                                        # fail closed at the first step
+
+    def test_root_run_declares_a_interface_and_counts_the_server(self):
+        rc, h = self.run_ctrl()
+        self.assertEqual(rc, 0)
+        run = json.loads((self.out / "evidence" / "run.json").read_text())
+        self.assertEqual(run["target_doc"]["ifaces"], [L.IF_A])
+        self.assertTrue(run["read_server"]["ready"]["ready"])
+        self.assertEqual(run["exit_codes"]["read_server"], 0)
+        self.assertEqual(run["collection"]["read_server_cpu_s"], 0.5)
+        self.assertIsInstance(self.reader, P.ProxyReader)                           # every read in A's netns
+        ticks = [SimpleNamespace(obs={"app": {}})] * 136
+        snap = {"measurements": [{"feature_id": "app.latency_ms", "coverage": 1.0, "aggregation": "P99",
+                                  "quality": "OK"}], "missing_measurements": []}
+        pi6 = PI_CHECKS({"collection": {"cpu_s": 1.0, "loader_cpu_s": 0.5, "read_server_cpu_s": 1.2,
+                                        "wall_s": 135.0}}, snap, ticks)["PI-6"]
+        self.assertAlmostEqual(pi6["collector_cpu_core"], 2.7 / 135.0)                # the server's CPU counts
+
+    def test_read_server_cli_needs_root(self):
+        with mock.patch.object(P.os, "geteuid", return_value=1000), self.assertRaises(P.Refused):
+            P.main(["read-server", "--netns", L.NS_A])
 
 
 class TestTargetProcesses(unittest.TestCase):

@@ -887,6 +887,117 @@ def spawn_collector(argv, cwd: Path, stderr):
                             cwd=str(cwd), close_fds=True, start_new_session=True, shell=False)
 
 
+# ------------------------------------------------------------------------------------------ reads in A's netns (P-7)
+# The collector attributes /sys/class/net and tc only when the reading process is in the target's network namespace
+# (contract §4.3, M3A-C1). The read server is the driver's own root child: a private mount namespace (a slave, so
+# nothing propagates to the host), A's network namespace, a sysfs mounted for it on /sys and cgroup2 on
+# /sys/fs/cgroup. It answers every read of the collector with the frozen LiveReader; the driver's ProxyReader
+# forwards them. Mounts exist only inside the child and vanish with it.
+CLONE_NEWNS, CLONE_NEWNET, MS_REC, MS_SLAVE = 0x00020000, 0x40000000, 0x4000, 0x80000
+READ_SERVER_TIMEOUT_S = 10.0
+
+
+def enter_netns_view(ns: str) -> None:
+    import ctypes
+    libc = ctypes.CDLL(None, use_errno=True)
+
+    def call(rc, what):
+        if rc != 0:
+            raise OSError(ctypes.get_errno(), what)
+    call(libc.unshare(CLONE_NEWNS), "unshare(CLONE_NEWNS)")
+    call(libc.mount(None, b"/", None, MS_REC | MS_SLAVE, None), "make / a recursive slave")
+    fd = os.open(f"{L.NETNS_DIR}/{ns}", os.O_RDONLY | os.O_CLOEXEC)
+    try:
+        call(libc.setns(fd, CLONE_NEWNET), f"setns {ns}")
+    finally:
+        os.close(fd)
+    call(libc.mount(b"sysfs", b"/sys", b"sysfs", 0, None), "mount sysfs for the netns")
+    call(libc.mount(b"cgroup2", b"/sys/fs/cgroup", b"cgroup2", 0, None), "mount cgroup2")
+
+
+def read_server(ns: str, rfile, wfile, enter=enter_netns_view, view=None) -> int:
+    """Enter the netns view, verify it (namespace inode is A's; /sys/class/net holds exactly lo and A's interface),
+    then serve {"m": read|listdir|readlink|tc_qdisc, "a": arg} lines until EOF."""
+    from sentinelai.collectors import LiveReader
+    from sentinelai.collectors.errors import Bad, CollectorError
+    if ns != L.NS_A:
+        refuse(f"read server only for {L.NS_A}")
+    want = os.stat(f"{L.NETNS_DIR}/{ns}").st_ino if view is None else view["ino"]
+    enter(ns)
+    got = os.stat("/proc/self/ns/net").st_ino if view is None else view["self_ino"]
+    ifs = sorted(os.listdir("/sys/class/net")) if view is None else view["ifs"]
+    if got != want or ifs != sorted(["lo", L.IF_A]):
+        wfile.write(json.dumps({"ready": False, "netns": got, "want": want, "ifs": ifs}) + "\n")
+        wfile.flush()
+        return 3
+    wfile.write(json.dumps({"ready": True, "netns": got, "ifs": ifs}) + "\n")
+    wfile.flush()
+    r = LiveReader()
+    for line in rfile:
+        q = json.loads(line)
+        try:
+            v = getattr(r, {"read": "read", "listdir": "listdir", "readlink": "readlink", "tc_qdisc": "tc_qdisc"}[q["m"]])(
+                q["a"])
+            out = {"bad": [v.status.value, v.detail]} if isinstance(v, Bad) else {"v": v}
+        except CollectorError as exc:
+            out = {"err": str(exc)}
+        wfile.write(json.dumps(out) + "\n")
+        wfile.flush()
+    return 0
+
+
+class ProxyReader:
+    """The collector's reader, served by the read server in A's netns (one JSON line per call)."""
+
+    def __init__(self, proc, timeout_s: float = READ_SERVER_TIMEOUT_S):
+        self.proc, self.ready = proc, json.loads(proc.stdout.readline() or "null")
+        if not (isinstance(self.ready, dict) and self.ready.get("ready") is True):
+            raise L.LabAbort(f"read server in {L.NS_A} not ready: {self.ready}")
+
+    def _call(self, m, a):
+        from sentinelai.collectors.errors import Bad, CollectorError, Status
+        self.proc.stdin.write(json.dumps({"m": m, "a": a}) + "\n")
+        self.proc.stdin.flush()
+        line = self.proc.stdout.readline()
+        if not line:
+            raise L.LabAbort("read server ended")
+        out = json.loads(line)
+        if "err" in out:
+            raise CollectorError(out["err"])
+        if "bad" in out:
+            return Bad(Status(out["bad"][0]), out["bad"][1])
+        return out["v"]
+
+    def read(self, path):
+        return self._call("read", path)
+
+    def listdir(self, path):
+        return self._call("listdir", path)
+
+    def readlink(self, path):
+        return self._call("readlink", path)
+
+    def tc_qdisc(self, ifname):
+        return self._call("tc_qdisc", ifname)
+
+    def close(self):
+        try:
+            self.proc.stdin.close()
+        except OSError:
+            pass
+
+
+def read_server_argv() -> list:
+    return [sys.executable, "-I", str(Path(__file__).resolve()), "read-server", "--netns", L.NS_A]
+
+
+def spawn_read_server(argv, stderr):
+    """The driver's own root child (like the eBPF loader, not a lab role), on the driver's CPUs."""
+    return subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=stderr, text=True,
+                            env={"PATH": "/usr/sbin:/usr/bin:/sbin:/bin", "LC_ALL": "C"}, close_fds=True,
+                            start_new_session=True, shell=False)
+
+
 def collect_child(run_id: str, out_dir: Path) -> int:
     """Runs as the lab uid: resolve the target, read its netns link, collect M3A + app over B + W (no eBPF: the loader
     needs root), and write child_ticks.jsonl and child_stats.json into out_dir. Refuses with any privilege."""
@@ -915,7 +1026,7 @@ def collect_child(run_id: str, out_dir: Path) -> int:
 
 
 def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host_cls=None,
-         sleep=time.sleep, variant: str = "ctrl", child_spawn=None, fault=None) -> int:
+         sleep=time.sleep, variant: str = "ctrl", child_spawn=None, fault=None, reader_spawn=None) -> int:
     from sentinelai.collectors import LiveReader, SystemClock, build_snapshot, collect, resolve_target
     from sentinelai.collectors import app as appmod
     from sentinelai.diagnostic.contract import Target, canonical_bytes
@@ -967,7 +1078,7 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
     if not R["preflight"]["ok"] or not base["bpf_available"]:
         write_new(ev / "run.json", dump(R))
         refuse(f"pre-setup checks failed: {R['preflight']}; bpf_available={base['bpf_available']}")
-    procs, loader, child, state, injector, hook = {}, None, None, {}, None, None
+    procs, loader, child, state, injector, hook, proxy = {}, None, None, {}, None, None, None
     read_app = (lambda: appmod.read_metrics(run_id)) if writer else (lambda: None)
     old = {s: signal.signal(s, on_signal) for s in (signal.SIGINT, signal.SIGTERM)}
     try:
@@ -990,7 +1101,8 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
         tpids = leaf_pids(sysr, "target")
         wpid, spid = target_processes(sysr, tpids)                     # the workload and its scanner (FZ-WORKSET M-2)
         R["target_processes"] = {"workload": wpid, "scanner": spid}
-        target = resolve_target(LiveReader(), "faultlab-ctrl", L.TARGET_CGROUP_PATH)
+        root = v["collector"] == "root"                                # P-7: A's interface, read in A's netns
+        target = resolve_target(LiveReader(), "faultlab-ctrl", L.TARGET_CGROUP_PATH, (L.IF_A,) if root else ())
         ns_a = sysr.netns_inode(L.NS_A)
         R["target"] = {"pids": list(target.pids), "cpuset": target.cpuset,
                        "netns_inode": sysr.pid_netns_inode(wpid), "lab_a_inode": ns_a}
@@ -1033,9 +1145,13 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
                               memory_guard(sysr) if (spec or {}).get("type") in ("memory_max", "ov5_page_cache_fill")
                               else None,
                               flood_observer(sysr) if flood else ov5_observer(sysr, spec["path"]) if ov5 else None)
+            rs = (reader_spawn or spawn_read_server)(read_server_argv(), (out / "logs" / "read_server.stderr").open("wb"))
+            proxy = ProxyReader(rs)
+            R["read_server"] = {"pid": rs.pid, "ready": proxy.ready}
             evt("collect_start")
-            ticks, stats = collect(target, params, LiveReader(), SystemClock(), PERIOD_S, LoaderTicks(loader), hook)
+            ticks, stats = collect(target, params, proxy, SystemClock(), PERIOD_S, LoaderTicks(loader), hook)
             evt("collect_end")
+            R["read_server"]["cpu_s"] = proc_cpu_s(rs.pid)
             if injector is not None:
                 injector.join(T_CAP_S + 1)
                 R["injection"] = dict(injector.record)
@@ -1050,7 +1166,8 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
                         raise L.LabAbort("OV-5 writer did not finish") from None
             R["w_docs"] = {k: {"mono_ns": t, "valid": isinstance(b, bytes)} for k, (t, b) in hook.docs.items()}
             R["collection"] = {"ticks": stats.ticks, "wall_s": stats.wall_s, "cpu_s": stats.cpu_s,
-                               "max_tick_read_s": stats.max_tick_read_s, "loader_cpu_s": proc_cpu_s(loader.proc.pid)}
+                               "max_tick_read_s": stats.max_tick_read_s, "loader_cpu_s": proc_cpu_s(loader.proc.pid),
+                               "read_server_cpu_s": R["read_server"]["cpu_s"]}
         elif unpriv:
             evt("collect_start")
             child = (child_spawn or spawn_collector)(collector_argv(run_id, out / COLLECTOR_DIR), out / COLLECTOR_DIR,
@@ -1140,6 +1257,13 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
             signal.signal(s, signal.SIG_IGN)
 
         def release():
+            if proxy is not None:                                       # EOF ends the read server; then reap it
+                proxy.close()
+                try:
+                    R["exit_codes"]["read_server"] = proxy.proc.wait(5)
+                except subprocess.TimeoutExpired:
+                    proxy.proc.kill()
+                    R["exit_codes"]["read_server"] = proxy.proc.wait(5)
             if child is not None and child.poll() is None:            # the driver's own child, never a host process
                 child.kill()
                 R["exit_codes"]["collector"] = child.wait(5)
@@ -1433,7 +1557,8 @@ def pi_checks(run, snap, ticks):
                    uid=u.get("uid"), cap_eff=u.get("cap_eff"))
         pi1["ok"] = pi1["ok"] and pi1["netns_verified"]
     col = run.get("collection") or {}
-    cpu = (col.get("cpu_s", 0) + col.get("loader_cpu_s", 0)) / col["wall_s"] if col.get("wall_s") else None
+    cpu = (col.get("cpu_s", 0) + col.get("loader_cpu_s", 0) + col.get("read_server_cpu_s", 0)) / col["wall_s"] \
+        if col.get("wall_s") else None
     post = set(post_fault_only((run.get("fault") or {}).get("type")))    # R-5: listed, not scored
     low = sorted({m["feature_id"] for m in ms if m["coverage"] < COVERAGE_MIN} - post)
     pi6 = {"ok": cpu is not None and cpu <= CPU_BUDGET_CORE and not low, "collector_cpu_core": cpu,
@@ -1717,10 +1842,16 @@ def main(argv=None) -> int:
     sub.add_parser("pairs").add_argument("campaign_dir")
     sub.add_parser("levels").add_argument("campaign_dir")
     sub.add_parser("cleanup").add_argument("dir")
+    rs = sub.add_parser("read-server")                            # internal: the root driver's reads in A's netns
+    rs.add_argument("--netns", required=True)
     child = sub.add_parser("collect-child")                       # internal: started by pi1u as the lab uid
     child.add_argument("--run-id", required=True)
     child.add_argument("--out-dir", required=True)
     a = ap.parse_args(argv)
+    if a.cmd == "read-server":
+        if os.geteuid() != 0:
+            refuse("the read server runs as the root driver's child")
+        return read_server(a.netns, sys.stdin, sys.stdout)
     if a.cmd == "collect-child":
         if not L.RUN_ID.fullmatch(a.run_id) or not a.run_id.startswith("PI1U-"):
             refuse(f"collector child run id {a.run_id!r} not allowed")
