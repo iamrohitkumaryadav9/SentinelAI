@@ -25,6 +25,7 @@ Evidence lives in `results/phase1c_m5_pilot/<campaign>/<run>/` and is committed 
 | `20261012T030504Z` | `7f6eac7` | PI0-1…5, CTRL-900001 | PI-0 5/5 passed. CTRL-900001 **FAILED** (`app_features`, §3). |
 | `20261012T040045Z` | `af2a4e7` | PI0-1…5, CTRL-900002…900005 | PI-0 5/5 passed. CTRL 4/4 passed. |
 | `20261012T045417Z` | `29d652f` | PI0-1…5; CTRL, PI6OFF, INSTOFF at seeds 900006 and 900007; PI1U-900008, PI1U-900009 | PI-0 5/5 passed. All 8 runs passed (§3a). |
+| `20261012T175020Z` | `c4e10d8` | PI0-1…5; CTRL-900180…900183; one re-check per earlier fault PI8-900340…900348; PI8-900360…900367 (`memory.max` 960 / 768 / 512 / 256 MiB, 2 each) | All 26 passed their pipeline checks (§3g); the separate scanner process removes the stall. PI-6 missed in PI8-900344 (throttle features, known) and in 4 memory runs (`mem.util.target` coverage 0.978–0.989). Memory effect saturated at every level. |
 | `20261012T165705Z` | `c874aa4` | PI0-1…5; CTRL-900170, 900171; PI8-900320 (`memory.max` 960 MiB) | PI-0 5/5, CTRL 2/2 passed. **PI8-900320 FAILED** (app features, client/server reconciliation): the workload stalled under memory pressure (§3f). Campaign closed; an owner decision is pending. |
 | `20261012T141516Z` | `dc5b3d5` | PI0-1…5; CTRL-900160…900163; PI8-900240…900271 (network faults) | All 41 passed their pipeline checks (§3e). Every network fault has an effect at every candidate. |
 | `20261012T133839Z` | `a0b0aaa` | PI0-1…5; CTRL-900150…900153; PI8-900200 (loss 0.5 % on A egress) | PI-0 5/5 and CTRL 4/4 passed. **PI8-900200 FAILED** across-R reconciliation again: segments are not packets under retransmission (§3d note). Fixed in the next commit; the network runs moved to a new campaign. |
@@ -316,6 +317,44 @@ process, so its target could not stall this way. The stall is an artifact of the
 mechanism the class claims (requests slowed by memory pressure). The run is kept as failed; the remaining memory runs
 were not started.
 
+## 3g. Scanner as a separate process; memory pressure (campaign `20261012T175020Z`, `c4e10d8`)
+
+The owner chose to run the FZ-WORKSET scanner as its own process (M-2, `0f9fd10`). The workload forks it before the
+listener opens; the pilot aborts unless the target holds exactly the workload and its child (`run.json`
+`target_processes`).
+
+- **PI-0 5/5 and CTRL 4/4 passed** with the scanner process: 136/136 valid app ticks, PI-1 coverage 1.0, collector
+  CPU 0.0022–0.0024 core. CTRL W p99: latency 12.8 ms, queue wait 3.2 ms, dependency latency 6.4 ms (bucket bounds),
+  memory PSI and refaults 0.
+- **Re-checks, one run per earlier fault at a mid candidate: all 9 passed their pipeline checks**, with injection
+  verified and ground truth met in each. W p99 latency: pool P′ 1 25.6 ms; lock hold 2,000 µs 25.6 ms (lock wait
+  12.8 ms); dependency delay 7 ms 25.6 ms; contention 100 51.2 ms; quota 10,000 µs 1,638 ms; local loss 1 %
+  409.6 ms; police 450 kbit/s 1,638 ms; path loss 1 % 1,638 ms; congestion 500 kbit/s 819 ms. PI8-900344 (quota)
+  again misses PI-6 coverage on `throttle.quota_cores` and `throttle.quota_saturation` (§6, known).
+- **Memory, all 8 runs passed their pipeline checks; the stall of §3f is gone.** Every rep met ground truth and
+  PI-5: the limit was hit (85,000–87,000 `max` events), refaults and memory PSI were above the CTRL maximum (0), no
+  OOM kills and no swap. `levels` reports every candidate established 2 of 2 (I1 960, I3 256 MiB, I2 496 MiB
+  interpolated, needs confirmation).
+
+| `memory.max` (MiB) | Runs | Refaults in W | Memory PSI some (s) | W p99 latency (ms) |
+|---|---|---|---|---|
+| 960 | 900360, 900361 | 5.46 M, 5.45 M | 3.07, 3.14 | 25.6, 25.6 |
+| 768 | 900362, 900363 | 5.45 M, 5.49 M | 3.19, 3.17 | 25.6, 25.6 |
+| 512 | 900364, 900365 | 5.46 M, 5.46 M | 3.12, 3.16 | 12.8, 25.6 |
+| 256 | 900366, 900367 | 5.45 M, 5.48 M | 3.10, 3.15 | 12.8, 25.6 |
+
+**Findings for the M5 review (report-only, nothing changed):**
+- **The memory effect is saturated, not graded.** All four candidates sit below the 1 GiB file, so the scanner
+  re-reads the whole file every pass at any limit; refaults and PSI are the same from 960 to 256 MiB. The kernel
+  effect is real, but the candidates do not order by severity, and the service's latency moves by at most one
+  histogram bucket. Grading would need candidates around the working set (above and below 1,040 MiB) or a different
+  working-set size; that is an FZ-INTENSITY-MEM / FZ-WORKSET question for the owner.
+- **`mem.util.target` loses ticks at the limit.** In PI8-900361, 900366 and 900367, 1 or 2 of 90 ticks read
+  `memory.current` a few pages above `memory.max` (ratio 1.000004–1.0004). The kernel charges before it reclaims,
+  so this is a real reading, but the normaliser rejects any fraction above 1 (`normalize._in_range`). Coverage
+  fell to 0.978–0.989, below PI-6's 0.99. The collector is frozen code; whether to cap the ratio at 1.0, accept the
+  overshoot, or keep the gap is an owner decision.
+
 ## 4. PI verdicts so far
 
 | PI | Status | Basis |
@@ -329,7 +368,9 @@ were not started.
 | PI-8 (CPU) | Contention I1 50 / I2 141 / I3 400; throttling 0.20 / 0.122 / 0.075 core; effect in every rep (§3d). Not frozen. | FZ-PI8 |
 | PI-8 (network) | Local loss 0.5 / 1 / 5 %; police 550 / 407 / 300 kbit/s; path loss 0.5 / 1 / 5 %; congestion 600 / 439 / 320 kbit/s (thin retransmission signal below 600) (§3e). Not frozen. | FZ-PI8 |
 | PI-2 | **pass**: path loss shows A retransmissions above the CTRL maximum while A's local drop counters stay 0, in every rep (§3e) | design §6.3 |
-| PI-2, PI-3, PI-5, PI-8 (other classes), OV-4, OV-5 | not run | §6 |
+| PI-8 (memory) | Every candidate established 2 of 2, but the effect is saturated (same refaults and PSI at 960…256 MiB) (§3g). Not frozen. | FZ-PI8 |
+| PI-5 | **met** in all 8 memory runs: PSI above CTRL, no OOM kills, swap 0 (§3g) | FZ-PI5 |
+| PI-3, OV-4, OV-5 | not run | §6 |
 
 ## 5. Evidence and integrity (AMD-27)
 
@@ -359,9 +400,12 @@ Re-check from a clean checkout:
 
 - **Application pool shrink and lock hold (§3c): resolved.** The owner chose Poisson arrivals (FZ-ARRIVALS); §3d
   shows all three mechanisms producing waiting.
-- **Memory working-set scanner (§3f), new.** The in-process scanner stalls the whole workload under memory pressure.
-  An owner choice is needed on the scanner's process structure or access method before the memory class can be
-  piloted.
+- **Memory working-set scanner (§3f): resolved.** The owner chose a separate scanner process (M-2); §3g shows no
+  stall.
+- **Memory grading (§3g), new, for the M5 review:** the candidates saturate; candidates around the working set or a
+  different working-set size would be needed for graded levels.
+- **`mem.util.target` above 1 at the limit (§3g), new, for the M5 review:** the frozen normaliser rejects the
+  kernel's brief overshoot, which costs PI-6 coverage in memory runs.
 - **PI-6 under throttling (§3d), for the M5 review:** whether features whose source exists only after the fault
   starts count towards PI-6 coverage.
 
