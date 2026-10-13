@@ -1,6 +1,6 @@
 # Phase 1C M6 collection
 
-Status: **collecting.** The matrix is committed (`9918b83`, the code pin). Batch 1 of 6 collected and packed.
+Status: **collecting.** The matrix is committed (`9918b83`, the code pin). Batches 1–2 of 6 collected and packed (68 of 202 runs).
 
 This document records how the M6 matrix is collected and what each batch produced. It is a runbook and a ledger; it
 validates nothing. M2 is never run on M6 data before M7 locks the parameters and the model (design §6.6).
@@ -69,8 +69,8 @@ stay stable while a batch runs (a login session appearing or ending fails the ho
 
 | Batch | Campaign | Commit | Runs | Passed | Failed (kept) | Packed in |
 |---|---|---|---|---|---|---|
-| 1 | `20261013T094920Z` | `9918b83` | 34 (+ PI0-1…5) | 34 pipeline; 32 every PI | 0 | this commit |
-| 2 | — | — | 34 | — | — | — |
+| 1 | `20261013T094920Z` | `9918b83` | 34 (+ PI0-1…5) | 34 pipeline; 32 every PI | 0 | `e7473f8` |
+| 2 | `20261013T113304Z` | `e7473f8` | 34 (+ PI0-1…5) | 34 pipeline; 29 every PI | 0 | this commit |
 | 3 | — | — | 34 | — | — | — |
 | 4 | — | — | 34 | — | — | — |
 | 5 | — | — | 34 | — | — | — |
@@ -84,3 +84,8 @@ target is CPU-stalled almost all of the time there, and in 1–2 of the 90 W tic
 longer than the tick (fractions 1.000048, 1.000133, 1.000021), which the frozen normaliser rejects as a fraction above 1.
 Same class as M-4 (`mem.util.target`); report-only, the raw ticks are kept, and it is listed for M7. Packed: 34 runs and
 5 PI-0 cycles, 44 MB; every packed run unpacks with every SHA-256 intact and its snapshot replays byte-identically.
+
+**Batch 2.** PI-0 5/5; all 34 runs passed their pipeline checks; nothing excluded. Five report-only PI misses, all of
+known kinds: two I3 quota runs on `psi.cpu.some.target` (as in batch 1), two memory runs on `mem.util.target` (M-4),
+and OV-9 on the app features (app metrics off by design). Packed: 34 runs and 5 PI-0 cycles; the dataset is 89 MB, and
+every packed run unpacks with every SHA-256 intact and replays byte-identically.
