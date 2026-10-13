@@ -68,6 +68,7 @@ RUN_LAB = "/run/sentinelai-lab"
 APP_ROOT = f"{RUN_LAB}/app/"
 WS_ROOT = "/var/tmp/sentinelai-lab"            # FZ-WORKSET: the workload's file-backed working set (ext4, not tmpfs)
 WS_FILE = "ws.bin"
+OV5_FILE = "ov5.bin"                           # OV-5 (AMD-15): the fresh page-cache file, next to the working set
 SCRATCH_ROOTS = (RUN_LAB, WS_ROOT)             # the only places the lab creates files outside cgroupfs
 LAB_UID = LAB_GID = C.LAB_UID                 # 1000
 PYTHON = C.PYTHON                             # /usr/bin/python3 (workload and load generator: standard library)
@@ -287,6 +288,35 @@ def flood_ops(pps: int, seconds: int) -> List[tuple]:
     return [("spawn", "flood_client", flood_client_argv(pps, seconds))]
 
 
+# OV-5 (AMD-15, FZ-OV O-1): A's memory.max = M for the whole run; after the B/W boundary a writer in A's cgroup
+# writes and fsyncs a fresh file of the approved size, then exits; its pages stay in A's page cache
+OV5_WRITER_CODE = (
+    "import os,sys\n"
+    "p,n=sys.argv[1],int(sys.argv[2])\n"
+    "fd=os.open(p,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW|os.O_CLOEXEC,0o600)\n"
+    "b=bytes([0xa5])*(1<<20)\n"
+    "for _ in range(n):\n"
+    " m=memoryview(b)\n"
+    " while m:m=m[os.write(fd,m):]\n"
+    "os.fsync(fd);os.close(fd)\n")
+
+
+def ov5_path(run_id: str) -> str:
+    return f"{ws_dir(run_id)}/{OV5_FILE}"
+
+
+def ov5_writer_argv(run_id: str, mib: int) -> List[str]:
+    return placed("target", NS_A, [PYTHON, "-I", "-c", OV5_WRITER_CODE, ov5_path(run_id), str(int(mib))])
+
+
+def ov5_setup_ops(memory_max_mib: int) -> List[tuple]:
+    return memory_ops(memory_max_mib)
+
+
+def ov5_ops(run_id: str, mib: int) -> List[tuple]:
+    return [("spawn", "ov5_writer", ov5_writer_argv(run_id, mib))]
+
+
 def contender_argv() -> List[str]:
     return placed("contender", NS_B, [PYTHON, "-I", "-c", CONTENDER_CODE])
 
@@ -377,6 +407,39 @@ class Sys(C.Sys):
                 "\x00" in p:
             raise LabRefused(f"not under {' or '.join(SCRATCH_ROOTS)}: {p!r}")
         return p
+
+    def residency(self, path) -> Optional[dict]:
+        """Page-cache residency of a file under a lab scratch root (mmap PROT_READ + mincore: no page is read or
+        faulted in), None if the file is absent; read-only."""
+        import ctypes
+        import mmap as _mmap
+        try:
+            fd = os.open(self._run_lab_path(path), os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+        except FileNotFoundError:
+            return None
+        try:
+            size = os.fstat(fd).st_size
+            page = _mmap.PAGESIZE
+            pages = (size + page - 1) // page
+            if pages == 0:
+                return {"size": 0, "pages": 0, "resident": 0}
+            libc = ctypes.CDLL(None, use_errno=True)
+            libc.mmap.restype, libc.mmap.argtypes = ctypes.c_void_p, (ctypes.c_void_p, ctypes.c_size_t, ctypes.c_int,
+                                                                      ctypes.c_int, ctypes.c_int, ctypes.c_long)
+            libc.mincore.argtypes = (ctypes.c_void_p, ctypes.c_size_t, ctypes.c_void_p)
+            libc.munmap.argtypes = (ctypes.c_void_p, ctypes.c_size_t)
+            addr = libc.mmap(None, size, _mmap.PROT_READ, _mmap.MAP_SHARED, fd, 0)
+            if addr in (None, ctypes.c_void_p(-1).value):
+                return {"size": size, "pages": pages, "resident": None}
+            try:
+                vec = (ctypes.c_ubyte * pages)()
+                if libc.mincore(addr, size, vec) != 0:
+                    return {"size": size, "pages": pages, "resident": None}
+                return {"size": size, "pages": pages, "resident": sum(b & 1 for b in vec)}
+            finally:
+                libc.munmap(addr, size)
+        finally:
+            os.close(fd)
 
     def lstat_run(self, path):
         """os.lstat of a path under a lab scratch root, None if absent (read-only)."""
@@ -663,7 +726,7 @@ class Plan:
         for op in fault_ops:                                        # the run's declared fault, exactly
             if op[0] == "write" and op[1] in (QUOTA_PATH, CONTENDER_WEIGHT_PATH, MEMORY_PATH):
                 self.writes.add((op[1], op[2]))
-            elif op[0] == "spawn" and op[1] in ("contender", "flood_client"):
+            elif op[0] == "spawn" and op[1] in ("contender", "flood_client", "ov5_writer"):
                 spawns = list(spawns) + [(op[1], op[2])]
             elif op[0] != "tc":
                 raise LabRefused(f"not a fault operation: {op!r}")
@@ -718,7 +781,7 @@ class Plan:
             parent = os.path.dirname(op[1]) if len(op) == 2 and isinstance(op[1], str) else ""
             if len(op) != 2 or self.run_id is None or not (
                     (parent == run_dir(self.run_id) and (name in RUN_FILES or TMP_FILE.fullmatch(name)))
-                    or (parent == ws_dir(self.run_id) and name == WS_FILE)):
+                    or (parent == ws_dir(self.run_id) and name in (WS_FILE, OV5_FILE))):
                 raise LabRefused(f"unlink outside the run files: {op!r}")
         elif kind == "spawn":
             if len(op) != 3 or (op[1], tuple(op[2])) not in self.spawns:
@@ -911,9 +974,9 @@ def cleanup(host: Host, sysr, entries: List[dict], run_id: Optional[str], wait_s
             else:
                 errors.append(f"unexpected file in the run directory (kept): {name!r}")
     if run_id is not None and ws_dir(run_id) in st["dirs"]:
-        for name in sysr.listdir_run(ws_dir(run_id)):     # only the working-set file; anything else stays
+        for name in sysr.listdir_run(ws_dir(run_id)):     # only the working-set and OV-5 files; anything else stays
             path = f"{ws_dir(run_id)}/{name}"
-            if name == WS_FILE:
+            if name in (WS_FILE, OV5_FILE):
                 step(f"unlink {name}", lambda path=path: host.apply(("unlink_run", path)))
             else:
                 errors.append(f"unexpected file in the working-set directory (kept): {name!r}")

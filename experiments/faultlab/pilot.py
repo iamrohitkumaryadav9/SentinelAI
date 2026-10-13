@@ -33,8 +33,8 @@ Values come only from approved decisions (docs/PHASE_1C_FREEZE1_DECISIONS.json);
 never invoked on pilot data (design §13 decision 7). Lab operations go through lab.Host only. Faults (pi8): the
 application faults (FZ-INTENSITY-APP) and the CPU and network faults (FZ-INTENSITY-CPUNET, refused until approved);
 memory pressure (memory_max: FZ-INTENSITY-MEM, FZ-PI5) with per-tick MemAvailable / OOM aborts; the OV-4
-feasibility flood (ov4_udp_flood: FZ-OV, AMD-13). The OV-5 generator (FZ-INTENSITY OV-5 sizes pending) is not
-implemented here.
+feasibility flood (ov4_udp_flood: FZ-OV, AMD-13); the OV-5 page-cache fill (ov5_page_cache_fill: FZ-OV O-1,
+AMD-15).
 """
 import argparse
 import hashlib
@@ -370,21 +370,24 @@ OP_FAULTS = {"cpu_contender": ("contender_weight_candidates", "higher", "cpu_con
              "netem_loss_r_egress": ("loss_r_pct_candidates", "higher", "tcp_retransmissions"),
              "netem_rate_r": ("congestion_kbit_candidates", "lower", "tcp_retransmissions"),
              "memory_max": ("memory_max_mib_candidates", "lower", "memory_pressure"),
-             "ov4_udp_flood": ("ov4_level_pps", "higher", "ov4_softirq_below_overload")}   # AMD-13 feasibility
-OP_DECISION = {"memory_max": "FZ-INTENSITY-MEM", "ov4_udp_flood": "FZ-OV"}
+             "ov4_udp_flood": ("ov4_level_pps", "higher", "ov4_softirq_below_overload"),   # AMD-13 feasibility
+             "ov5_page_cache_fill": ("ov5_sizes", "higher", "ov5_high_memory_no_pressure")}  # AMD-15 F1
+OP_DECISION = {"memory_max": "FZ-INTENSITY-MEM", "ov4_udp_flood": "FZ-OV", "ov5_page_cache_fill": "FZ-OV"}
 FLOOD_S = W_S + 5                                  # the flood outlives W ([60, 150) by read-back, AMD-13 (c))
 MEM_AVAILABLE_MIN_KB, SWAP_PAGES_MAX = 4 * 1024 * 1024, 25.0     # memory-run abort; PI-5 swap bound (FZ-PI5)
 QUOTA_TOLERANCE = 1.05                       # usage <= quota x 1.05 (window edges are not CFS period edges; ENG)
 THROTTLE_RATIO_MIN, IDLE_MAX = 0.9, 0.05     # design §5.8 (R2-D GT, R2-C G2/G3/G6)
 
 
-def op_fault_spec(fault: str, magnitude, decisions=DECISIONS) -> dict:
+def op_fault_spec(fault: str, magnitude, decisions=DECISIONS, run_id: Optional[str] = None) -> dict:
     """A CPU or network fault at an approved candidate (FZ-INTENSITY-CPUNET), re-checked against the approved
     ceilings and floors (FZ-INTENSITY-R2, FZ-INTENSITY-NET); its exact lab operations; refuses anything else."""
     key, stronger, cls = OP_FAULTS[fault]
     decision = OP_DECISION.get(fault, "FZ-INTENSITY-CPUNET")
     cand = approved_value(decision, decisions)
-    cands = cand[key] if isinstance(cand[key], list) else [cand[key]]      # FZ-OV: the one preregistered OV-4 level
+    ov5 = cand["ov5_sizes"] if fault == "ov5_page_cache_fill" else None       # FZ-OV O-1: M, file size, lab cap
+    cands = [ov5["fill_file_mib"]] if ov5 else cand[key] if isinstance(cand[key], list) else [cand[key]]   # FZ-OV:
+    # the one preregistered OV-4 level and OV-5 file size
     r2, net = approved_value("FZ-INTENSITY-R2", decisions), approved_value("FZ-INTENSITY-NET", decisions)
     if isinstance(magnitude, bool) or not isinstance(magnitude, (int, float)) or magnitude not in cands:
         refuse(f"{fault} magnitude {magnitude!r} is not an approved candidate {cands}")
@@ -395,7 +398,10 @@ def op_fault_spec(fault: str, magnitude, decisions=DECISIONS) -> dict:
                   "netem_rate_r": lambda m: m >= cand["congestion_floor_kbit"],
                   "police_a_ingress": lambda m: m >= cand["police_floor_kbit"],
                   "memory_max": lambda m: m >= cand["floor_mib"],
-                  "ov4_udp_flood": lambda m: type(m) is int and m == cand["ov4_level_pps"]}[fault]
+                  "ov4_udp_flood": lambda m: type(m) is int and m == cand["ov4_level_pps"],
+                  "ov5_page_cache_fill": lambda m: type(m) is int and m == ov5["fill_file_mib"] and
+                  ov5["lab_cap_mib"] * (1 << 20) == int(L.LAB_MEMORY_MAX) and
+                  m < ov5["target_memory_max_mib"] < ov5["lab_cap_mib"]}[fault]
     if not ceiling_ok(magnitude) or cand.get("netem_limit_packets", 0) > net["netem_limit_max_packets"]:
         refuse(f"{fault} magnitude {magnitude!r} violates its approved ceiling or floor")
     ops = {"cpu_contender": lambda m: L.contender_ops(int(m)), "cpu_quota": lambda m: L.quota_ops(int(m)),
@@ -404,9 +410,15 @@ def op_fault_spec(fault: str, magnitude, decisions=DECISIONS) -> dict:
            "netem_rate_r": lambda m: L.netem_rate_ops(int(m), cand["netem_limit_packets"]),
            "police_a_ingress": lambda m: L.police_ops(int(m)),
            "memory_max": lambda m: L.memory_ops(int(m)),
-           "ov4_udp_flood": lambda m: L.flood_ops(int(m), FLOOD_S)}[fault](magnitude)
-    return {"type": fault, "class": cls, "magnitude": magnitude, "candidates": cands, "stronger": stronger,
+           "ov4_udp_flood": lambda m: L.flood_ops(int(m), FLOOD_S),
+           "ov5_page_cache_fill": lambda m: L.ov5_ops(run_id, int(m)) if run_id else refuse("OV-5 needs the run id")
+           }[fault](magnitude)
+    spec = {"type": fault, "class": cls, "magnitude": magnitude, "candidates": cands, "stronger": stronger,
             "ops": ops, "decision": decision}
+    if ov5:                                       # M for the whole run, set before the workload starts (AMD-15)
+        spec.update(setup_ops=L.ov5_setup_ops(ov5["target_memory_max_mib"]), memory_max_mib=ov5["target_memory_max_mib"],
+                    r_star=cand["ov5_r_star"], path=L.ov5_path(run_id))
+    return spec
 
 
 _TC_RATE = re.compile(r"\brate ([0-9.]+)([KMG]?)bit")
@@ -429,6 +441,9 @@ def op_readback(spec: dict, sysr) -> bool:
         return (sysr.read(L.MEMORY_PATH) or "").strip() == str(int(m) * 1024 * 1024)
     if t == "ov4_udp_flood":
         return flood_client_pid(sysr) is not None
+    if t == "ov5_page_cache_fill":                                     # written in full and fsynced: the writer is gone
+        st = sysr.lstat_run(spec["path"])
+        return st is not None and st.st_size == int(m) << 20 and len(leaf_pids(sysr, "target")) == 2
     probe = lambda k: (lambda r: r[1] if r and r[0] == 0 else "")(sysr.probe(L.TC_READS[k]))
     if t in ("netem_loss_a_egress", "netem_loss_r_egress"):
         text = probe("a_qdisc_text" if t == "netem_loss_a_egress" else "r_qdisc_text")
@@ -502,12 +517,18 @@ def flood_observer(sysr):
     return observe
 
 
+def ov5_observer(sysr, path: str):
+    """AMD-15: page-cache residency of the OV-5 file at every W tick (mmap + mincore, read-only)."""
+    return lambda k: dict(sysr.residency(path) or {"size": None, "pages": None, "resident": None}, k=k)
+
+
 def gt_snapshot(sysr, tpid: int) -> dict:
     """Raw ground-truth sources at a window edge, read directly from the kernel (never through the collector)."""
     probe = lambda argv: (lambda r: r[1] if r and r[0] == 0 else None)(sysr.probe(argv))
     return {"mono_ns": time.monotonic_ns(), "proc_stat": sysr.read("/proc/stat"),
             "target_cpu_stat": sysr.read(f"{L.TARGET_DIR}/cpu.stat"), "a_snmp": sysr.read(f"/proc/{tpid}/net/snmp"),
             "target_mem_events": sysr.read(f"{L.TARGET_DIR}/memory.events"),
+            "target_mem_current": sysr.read(f"{L.TARGET_DIR}/memory.current"),
             "target_mem_stat": sysr.read(f"{L.TARGET_DIR}/memory.stat"),
             "target_mem_pressure": sysr.read(f"{L.TARGET_DIR}/memory.pressure"), "vmstat": sysr.read("/proc/vmstat"),
             "a_links": probe(L.LAB_READS["a_links"]), "a_qdisc": probe(L.TC_READS["a_qdisc_json"]),
@@ -533,8 +554,13 @@ def gt_parse(g: dict) -> dict:
     ev, ms, vm = kv(g.get("target_mem_events")), kv(g.get("target_mem_stat")), kv(g.get("vmstat"))
     if ev:
         out["mem_max_events"], out["oom_kill"] = ev.get("max", 0), ev.get("oom_kill", 0)
+        out["mem_high_events"] = ev.get("high", 0)
     if ms:
         out["mem_refaults"] = ms.get("workingset_refault_anon", 0) + ms.get("workingset_refault_file", 0)
+        out["mem_pgscan"] = ms.get("pgscan", 0)
+    cur = (g.get("target_mem_current") or "").strip()
+    if cur.isdigit():
+        out["mem_current"] = int(cur)
     some = re.search(r"^some .*\btotal=([0-9]+)", g.get("target_mem_pressure") or "", re.M)
     if some:
         out["mem_psi_some_us"] = int(some.group(1))
@@ -647,11 +673,44 @@ def ov4_check(run: dict, client: bytes, server: bytes, decisions=DECISIONS) -> d
     return dict(c, criteria=crit, level_pps=level, tau=tau, feasible=all(crit.values()))
 
 
-def fault_spec(fault: str, magnitude: int, w: dict, decisions=DECISIONS) -> dict:
+def ov5_check(run: dict, a: dict, b: dict, ctrl: dict) -> dict:
+    """AMD-15 F1 for one rep, from the run record, two gt_parse results and the campaign's CTRL maxima:
+    fill complete (read back, with its latency; judged against T_TRANS once T_TRANS is frozen); residency >= r* at
+    every W tick after the fill (every scored window's end is such a tick); memory.events high, max and oom_kill
+    deltas 0; refaults, reclaim scans and memory PSI within the CTRL range (non-independent); MemAvailable >= 4 GiB
+    throughout is the per-tick abort, so a completed run holds it."""
+    f, inj = run["fault"], run.get("injection") or {}
+    obs = (run.get("ov5") or {}).get("observations") or []
+    full = f["magnitude"] << 20
+    d = lambda k: (b.get(k) or 0) - (a.get(k) or 0) if k in a and k in b else None
+    after = [o for o in obs if o.get("size") == full and o.get("pages")]
+    filled_at = after[0]["k"] if after else None
+    tail = [o for o in obs if filled_at is not None and o["k"] >= filled_at]
+    frac = [o["resident"] / o["pages"] if o.get("resident") is not None else None for o in tail]
+    m = {"fill_verified": bool(inj.get("verified")), "fill_s": inj.get("readback_latency_s"),
+         "filled_at_tick": filled_at, "residency_min": min(frac) if frac and None not in frac else None,
+         "residency_end": frac[-1] if frac else None, "ticks_after_fill": len(tail),
+         "high_events": d("mem_high_events"), "max_events": d("mem_max_events"), "oom_kill": d("oom_kill"),
+         "refaults": d("mem_refaults"), "pgscan": d("mem_pgscan"), "psi_some_us": d("mem_psi_some_us"),
+         "ctrl": {k: ctrl.get(k) for k in ("mem_refaults", "mem_pgscan", "mem_psi_some_us")},
+         "utilisation_w_end": b["mem_current"] / (f["memory_max_mib"] << 20) if b.get("mem_current") else None,
+         "r_star": f["r_star"]}
+    within = lambda k, c: m[k] is not None and ctrl.get(c) is not None and m[k] <= ctrl[c]
+    m["writer_exit"] = (run.get("exit_codes") or {}).get("ov5_writer")
+    crit = {"fill": m["fill_verified"] and m["fill_s"] is not None and m["fill_s"] <= T_CAP_S and m["writer_exit"] == 0,
+            "residency": m["residency_min"] is not None and m["residency_min"] >= f["r_star"] and
+            len(obs) == run.get("nW"),
+            "events": (m["high_events"], m["max_events"], m["oom_kill"]) == (0, 0, 0),
+            "ctrl_range": within("refaults", "mem_refaults") and within("pgscan", "mem_pgscan") and
+            within("psi_some_us", "mem_psi_some_us")}
+    return dict(m, criteria=crit, established=all(crit.values()))
+
+
+def fault_spec(fault: str, magnitude: int, w: dict, decisions=DECISIONS, run_id: Optional[str] = None) -> dict:
     """An application fault at an approved PI-8 candidate magnitude (FZ-INTENSITY-APP), or a CPU / network fault
     (op_fault_spec); refuses anything else."""
     if fault in OP_FAULTS:
-        return op_fault_spec(fault, magnitude, decisions)
+        return op_fault_spec(fault, magnitude, decisions, run_id)
     if fault not in APP_FAULTS:
         refuse(f"fault {fault!r} is not implemented ({sorted(APP_FAULTS) + sorted(OP_FAULTS)})")
     key, cands, hist, echo, stronger = APP_FAULTS[fault]
@@ -860,8 +919,8 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
     arr = approved_value("FZ-ARRIVALS", decisions)                   # Poisson arrivals (approved 2026-10-12)
     if (variant == "pi8") != (fault is not None):
         refuse("a pi8 run needs exactly one fault; other variants take none")
-    spec = fault_spec(fault[0], fault[1], w, decisions) if fault is not None else None
     run_id = f"{v['prefix']}-s{seed}"
+    spec = fault_spec(fault[0], fault[1], w, decisions, run_id) if fault is not None else None
     load_s = WARMUP_S + B_S + W_S + COOLDOWN_S
     unpriv, writer = v["collector"] == "unprivileged", v["metrics_writer"]
     out.mkdir(mode=0o755)
@@ -877,8 +936,9 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
     if flood:
         argv["flood_server"] = L.flood_server_argv()                  # idle in B until the client connects
     sysr = sysr or L.Sys()
-    host = (host_cls or L.Host)(L.Plan(run_id, spawns=argv.items(), fault_ops=(spec or {}).get("ops", ())),
-                                str(out / "ops.jsonl"), sysr)
+    fault_ops = list((spec or {}).get("setup_ops", ())) + list((spec or {}).get("ops", ()))
+    host = (host_cls or L.Host)(L.Plan(run_id, spawns=argv.items(), fault_ops=fault_ops), str(out / "ops.jsonl"), sysr)
+    ov5 = (spec or {}).get("type") == "ov5_page_cache_fill"
     ev = out / EVIDENCE
     R = {"format": FORMAT, "stage": "CTRL" if variant == "ctrl" else variant.upper(), "variant": variant,
          "collector_mode": v["collector"], "ebpf": v["ebpf"], "metrics_writer": writer, "working_set": ws,
@@ -901,6 +961,10 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
     try:
         setup_lab(host, sysr, R, run_id)
         rdir = L.run_dir(run_id)
+        for op in (spec or {}).get("setup_ops", ()):                # OV-5: A's memory.max = M before the workload
+            host.apply(op)
+            if (sysr.read(op[1]) or "").strip() != op[2]:
+                raise L.LabAbort(f"setup write not read back: {op[1]}")
         host.apply(("write_new", f"{rdir}/control.json",
                     json.dumps({"dependency_delay_ms": int(w["dependency_delay_ms"])}).encode()))
         for role in ("dependency", "workload"):
@@ -954,8 +1018,9 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
                                     stdout_files={"flood_client": out / "lg" / "flood_client.json"} if flood else None)
             hook = WindowHook(appmod.AppSource(run_id), round(B_S / PERIOD_S), round(W_S / PERIOD_S), read_app,
                               injector, lambda: gt_snapshot(sysr, wpid),
-                              memory_guard(sysr) if (spec or {}).get("type") == "memory_max" else None,
-                              flood_observer(sysr) if flood else None)
+                              memory_guard(sysr) if (spec or {}).get("type") in ("memory_max", "ov5_page_cache_fill")
+                              else None,
+                              flood_observer(sysr) if flood else ov5_observer(sysr, spec["path"]) if ov5 else None)
             evt("collect_start")
             ticks, stats = collect(target, params, LiveReader(), SystemClock(), PERIOD_S, LoaderTicks(loader), hook)
             evt("collect_end")
@@ -964,6 +1029,13 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
                 R["injection"] = dict(injector.record)
                 if R["injection"]["issued"]:
                     evt("fault_issued", mono_ns=R["injection"]["issue_mono_ns"])
+            if ov5:
+                R["ov5"] = {"observations": hook.observed, "path": spec["path"]}
+                if injector.procs:                                     # the writer exits once written and fsynced
+                    try:
+                        R["exit_codes"]["ov5_writer"] = injector.procs[0].wait(T_CAP_S)
+                    except subprocess.TimeoutExpired:
+                        raise L.LabAbort("OV-5 writer did not finish") from None
             R["w_docs"] = {k: {"mono_ns": t, "valid": isinstance(b, bytes)} for k, (t, b) in hook.docs.items()}
             R["collection"] = {"ticks": stats.ticks, "wall_s": stats.wall_s, "cpu_s": stats.cpu_s,
                                "max_tick_read_s": stats.max_tick_read_s, "loader_cpu_s": proc_cpu_s(loader.proc.pid)}
@@ -1474,6 +1546,12 @@ def rep_effect(run_dir: Path, ctrl_max: dict, lock_rule: dict) -> dict:
     run = json.loads((run_dir / EVIDENCE / "run.json").read_bytes())
     f = run["fault"]
     verified = (rep["checks"].get("injection_verified") or {}).get("ok", False)
+    if f["type"] == "ov5_page_cache_fill":                           # AMD-15 F1 against the campaign's CTRL range
+        a, b = (gt_parse(json.loads((run_dir / EVIDENCE / f"gt_{k}.json").read_bytes())) for k in ("w_start", "w_end"))
+        g = ov5_check(run, a, b, ctrl_max)
+        return {"run": run_dir.name, "seed": run["seed"], "magnitude": f["magnitude"], "pipeline_ok": rep["pipeline_ok"],
+                "injection_verified": verified, "measure": g, "basis": "AMD-15 F1",
+                "ground_truth": bool(rep["pipeline_ok"] and verified and g["established"])}
     if f["type"] == "ov4_udp_flood":                                 # AMD-13 (a)-(d); (e) = the run's pipeline
         g = rep.get("ov4") or {"feasible": False}
         return {"run": run_dir.name, "seed": run["seed"], "magnitude": f["magnitude"], "pipeline_ok": rep["pipeline_ok"],
@@ -1519,7 +1597,7 @@ def levels(campaign: Path, decisions=DECISIONS) -> dict:
                     a, b = (gt_parse(json.loads((d / EVIDENCE / f"gt_{k}.json").read_bytes()))
                             for k in ("w_start", "w_end"))
                     ctrl_max["retrans"] = max(ctrl_max.get("retrans", 0), (b["retrans"] or 0) - (a["retrans"] or 0))
-                    for k in ("mem_refaults", "mem_psi_some_us"):                 # CTRL memory maxima (PI-5)
+                    for k in ("mem_refaults", "mem_psi_some_us", "mem_pgscan"):   # CTRL memory maxima (PI-5, OV-5)
                         if k in a and k in b:
                             ctrl_max[k] = max(ctrl_max.get(k, 0), b[k] - a[k])
     out = {"campaign": campaign.name, "ctrl_runs": ctrl_runs, "ctrl_max_ms": ctrl_max, "faults": {},
@@ -1637,7 +1715,7 @@ def run_stage(a, run_preflight=None) -> int:
     if a.cmd != "lifecycle":
         check_seed(a.seed)
     if a.cmd == "pi8":                                    # refuse an unapproved fault before anything is created
-        fault_spec(a.fault, a.magnitude, approved_value("FZ-WORKLOAD"))
+        fault_spec(a.fault, a.magnitude, approved_value("FZ-WORKLOAD"), run_id=f"PI8-s{a.seed}")
     staging = staging_root()
     out = run_path(staging, a.campaign, f"PI0-{a.cycle}" if a.cmd == "lifecycle" else
                    f"{VARIANTS[a.cmd]['prefix']}-{a.seed}")

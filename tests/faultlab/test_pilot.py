@@ -85,6 +85,8 @@ class FakeSys(L.Sys):
         self.on_umount = None              # called before the simulated umount2 (concurrent changes)
         self.qd = {L.IF_A: [], L.IF_RB: []}  # tc state: qdiscs added by the run (veth default: noqueue)
         self.ppid = {}                       # pid -> parent pid (/proc/<pid>/stat)
+        self.sizes = {}                      # scratch file -> size in bytes (the OV-5 file is never materialised)
+        self.resident = lambda path, pages: pages   # page-cache residency of a scratch file (mincore)
         self.police_text = ""
 
     def add_mount(self, mnt, parent, **kw):
@@ -160,7 +162,16 @@ class FakeSys(L.Sys):
         e = self.run.get(str(path))
         if e is None:
             return None
-        return SimpleNamespace(st_mode=(stat.S_IFDIR if e[0] == "dir" else stat.S_IFREG) | 0o700, st_uid=e[1])
+        return SimpleNamespace(st_mode=(stat.S_IFDIR if e[0] == "dir" else stat.S_IFREG) | 0o700, st_uid=e[1],
+                               st_size=self.sizes.get(str(path), len(e[2])))
+
+    def residency(self, path):
+        self._run_lab_path(path)
+        if str(path) not in self.run:
+            return None
+        size = self.sizes.get(str(path), len(self.run[str(path)][2]))
+        pages = (size + 4095) // 4096
+        return {"size": size, "pages": pages, "resident": self.resident(str(path), pages)}
 
     def listdir_run(self, path):
         self._run_lab_path(path)
@@ -368,9 +379,12 @@ class SimHost(L.Host):
             p = (self.spawn.get(role) or (lambda: FakeProc()))()
             leaf = {"echo_server": "support", "echo_client": "target", "workload": "target",
                     "dependency": "support", "loadgen": "support", "contender": "contender",
-                    "flood_server": "support", "flood_client": "support"}[role]
+                    "flood_server": "support", "flood_client": "support", "ov5_writer": "target"}[role]
             if role in ("echo_server", "dependency", "loadgen", "workload", "contender", "flood_server", "flood_client"):
                 s.procs[p.pid] = f"/{L.LAB}/{leaf}"
+            if role == "ov5_writer":                          # written in full, fsynced, exited (never in the leaf)
+                path, mib = op[2][-2], int(op[2][-1])
+                s.run[path], s.sizes[path] = ("file", L.LAB_UID, b""), mib << 20
             if role.startswith("flood_"):                     # iperf3: its own argv, affinity and JSON report
                 prog = list(op[2][op[2].index(L.IPERF3):])
                 s.files[f"/proc/{p.pid}/cmdline"] = "\0".join(prog) + "\0"
@@ -2417,11 +2431,13 @@ class TestClientAccountingUnderNetworkFaults(unittest.TestCase):
                 self.assertEqual(self.check(fault, {"200": 100, "503": 3}, (100, 3, 0)), [])
 
 
-def mem_files(max_events=0, oom=0, refaults=0, psi_us=0, swap=0, avail_kb=13 * 1024 * 1024):
+def mem_files(max_events=0, oom=0, refaults=0, psi_us=0, swap=0, avail_kb=13 * 1024 * 1024, high=0, pgscan=0,
+              current=1080 << 20):
     return {"/proc/meminfo": f"MemTotal: 16053920 kB\nMemAvailable: {avail_kb} kB\n",
-            f"{L.TARGET_DIR}/memory.events": f"low 0\nhigh 0\nmax {max_events}\noom 0\noom_kill {oom}\n",
+            f"{L.TARGET_DIR}/memory.events": f"low 0\nhigh {high}\nmax {max_events}\noom 0\noom_kill {oom}\n",
+            f"{L.TARGET_DIR}/memory.current": f"{current}\n",
             f"{L.TARGET_DIR}/memory.stat": f"anon 23000000\nfile 1073741824\nworkingset_refault_anon 0\n"
-                                          f"workingset_refault_file {refaults}\n",
+                                          f"workingset_refault_file {refaults}\npgscan {pgscan}\n",
             f"{L.TARGET_DIR}/memory.pressure": f"some avg10=0.00 avg60=0.00 avg300=0.00 total={psi_us}\n"
                                               f"full avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
             "/proc/vmstat": f"pgfault 1\npswpin {swap}\npswpout 0\n"}
@@ -2615,6 +2631,176 @@ class TestOv4Flood(OpFaultFixture):
         edge = 80000 * 1.1                                                       # tau is inclusive
         self.assertTrue(P.ov4_check(run, iperf_doc(packets=round(edge * 95)), iperf_doc(False))["criteria"]["a"])
         self.assertFalse(P.ov4_check(run, iperf_doc(packets=round(edge * 95) + 100), iperf_doc(False))["criteria"]["a"])
+
+
+class TestOv5Fill(OpFaultFixture):
+    """OV-5 (AMD-15, FZ-OV O-1): M = 2,048 MiB for the whole run, a 768 MiB file written in A's cgroup at the boundary."""
+
+    CTRL = {"retrans": 0, "mem_refaults": 0, "mem_psi_some_us": 0, "mem_pgscan": 0}
+
+    def setUp(self):
+        super().setUp()
+        cpu = self.base
+        self.base = lambda s: (cpu(s), s.files.update(mem_files()))
+        self.filled = lambda s: s.files.update(mem_files(current=1848 << 20))
+
+    def rep5(self, seed, ctrl=None):
+        return P.rep_effect(self.tmp / f"PI8-{seed}", ctrl or self.CTRL, _RECORD["FZ-PI7-LOCK"]["value"])
+
+    def test_spec_is_the_approved_sizes_only(self):
+        spec = P.fault_spec("ov5_page_cache_fill", 768, WORKLOAD, run_id="PI8-s900420")
+        self.assertEqual((spec["decision"], spec["candidates"], spec["memory_max_mib"], spec["r_star"]),
+                         ("FZ-OV", [768], 2048, 0.9))
+        self.assertEqual(spec["setup_ops"], [("write", L.MEMORY_PATH, str(2048 << 20))])
+        self.assertEqual(spec["ops"], L.ov5_ops("PI8-s900420", 768))
+        argv = spec["ops"][0][2]
+        self.assertEqual(argv[-2:], [f"{L.WS_ROOT}/PI8-s900420/{L.OV5_FILE}", "768"])
+        self.assertEqual(argv[:len(L.placed("target", L.NS_A, []))], L.placed("target", L.NS_A, []))
+        for bad in (512, 1024, 768.0, True):
+            with self.subTest(bad), self.assertRaises(P.Refused):
+                P.fault_spec("ov5_page_cache_fill", bad, WORKLOAD, run_id="PI8-s900420")
+        with self.assertRaises(P.Refused):
+            P.fault_spec("ov5_page_cache_fill", 768, WORKLOAD)                    # the path needs the run id
+        with mock.patch.object(L, "LAB_MEMORY_MAX", str(3072 << 20)), self.assertRaises(P.Refused):
+            P.fault_spec("ov5_page_cache_fill", 768, WORKLOAD, run_id="PI8-s900420")   # lab cap differs
+
+    def test_writer_writes_the_file_in_full_once(self):
+        d = Path(tempfile.mkdtemp(dir=self.tmp))
+        argv = L.ov5_writer_argv("PI8-s900420", 2)
+        code = L.OV5_WRITER_CODE
+        self.assertEqual(argv[argv.index(L.PYTHON):argv.index(L.PYTHON) + 3], [L.PYTHON, "-I", "-c"])
+        self.assertEqual(argv[argv.index(L.PYTHON) + 3], code)
+        with mock.patch.object(sys, "argv", ["-c", str(d / "f.bin"), "2"]):
+            exec(compile(code, "ov5_writer", "exec"), {})
+            self.assertEqual((d / "f.bin").read_bytes(), bytes([0xa5]) * (2 << 20))
+            with self.assertRaises(FileExistsError):                             # O_EXCL: never overwrites
+                exec(compile(code, "ov5_writer", "exec"), {})
+        with mock.patch.object(sys, "argv", ["-c", str(d / "g.bin"), "1"]), mock.patch.object(os, "fsync") as fs:
+            exec(compile(code, "ov5_writer", "exec"), {})
+        fs.assert_called_once()                                                  # fsynced before it exits
+
+    def test_real_residency_reader(self):
+        with self.assertRaises(L.LabRefused):
+            L.Sys().residency("/etc/passwd")                                    # only under the scratch roots
+        d = Path(tempfile.mkdtemp(dir=self.tmp))
+        (d / "r.bin").write_bytes(b"x" * (64 << 10))
+        (d / "e.bin").write_bytes(b"")
+        with mock.patch.object(L.Sys, "_run_lab_path", staticmethod(lambda p: str(p))):
+            self.assertEqual(L.Sys().residency(d / "r.bin"), {"size": 64 << 10, "pages": 16, "resident": 16})
+            self.assertEqual(L.Sys().residency(d / "e.bin"), {"size": 0, "pages": 0, "resident": 0})
+            self.assertIsNone(L.Sys().residency(d / "absent.bin"))
+            fd = os.open(d / "r.bin", os.O_RDONLY)
+            try:
+                os.fsync(fd)
+                os.posix_fadvise(fd, 0, 0, os.POSIX_FADV_DONTNEED)               # clean pages: evicted
+            finally:
+                os.close(fd)
+            self.assertEqual(L.Sys().residency(d / "r.bin")["resident"], 0)
+
+    def test_readback_needs_the_full_file_and_the_writer_gone(self):
+        spec = P.fault_spec("ov5_page_cache_fill", 768, WORKLOAD, run_id="PI8-s900420")
+        s = FakeSys()
+        s.dirs.add(L.TARGET_DIR)
+        s.procs.update({10: f"/{L.LAB}/target", 11: f"/{L.LAB}/target"})
+        self.assertFalse(P.op_readback(spec, s))                                 # not written yet
+        s.run[spec["path"]], s.sizes[spec["path"]] = ("file", L.LAB_UID, b""), 767 << 20
+        self.assertFalse(P.op_readback(spec, s))                                 # still being written
+        s.sizes[spec["path"]] = 768 << 20
+        s.procs[12] = f"/{L.LAB}/target"
+        self.assertFalse(P.op_readback(spec, s))                                 # full size, writer not yet gone
+        del s.procs[12]
+        self.assertTrue(P.op_readback(spec, s))
+
+    def test_setup_limit_must_read_back_and_the_memory_guard_applies(self):
+        cpu = self.base
+
+        def stuck(s):                                                            # memory.max write does not stick
+            cpu(s)
+            s.files.update(mem_files())
+            real = s.read
+            s.read = lambda path: "max\n" if path == L.MEMORY_PATH else real(path)
+        self.base = stuck
+        rc, h, rep = self.go("ov5_page_cache_fill", 768, 900428)
+        self.assertNotEqual(rc, 0)
+        self.assertTrue(any("setup write not read back" in a for a in rep["checks"]["run_completed"]["aborts"]))
+        self.base = lambda s: (cpu(s), s.files.update(mem_files()))
+        rc, h, rep = self.go("ov5_page_cache_fill", 768, 900429,
+                             lambda s: s.files.update(mem_files(avail_kb=3 * 1024 * 1024)))
+        self.assertNotEqual(rc, 0)
+        self.assertTrue(any("MemAvailable" in a for a in rep["checks"]["run_completed"]["aborts"]), rep["checks"])
+        self.assertIn(L.MEMORY_RESTORE, h.ops)                                   # restored after the abort
+
+    def test_feasible_run(self):
+        rc, h, rep = self.go("ov5_page_cache_fill", 768, 900420, self.filled)
+        self.assertEqual(rc, 0, rep["checks"])
+        mm = ("write", L.MEMORY_PATH, str(2048 << 20))
+        self.assertLess(h.ops.index(mm), next(i for i, o in enumerate(h.ops)
+                                              if o[0] == "spawn" and o[1] == "workload"))   # M before the workload
+        self.assertIn(L.MEMORY_RESTORE, h.ops)
+        self.assertLess(h.ops.index(L.MEMORY_RESTORE), h.ops.index(("rmdir", L.TARGET_DIR)))
+        self.assertIn(("unlink_run", f"{L.WS_ROOT}/PI8-s900420/{L.OV5_FILE}"), h.ops)
+        self.assertTrue(rep["checks"]["injection_verified"]["ok"])
+        g = self.rep5(900420)
+        self.assertTrue(g["ground_truth"], g)
+        self.assertAlmostEqual(g["measure"]["utilisation_w_end"], 1848 / 2048)
+        self.assertEqual(g["measure"]["residency_min"], 1.0)
+        self.assertTrue(empty(self.s))
+
+    def test_f1_failures_are_reported(self):
+        cases = (("evicted below r*", 900421, lambda s: (self.filled(s), s.__setattr__(
+                     "resident", lambda p, n: int(n * 0.85))), "residency"),
+                 ("limit reached", 900422, lambda s: s.files.update(mem_files(max_events=3, current=2040 << 20)),
+                  "events"),
+                 ("high events", 900423, lambda s: s.files.update(mem_files(high=1)), "events"),
+                 ("refaults above CTRL", 900424, lambda s: s.files.update(mem_files(refaults=10)), "ctrl_range"),
+                 ("reclaim scans above CTRL", 900425, lambda s: s.files.update(mem_files(pgscan=5)), "ctrl_range"),
+                 ("PSI above CTRL", 900426, lambda s: s.files.update(mem_files(psi_us=7)), "ctrl_range"))
+        for name, seed, effect, crit in cases:
+            with self.subTest(name):
+                rc, h, rep = self.go("ov5_page_cache_fill", 768, seed, effect)
+                self.assertTrue(rep["pipeline_ok"], rep["checks"])               # a valid run, an infeasible rep
+                g = self.rep5(seed)
+                self.assertFalse(g["ground_truth"])
+                self.assertFalse(g["measure"]["criteria"][crit], g["measure"])
+
+    def test_ctrl_range_is_inclusive_and_needs_ctrl(self):
+        self.go("ov5_page_cache_fill", 768, 900427, lambda s: s.files.update(mem_files(refaults=10, pgscan=5,
+                                                                                         psi_us=7)))
+        self.assertTrue(self.rep5(900427, {"mem_refaults": 10, "mem_pgscan": 5, "mem_psi_some_us": 7})["ground_truth"])
+        self.assertFalse(self.rep5(900427, {"mem_refaults": 10, "mem_pgscan": 5})["ground_truth"])   # no PSI max
+
+    def test_writer_failure_or_missing_ticks_fail_f1(self):
+        run = {"fault": {"magnitude": 768, "memory_max_mib": 2048, "r_star": 0.9}, "nW": 3,
+               "injection": {"verified": True, "readback_latency_s": 4.0}, "exit_codes": {"ov5_writer": 0},
+               "ov5": {"observations": [{"k": k, "size": 768 << 20, "pages": 196608, "resident": 196608}
+                                        for k in (46, 47, 48)]}}
+        a = {"mem_high_events": 0, "mem_max_events": 0, "oom_kill": 0, "mem_refaults": 0, "mem_pgscan": 0,
+             "mem_psi_some_us": 0}
+        b = dict(a, mem_current=1848 << 20)
+        ok = P.ov5_check(run, a, b, self.CTRL)
+        self.assertTrue(ok["established"], ok)
+        for name, change, crit in (("writer failed", {"exit_codes": {"ov5_writer": 1}}, "fill"),
+                                   ("fill slower than T_cap", {"injection": {"verified": True,
+                                                                             "readback_latency_s": 31.0}}, "fill"),
+                                   ("not read back", {"injection": {"verified": False}}, "fill"),
+                                   ("a tick missing", {"nW": 4}, "residency"),
+                                   ("never full size", {"ov5": {"observations": [
+                                       {"k": 46, "size": 1 << 20, "pages": 256, "resident": 256}]}}, "residency"),
+                                   ("residency unreadable", {"ov5": {"observations": [
+                                       {"k": k, "size": 768 << 20, "pages": 196608, "resident": None}
+                                       for k in (46, 47, 48)]}}, "residency")):
+            with self.subTest(name):
+                g = P.ov5_check(dict(run, **change), a, b, self.CTRL)
+                self.assertFalse(g["criteria"][crit], g)
+        partial = dict(run, ov5={"observations": [{"k": 46, "size": 1 << 20, "pages": 256, "resident": 10}] +
+                                 run["ov5"]["observations"][1:]}, nW=3)
+        self.assertTrue(P.ov5_check(partial, a, b, self.CTRL)["criteria"]["residency"])   # judged after the fill
+        edge = dict(run, ov5={"observations": [dict(o, resident=int(196608 * 0.9) + 1) for o in
+                                               run["ov5"]["observations"]]})
+        self.assertTrue(P.ov5_check(edge, a, b, self.CTRL)["criteria"]["residency"])
+        under = dict(run, ov5={"observations": [dict(o, resident=int(196608 * 0.9) - 1) for o in
+                                                run["ov5"]["observations"]]})
+        self.assertFalse(P.ov5_check(under, a, b, self.CTRL)["criteria"]["residency"])
 
 
 class TestTargetProcesses(unittest.TestCase):
