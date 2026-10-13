@@ -32,8 +32,9 @@ is handed to the invoking user at the end.
 Values come only from approved decisions (docs/PHASE_1C_FREEZE1_DECISIONS.json); the driver refuses otherwise. M2 is
 never invoked on pilot data (design §13 decision 7). Lab operations go through lab.Host only. Faults (pi8): the
 application faults (FZ-INTENSITY-APP) and the CPU and network faults (FZ-INTENSITY-CPUNET, refused until approved);
-memory pressure (memory_max: FZ-INTENSITY-MEM, FZ-PI5) with per-tick MemAvailable / OOM aborts; the OV-5
-generator (FZ-INTENSITY OV-5 sizes pending) is not implemented here.
+memory pressure (memory_max: FZ-INTENSITY-MEM, FZ-PI5) with per-tick MemAvailable / OOM aborts; the OV-4
+feasibility flood (ov4_udp_flood: FZ-OV, AMD-13). The OV-5 generator (FZ-INTENSITY OV-5 sizes pending) is not
+implemented here.
 """
 import argparse
 import hashlib
@@ -368,7 +369,10 @@ OP_FAULTS = {"cpu_contender": ("contender_weight_candidates", "higher", "cpu_con
              "police_a_ingress": ("police_kbit_candidates", "lower", "network_packet_loss"),
              "netem_loss_r_egress": ("loss_r_pct_candidates", "higher", "tcp_retransmissions"),
              "netem_rate_r": ("congestion_kbit_candidates", "lower", "tcp_retransmissions"),
-             "memory_max": ("memory_max_mib_candidates", "lower", "memory_pressure")}
+             "memory_max": ("memory_max_mib_candidates", "lower", "memory_pressure"),
+             "ov4_udp_flood": ("ov4_level_pps", "higher", "ov4_softirq_below_overload")}   # AMD-13 feasibility
+OP_DECISION = {"memory_max": "FZ-INTENSITY-MEM", "ov4_udp_flood": "FZ-OV"}
+FLOOD_S = W_S + 5                                  # the flood outlives W ([60, 150) by read-back, AMD-13 (c))
 MEM_AVAILABLE_MIN_KB, SWAP_PAGES_MAX = 4 * 1024 * 1024, 25.0     # memory-run abort; PI-5 swap bound (FZ-PI5)
 QUOTA_TOLERANCE = 1.05                       # usage <= quota x 1.05 (window edges are not CFS period edges; ENG)
 THROTTLE_RATIO_MIN, IDLE_MAX = 0.9, 0.05     # design §5.8 (R2-D GT, R2-C G2/G3/G6)
@@ -378,18 +382,20 @@ def op_fault_spec(fault: str, magnitude, decisions=DECISIONS) -> dict:
     """A CPU or network fault at an approved candidate (FZ-INTENSITY-CPUNET), re-checked against the approved
     ceilings and floors (FZ-INTENSITY-R2, FZ-INTENSITY-NET); its exact lab operations; refuses anything else."""
     key, stronger, cls = OP_FAULTS[fault]
-    decision = "FZ-INTENSITY-MEM" if fault == "memory_max" else "FZ-INTENSITY-CPUNET"
+    decision = OP_DECISION.get(fault, "FZ-INTENSITY-CPUNET")
     cand = approved_value(decision, decisions)
+    cands = cand[key] if isinstance(cand[key], list) else [cand[key]]      # FZ-OV: the one preregistered OV-4 level
     r2, net = approved_value("FZ-INTENSITY-R2", decisions), approved_value("FZ-INTENSITY-NET", decisions)
-    if isinstance(magnitude, bool) or not isinstance(magnitude, (int, float)) or magnitude not in cand[key]:
-        refuse(f"{fault} magnitude {magnitude!r} is not an approved candidate {cand[key]}")
+    if isinstance(magnitude, bool) or not isinstance(magnitude, (int, float)) or magnitude not in cands:
+        refuse(f"{fault} magnitude {magnitude!r} is not an approved candidate {cands}")
     ceiling_ok = {"cpu_contender": lambda m: m <= r2["contender_weight_max"],
                   "cpu_quota": lambda m: m >= r2["cpu_quota_min_core"] * L.CPU_PERIOD_US,
                   "netem_loss_a_egress": lambda m: 0 < m <= r2["loss_a_egress_max_pct"],
                   "netem_loss_r_egress": lambda m: 0 < m <= net["loss_r_egress_max_pct"],
                   "netem_rate_r": lambda m: m >= cand["congestion_floor_kbit"],
                   "police_a_ingress": lambda m: m >= cand["police_floor_kbit"],
-                  "memory_max": lambda m: m >= cand["floor_mib"]}[fault]
+                  "memory_max": lambda m: m >= cand["floor_mib"],
+                  "ov4_udp_flood": lambda m: type(m) is int and m == cand["ov4_level_pps"]}[fault]
     if not ceiling_ok(magnitude) or cand.get("netem_limit_packets", 0) > net["netem_limit_max_packets"]:
         refuse(f"{fault} magnitude {magnitude!r} violates its approved ceiling or floor")
     ops = {"cpu_contender": lambda m: L.contender_ops(int(m)), "cpu_quota": lambda m: L.quota_ops(int(m)),
@@ -397,8 +403,9 @@ def op_fault_spec(fault: str, magnitude, decisions=DECISIONS) -> dict:
            "netem_loss_r_egress": lambda m: L.netem_loss_ops("r", m),
            "netem_rate_r": lambda m: L.netem_rate_ops(int(m), cand["netem_limit_packets"]),
            "police_a_ingress": lambda m: L.police_ops(int(m)),
-           "memory_max": lambda m: L.memory_ops(int(m))}[fault](magnitude)
-    return {"type": fault, "class": cls, "magnitude": magnitude, "candidates": cand[key], "stronger": stronger,
+           "memory_max": lambda m: L.memory_ops(int(m)),
+           "ov4_udp_flood": lambda m: L.flood_ops(int(m), FLOOD_S)}[fault](magnitude)
+    return {"type": fault, "class": cls, "magnitude": magnitude, "candidates": cands, "stronger": stronger,
             "ops": ops, "decision": decision}
 
 
@@ -420,6 +427,8 @@ def op_readback(spec: dict, sysr) -> bool:
         return (sysr.read(L.CONTENDER_WEIGHT_PATH) or "").strip() == str(int(m)) and bool(leaf_pids(sysr, "contender"))
     if t == "memory_max":
         return (sysr.read(L.MEMORY_PATH) or "").strip() == str(int(m) * 1024 * 1024)
+    if t == "ov4_udp_flood":
+        return flood_client_pid(sysr) is not None
     probe = lambda k: (lambda r: r[1] if r and r[0] == 0 else "")(sysr.probe(L.TC_READS[k]))
     if t in ("netem_loss_a_egress", "netem_loss_r_egress"):
         text = probe("a_qdisc_text" if t == "netem_loss_a_egress" else "r_qdisc_text")
@@ -464,6 +473,33 @@ def memory_guard(sysr):
             return f"memory abort: oom_kill {ev['oom_kill']} in the target cgroup"
         return None
     return check
+
+
+def flood_client_pid(sysr) -> Optional[int]:
+    """The OV-4 iperf3 client: the support-leaf process whose command line is the approved client's (L.IPERF3 -c)."""
+    for pid in leaf_pids(sysr, "support"):
+        if (sysr.read(f"/proc/{pid}/cmdline") or "").split("\0")[:2] == [L.IPERF3, "-c"]:
+            return pid
+    return None
+
+
+def flood_observer(sysr):
+    """AMD-13 (c) and (d) by read-back at every W tick: the flood client is alive (not a zombie), in A's network
+    namespace, and allowed only CPUs disjoint from the target's."""
+    def observe(k: int) -> dict:
+        pid = flood_client_pid(sysr)
+        o = {"k": k, "pid": pid, "alive": False, "cpus": None, "netns_a": False}
+        if pid is not None:
+            stat_ = sysr.read(f"/proc/{pid}/stat") or ""
+            state = stat_.rsplit(")", 1)[1].split()[0] if ")" in stat_ else None
+            status = sysr.read(f"/proc/{pid}/status") or ""
+            o["alive"] = state is not None and state not in ("Z", "X")
+            o["cpus"] = next((l.split(":", 1)[1].strip() for l in status.splitlines()
+                              if l.startswith("Cpus_allowed_list:")), None)
+            ns_a = sysr.netns_inode(L.NS_A)
+            o["netns_a"] = ns_a is not None and sysr.pid_netns_inode(pid) == ns_a
+        return o
+    return observe
 
 
 def gt_snapshot(sysr, tpid: int) -> dict:
@@ -550,6 +586,67 @@ def fault_ground_truth(fault: str, magnitude, a: dict, b: dict, ctrl) -> dict:
     return dict(m, established=bool(ok))
 
 
+def iperf_sum(doc: bytes) -> dict:
+    """An iperf3 -J report -> its end.sum and connection, or the reason it is unusable."""
+    try:
+        d = json.loads(doc)
+        if d.get("error"):
+            return {"error": str(d["error"])}
+        s, con = d["end"]["sum"], d["start"]["connected"][0]
+        return {"packets": int(s["packets"]), "lost_packets": int(s["lost_packets"]), "seconds": float(s["seconds"]),
+                "local_host": con["local_host"], "remote_host": con["remote_host"], "error": None}
+    except (ValueError, KeyError, IndexError, TypeError, AttributeError):
+        return {"error": "iperf3 report unreadable"}
+
+
+def softirq_frac(a: dict, b: dict, cpus) -> dict:
+    """Report-only: softirq share of each listed CPU over W from the raw /proc/stat at the window edges."""
+    def per_cpu(g):
+        rows = {}
+        for l in (g.get("proc_stat") or "").splitlines():
+            f = l.split()
+            if f and f[0].startswith("cpu") and f[0][3:].isdigit() and len(f) >= 8:
+                rows[int(f[0][3:])] = [int(x) for x in f[1:8]]
+        return rows
+    pa, pb = per_cpu(a), per_cpu(b)
+    out = {}
+    for c in cpus:
+        if c in pa and c in pb:
+            tot = sum(pb[c]) - sum(pa[c])
+            out[str(c)] = (pb[c][6] - pa[c][6]) / tot if tot > 0 else None
+    return out
+
+
+def ov4_check(run: dict, client: bytes, server: bytes, decisions=DECISIONS) -> dict:
+    """AMD-13 OV-4 producibility for one rep, criteria (a)-(d); (e), the host-safety gates, is the run's own
+    pipeline (cleanup, host comparison). FZ-OV: level and tau."""
+    ov = approved_value("FZ-OV", decisions)
+    level, tau = ov["ov4_level_pps"], ov["ov4_tau"]
+    cl, sv = iperf_sum(client), iperf_sum(server)
+    fl = run.get("flood") or {}
+    obs = fl.get("observations") or []
+    pps = lambda r: r["packets"] / r["seconds"] if not r.get("error") and r["seconds"] > 0 else None
+    within = lambda v: v is not None and abs(v - level) <= tau * level
+    def cpus(text):
+        try:
+            return C.parse_cpulist((text or "").strip())
+        except ValueError:
+            return frozenset()
+    target, support = cpus(fl.get("target_cpus_effective")), cpus(fl.get("support_cpus_effective"))
+    disjoint = lambda text: bool(cpus(text)) and L.TARGET_CPU not in cpus(text)
+    c = {"a_sender_pps": pps(cl), "a_receiver_pps": pps(sv), "b_receiver_lost": sv.get("lost_packets"),
+         "c_alive_ticks": sum(1 for o in obs if o.get("alive")), "c_ticks": len(obs), "nW": run.get("nW"),
+         "client_error": cl.get("error"), "server_error": sv.get("error"),
+         "path": [cl.get("local_host"), cl.get("remote_host")]}
+    crit = {"a": within(c["a_sender_pps"]) and within(c["a_receiver_pps"]),
+            "b": c["b_receiver_lost"] == 0,
+            "c": c["nW"] is not None and c["c_ticks"] == c["nW"] and c["c_alive_ticks"] == c["nW"],
+            "d": bool(obs) and all(disjoint(o.get("cpus")) and o.get("netns_a") for o in obs) and
+                 bool(target) and bool(support) and not (target & support),
+            "path": c["path"] == [L.IP_A, L.IP_B]}
+    return dict(c, criteria=crit, level_pps=level, tau=tau, feasible=all(crit.values()))
+
+
 def fault_spec(fault: str, magnitude: int, w: dict, decisions=DECISIONS) -> dict:
     """An application fault at an approved PI-8 candidate magnitude (FZ-INTENSITY-APP), or a CPU / network fault
     (op_fault_spec); refuses anything else."""
@@ -571,10 +668,11 @@ class WindowHook:
     reads the raw metrics document and then issues the fault, if any; after tick nB + nW it reads the raw document
     again. Effect ground truth for application faults is computed from these documents, never from features."""
 
-    def __init__(self, app, nB: int, nW: int, read_raw, inject=None, read_gt=None, guard=None):
+    def __init__(self, app, nB: int, nW: int, read_raw, inject=None, read_gt=None, guard=None, observe=None):
         self.app, self.nB, self.nW, self.read_raw, self.inject, self.read_gt = app, nB, nW, read_raw, inject, read_gt
         self.guard = guard                     # per-tick safety check: a message aborts the run (then cleanup)
-        self.k, self.docs, self.gt = 0, {}, {}
+        self.observe = observe                 # per-W-tick read-back, recorded (OV-4: the flood, AMD-13)
+        self.k, self.docs, self.gt, self.observed = 0, {}, {}, []
 
     def sample(self):
         obs = self.app.sample()
@@ -582,6 +680,8 @@ class WindowHook:
             why = self.guard()
             if why:
                 raise L.LabAbort(why)
+        if self.observe is not None and self.nB < self.k <= self.nB + self.nW:
+            self.observed.append(self.observe(self.k))
         if self.k in (self.nB, self.nB + self.nW):
             edge = "w_start" if self.k == self.nB else "w_end"
             self.docs[edge] = (time.monotonic_ns(), self.read_raw())
@@ -596,9 +696,11 @@ class WindowHook:
 class Injector:
     """Issues one application fault through replace_control and watches its echo (read-back) on a thread."""
 
-    def __init__(self, host, sysr, run_id: str, spec: dict, clock_ns=time.monotonic_ns, poll_s: float = 0.01):
+    def __init__(self, host, sysr, run_id: str, spec: dict, clock_ns=time.monotonic_ns, poll_s: float = 0.01,
+                 stdout_files=None):
         self.host, self.sysr, self.run_id, self.spec, self.clock_ns, self.poll_s = \
             host, sysr, run_id, spec, clock_ns, poll_s
+        self.stdout_files = stdout_files or {}     # spawn role -> path of its stdout (OV-4: the iperf3 JSON report)
         self.record = {"type": spec["type"], "magnitude": spec["magnitude"], "issued": False, "verified": False}
         self.thread, self.procs = None, []
 
@@ -608,7 +710,7 @@ class Injector:
         try:
             if "ops" in self.spec:                                    # CPU / network: the declared exact ops
                 for op in self.spec["ops"]:
-                    res = self.host.apply(op, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) \
+                    res = self.host.apply(op, stdout=self.stdout(op[1]), stderr=subprocess.DEVNULL) \
                         if op[0] == "spawn" else self.host.apply(op)
                     if op[0] == "spawn":
                         self.procs.append(res)
@@ -620,6 +722,10 @@ class Injector:
             return
         self.thread = threading.Thread(target=self.watch, daemon=True)
         self.thread.start()
+
+    def stdout(self, role):
+        path = self.stdout_files.get(role)
+        return open(path, "xb") if path is not None else subprocess.DEVNULL
 
     def echo_value(self):
         try:
@@ -767,6 +873,9 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
     client_tmp = out / "lg" / "client.jsonl"
     argv = {"dependency": L.dependency_argv(run_id, w), "workload": L.workload_argv(run_id, w, writer, ws),
             "loadgen": L.loadgen_argv(w, load_s, seed, str(client_tmp), arr)}
+    flood = (spec or {}).get("type") == "ov4_udp_flood"
+    if flood:
+        argv["flood_server"] = L.flood_server_argv()                  # idle in B until the client connects
     sysr = sysr or L.Sys()
     host = (host_cls or L.Host)(L.Plan(run_id, spawns=argv.items(), fault_ops=(spec or {}).get("ops", ())),
                                 str(out / "ops.jsonl"), sysr)
@@ -828,6 +937,11 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
                                                                                   state["start"]["ip"],
                                                                                   state["start"]["qdisc"]):
             raise L.LabAbort("start counters unavailable")
+        if flood:
+            procs["flood_server"] = host.apply(("spawn", "flood_server", argv["flood_server"]),
+                                               stdout=(out / "lg" / "flood_server.json").open("xb"),
+                                               stderr=(out / "logs" / "flood_server.stderr").open("wb"))
+            evt("flood_server_started")
         procs["loadgen"] = host.apply(("spawn", "loadgen", argv["loadgen"]),
                                       stderr=(out / "logs" / "loadgen.stderr").open("wb"))
         evt("loadgen_started")
@@ -836,10 +950,12 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
         ticks = None
         if v["collector"] == "root":
             if spec is not None:
-                injector = Injector(host, sysr, run_id, spec)
+                injector = Injector(host, sysr, run_id, spec,
+                                    stdout_files={"flood_client": out / "lg" / "flood_client.json"} if flood else None)
             hook = WindowHook(appmod.AppSource(run_id), round(B_S / PERIOD_S), round(W_S / PERIOD_S), read_app,
                               injector, lambda: gt_snapshot(sysr, wpid),
-                              memory_guard(sysr) if (spec or {}).get("type") == "memory_max" else None)
+                              memory_guard(sysr) if (spec or {}).get("type") == "memory_max" else None,
+                              flood_observer(sysr) if flood else None)
             evt("collect_start")
             ticks, stats = collect(target, params, LiveReader(), SystemClock(), PERIOD_S, LoaderTicks(loader), hook)
             evt("collect_end")
@@ -878,6 +994,21 @@ def ctrl(out: Path, seed: int, commit: str, decisions=DECISIONS, sysr=None, host
         if R["exit_codes"]["loadgen"] != 0:
             raise L.LabAbort(f"load generator exited with {R['exit_codes']['loadgen']}")
         evt("loadgen_finished")
+        if flood:                                                     # both iperf3 ends report, then exit
+            if not (injector and injector.procs):
+                raise L.LabAbort("OV-4 flood client was not started")
+            try:
+                R["exit_codes"]["flood_client"] = injector.procs[0].wait(FLOOD_S + 30)
+                R["exit_codes"]["flood_server"] = procs["flood_server"].wait(30)
+            except subprocess.TimeoutExpired:
+                raise L.LabAbort("OV-4 flood did not finish") from None
+            R["flood"] = {"observations": hook.observed, "duration_s": FLOOD_S,
+                          "client_cpu": L.FLOOD_CLIENT_CPU, "server_cpu": L.FLOOD_SERVER_CPU,
+                          "support_cpus_effective": sysr.read(f"{L.SUPPORT_DIR}/cpuset.cpus.effective"),
+                          "target_cpus_effective": sysr.read(f"{L.TARGET_DIR}/cpuset.cpus.effective")}
+            for role in ("flood_client", "flood_server"):
+                write_new(ev / f"{role}.json", read_regular(out / "lg" / f"{role}.json"))
+            evt("flood_finished")
 
         def drained():
             d = appmod.parse(appmod.read_metrics(run_id))
@@ -1231,7 +1362,7 @@ def evaluate(out: Path, live: bool = False, run_result=None) -> dict:
     checks["host_compare"] = {"ok": bool((run.get("host_compare") or {}).get("ok")),
                               "failed": (run.get("host_compare") or {}).get("failed")}
     checks["bpf_released"] = {"ok": bool((run.get("bpf_release") or {}).get("released"))}
-    pis, effects = {}, None
+    pis, effects, ov4 = {}, None, None
     variant = run.get("variant", "ctrl")
     collected = VARIANTS.get(variant, VARIANTS["ctrl"])["collector"] is not None
     if not run.get("aborts"):
@@ -1267,6 +1398,11 @@ def evaluate(out: Path, live: bool = False, run_result=None) -> dict:
                 pis = pi_checks(run, json.loads(live_bytes), ticks)
             if variant == "pi8":
                 checks["injection_verified"] = injection_check(run)
+            if (run.get("fault") or {}).get("type") == "ov4_udp_flood":   # AMD-13 (report; levels decides)
+                ov4 = ov4_check(run, *((out / EVIDENCE / f"{r}.json").read_bytes()
+                                       for r in ("flood_client", "flood_server")))
+                a, b = (json.loads((out / EVIDENCE / f"gt_{k}.json").read_bytes()) for k in ("w_start", "w_end"))
+                ov4["softirq_frac_w"] = softirq_frac(a, b, (L.TARGET_CPU, L.FLOOD_CLIENT_CPU, L.FLOOD_SERVER_CPU))
             if run.get("w_docs"):                                       # root-collected runs: W-window effects
                 effects = w_effects(out)
         except Exception as exc:                                        # noqa: BLE001 -- recorded, never hidden
@@ -1275,7 +1411,7 @@ def evaluate(out: Path, live: bool = False, run_result=None) -> dict:
     ok = set(checks) == pipeline_checks(variant) and all(c["ok"] for c in checks.values())
     report = {"format": FORMAT + ".report", "variant": variant, "pipeline_ok": ok,
               "ok": ok and all(p["ok"] for p in pis.values()), "checks": checks, "pi": pis,
-              "w_effects": effects, "fault": run.get("fault"),
+              "w_effects": effects, "fault": run.get("fault"), **({"ov4": ov4} if ov4 is not None else {}),
               "note": "PI verdicts are measurements against the proposed criteria; a pipeline pass is not a "
                       "scientific validation."}
     if live:
@@ -1338,6 +1474,11 @@ def rep_effect(run_dir: Path, ctrl_max: dict, lock_rule: dict) -> dict:
     run = json.loads((run_dir / EVIDENCE / "run.json").read_bytes())
     f = run["fault"]
     verified = (rep["checks"].get("injection_verified") or {}).get("ok", False)
+    if f["type"] == "ov4_udp_flood":                                 # AMD-13 (a)-(d); (e) = the run's pipeline
+        g = rep.get("ov4") or {"feasible": False}
+        return {"run": run_dir.name, "seed": run["seed"], "magnitude": f["magnitude"], "pipeline_ok": rep["pipeline_ok"],
+                "injection_verified": verified, "measure": g, "basis": "AMD-13 OV-4 producibility",
+                "ground_truth": bool(rep["pipeline_ok"] and verified and g["feasible"])}
     if f["type"] in OP_FAULTS:                                       # kernel-side ground truth (design §5.8)
         a, b = (gt_parse(json.loads((run_dir / EVIDENCE / f"gt_{k}.json").read_bytes())) for k in ("w_start", "w_end"))
         g = fault_ground_truth(f["type"], f["magnitude"], a, b, ctrl_max)

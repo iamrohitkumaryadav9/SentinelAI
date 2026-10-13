@@ -12,6 +12,7 @@ import importlib.util
 import json
 import os
 import stat
+import subprocess
 import sys
 import tempfile
 import time
@@ -231,6 +232,19 @@ class FakeSys(L.Sys):
         return (0, "[]", "")                                  # routes6
 
 
+def iperf_doc(sender=True, packets=80000 * 95, seconds=95.0, lost=0, error=None):
+    """An iperf3 3.9 -J UDP report (client: sender True; one-off server: sender False)."""
+    if error:
+        return json.dumps({"start": {}, "intervals": [], "end": {}, "error": error}).encode()
+    local, remote = (L.IP_A, L.IP_B) if sender else (L.IP_B, L.IP_A)
+    s = {"start": 0, "end": seconds, "seconds": seconds, "bytes": packets * 64 if sender else 0, "jitter_ms": 0.01,
+         "lost_packets": lost, "packets": packets, "lost_percent": 100.0 * lost / packets if packets else 0,
+         "sender": sender}
+    return json.dumps({"start": {"connected": [{"socket": 5, "local_host": local, "local_port": 40000,
+                                                "remote_host": remote, "remote_port": L.FLOOD_PORT}]},
+                       "intervals": [], "end": {"streams": [{"udp": s}], "sum": s}}).encode()
+
+
 class FakeProc:
     _next = 4242
 
@@ -255,9 +269,11 @@ class SimHost(L.Host):
     """Real plan check and op log; the effect is simulated on FakeSys. fail(op) -> True raises OSError there."""
 
     def __init__(self, plan, oplog, sysr, fail=None, spawn=None, fail_after_mount=False, workload_files=None,
-                 on_control=None):
+                 on_control=None, flood=None, flood_cpus="22"):
         super().__init__(plan, oplog, sysr)
         self.on_control = on_control                   # the workload's reaction to a replaced control file
+        self.flood = flood if flood is not None else {"flood_client": iperf_doc(), "flood_server": iperf_doc(False)}
+        self.flood_cpus = flood_cpus                   # the flood client's Cpus_allowed_list
         self.fail, self.spawn, self.ops = fail or (lambda op: False), spawn or {}, []
         self.workload_files = workload_files or {}   # what the workload publishes (config echo); default b"{}"
         self.fail_after_mount = fail_after_mount     # the first ip netns add fails after mounting /run/netns
@@ -351,9 +367,18 @@ class SimHost(L.Host):
             role = op[1]
             p = (self.spawn.get(role) or (lambda: FakeProc()))()
             leaf = {"echo_server": "support", "echo_client": "target", "workload": "target",
-                    "dependency": "support", "loadgen": "support", "contender": "contender"}[role]
-            if role in ("echo_server", "dependency", "loadgen", "workload", "contender"):
+                    "dependency": "support", "loadgen": "support", "contender": "contender",
+                    "flood_server": "support", "flood_client": "support"}[role]
+            if role in ("echo_server", "dependency", "loadgen", "workload", "contender", "flood_server", "flood_client"):
                 s.procs[p.pid] = f"/{L.LAB}/{leaf}"
+            if role.startswith("flood_"):                     # iperf3: its own argv, affinity and JSON report
+                prog = list(op[2][op[2].index(L.IPERF3):])
+                s.files[f"/proc/{p.pid}/cmdline"] = "\0".join(prog) + "\0"
+                s.files[f"/proc/{p.pid}/status"] = f"Name:\tiperf3\nCpus_allowed_list:\t" \
+                    f"{self.flood_cpus if role == 'flood_client' else '23'}\n"
+                if role in self.flood and stdout not in (None, subprocess.DEVNULL):
+                    stdout.write(self.flood[role])
+                    stdout.flush()
             if role == "dependency":
                 s.run[f"{L.run_dir(self.plan.run_id)}/dependency_config.json"] = ("file", L.LAB_UID, b"{}")
             if role == "workload":                            # --metrics off: the workload publishes no metrics.json
@@ -2500,6 +2525,96 @@ class TestMemoryFault(OpFaultFixture):
         lv = P.levels(self.tmp)["faults"]["memory_max"]
         self.assertEqual(lv["established_2of2"], [768, 512, 256])
         self.assertEqual((lv["I1"], lv["I3"], lv["I0"]), (768, 256, 960))
+
+
+class TestOv4Flood(OpFaultFixture):
+    """OV-4 feasibility (AMD-13, FZ-OV) as a PI-8 fault: a 64-byte UDP flood A -> B at the one approved level."""
+
+    def test_only_the_preregistered_level_with_its_exact_ops(self):
+        spec = P.fault_spec("ov4_udp_flood", 80000, WORKLOAD)
+        self.assertEqual((spec["decision"], spec["candidates"], spec["ops"]),
+                         ("FZ-OV", [80000], L.flood_ops(80000, P.W_S + 5)))
+        argv = spec["ops"][0][2]
+        prog = argv[argv.index(L.IPERF3):]
+        self.assertEqual(prog, [L.IPERF3, "-c", L.IP_B, "-B", L.IP_A, "-p", "5301", "-u", "-l", "64",
+                                "-b", str(80000 * 64 * 8), "-t", str(P.W_S + 5), "-A", "22", "-J"])
+        self.assertEqual(argv[:len(L.placed("support", L.NS_A, []))], L.placed("support", L.NS_A, []))
+        self.assertNotIn(L.FLOOD_CLIENT_CPU, (L.TARGET_CPU,))
+        self.assertNotIn(L.FLOOD_SERVER_CPU, (L.TARGET_CPU,))
+        for bad in (40000, 160000, 80000.0, True):
+            with self.subTest(bad), self.assertRaises(P.Refused):
+                P.fault_spec("ov4_udp_flood", bad, WORKLOAD)
+
+    def test_guard_accepts_only_the_declared_flood(self):
+        spec = P.fault_spec("ov4_udp_flood", 80000, WORKLOAD)
+        plan = L.Plan("PI8-s900400", spawns=[("flood_server", L.flood_server_argv())], fault_ops=spec["ops"])
+        plan.check(spec["ops"][0])
+        plan.check(("spawn", "flood_server", L.flood_server_argv()))
+        with self.assertRaises(L.LabRefused):
+            plan.check(("spawn", "flood_client", L.flood_client_argv(160000, P.W_S + 5)))
+        with self.assertRaises(L.LabRefused):
+            L.Plan("PI8-s900400").check(spec["ops"][0])                       # undeclared: refused
+        for role in ("workload", "loadgen", "flood_server", "dependency"):     # only fault roles are fault ops
+            with self.subTest(role), self.assertRaises(L.LabRefused):
+                L.Plan("PI8-s900400", fault_ops=[("spawn", role, L.flood_server_argv())])
+
+    def test_feasible_run(self):
+        rc, h, rep = self.go("ov4_udp_flood", 80000, 900400)
+        self.assertEqual(rc, 0, rep["checks"])
+        spawns = [o[1] for o in h.ops if o[0] == "spawn"]
+        self.assertLess(spawns.index("flood_server"), spawns.index("loadgen"))   # listening before any flood
+        self.assertLess(spawns.index("loadgen"), spawns.index("flood_client"))   # the client is the injection
+        self.assertTrue(rep["checks"]["injection_verified"]["ok"])
+        o = rep["ov4"]
+        self.assertTrue(o["feasible"], o)
+        self.assertEqual((o["c_ticks"], o["c_alive_ticks"], o["nW"]), (P.W_S, P.W_S, P.W_S))
+        self.assertAlmostEqual(o["a_sender_pps"], 80000.0)
+        man = json.loads((self.out / "manifest.json").read_text())
+        self.assertTrue({"evidence/flood_client.json", "evidence/flood_server.json"} <= set(man["files"]))
+        g = self.rep(900400)
+        self.assertTrue(g["ground_truth"], g)
+        self.assertTrue(empty(self.s))
+
+    def test_infeasible_reps_are_reported_not_hidden(self):
+        cases = (("sender rate off by more than tau", {"flood": {"flood_client": iperf_doc(packets=70000 * 95),
+                                                                 "flood_server": iperf_doc(False, 70000 * 95)}}, "a"),
+                 ("receiver loss", {"flood": {"flood_client": iperf_doc(),
+                                              "flood_server": iperf_doc(False, lost=3)}}, "b"),
+                 ("client on the target CPU", {"flood_cpus": "18,22"}, "d"),
+                 ("client error", {"flood": {"flood_client": iperf_doc(error="unable to connect"),
+                                             "flood_server": iperf_doc(False)}}, "a"))
+        for seed, (name, kw, crit) in enumerate(cases, start=900401):
+            with self.subTest(name):
+                rc, h, rep = self.go("ov4_udp_flood", 80000, seed, **kw)
+                o = rep["ov4"]
+                self.assertFalse(o["feasible"])
+                self.assertFalse(o["criteria"][crit], o)
+                self.assertTrue(rep["pipeline_ok"], rep["checks"])               # a valid run, an infeasible rep
+                self.assertFalse(self.rep(seed)["ground_truth"])
+
+    def test_flood_dead_for_one_tick(self):
+        obs = [{"k": k, "pid": 7, "alive": k != 100, "cpus": "22", "netns_a": True} for k in range(46, 136)]
+        run = {"nW": 90, "flood": {"observations": obs, "target_cpus_effective": "18\n",
+                                   "support_cpus_effective": "19-20,22-23\n"}}
+        o = P.ov4_check(run, iperf_doc(), iperf_doc(False))
+        self.assertEqual((o["criteria"]["c"], o["feasible"]), (False, False))
+        run["flood"]["observations"] = [dict(x, alive=True) for x in obs]
+        self.assertTrue(P.ov4_check(run, iperf_doc(), iperf_doc(False))["feasible"])
+        for key, val in (("target_cpus_effective", "19\n"), ("support_cpus_effective", "")):
+            with self.subTest(key):
+                bad = dict(run, flood=dict(run["flood"], **{key: val}))
+                self.assertFalse(P.ov4_check(bad, iperf_doc(), iperf_doc(False))["criteria"]["d"])
+        wrong_ns = dict(run, flood=dict(run["flood"], observations=[dict(x, alive=True, netns_a=k > 0)
+                                                                    for k, x in enumerate(obs)]))
+        self.assertFalse(P.ov4_check(wrong_ns, iperf_doc(), iperf_doc(False))["criteria"]["d"])
+        few = dict(run, flood=dict(run["flood"], observations=run["flood"]["observations"][:-1]))
+        self.assertFalse(P.ov4_check(few, iperf_doc(), iperf_doc(False))["criteria"]["c"])
+        swapped = json.loads(iperf_doc())
+        swapped["start"]["connected"][0].update(local_host=L.IP_B, remote_host=L.IP_A)
+        self.assertFalse(P.ov4_check(run, json.dumps(swapped).encode(), iperf_doc(False))["criteria"]["path"])
+        edge = 80000 * 1.1                                                       # tau is inclusive
+        self.assertTrue(P.ov4_check(run, iperf_doc(packets=round(edge * 95)), iperf_doc(False))["criteria"]["a"])
+        self.assertFalse(P.ov4_check(run, iperf_doc(packets=round(edge * 95) + 100), iperf_doc(False))["criteria"]["a"])
 
 
 class TestTargetProcesses(unittest.TestCase):

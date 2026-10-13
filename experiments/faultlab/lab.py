@@ -264,6 +264,29 @@ CONTENDER_CODE = "i = 0\nwhile True:\n    i += 1\n"               # one SCHED_OT
 POLICE_BURST_BYTES = 3000                                            # two MTU-sized packets (ENG)
 
 
+# OV-4 feasibility (AMD-13, FZ-OV): a 64-byte UDP flood from A to B through R, both iperf3 ends in the support leaf
+# on CPUs disjoint from the target's (design §6.3 generator; R2-E's iperf3 3.9 and payload size)
+IPERF3 = "/usr/bin/iperf3"
+FLOOD_PORT, FLOOD_UDP_LEN = 5301, 64
+FLOOD_CLIENT_CPU, FLOOD_SERVER_CPU = 22, 23                          # support CPUs, never TARGET_CPU
+
+
+def flood_server_argv() -> List[str]:
+    """One-off iperf3 server in B (exits after one test); its JSON report is the receiver's view."""
+    return placed("support", NS_B, [IPERF3, "-s", "-1", "-B", IP_B, "-p", str(FLOOD_PORT),
+                                    "-A", str(FLOOD_SERVER_CPU), "-J"])
+
+
+def flood_client_argv(pps: int, seconds: int) -> List[str]:
+    return placed("support", NS_A, [IPERF3, "-c", IP_B, "-B", IP_A, "-p", str(FLOOD_PORT), "-u",
+                                    "-l", str(FLOOD_UDP_LEN), "-b", str(int(pps) * FLOOD_UDP_LEN * 8),
+                                    "-t", str(int(seconds)), "-A", str(FLOOD_CLIENT_CPU), "-J"])
+
+
+def flood_ops(pps: int, seconds: int) -> List[tuple]:
+    return [("spawn", "flood_client", flood_client_argv(pps, seconds))]
+
+
 def contender_argv() -> List[str]:
     return placed("contender", NS_B, [PYTHON, "-I", "-c", CONTENDER_CODE])
 
@@ -640,7 +663,7 @@ class Plan:
         for op in fault_ops:                                        # the run's declared fault, exactly
             if op[0] == "write" and op[1] in (QUOTA_PATH, CONTENDER_WEIGHT_PATH, MEMORY_PATH):
                 self.writes.add((op[1], op[2]))
-            elif op[0] == "spawn" and op[1] == "contender":
+            elif op[0] == "spawn" and op[1] in ("contender", "flood_client"):
                 spawns = list(spawns) + [(op[1], op[2])]
             elif op[0] != "tc":
                 raise LabRefused(f"not a fault operation: {op!r}")
