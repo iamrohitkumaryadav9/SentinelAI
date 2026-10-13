@@ -26,6 +26,7 @@ Evidence lives in `results/phase1c_m5_pilot/<campaign>/<run>/` and is committed 
 | `20261012T030504Z` | `7f6eac7` | PI0-1…5, CTRL-900001 | PI-0 5/5 passed. CTRL-900001 **FAILED** (`app_features`, §3). |
 | `20261012T040045Z` | `af2a4e7` | PI0-1…5, CTRL-900002…900005 | PI-0 5/5 passed. CTRL 4/4 passed. |
 | `20261012T045417Z` | `29d652f` | PI0-1…5; CTRL, PI6OFF, INSTOFF at seeds 900006 and 900007; PI1U-900008, PI1U-900009 | PI-0 5/5 passed. All 8 runs passed (§3a). |
+| `20261013T035747Z` | `9e7e14c` | PI0-1…5; CTRL-900600, 900601; I2 confirmation PI8-900610…900617 | PI-0 5/5, CTRL 2/2 passed. Lock, contention and quota I2 confirmed 2 of 2 (§3i). **PI8-900617 FAILED** client/server reconciliation: one HTTP 400 the reconciliation did not map. Campaign stopped; police and congestion move to the next campaign. |
 | `20261013T024805Z` | `9934ca0` | PI0-1…5; CTRL-900190, 900191; PI8-900430, 900431 (OV-4 flood, 80,000 pps); PI8-900440, 900441 (OV-5 fill, 768 MiB under M = 2,048 MiB) | All 11 passed their pipeline checks and every PI (§3h). OV-4 producible 2 of 2 (AMD-13); OV-5 feasible 2 of 2 (AMD-15 F1). |
 | `20261012T175020Z` | `c4e10d8` | PI0-1…5; CTRL-900180…900183; one re-check per earlier fault PI8-900340…900348; PI8-900360…900367 (`memory.max` 960 / 768 / 512 / 256 MiB, 2 each) | All 26 passed their pipeline checks (§3g); the separate scanner process removes the stall. PI-6 missed in PI8-900344 (throttle features, known) and in 3 memory runs, PI8-900361, 900366 and 900367 (`mem.util.target` coverage 0.978–0.989). Memory effect saturated at every level. |
 | `20261012T165705Z` | `c874aa4` | PI0-1…5; CTRL-900170, 900171; PI8-900320 (`memory.max` 960 MiB) | PI-0 5/5, CTRL 2/2 passed. **PI8-900320 FAILED** (app features, client/server reconciliation): the workload stalled under memory pressure (§3f). Campaign closed; an owner decision is pending. |
@@ -384,18 +385,42 @@ PI-7 (CTRL part).
 
 
 
+## 3i. I2 confirmation (campaign `20261013T035747Z`, `9e7e14c`)
+
+The FZ-M5-REVIEW I2 levels, 2 reps each (AMD-13). PI-0 5/5 and CTRL 2/2 passed. (An earlier attempt,
+`20261013T034623Z`, was refused before anything was created: three decision records carried unregistered value
+keys; fixed in `9e7e14c`.)
+
+| Fault | I2 | Reps | Result |
+|---|---|---|---|
+| lock hold | 1,581 µs | PI8-900610, 900611 | **confirmed** 2 of 2 (lock wait P99 12.8 ms > 0.05 ms) |
+| contention | 141 | PI8-900612, 900613 | **confirmed** 2 of 2 (CPU 18 idle 0.01 %) |
+| quota | 12,248 µs | PI8-900614, 900615 | **confirmed** 2 of 2 (throttled in 99.9 % and 100 % of periods) |
+| police | 407 kbit/s | PI8-900616 valid; PI8-900617 failed | 1 valid rep; not yet decided |
+| congestion | 439 kbit/s | not run | — |
+
+**PI8-900617: FAILED (client/server reconciliation).** Ground truth held (12,549 police drops), injection was verified,
+and every other check passed. One request (k = 16,674) was delayed 3.7 s by police drops and TCP retransmission. The
+workload reads a request for at most 2 s, so it answered **400 Bad Request** and counted it in
+`requests_failed_total`, as its documented accounting says (failed = 400, 504 or a lost client). The reconciliation
+mapped only 504 to that counter, so it reported the 400 as unexplained. No request was lost: the server's failed count
+is 321 = 320 × 504 + 1 × 400. The run is kept as failed; the reconciliation is corrected in the next commit, and police
+and congestion are confirmed in a new campaign.
+
+## 4. PI verdicts so far
+
 | PI | Status | Basis |
 |---|---|---|
 | PI-0 | **pass** (5/5 at `af2a4e7`) | §2 |
-| PI-1 | **pass in both modes.** Driver-root: coverage 1.0 in all 6 CTRL runs at `af2a4e7` and `29d652f`. Unprivileged: coverage 1.0 and netns verified in PI1U-900008 and PI1U-900009. The choice of mode (Q-2) is the owner's. | Design §6.2: 2 runs per mode |
+| PI-1 | **pass in both modes.** Driver-root: coverage 1.0 in all 6 CTRL runs at `af2a4e7` and `29d652f`. Unprivileged: coverage 1.0 and netns verified in PI1U-900008 and PI1U-900009. M6 uses driver-root (Q-2, `FZ-Q2`, 2026-10-12). | Design §6.2: 2 runs per mode |
 | PI-6 | **pass.** Collector CPU 0.0015–0.0021 core (budget 0.02) and coverage ≥ 0.99 in every collected run. 2 collectors-off pairs complete (§3a, report-only differences). | Design §6.7 |
 | Instrumentation | 2 on/off pairs complete; report-only (§3a) | Design §5.5 |
-| PI-7 | CTRL part: 136/136 valid app ticks, `app.latency_ms` P99 measured, in every run. Fault part: dependency delay above the CTRL maximum in every rep; pool shrink and lock hold not (§3c). An owner decision is pending. | FZ-PI7, FZ-PI7-LOCK |
-| PI-8 (application) | Under Poisson arrivals (§3d): dependency delay I1 4 / I2 7 / I3 15 ms; lock hold 500 / 1,581 / 5,000 µs; pool shrink only P′ = 1. Not frozen. (Under bounded jitter, §3c, pool and lock had no effect.) | FZ-PI8 |
-| PI-8 (CPU) | Contention I1 50 / I2 141 / I3 400; throttling 0.20 / 0.122 / 0.075 core; effect in every rep (§3d). Not frozen. | FZ-PI8 |
-| PI-8 (network) | Local loss 0.5 / 1 / 5 %; police 550 / 407 / 300 kbit/s; path loss 0.5 / 1 / 5 %; congestion 600 / 439 / 320 kbit/s (thin retransmission signal below 600) (§3e). Not frozen. | FZ-PI8 |
+| PI-7 | CTRL part: 136/136 valid app ticks, `app.latency_ms` P99 measured, in every run. Fault part: under Poisson arrivals (§3d) every mechanism shows its wait metric above the CTRL maximum (lock hold by FZ-PI7-LOCK); pool shrink only at P′ = 1 (R-3). | FZ-PI7, FZ-PI7-LOCK |
+| PI-8 (application) | Under Poisson arrivals (§3d): dependency delay I1 4 / I2 7 / I3 15 ms; lock hold 500 / 1,581 / 5,000 µs; pool shrink only P′ = 1. Frozen (R-1); I2 confirmation §3i. (Under bounded jitter, §3c, pool and lock had no effect.) | FZ-PI8 |
+| PI-8 (CPU) | Contention I1 50 / I2 141 / I3 400; throttling 0.20 / 0.122 / 0.075 core; effect in every rep (§3d). Frozen (R-1); I2 confirmation §3i. | FZ-PI8 |
+| PI-8 (network) | Local loss 0.5 / 1 / 5 %; police 550 / 407 / 300 kbit/s; path loss 0.5 / 1 / 5 %; congestion 600 / 439 / 320 kbit/s (thin retransmission signal below 600) (§3e). Frozen (R-1); I2 confirmation §3i. | FZ-PI8 |
 | PI-2 | **pass**: path loss shows A retransmissions above the CTRL maximum while A's local drop counters stay 0, in every rep (§3e) | design §6.3 |
-| PI-8 (memory) | Every candidate established 2 of 2, but the effect is saturated (same refaults and PSI at 960…256 MiB) (§3g). Not frozen. | FZ-PI8 |
+| PI-8 (memory) | Every candidate established 2 of 2, but the effect is saturated (same refaults and PSI at 960…256 MiB) (§3g). Single level 768 MiB (R-6). | FZ-PI8 |
 | PI-5 | **met** in all 8 memory runs: PSI above CTRL, no OOM kills, swap 0 (§3g) | FZ-PI5 |
 | OV-4 | **producible** 2 of 2 at 80,000 pps (AMD-13 (a)–(e)) (§3h) | FZ-OV |
 | OV-5 | **feasible** 2 of 2 (AMD-15 F1; fill timing judged again once T_TRANS is frozen) (§3h) | FZ-OV O-1 |
