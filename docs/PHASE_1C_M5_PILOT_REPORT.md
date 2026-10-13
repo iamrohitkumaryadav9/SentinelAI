@@ -26,6 +26,7 @@ Evidence lives in `results/phase1c_m5_pilot/<campaign>/<run>/` and is committed 
 | `20261012T030504Z` | `7f6eac7` | PI0-1…5, CTRL-900001 | PI-0 5/5 passed. CTRL-900001 **FAILED** (`app_features`, §3). |
 | `20261012T040045Z` | `af2a4e7` | PI0-1…5, CTRL-900002…900005 | PI-0 5/5 passed. CTRL 4/4 passed. |
 | `20261012T045417Z` | `29d652f` | PI0-1…5; CTRL, PI6OFF, INSTOFF at seeds 900006 and 900007; PI1U-900008, PI1U-900009 | PI-0 5/5 passed. All 8 runs passed (§3a). |
+| `20261013T044701Z` | `190b9d9` | PI0-1…5; CTRL-900620, 900621; PI8-900622, 900623 (police 407); PI8-900624…900626 (congestion 439) | PI-0 5/5, CTRL 2/2 passed. Police and congestion I2 confirmed 2 of 2 (§3j). **PI8-900624 FAILED** the host comparison: a new login session scope appeared during the run (the owner's connection dropped and reconnected); repeated as PI8-900626. |
 | `20261013T035747Z` | `9e7e14c` | PI0-1…5; CTRL-900600, 900601; I2 confirmation PI8-900610…900617 | PI-0 5/5, CTRL 2/2 passed. Lock, contention and quota I2 confirmed 2 of 2 (§3i). **PI8-900617 FAILED** client/server reconciliation: one HTTP 400 the reconciliation did not map. Campaign stopped; police and congestion move to the next campaign. |
 | `20261013T024805Z` | `9934ca0` | PI0-1…5; CTRL-900190, 900191; PI8-900430, 900431 (OV-4 flood, 80,000 pps); PI8-900440, 900441 (OV-5 fill, 768 MiB under M = 2,048 MiB) | All 11 passed their pipeline checks and every PI (§3h). OV-4 producible 2 of 2 (AMD-13); OV-5 feasible 2 of 2 (AMD-15 F1). |
 | `20261012T175020Z` | `c4e10d8` | PI0-1…5; CTRL-900180…900183; one re-check per earlier fault PI8-900340…900348; PI8-900360…900367 (`memory.max` 960 / 768 / 512 / 256 MiB, 2 each) | All 26 passed their pipeline checks (§3g); the separate scanner process removes the stall. PI-6 missed in PI8-900344 (throttle features, known) and in 3 memory runs, PI8-900361, 900366 and 900367 (`mem.util.target` coverage 0.978–0.989). Memory effect saturated at every level. |
@@ -407,6 +408,24 @@ mapped only 504 to that counter, so it reported the 400 as unexplained. No reque
 is 321 = 320 × 504 + 1 × 400. The run is kept as failed; the reconciliation is corrected in the next commit, and police
 and congestion are confirmed in a new campaign.
 
+## 3j. I2 confirmation, police and congestion (campaign `20261013T044701Z`, `190b9d9`)
+
+PI-0 5/5 and CTRL 2/2 passed (CTRL retransmissions in W: 0).
+
+| Fault | I2 | Valid reps | Result |
+|---|---|---|---|
+| police | 407 kbit/s | PI8-900622, 900623 | **confirmed** 2 of 2 (12,387 and 12,175 police drops at A's ingress) |
+| congestion | 439 kbit/s | PI8-900625, 900626 | **confirmed** 2 of 2 (7 retransmissions each against a CTRL maximum of 0; A's local drops 0) |
+
+**PI8-900624: FAILED (host comparison).** `cgroup_dirs_identical` failed because
+`user.slice/user-1000.slice/session-162.scope` appeared during the run: the owner's network connection dropped and a
+new login session started. Injection was verified, cleanup passed, and every network, interface, route, qdisc and BPF
+comparison was identical. External, like PI8-900081; kept as failed and repeated (PI8-900626). The congestion signal
+is again small (7 retransmissions), as recorded under R-4.
+
+**With §3i, all five interpolated I2 levels are confirmed under AMD-13**: lock hold 1,581 µs, contention 141, quota
+12,248 µs, police 407 kbit/s, congestion 439 kbit/s. No tie-break was needed.
+
 ## 4. PI verdicts so far
 
 | PI | Status | Basis |
@@ -486,6 +505,8 @@ freezing is the review's (FZ-INTENSITY, FZ-PI8).
 | `20261012T104753Z/PI8-900116` | across-R reconciliation under local loss | fixed `6320943` |
 | `20261012T133839Z/PI8-900200` | across-R: segments are not packets under retransmission | fixed `caf5ff0` |
 | `20261012T165705Z/PI8-900320` | in-process scanner stalled the workload under `memory.max` | scanner process, M-2 (`c4e10d8`) |
+| `20261013T035747Z/PI8-900617` | client/server reconciliation: the workload's 400 was not mapped (§3i) | fixed `190b9d9` |
+| `20261013T044701Z/PI8-900624` | host comparison: a new login session after a dropped connection (§3j) | external; repeated |
 
 **7.2 PI-8 levels proposed for freezing** (`levels`, first two pipeline-valid reps per candidate, 2 of 2):
 
