@@ -714,6 +714,10 @@ class TestStagesAndPrivilege(Base):
         self.assertEqual((v("FZ-TTRANS")["T_TRANS_s"], v("FZ-TTRANS")["W_s"]), (16, 24))
         self.assertIn("compressed", v("FZ-STAGING")["m6_raw_retention"])
         self.assertIn("FZ-M5-REVIEW", P.FULL_ONLY)
+        m6 = v("FZ-M6-PLAN")                                               # P-1..P-6, 2026-10-13
+        self.assertEqual(m6["matrix"]["total_runs"], 196)
+        self.assertIn("deferred", m6["ood"])
+        self.assertIn("FZ-M6-PLAN", P.FULL_ONLY)
         ov5 = v("FZ-OV")["ov5_sizes"]                                      # O-1, 2026-10-13
         self.assertEqual((ov5["target_memory_max_mib"], ov5["fill_file_mib"], ov5["lab_cap_mib"], ov5["reps"]),
                          (2048, 768, 2560, 2))

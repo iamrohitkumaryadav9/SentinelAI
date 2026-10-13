@@ -202,6 +202,22 @@ holds each one under its own ID. Tags as in §1; **ENG** values are arithmetic o
 
 | R-8 | `FZ-INTENSITY` | Closed (owner reply "close FZ-Intensity", 2026-10-13) once all five interpolated I2 levels were confirmed 2 of 2 under AMD-13 (campaigns `20261013T035747Z`, `20261013T044701Z`, no tie-break). The record holds the final M6 level table: I1/I2/I3 per fault, single levels for pool (P′ = 1), memory (768 MiB), OV-4 (80,000 pps) and OV-5 (768 MiB) | **V** pilot report §3i, §3j |
 
+**M6 plan (owner reply "all A", 2026-10-13; `FZ-M6-PLAN`):**
+
+| Item | Decision |
+|---|---|
+| P-1 | A class's seeds are split evenly across its mechanisms (application: delay / lock / pool; loss: netem on A / police; retransmissions: path loss / congestion) |
+| P-2 | Memory (768 MiB) and pool (P′ = 1) run their test seeds at the single level; the I2 test-only rule cannot apply to them (limitation) |
+| P-3 | SENS I0 = ½ × I1 in injection units (weaker, so within every ceiling) |
+| P-4 | OOD deferred; reported as not run |
+| P-5 | AMD-29 admits the matrix generator, the M6 batch runner, their tests, `docs/PHASE_1C_M6_*.md` and `datasets/faultlab/v1/matrix.json` (add-only) |
+| P-6 | U-8 traceability audit now (read-only); U-5 offline rebuild; U-4 the 6 PI-3 runs in batch 1 |
+
+Matrix: 48 single-fault train + 72 test (12 per class, Q-5) + 40 overlap/distractor + 24 CTRL (10 / 14) + 12 SENS =
+196 runs. Collection: code pinned for all of M6, only dataset commits between batches, each batch its own campaign with
+PI-0; failed_injection excluded and counted, never retried; any other failed run kept as failed and its seed never
+reused.
+
 Still pending after §5:
 
 - No Freeze-1 parameter decision.

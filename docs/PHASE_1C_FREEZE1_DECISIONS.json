@@ -605,6 +605,31 @@
     "U-1b": "A: design §10's waiver covers softirq's G-Q2, basis R2-E",
     "U-7": "A: G-Q1 and G-Q4 over single-fault test runs plus CTRL test runs; OV runs scored only under robustness"
    }
+  },
+  "FZ-M6-PLAN": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-13",
+   "reference": "Approved by Rohit Kumar on 2026-10-13 (owner reply \"all A\" to the M6 plan; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §5 P-1..P-6; design §6.4, §6.6, §6.7; pilot design §8",
+   "value": {
+    "matrix": {
+     "single_fault_train": "6 classes x {I1, I3} x 4 seeds = 48",
+     "single_fault_test": "6 classes x 12 seeds (10 required + 2 provisioned, Q-5) = 72",
+     "overlap": "OV-1..OV-10 x 4 seeds (2 train / 2 test) = 40",
+     "ctrl": "10 train / 14 test (FZ-Q5) = 24",
+     "sens": "6 classes x 2 at I0 = 12 (not gated)",
+     "ood": "deferred, reported as not run",
+     "total_runs": 196
+    },
+    "mechanisms": "P-1 A: a class's seeds are split evenly across its mechanisms (application: dependency delay / lock hold / pool shrink; packet loss: netem on A / police; retransmissions: path loss / congestion)",
+    "single_level_classes": "P-2 A: memory (768 MiB) and pool (P' = 1) run their test seeds at the single level; the I2 test-only rule cannot apply to them (recorded limitation)",
+    "sens_i0": "P-3 A: I0 = 0.5 x I1 in injection units (weaker than I1, so within every ceiling); single-level faults use 0.5 x their level where a weaker direction exists",
+    "ood": "P-4 A: deferred; not run in M6",
+    "integrity": "P-5 A: AMD-29 admits the matrix generator, the M6 batch runner, their tests, docs/PHASE_1C_M6_*.md and datasets/faultlab/v1/matrix.json (add-only)",
+    "pilot_design_items": "P-6 A: U-8 G-R2 traceability audit now (read-only; new tests separately approved); U-5 M3A-only ablation by offline rebuild; U-4 the 6 PI-3 runs inside batch 1",
+    "collection_rules": "code pinned for all of M6, only dataset commits between batches, each batch its own campaign with PI-0; failed_injection excluded and counted, never retried (AMD-10); any other failed run kept as failed, its seed never reused, the next provisioned seed used",
+    "batches": "a smoke batch (one run per new family) then about 6 batches of about 1 h 45 min"
+   }
   }
  }
 }
