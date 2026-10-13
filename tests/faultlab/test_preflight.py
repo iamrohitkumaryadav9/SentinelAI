@@ -686,6 +686,9 @@ class TestStagesAndPrivilege(Base):
         ws = v("FZ-WORKSET")["values"]                                     # D4 values, approved the same day
         self.assertEqual((ws["file_mib"], ws["pass_s"], ws["slices_per_pass"], ws["anon_mib"]), (1024, 1.0, 10, 16))
         self.assertIn("separate child process", ws["scanner_process"])     # M-2, 2026-10-12
+        mem = v("FZ-INTENSITY-MEM")                                        # M-3, M-4, 2026-10-13
+        self.assertIn("single severity", mem["grading"])
+        self.assertIn("collector is not changed", mem["mem_util_overshoot"])
         self.assertEqual(v("FZ-Q2")["collector_mode_m6"], "driver-root")
         self.assertEqual(P.decision_state("FZ-ARRIVALS", dec["FZ-ARRIVALS"]), (True, "approved"))   # A-1
         self.assertNotIn("FZ-ARRIVALS", P.FULL_ONLY)                       # every run uses it, CTRL included

@@ -402,10 +402,10 @@ Re-check from a clean checkout:
   shows all three mechanisms producing waiting.
 - **Memory working-set scanner (§3f): resolved.** The owner chose a separate scanner process (M-2); §3g shows no
   stall.
-- **Memory grading (§3g), new, for the M5 review:** the candidates saturate; candidates around the working set or a
-  different working-set size would be needed for graded levels.
-- **`mem.util.target` above 1 at the limit (§3g), new, for the M5 review:** the frozen normaliser rejects the
-  kernel's brief overshoot, which costs PI-6 coverage in memory runs.
+- **Memory grading (§3g): decided (M-3).** Memory is a single-severity class in the pilot; graded levels are left
+  to the M5 review.
+- **`mem.util.target` above 1 at the limit (§3g): decided (M-4).** Known limitation; the collector stays frozen
+  (a cap would change committed snapshots' replay under `m3a-1.1.0`). Left to the M5 review.
 - **PI-6 under throttling (§3d), for the M5 review:** whether features whose source exists only after the fault
   starts count towards PI-6 coverage.
 

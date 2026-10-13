@@ -437,7 +437,7 @@
    "status": "approved",
    "approved_by": "Rohit Kumar",
    "date": "2026-10-12",
-   "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply \"approve memory\" to the memory floor proposal; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §5 M-1",
+   "reference": "Approved by Rohit Kumar on 2026-10-12 (owner reply \"approve memory\" to the memory floor proposal; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §5 M-1; memory accepted as a single-severity class by Rohit Kumar on 2026-10-13 (owner replies \"go\" and \"go C\"; Register §5 M-3, M-4)",
    "value": {
     "memory_max_mib_candidates": [
      960,
@@ -447,7 +447,9 @@
     ],
     "floor_mib": 256,
     "basis": "CTRL workload cgroup ~1,080 MiB with the 1 GiB file resident, non-file ~56 MiB (process anon 22 MiB measured); floor ~4.5x the non-file memory; 768/512 = R2-F validated levels; 960 just below the working set",
-    "aborts": "host MemAvailable < 4 GiB or any oom_kill aborts the run"
+    "aborts": "host MemAvailable < 4 GiB or any oom_kill aborts the run",
+    "grading": "single severity (owner, 2026-10-13, M-3): every candidate lies below the 1 GiB working set and campaign 20261012T175020Z showed the same effect at all four (refaults ~5.46 M, PSI ~3.1 s); no further memory campaigns in the pilot; graded levels are left to the M5 review",
+    "mem_util_overshoot": "known limitation (owner, 2026-10-13, M-4): the frozen collector (m3a-1.1.0) rejects mem.util.target above 1 when memory.current briefly exceeds memory.max at the limit, which costs 1-2 W ticks of coverage; the collector is not changed in the pilot"
    }
   }
  }
