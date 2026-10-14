@@ -199,7 +199,11 @@ class TestHybridEbpfStreams(unittest.TestCase):
                                                    ebpf=True, code_commit=COMMIT)
                     acq = json.loads(Path(run, "acquisition.json").read_bytes())
                     self.assertEqual((acq["ebpf"], acq["collector_versions"]), (True, ["m3a-1.1.0", "m3b-1.0.0"]))
-                    self.assertTrue(rec.validated_configuration.validated)
+                    # a fresh snapshot is built under contract 0.6.0 (rules m2-1.2.0), which no campaign has
+                    # validated yet: reported as unvalidated, with exactly those two reasons (C7-11)
+                    self.assertEqual((rec.validated_configuration.validated, rec.validated_configuration.reasons),
+                                     (False, ("rules m2-1.2.0 != validated m2-1.1.0",
+                                              "contract 0.6.0-draft != validated 0.5.0-draft")))
                     r = replay_run_dir(run, "ticks")
                     self.assertEqual(r.status, "MATCH")
                     self.assertTrue(all(r.checks.values()))

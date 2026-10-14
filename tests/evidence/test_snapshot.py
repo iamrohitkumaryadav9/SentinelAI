@@ -107,7 +107,7 @@ class TestSnapshot(unittest.TestCase):
 
     def test_conflicts(self):
         th = b.meas("throttle.ratio", "cgroup:/lab", 0.7)
-        it = b.item("CT.R2", EvidenceKind.POSITIVE, [th], supports=[Label.cpu_throttling])
+        it = b.item("CT.R3", EvidenceKind.POSITIVE, [th], supports=[Label.cpu_throttling])   # v0.6.0: ratio is CT.R3
         cf = Conflict(labels=(Label.cpu_throttling, Label.cpu_contention), rule="PR-3", item_ids=(it.item_id,))
         b.snapshot([th], [it], conflicts=[cf])
         with self.assertRaises(ValidationError):  # unknown item

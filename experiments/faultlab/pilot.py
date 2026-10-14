@@ -1432,7 +1432,9 @@ def replay(out: Path) -> bytes:
     ticks = decode_ticks((out / EVIDENCE / "ticks.jsonl").read_bytes())
     target = Target.model_validate_json(json.dumps(run["target_doc"]), strict=False)
     params = ParameterSet.model_validate_json(json.dumps(run["parameter_set"]), strict=False)
-    snap = build_snapshot(ticks, target, params, run["timeline"]["period_s"], run.get("ebpf", True), True)
+    recorded = json.loads((out / "snapshot.json").read_bytes()).get("contract_version")   # replay under it
+    snap = build_snapshot(ticks, target, params, run["timeline"]["period_s"], run.get("ebpf", True), True,
+                          contract_version=recorded)
     return validate_snapshot(canonical_bytes(snap))[1]
 
 

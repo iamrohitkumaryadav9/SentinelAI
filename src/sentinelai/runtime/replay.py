@@ -27,7 +27,9 @@ from ..collectors.errors import CollectorError
 from ..diagnostic.contract import EvidenceSnapshot
 from ..diagnostic.contract.serialize import canonical_bytes
 from ..diagnostic.contract.version import CONTRACT_VERSION
+from ..diagnostic.contract.catalog import contract_version
 from ..diagnostic.rules import RULES_VERSION, EngineError, UncalibratedParameters
+from ..diagnostic.rules.engine import RULES_BY_CONTRACT
 from . import registry
 from .acquisition import FORMAT as ACQ_FORMAT, AcquisitionRecord, bad_counts, collector_versions
 from .context import IncidentContext
@@ -127,6 +129,15 @@ def _first_difference(a, b, path="$") -> Optional[str]:
     return None if a == b else path
 
 
+def _recorded_contract(raw: bytes):
+    """The contract version a persisted snapshot records, or None if it cannot be read (validation refuses it)."""
+    try:
+        obj = json.loads(raw)
+    except (ValueError, UnicodeDecodeError):
+        return None
+    return obj.get("contract_version") if isinstance(obj, dict) else None
+
+
 def _reconstruct(data: dict, context: IncidentContext, params) -> bytes:
     """acquisition.json + ticks.jsonl -> canonical bytes of the rebuilt snapshot (refuses, never repairs)."""
     try:
@@ -153,7 +164,8 @@ def _reconstruct(data: dict, context: IncidentContext, params) -> bytes:
     if bad_counts(ticks) != acq.bad_counts or (acq.status == "COMPLETE") != (not acq.bad_counts):
         raise ReplayRefused("TICKS_INVALID", "Bad-state counts of the stream differ from acquisition.json")
     try:
-        rebuilt = snapshot_from_ticks(ticks, acq.target, params, acq.period_s, acq.ebpf)
+        recorded = _recorded_contract(data["snapshot.json"])     # rebuild under the recorded version
+        rebuilt = snapshot_from_ticks(ticks, acq.target, params, acq.period_s, acq.ebpf, contract_version=recorded)
         rebuilt, raw = validate_snapshot(rebuilt)
     except (CollectorError, UncalibratedParameters, SnapshotInvalid, ValueError, TypeError) as exc:
         raise ReplayRefused("RECONSTRUCTION_INVALID", f"{type(exc).__name__}: {exc}"[:400]) from None
@@ -207,15 +219,23 @@ def replay_run_dir(run_dir: str, source: str = "snapshot") -> ReplayResult:
         stored_obj = json.loads(data["diagnosis.json"])
         if not isinstance(stored_obj, dict) or set(stored_obj) != {"record", "evaluated_snapshot"}:
             raise ValueError("diagnosis.json must hold exactly 'record' and 'evaluated_snapshot'")
-        stored = DiagnosisRecord.model_validate_json(json.dumps(stored_obj["record"]), strict=False)
-        EvidenceSnapshot.model_validate_json(json.dumps(stored_obj["evaluated_snapshot"]), strict=False)
+        raw_record = stored_obj["record"] if isinstance(stored_obj["record"], dict) else {}
+        recorded_contract, recorded_rules = raw_record.get("contract_version"), raw_record.get("rules_version")
+        versioned = isinstance(recorded_contract, str) and isinstance(recorded_rules, str)
+        # a record replays only under the exact (contract, rules) pair that produced it, and only if this code carries
+        # that pair (the current one or a version-pinned earlier one): checked before the record is parsed, since it
+        # is parsed under its own contract; a record without both versions is malformed and fails parsing below
+        if versioned and RULES_BY_CONTRACT.get(recorded_contract) != recorded_rules:
+            raise ReplayRefused("PARAMETERS_REFUSED", f"stored record was produced by rules {recorded_rules} / "
+                                f"contract {recorded_contract}; this code has {RULES_VERSION} / {CONTRACT_VERSION} "
+                                f"and version-pinned {sorted(RULES_BY_CONTRACT.items())}")
+        with contract_version(recorded_contract if versioned else None):     # parsed under its own contract
+            stored = DiagnosisRecord.model_validate_json(json.dumps(stored_obj["record"]), strict=False)
+            EvidenceSnapshot.model_validate_json(json.dumps(stored_obj["evaluated_snapshot"]), strict=False)
     except (ValueError, ValidationError) as exc:
         raise ReplayRefused("RECORD_INVALID", f"diagnosis.json invalid: {str(exc)[:300]}") from None
     if stored.parameter_set_id != context.parameter_set_id:
         raise ReplayRefused("PARAMETERS_REFUSED", "stored record names a different parameter set than the context")
-    if stored.rules_version != RULES_VERSION or stored.contract_version != CONTRACT_VERSION:
-        raise ReplayRefused("PARAMETERS_REFUSED", f"stored record was produced by rules {stored.rules_version} / "
-                            f"contract {stored.contract_version}; this code has {RULES_VERSION} / {CONTRACT_VERSION}")
 
     snapshot_bytes, snapshot_checks, snapshot_first = data["snapshot.json"], {}, None
     if source == "ticks":
@@ -238,6 +258,9 @@ def replay_run_dir(run_dir: str, source: str = "snapshot") -> ReplayResult:
         raise ReplayRefused("M2_REFUSED", f"{type(exc).__name__}: {exc}") from None
     if snap.parameter_set_id != context.parameter_set_id:
         raise ReplayRefused("PARAMETERS_REFUSED", "snapshot names a different parameter set than the context")
+    if snap.contract_version != stored.contract_version:     # the snapshot must record the record's contract
+        raise ReplayRefused("PARAMETERS_REFUSED", f"snapshot records contract {snap.contract_version}; the stored "
+                            f"record was produced under {stored.contract_version}")
 
     recomputed = canonical_bytes({"record": record, "evaluated_snapshot": evaluated})
     checks = {

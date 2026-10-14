@@ -14,7 +14,7 @@ from typing import List, Optional, Tuple
 from ..diagnostic.contract import (BaselineMethod, BaselineStat, DataQuality, Deviation, EvidenceSnapshot,
                                    Measurement, MissingMeasurement, Provenance, Qualifier, Quality, SourceType,
                                    Target, Window, load_contract, measurement_id, snapshot_id)
-from ..diagnostic.contract.version import CONTRACT_VERSION, SCHEMA_VERSION
+from ..diagnostic.contract.version import CONTRACT_VERSION, MEASUREMENT_IDENTICAL, SCHEMA_VERSION
 from ..diagnostic.rules.params import ParameterSet, UncalibratedParameters
 from .app import APP_FEATURES, app_calcs
 from .clock import Clock, SystemClock
@@ -187,12 +187,17 @@ def _measurement(calc, ev, ticks, nB, nW, bwin, wwin, params) -> Tuple[Measureme
 
 
 def build_snapshot(ticks: List[Tick], target: Target, params: ParameterSet, period: float = 1.0,
-                   ebpf: bool = False, app: bool = False, window_start: Optional[int] = None) -> EvidenceSnapshot:
+                   ebpf: bool = False, app: bool = False, window_start: Optional[int] = None,
+                   contract_version: Optional[str] = None) -> EvidenceSnapshot:
     """ebpf: the ticks carry eBPF observations (M3B); the four eBPF features are then measured.
     app: the ticks carry app.* observations (AppSource); the nine app.* features are then measured.
     window_start (AMD-6, FaultLab): ticks is a whole collection; the baseline is ticks 0..nB and the window the nW
     intervals from tick window_start (>= nB); the ticks between are not used. None: the window follows the baseline
-    and ticks holds exactly nB + nW + 1 ticks (unchanged)."""
+    and ticks holds exactly nB + nW + 1 ticks (unchanged).
+    contract_version: replaying evidence recorded under an earlier contract whose measurement layer is identical
+    (MEASUREMENT_IDENTICAL) writes that recorded version; None writes the current one."""
+    if contract_version is not None and contract_version not in (CONTRACT_VERSION,) + MEASUREMENT_IDENTICAL:
+        raise CollectorError(f"contract {contract_version!r} is not measurement-identical to {CONTRACT_VERSION}")
     check_parameters(params, ebpf, app)
     nB, nW = window_counts(params, period)
     gap = window_start is not None
@@ -241,7 +246,7 @@ def build_snapshot(ticks: List[Tick], target: Target, params: ParameterSet, peri
                for (f, s, q), r in sorted(missing.items(), key=lambda kv: (kv[0][0], kv[0][1], kv[0][2] or "")))
     measurements.sort(key=lambda m: m.measurement_id)
     dq = _data_quality(measurements, resets, params, ebpf, app)
-    return EvidenceSnapshot(schema_version=SCHEMA_VERSION, contract_version=CONTRACT_VERSION,
+    return EvidenceSnapshot(schema_version=SCHEMA_VERSION, contract_version=contract_version or CONTRACT_VERSION,
                             parameter_set_id=params.parameter_set_id,
                             snapshot_id=snapshot_id(target, wwin, measurements), target=target, window=wwin,
                             baseline_window=bwin, measurements=tuple(measurements), evidence_items=(),

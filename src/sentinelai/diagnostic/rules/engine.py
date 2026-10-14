@@ -22,11 +22,12 @@ from ..contract import (FAULT_LABELS, AbstentionReason, Candidate, CandidateStat
                         ScopeKind, Strength, Threshold, evidence_item_id, load_contract, scope_kind,
                         validate_against_snapshot)
 from ..contract.enums import Aggregation
+from ..contract.catalog import active_contract_version, contract_version
 from ..contract.version import CONTRACT_VERSION
 from .logic import Eval, Tri, absolute, absolute_b, baseline_gate, dev, k_and, k_not, k_or, strongest, usable
 from .params import ParameterSet, UncalibratedParameters
 
-RULES_VERSION = "m2-1.1.0"
+RULES_VERSION = "m2-1.2.0"
 L = Label
 INFRA = (L.cpu_contention, L.cpu_throttling, L.softirq_overload, L.network_packet_loss, L.tcp_retransmissions,
          L.memory_pressure)
@@ -195,10 +196,25 @@ def ct_r1(ctx):
 
 
 def ct_r2(ctx):
+    ev = dev(ctx.v.one("throttle.time_rate"), ctx.p)
+    _required_item(ctx, "CT.R2", L.cpu_throttling, ev)
+    return Clause("CT.R2", ev)
+
+
+def ct_r2_v050(ctx):
+    """CT.R2 of contract 0.5.0 (rules m2-1.1.0), kept verbatim for evidence recorded under that contract."""
     p = ctx.p
     ev = k_and(absolute_b(ctx.v.one("throttle.ratio"), p.num("THR_RATIO_MIN"), p), dev(ctx.v.one("throttle.time_rate"), p))
     _required_item(ctx, "CT.R2", L.cpu_throttling, ev, threshold="THR_RATIO_MIN")
     return Clause("CT.R2", ev)
+
+
+def ct_r3(ctx):
+    """v0.6.0: throttle.ratio is a bounded ratio judged without a baseline; it is undefined before a quota exists
+    (FaultLab applies the quota at fault onset, FZ-M7-PLAN C7-11)."""
+    ev = absolute(ctx.v.one("throttle.ratio"), ctx.p.num("THR_RATIO_MIN"), ctx.p)
+    _required_item(ctx, "CT.R3", L.cpu_throttling, ev, threshold="THR_RATIO_MIN")
+    return Clause("CT.R3", ev)
 
 
 # -- softirq_overload (§8.3) --------------------------------------------------------------
@@ -395,7 +411,7 @@ def ab_r2(ctx):
     return Clause("AB.R2", ev)
 
 
-EVALUATORS = {"CC.R1": cc_r1, "CC.R2": cc_r2, "CC.X1": cc_x1, "CC.X2": cc_x2, "CT.R1": ct_r1, "CT.R2": ct_r2,
+EVALUATORS = {"CC.R1": cc_r1, "CC.R2": cc_r2, "CC.X1": cc_x1, "CC.X2": cc_x2, "CT.R1": ct_r1, "CT.R2": ct_r2, "CT.R3": ct_r3,
               "SI.R1": si_r1, "SI.R2": si_r2, "PL.R1": pl_r1, "RT.R0": rt_r0, "RT.R1": rt_r1, "RT.R2": rt_r2,
               "MP.R1": mp_r1, "AB.R1": ab_r1, "AB.R2": ab_r2}
 # AB.R3 depends on the infrastructure candidates and is evaluated after them (see _ab_r3).
@@ -414,19 +430,37 @@ SUPPORTING = {
                         ("DEV", "mem.swap_io.host", None), ("ABS", "mem.util.target", "SAT_MIN")),
     L.application_bottleneck: (("ABS", "app.pool_utilization", "SAT_MIN"),),
 }
-DEV_FEATURES = tuple(sorted(set().union(
-    *[load_contract().labels.clause(c).features for c in EVALUATORS if load_contract().labels.clause(c).uses_baseline],
-    {f for preds in SUPPORTING.values() for prim, f, _ in preds if prim == "DEV"},
-    {"app.latency_ms", "net.drop.kfree_skb"})))
+# Version-pinned evaluation (contract 0.6.0): a snapshot is evaluated under the contract it was recorded with.
+V050 = "0.5.0-draft"
+RULES_BY_CONTRACT = {CONTRACT_VERSION: RULES_VERSION, V050: "m2-1.1.0"}
+
+
+def evaluators() -> dict:
+    """The clause evaluators of the contract in force (catalog.contract_version)."""
+    if active_contract_version() == V050:
+        return {k: (ct_r2_v050 if k == "CT.R2" else f) for k, f in EVALUATORS.items() if k != "CT.R3"}
+    return EVALUATORS
+
+
+def dev_features() -> Tuple[str, ...]:
+    c = load_contract()
+    return tuple(sorted(set().union(
+        *[c.labels.clause(k).features for k in evaluators() if c.labels.clause(k).uses_baseline],
+        {f for preds in SUPPORTING.values() for prim, f, _ in preds if prim == "DEV"},
+        {"app.latency_ms", "net.drop.kfree_skb"})))
+
+
+DEV_FEATURES = dev_features()                      # of the current contract
 
 
 def _self_check():
-    """The evaluator table must cover the contract's clauses exactly (no hidden or missing rules)."""
-    c = load_contract()
-    have = set(EVALUATORS) | {"AB.R3"}
-    want = {cl.clause_id for cl in c.labels.clauses}
-    if have != want:
-        raise ImportError(f"rule table does not match contract clauses: {sorted(have ^ want)}")
+    """Each evaluator table must cover its contract's clauses exactly (no hidden or missing rules)."""
+    for version in RULES_BY_CONTRACT:
+        with contract_version(version):
+            have = set(evaluators()) | {"AB.R3"}
+            want = {cl.clause_id for cl in load_contract().labels.clauses}
+        if have != want:
+            raise ImportError(f"rule table does not match contract {version} clauses: {sorted(have ^ want)}")
 
 
 _self_check()
@@ -551,18 +585,26 @@ class Diagnosis:
 
 
 def diagnose(snapshot: EvidenceSnapshot, params: ParameterSet, *, code_commit: str) -> Diagnosis:
-    """Evaluate the contract on a measurements-only snapshot. Pure and deterministic."""
+    """Evaluate the contract on a measurements-only snapshot. Pure and deterministic. The snapshot is evaluated under
+    the contract version it records (the current one, or a measurement-identical earlier one, with its rules)."""
+    if snapshot.contract_version not in RULES_BY_CONTRACT:
+        raise EngineError(f"no rules for contract {snapshot.contract_version}")
+    with contract_version(snapshot.contract_version):
+        return _diagnose(snapshot, params, code_commit=code_commit)
+
+
+def _diagnose(snapshot: EvidenceSnapshot, params: ParameterSet, *, code_commit: str) -> Diagnosis:
     if snapshot.evidence_items or snapshot.conflicts:
         raise EngineError("input snapshot must contain measurements only; the engine produces the evidence")
     if params.parameter_set_id != snapshot.parameter_set_id:
         raise EngineError("parameter set does not match snapshot.parameter_set_id")
-    missing = params.missing(DEV_FEATURES)
+    missing = params.missing(dev_features())
     if missing:
         raise UncalibratedParameters(missing)
 
     c = load_contract()
     ctx = Ctx(View(snapshot, params), params)
-    clauses = {cid: fn(ctx) for cid, fn in EVALUATORS.items()}
+    clauses = {cid: fn(ctx) for cid, fn in evaluators().items()}
     support_missing = _supporting(ctx)
     impact = _impact(ctx)
 
@@ -690,7 +732,8 @@ def diagnose(snapshot: EvidenceSnapshot, params: ParameterSet, *, code_commit: s
                          for l, st, met, sup, con, fired in cands),
         rules_fired=tuple(sorted({r for *_, fired in cands for r in fired})),
         ml=None, flags=flags,
-        engine=EngineInfo(contract_version=CONTRACT_VERSION, rules_version=RULES_VERSION,
+        engine=EngineInfo(contract_version=active_contract_version(),
+                          rules_version=RULES_BY_CONTRACT[active_contract_version()],
                           parameter_set_id=params.parameter_set_id, code_commit=code_commit))
     validate_against_snapshot(result, out_snapshot)   # every contract invariant, or raise
     return Diagnosis(out_snapshot, result)

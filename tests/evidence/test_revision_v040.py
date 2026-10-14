@@ -140,8 +140,9 @@ class TestPreservation(unittest.TestCase):
                 self.assertIsNone(f.dimension)
 
     def test_rules_predicates_parameters_unchanged(self):
+        # held for the contract this revision produced (0.5.0, archived); v0.6.0 changes labels.json (test_revision_v060)
         for name in ("labels.json", "predicates.json", "parameters.json"):
-            d = _raw(name)
+            d = json.loads((DATA / "archive" / "0.5.0-draft" / name).read_text(encoding="utf-8"))
             d.pop("contract_version")
             with self.subTest(name):
                 self.assertEqual(_canon_hash(d), GOLDEN[name])
@@ -149,7 +150,7 @@ class TestPreservation(unittest.TestCase):
     def test_m2_does_not_consume_the_new_features(self):
         from sentinelai.diagnostic.rules import RULES_VERSION
         from sentinelai.diagnostic.rules.engine import DEV_FEATURES, SUPPORTING
-        self.assertEqual(RULES_VERSION, "m2-1.1.0")
+        self.assertEqual(RULES_VERSION, "m2-1.2.0")                       # v0.6.0 (C7-11)
         used = {f for cl in C.labels.clauses for f in cl.features}
         used |= {f for preds in SUPPORTING.values() for _, f, _ in preds} | set(DEV_FEATURES)
         self.assertFalse(used & NEW)
@@ -161,8 +162,8 @@ class TestPreservation(unittest.TestCase):
 
 class TestVersioningAndDeterminism(unittest.TestCase):
     def test_minor_bump(self):
-        # v0.5.0-draft (M3B-C1) keeps the v0.4.0 features tested here; it only changes multi-aggregation ids
-        self.assertEqual((CONTRACT_VERSION, SCHEMA_VERSION), ("0.5.0-draft", "0.2.0"))
+        # v0.5.0-draft (M3B-C1) and v0.6.0-draft (C7-11) keep the v0.4.0 features tested here
+        self.assertEqual((CONTRACT_VERSION, SCHEMA_VERSION), ("0.6.0-draft", "0.2.0"))
         for name in ("registry.json", "labels.json", "predicates.json", "parameters.json"):
             self.assertEqual(_raw(name)["contract_version"], CONTRACT_VERSION)
         self.assertEqual(require_compatible("0.3.0-draft"), "0.3.0-draft")   # same major: older snapshots accepted

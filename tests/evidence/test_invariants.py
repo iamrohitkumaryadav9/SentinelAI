@@ -150,7 +150,8 @@ class TestI6ApplicationBottleneck(unittest.TestCase):
         items = [b.item("AB.R1", POS, [qw], supports=[Label.application_bottleneck]),
                  b.item("AB.R2", POS, [lat, qw], supports=[Label.application_bottleneck]), ev,
                  b.item("CT.R1", POS, [quota], supports=[Label.cpu_throttling]),
-                 b.item("CT.R2", POS, [ratio, trate], supports=[Label.cpu_throttling])]
+                 b.item("CT.R2", POS, [trate], supports=[Label.cpu_throttling]),        # v0.6.0: CT.R2 / CT.R3
+                 b.item("CT.R3", POS, [ratio], supports=[Label.cpu_throttling])]
         snap = b.snapshot([cpu, qw, lat, quota, ratio, trate], items)
         r = b.result(snap, Label.cpu_throttling, contributing=(Label.application_bottleneck,),
                      cands={Label.cpu_throttling: b.candidate(Label.cpu_throttling, A, met=b.all_met(Label.cpu_throttling)),

@@ -3,7 +3,10 @@
 import re
 
 CONTRACT_ID = "sentinelai.evidence-contract"
-CONTRACT_VERSION = "0.5.0-draft"
+CONTRACT_VERSION = "0.6.0-draft"
+# Earlier versions whose measurement layer (registry, predicates, parameters, measurement identity) is identical to
+# this one: evidence recorded under them is rebuilt with its recorded version (0.6.0 changed only clause CT.R2/CT.R3).
+MEASUREMENT_IDENTICAL = ("0.5.0-draft",)
 SCHEMA_VERSION = "0.2.0"
 
 _SEMVER = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?$")

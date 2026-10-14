@@ -1,5 +1,5 @@
 {
- "contract_version": "0.5.0-draft",
+ "contract_version": "0.6.0-draft",
  "labels": {
   "cpu_contention": {
    "confusable": [
@@ -150,10 +150,26 @@
    "role": "required",
    "uses_baseline": true,
    "features": [
-    "throttle.ratio",
     "throttle.time_rate"
    ],
-   "definition": "ABS(throttle.ratio, THR_RATIO_MIN) and DEV(throttle.time_rate)",
+   "definition": "DEV(throttle.time_rate)",
+   "components": [
+    {
+     "type": "item",
+     "sub": null,
+     "kind": "POSITIVE"
+    }
+   ]
+  },
+  {
+   "clause_id": "CT.R3",
+   "label": "cpu_throttling",
+   "role": "required",
+   "uses_baseline": false,
+   "features": [
+    "throttle.ratio"
+   ],
+   "definition": "ABS(throttle.ratio, THR_RATIO_MIN) (a bounded ratio, judged without a baseline: it is undefined before a quota exists)",
    "components": [
     {
      "type": "item",

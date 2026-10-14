@@ -141,9 +141,11 @@ def check_target(context: IncidentContext, target: Target, ebpf: bool) -> None:
         raise AcquisitionInvalid(f"ebpf={ebpf!r} contradicts context ebpf={context.ebpf!r}")
 
 
-def snapshot_from_ticks(ticks: List[Tick], target: Target, params, period_s: float, ebpf: bool) -> EvidenceSnapshot:
-    """The M3A/M3B transformation, unchanged: collectors.build_snapshot (pure)."""
-    return build_snapshot(ticks, target, params, period_s, ebpf)
+def snapshot_from_ticks(ticks: List[Tick], target: Target, params, period_s: float, ebpf: bool,
+                        contract_version=None) -> EvidenceSnapshot:
+    """The M3A/M3B transformation, unchanged: collectors.build_snapshot (pure). contract_version: a replay rebuilds
+    under the version the evidence was recorded with (measurement-identical versions only)."""
+    return build_snapshot(ticks, target, params, period_s, ebpf, contract_version=contract_version)
 
 
 def run_from_ticks(context: IncidentContext, ticks: List[Tick], target: Target, store: ArtifactStore, *,

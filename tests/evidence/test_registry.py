@@ -31,7 +31,7 @@ app.lock_wait_ms app.dependency_latency_ms app.events
 """.split()
 
 REQUIRED_CLAUSES = {  # contract §8 Required clauses
-    Label.cpu_contention: {"CC.R1", "CC.R2"}, Label.cpu_throttling: {"CT.R1", "CT.R2"},
+    Label.cpu_contention: {"CC.R1", "CC.R2"}, Label.cpu_throttling: {"CT.R1", "CT.R2", "CT.R3"},  # v0.6.0: CT.R3
     Label.softirq_overload: {"SI.R1", "SI.R2"}, Label.network_packet_loss: {"PL.R1"},  # unchanged by v0.2.0
     Label.tcp_retransmissions: {"RT.R0", "RT.R1", "RT.R2"}, Label.memory_pressure: {"MP.R1"},
     Label.application_bottleneck: {"AB.R1", "AB.R2", "AB.R3"},
@@ -45,7 +45,7 @@ class TestRegistry(unittest.TestCase):
     def test_ids_unique_and_versioned(self):
         ids = [f.id for f in C.registry.features]
         self.assertEqual(len(ids), len(set(ids)))
-        self.assertEqual(C.registry.contract_version, "0.5.0-draft")
+        self.assertEqual(C.registry.contract_version, "0.6.0-draft")
 
     def test_unknown_feature_rejected(self):
         with self.assertRaises(ContractViolation):

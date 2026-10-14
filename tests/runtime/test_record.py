@@ -118,11 +118,13 @@ class TestRecord(unittest.TestCase):
         self.assertEqual(r.snapshot_id, self.snap.snapshot_id)
         self.assertEqual(r.input_snapshot_sha256, sha256_bytes(self.raw))
         self.assertEqual((r.parameter_set_id, r.parameter_set_sha256), ("r2c-validation-uncalibrated", PIN))
-        self.assertEqual((r.rules_version, r.contract_version, r.code_commit), (RULES_VERSION, CONTRACT_VERSION, COMMIT))
+        # evaluated under the contract the snapshot records (M1-1: 0.5.0, rules m2-1.1.0), not the current one
+        self.assertEqual(self.snap.contract_version, "0.5.0-draft")
+        self.assertEqual((r.rules_version, r.contract_version, r.code_commit), ("m2-1.1.0", "0.5.0-draft", COMMIT))
         self.assertEqual(r.result_sha256, sha256_bytes(canonical_bytes(r.result)))
         self.assertEqual(r.diagnosis_id, diagnosis_id(input_snapshot_sha256=r.input_snapshot_sha256,
-                                                      parameter_set_sha256=PIN, rules_version=RULES_VERSION,
-                                                      contract_version=CONTRACT_VERSION))
+                                                      parameter_set_sha256=PIN, rules_version="m2-1.1.0",
+                                                      contract_version="0.5.0-draft"))
         self.assertEqual(self.evaluated.measurements, self.snap.measurements)    # provenance untouched
 
     def test_input_unchanged(self):

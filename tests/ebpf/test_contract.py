@@ -22,7 +22,7 @@ EXPECTED = {
 
 class TestContractMapping(unittest.TestCase):
     def test_versions(self):
-        self.assertEqual((CONTRACT_VERSION, SCHEMA_VERSION, RULES_VERSION), ("0.5.0-draft", "0.2.0", "m2-1.1.0"))
+        self.assertEqual((CONTRACT_VERSION, SCHEMA_VERSION, RULES_VERSION), ("0.6.0-draft", "0.2.0", "m2-1.2.0"))
 
     def test_registry_definitions(self):
         self.assertEqual(set(EBPF_FEATURES), set(EXPECTED))

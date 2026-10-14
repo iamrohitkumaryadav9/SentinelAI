@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Contract ID | `sentinelai.evidence-contract` |
-| Version | **0.5.0-draft** (M3B-C1: measurement identity includes the aggregation for multi-aggregation features; see the revision history below) |
+| Version | **0.6.0-draft** (M7 C7-11: CT.R2 split so `throttle.ratio` is judged without a baseline; see the revision history below) |
 | Date | 2026-10-03 |
 | Status | DESIGN; schema implemented in M1 (schema version `0.2.0`). Every numeric threshold is an **uncalibrated parameter** (§6). |
 | Consumers | Deterministic rule engine, ML classifier, tests, and (later) the LLM orchestrator |
@@ -21,6 +21,7 @@ This contract defines what SentinelAI may claim about a performance incident, an
 | **0.3.0-draft** | C-1 resolution (found by M2, `docs/PHASE_1C_M2_REPORT.md` §15; resolved in `docs/PHASE_1C_C1_REPORT.md`):<br>**C-1** RT.R2 becomes a **Primary** clause (§8): it is required for `tcp_retransmissions` to be the *decision*, not for it to be *contributing*. When local loss is proven (RT.R2 FALSE), `tcp_retransmissions` with RT.R0 and RT.R1 TRUE is CONTRIBUTING under PR-1 when `network_packet_loss` is the decision (§8.5, §9, §10.7 I2/I4). The RT.R2 predicate itself is unchanged.<br>**C-3** `throttle.quota_limited` added to the AB.R3 feature list, so AB.R3 can cite the CT.R1 measurement (§8.7).<br>Schema version unchanged (`0.2.0`): no field of any evidence object changes. |
 | **0.4.0-draft** | M3B-C0 (gaps from the M3B audit, `docs/PHASE_1C_M3B_REPORT.md`; resolved in `docs/PHASE_1C_M3B_C0_REPORT.md`). **Additive only**: two new EBPF-sourced features; no existing feature, clause, predicate, parameter or precedence rule changes, and M2 consumes neither feature.<br>**G-2** `softirq.exec_time.percpu` (§4.5): softirq execution time from `irq:softirq_entry`/`softirq_exit`, per CPU and per `vector` qualifier, in cores (CPU-s/s).<br>**G-3** `tcp.retrans_skb_rate` (§4.4): `tcp:tcp_retransmit_skb` events per second (retransmitted skbs/s) in the target netns. It is distinct from `tcp.retrans_rate` (RetransSegs, segments/s), which is unchanged.<br>**G-1** accepted: `sched.latency_hist.target` keeps P50/P99 only.<br>Schema version unchanged (`0.2.0`). |
 | **0.5.0-draft** | M3B-C1 (contradiction found by the M3B build audit; resolved in `docs/PHASE_1C_M3B_C1_REPORT.md`). **Identity only**: `sched.latency_hist.target` registers P50 and P99, but `measurement_id` did not include the aggregation, so both percentiles of one scope and window had the same id and could not coexist in a snapshot (the same latent defect affected `app.latency_ms` P50/P99 and `tcp.srtt_ms` P50/P90).<br>**C1-1** §10.3: the aggregation is an identity input **exactly when the feature registers more than one aggregation**. Every single-aggregation id is byte-identical to 0.4.0. No feature, unit, source, qualifier, clause, predicate, parameter or precedence rule changes. Schema version unchanged (`0.2.0`); rules unchanged (`m2-1.1.0`). |
+| **0.6.0-draft** | M7 C7-11 (owner decision 1A, `FZ-M7-PLAN`, 2026-10-14; found by the M7 train-only calibration dry run, `docs/PHASE_1C_M7_CONTRACT_REVISION.md`). **Clause structure only**: CT.R2 `ABS(throttle.ratio, THR_RATIO_MIN) ∧ DEV(throttle.time_rate)` is split into CT.R2 `DEV(throttle.time_rate)` (baseline-using) and the new required CT.R3 `ABS(throttle.ratio, THR_RATIO_MIN)` (no baseline). Both remain required, so the conjunction is unchanged; only the baseline requirement no longer applies to the ratio, which is undefined before a quota exists. Registry, predicates, parameters and measurement identity are unchanged. |
 
 ---
 
@@ -307,7 +308,10 @@ For each label: **Required** is necessary for assertion (all clauses). **Primary
 
 - **Required:**
   - **CT.R1** `throttle.quota_limited == 1` (a finite quota exists).
-  - **CT.R2** `ABS(throttle.ratio, THR_RATIO_MIN)` is TRUE **and** `DEV(throttle.time_rate)` is TRUE.
+  - **CT.R2** `DEV(throttle.time_rate)` is TRUE.
+  - **CT.R3** `ABS(throttle.ratio, THR_RATIO_MIN)` is TRUE. It does not use a baseline: the ratio of throttled to
+    elapsed periods is undefined while no quota exists, so a baseline taken before a quota was applied has none
+    (v0.6.0).
 - **Supporting:** `ABS(throttle.quota_saturation, SAT_MIN)`; `sched.run_delay.target ≈ throttle.time_rate` (excess delay FALSE); impact (latency tail) above baseline while `cpu.util.host` is below `SAT_MIN`.
 - **Contradictory:** `DEV(sched.run_delay_excess.target)` TRUE means contention is also present (PR-3).
 - **Insufficient:** cgroup `cpu.stat` unavailable → MISSING. Quota `max` (unlimited) → `throttle.quota_limited = 0` (quality OK) → CT.R1 FALSE, which is NEGATIVE. Only an unreadable `cpu.max` makes CT.R1 MISSING.

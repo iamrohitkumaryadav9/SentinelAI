@@ -6,6 +6,8 @@ logic (that is M2). Loaded once from ``data/*.json`` and validated strictly.
 
 import json
 import re
+from contextlib import contextmanager
+from contextvars import ContextVar
 from functools import lru_cache
 from pathlib import Path
 from typing import Dict, Literal, Optional, Tuple, Union
@@ -14,7 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .enums import (FAULT_LABELS, Aggregation, Availability, EvidenceKind, Label, ScopeKind, SourceType, Unit)
 from .serialize import format_float
-from .version import CONTRACT_VERSION
+from .version import CONTRACT_VERSION, MEASUREMENT_IDENTICAL
 
 DATA = Path(__file__).resolve().parent / "data"
 STRICT = ConfigDict(extra="forbid", frozen=True, strict=True)
@@ -106,7 +108,7 @@ class FeatureRegistry(BaseModel):
 
     @model_validator(mode="after")
     def _check(self):
-        if self.contract_version != CONTRACT_VERSION:
+        if self.contract_version not in (CONTRACT_VERSION,) + MEASUREMENT_IDENTICAL:
             raise ValueError(f"registry contract_version {self.contract_version} != {CONTRACT_VERSION}")
         ids = [f.id for f in self.features]
         if len(ids) != len(set(ids)):
@@ -209,7 +211,7 @@ class LabelContracts(BaseModel):
 
     @model_validator(mode="after")
     def _check(self):
-        if self.contract_version != CONTRACT_VERSION:
+        if self.contract_version not in (CONTRACT_VERSION,) + MEASUREMENT_IDENTICAL:
             raise ValueError("labels contract_version mismatch")
         if set(self.labels) != set(FAULT_LABELS):
             raise ValueError("label contracts must cover exactly the seven fault labels")
@@ -389,9 +391,36 @@ def _load(name):
     return json.loads((DATA / name).read_text(encoding="utf-8"))
 
 
-@lru_cache(maxsize=1)
+ARCHIVE = DATA / "archive"                     # earlier contract versions, verbatim (version-pinned evaluation)
+_ACTIVE: ContextVar = ContextVar("sentinelai_contract_version", default=None)
+
+
+@lru_cache(maxsize=None)
+def _load_version(version: Optional[str]) -> Contract:
+    d = DATA if version in (None, CONTRACT_VERSION) else ARCHIVE / version
+    return Contract(registry=FeatureRegistry.model_validate_json((d / "registry.json").read_text(), strict=False),
+                    labels=LabelContracts.model_validate_json((d / "labels.json").read_text(), strict=False),
+                    predicates=PredicateCatalog.model_validate_json((d / "predicates.json").read_text(), strict=False),
+                    parameters=ParameterCatalog.model_validate_json((d / "parameters.json").read_text(), strict=False))
+
+
 def load_contract() -> Contract:
-    return Contract(registry=FeatureRegistry.model_validate_json((DATA / "registry.json").read_text(), strict=False),
-                    labels=LabelContracts.model_validate_json((DATA / "labels.json").read_text(), strict=False),
-                    predicates=PredicateCatalog.model_validate_json((DATA / "predicates.json").read_text(), strict=False),
-                    parameters=ParameterCatalog.model_validate_json((DATA / "parameters.json").read_text(), strict=False))
+    """The contract in force: the current one, or inside contract_version(v) the archived version v."""
+    return _load_version(_ACTIVE.get())
+
+
+def active_contract_version() -> str:
+    return _ACTIVE.get() or CONTRACT_VERSION
+
+
+@contextmanager
+def contract_version(version: Optional[str]):
+    """Evaluate under the contract version evidence was recorded with: the current one or a measurement-identical
+    earlier version (MEASUREMENT_IDENTICAL), whose files are archived verbatim. Anything else is refused."""
+    if version not in (None, CONTRACT_VERSION) + MEASUREMENT_IDENTICAL:
+        raise ValueError(f"contract {version!r} is neither {CONTRACT_VERSION} nor measurement-identical to it")
+    token = _ACTIVE.set(None if version == CONTRACT_VERSION else version)
+    try:
+        yield
+    finally:
+        _ACTIVE.reset(token)

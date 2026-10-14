@@ -1,0 +1,129 @@
+{
+ "contract_version": "0.5.0-draft",
+ "status": "UNCALIBRATED",
+ "parameters": [
+  {
+   "name": "W",
+   "type": "number"
+  },
+  {
+   "name": "B",
+   "type": "number"
+  },
+  {
+   "name": "N_BASE_MIN",
+   "type": "number"
+  },
+  {
+   "name": "COV_MIN",
+   "type": "number"
+  },
+  {
+   "name": "Z_STRONG",
+   "type": "number"
+  },
+  {
+   "name": "Z_MODERATE",
+   "type": "number"
+  },
+  {
+   "name": "R_STRONG",
+   "type": "number"
+  },
+  {
+   "name": "R_MODERATE",
+   "type": "number"
+  },
+  {
+   "name": "DROP_ABS_MIN",
+   "type": "number"
+  },
+  {
+   "name": "DROP_FRAC_MIN",
+   "type": "number"
+  },
+  {
+   "name": "KFREE_REASONS_LOSS",
+   "type": "reason_set"
+  },
+  {
+   "name": "RT_FRAC_MIN",
+   "type": "number"
+  },
+  {
+   "name": "RT_RATE_MIN",
+   "type": "number"
+  },
+  {
+   "name": "SEG_MIN",
+   "type": "number"
+  },
+  {
+   "name": "THR_RATIO_MIN",
+   "type": "number"
+  },
+  {
+   "name": "THR_TIME_MIN",
+   "type": "number"
+  },
+  {
+   "name": "RDX_MIN",
+   "type": "number"
+  },
+  {
+   "name": "SAT_MIN",
+   "type": "number"
+  },
+  {
+   "name": "SI_ABS_MIN",
+   "type": "number"
+  },
+  {
+   "name": "SI_RATIO_MIN",
+   "type": "number"
+  },
+  {
+   "name": "SI_SHARE_MIN",
+   "type": "number"
+  },
+  {
+   "name": "PSI_MEM_MIN",
+   "type": "number"
+  },
+  {
+   "name": "RECLAIM_MIN",
+   "type": "number"
+  },
+  {
+   "name": "REFAULT_MIN",
+   "type": "number"
+  },
+  {
+   "name": "APP_WAIT_MIN",
+   "type": "number"
+  },
+  {
+   "name": "APP_SHARE_MIN",
+   "type": "number"
+  },
+  {
+   "name": "IMPACT_MIN",
+   "type": "number"
+  },
+  {
+   "name": "DOM_RATIO",
+   "type": "number"
+  },
+  {
+   "name": "τ_DISAGREE",
+   "type": "number"
+  }
+ ],
+ "per_feature_parameters": [
+  {
+   "name": "floor",
+   "type": "number"
+  }
+ ],
+ "note": "Symbolic names and types only. No values are defined (contract section 6)."
+}

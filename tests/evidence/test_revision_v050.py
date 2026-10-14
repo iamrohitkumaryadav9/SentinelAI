@@ -223,7 +223,7 @@ class TestVersioning(unittest.TestCase):
 
     def test_minor_bump_only_contract(self):
         from sentinelai.diagnostic.rules import RULES_VERSION
-        self.assertEqual((CONTRACT_VERSION, SCHEMA_VERSION, RULES_VERSION), ("0.5.0-draft", "0.2.0", "m2-1.1.0"))
+        self.assertEqual((CONTRACT_VERSION, SCHEMA_VERSION, RULES_VERSION), ("0.6.0-draft", "0.2.0", "m2-1.2.0"))
         for name in ("registry.json", "labels.json", "predicates.json", "parameters.json"):
             self.assertEqual(json.loads((DATA / name).read_text())["contract_version"], CONTRACT_VERSION)
         self.assertEqual(require_compatible("0.4.0-draft"), "0.4.0-draft")
