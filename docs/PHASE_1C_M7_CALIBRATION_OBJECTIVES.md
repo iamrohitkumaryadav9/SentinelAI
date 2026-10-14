@@ -2,7 +2,9 @@
 
 Status: **committed before any calibration** (amended before any calibration: §2 steps 5–6, where `τ_DISAGREE` is set;
 amended after a train-only dry run and before any calibration artefact: C7-11 … C7-14, §3 and §5; amended after a
-second train-only dry run and before re-running it: C7-16, §3 "No negatives" and §3 "Train evaluation") (design §7.4 "each parameter's objective is written in
+second train-only dry run and before re-running it: C7-16, §3 "No negatives" and §3 "Train evaluation"; amended
+after the training-only investigation and before the calibration run and ML training: C7-17 … C7-20, §3 "ML
+interpretations", §5) (design §7.4 "each parameter's objective is written in
 `params.calibration.md` before calibration runs"; this file is that document). No calibration has been run and no
 M6 window has been evaluated by the rule engine when this file is committed.
 
@@ -85,7 +87,7 @@ exists only under a quota) and `APP_SHARE_MIN` (CTRL latency does not rise). For
 | `DROP_FRAC_MIN` | drops / (packets + drops) of the interface sources | `network_packet_loss` | |
 | `RT_FRAC_MIN` | `tcp.retrans_frac` | `tcp_retransmissions` | windows of `network_packet_loss` are neither positive nor negative: local loss causes retransmissions by mechanism (contract PR-1) |
 | `RT_RATE_MIN` | `tcp.retrans_rate` | `tcp_retransmissions` | as above; not read by the current engine, recorded |
-| `THR_RATIO_MIN` | `throttle.ratio` | `cpu_throttling` | read by CT.R3 without a baseline (contract v0.6.0, C7-11) |
+| `THR_RATIO_MIN` | — | `cpu_throttling` | **declared 0.5, not calibrated (C7-17)**; read by CT.R3 without a baseline (C7-11) and by CC.X1 |
 | `THR_TIME_MIN` | `throttle.time_rate` | `cpu_throttling` | not read by the current engine, recorded |
 | `RDX_MIN` | `sched.run_delay.target` minus the throttled time rate (excess waiting-cores) | `cpu_contention` | not read by the engine: no clause, predicate or precedence rule of any contract version references it (CC.R1 is `DEV(sched.run_delay_excess.target)` since v0.1.0; M2 report I-14); calibrated and recorded only |
 | `SAT_MIN` | `cpu.util.cpuset` | `cpu_contention` | CC.R2 is its only required use |
@@ -94,6 +96,16 @@ exists only under a quota) and `APP_SHARE_MIN` (CTRL latency does not rise). For
 | `REFAULT_MIN` | `mem.refault.target` | `memory_pressure` | not read by the current engine, recorded |
 | `APP_WAIT_MIN` | the largest of the app wait features (`app.queue_wait_ms`, `app.lock_wait_ms`, `app.dependency_latency_ms` P99) | `application_bottleneck` | negatives are train CTRL windows only (C7-12) |
 | `APP_SHARE_MIN` | the share of the latency increase explained by app-level wait (engine AB.R2 share: largest wait increase / P99 latency increase) | `application_bottleneck` | negatives are train CTRL windows only (C7-12) |
+
+**Declared value (C7-17).** `THR_RATIO_MIN` = 0.5 is an engineering value, not a calibrated optimum.
+- On the train split `throttle.ratio` is 1.0 in every tick of every throttling run: 8 threads on one CPU, an unthrottled
+  demand of 0.18–0.28 cores, against quotas of 0.2 and 0.075 cores, so every enforcement period is throttled.
+- Without a binding quota the ratio is undefined, or 0 for a non-binding quota (R2-D Q0).
+- With no negatives the objective cannot discriminate; any value in (0, 1] separates the train data equally.
+- 0.5 reads as "a majority of enforcement periods throttled", tolerating windows with unthrottled periods.
+- It changes no train decision.
+- Tested: 0.99 satisfies CT.R3, 0.0 does not.
+- The report records the observed train distribution next to the declared value.
 
 **Train evaluation (reported with the calibration, for owner review; train split only).** With every engine
 parameter fixed at its calibrated value, each train SF and CTRL run is diagnosed in its three windows. The run
@@ -147,6 +159,77 @@ showed two defects and two findings. The owner decided (`FZ-M7-PLAN` revisions, 
   including its stop rule.
 
 The objectives in §3 are otherwise unchanged. The dry-run numbers are not used: calibration is re-run from scratch.
+
+- **C7-17 … C7-20 (owner, `f9d8c00`),** after a training-only investigation of the third dry run:
+  - **C7-17:** `THR_RATIO_MIN` is declared (above).
+  - **C7-18:** `APP_SHARE_MIN` = 0.5 (C7-16) is accepted. Limitations:
+    - The application metrics are log2 histogram buckets (3.2 · 2^k ms), so the share takes values near 0.5 and 1.0.
+    - Any θ in (0, 0.5] gives the same train decisions.
+    - AB.R2 fires in every fault class where latency rose (contention 24/24, throttling 24/24, retransmissions
+      19/22, loss 12/19, memory 7/7, application 15/15 defined windows).
+    - It separates fault windows from CTRL, not classes from each other; class separation rests on AB.R3 (PR-4).
+  - **C7-19:** C7-12 is kept. Five train `tcp_retransmissions` runs are decided `application_bottleneck`:
+    - AB.R1 holds there through pool rejections and the closed-set events, not through the wait floor.
+    - AB.R3 is not blocked: in four runs `tcp.out_segs_rate` is below `SEG_MIN`, so RT is not evaluable.
+    - Rate limiting (`netem_rate_r`) at I3 delays without retransmitting.
+    - Any negative set beyond CTRL removes the errors only by making the application class undiagnosable (train
+      app recall 0).
+    - No contract v0.7.0 before M8.
+  - **C7-20:** D-6 is a finding, an invalid contract assumption:
+    - `sched.run_delay.target` sums per-thread run delay (waiting-cores), while `throttle.time_rate` is the
+      per-cgroup throttled wall time.
+    - Each runnable thread accrues about that wall time while throttled. On the train split the run delay is 6.1–8.0
+      × the throttled time (6–8 waiting threads), so `sched.run_delay_excess.target` grows with the number of
+      runnable threads.
+    - The 2026-10-02 equality came from the one-thread R2-C/R2-D target.
+    - Caveat: PR-3 results on OV-7 (quota + contender) rest on the inflated excess.
+    - The per-thread collector/contract revision is deferred.
+
+**ML interpretations (written before training; design §5.2–5.4, C7-8, C7-9).**
+- **ML-0 Data.** Windows of the train SF, CTRL and overlap runs; a run with an acceptable-set ground truth (OV-7) is
+  excluded. The label is the run's ground-truth primary label (CTRL: `INSUFFICIENT_EVIDENCE`) for each of its three
+  windows. The windows are built with the committed calibration report's engine values.
+- **ML-1 Canonical scope.** A column key is (feature, scope kind, qualifier, aggregation). It never carries a scope
+  ID, cpuset, path or name; the column audit (G-L1) rejects any column naming one.
+- **ML-2 Values.**
+  - Per key, from usable measurements only:
+    - `z` = sign(z) · log1p(|z|), so very small floors cannot make z unbounded;
+    - `log ratio` = log(max(ratio, 10⁻⁶));
+    - the absolute value is the value for a fraction-unit feature and sign · log1p(|value|) otherwise.
+  - Several instances of a key (per CPU) contribute the largest value of each column.
+- **ML-3 Columns.**
+  - Four per key: `z`, `log ratio`, `abs`, and a missing indicator.
+  - A missing key is filled with 0 and its indicator set to 1, never imputed from other runs.
+  - The keys are those usable in at least one training window, sorted.
+- **ML-4 Model fitting and selection.**
+  - Grids, tried in this order, with ties going to the earlier value:
+    - LR: C ∈ {0.01, 0.1, 1, 10};
+    - RF: 500 trees, `min_samples_leaf` ∈ {10, 5, 2, 1};
+    - HGB: (learning rate, leaves) ∈ {(0.05, 7), (0.1, 7), (0.05, 15), (0.1, 15)}.
+  - All three models use balanced class weights and seed 20261002.
+  - Validation: outer `GroupKFold` with 5 folds (groups = run), with the inner `GroupKFold` (4 folds) choosing the
+    hyperparameter by window-level macro F1 and fitting the Platt calibration.
+  - The final model: hyperparameter by `GroupKFold` (5) on all training windows; Platt calibration with
+    `GroupKFold` (5); `ensemble=False`.
+- **ML-5 Gates on validation.** Computed on the pooled held-out windows:
+  - G-Q1: gated run-level macro F1 ≥ 0.80;
+  - G-Q2: gated run-level recall ≥ 0.70 for each fault class;
+  - G-C1: ECE ≤ 0.10 and calibrated Brier < uncalibrated Brier.
+
+  Models are tried in the design order; the first that meets every gate is used.
+- **ML-6 No model meets the gates.** The kind with the highest validation gated run macro F1 is used (a tie goes to
+  the simpler). The miss is reported, not tuned away.
+- **ML-7 Abstention.**
+  - `τ_ML` is the smallest threshold with selective risk ≤ 10 % on the pooled held-out calibrated probabilities. Risk
+    is the error rate among the windows kept (max p ≥ τ).
+  - The gated output also abstains when a Required clause of the predicted label is not TRUE in that window.
+- **ML-8 `τ_DISAGREE`.** The combined policy keeps the rules' decision of record (design §5.4), so its macro F1 is the
+  same for every grid value and the tie rule gives 0.9. The flag counts are reported.
+- **Artefacts (add-only, AMD-30).** `params.calibrated.json` holds exactly the committed engine values plus
+  `τ_DISAGREE`. `model.json` is a JSON re-implementation of the fitted calibrated model, checked to reproduce
+  scikit-learn's probabilities within 10⁻⁹ with the same argmax on every training window. `training_report.json`
+  and `lock.json` (SHA-256 of the artefacts, the matrix and the manifest) complete the set, and the lock is
+  committed before any test run is read (M8).
 
 ## 6. Determinism
 

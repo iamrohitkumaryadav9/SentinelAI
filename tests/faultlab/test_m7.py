@@ -120,6 +120,99 @@ class TestWindowGap(unittest.TestCase):
                 build_snapshot(self.ticks, self.target, self.p, 1.0, self.ebpf, True, window_start=bad)
 
 
+class TestDeclaredThrottleRatio(unittest.TestCase):
+    """C7-17: THR_RATIO_MIN = 0.5 is declared, not calibrated; 0.99 satisfies the ratio clause, 0.0 does not."""
+
+    def test_declared_not_calibrated(self):
+        self.assertEqual(X.DECLARED, {"THR_RATIO_MIN": 0.5})
+        self.assertNotIn("THR_RATIO_MIN", X.THRESHOLDS)
+
+    def test_ratio_clause_at_the_declared_value(self):
+        from rules._fixtures import CG, COMMIT, m, params, snapshot
+        from sentinelai.diagnostic.contract import Label
+        from sentinelai.diagnostic.rules import diagnose
+        def ct(ratio):
+            ms = [m("throttle.quota_limited", CG, 1.0, base=False), m("throttle.ratio", CG, ratio, base=False),
+                  m("throttle.time_rate", CG, 0.5, 0.0, 0.0)]
+            d = diagnose(snapshot(ms), params(THR_RATIO_MIN=X.DECLARED["THR_RATIO_MIN"]), code_commit=COMMIT)
+            return next(c for c in d.result.candidates if c.label is Label.cpu_throttling)
+        self.assertIn("CT.R3", ct(0.99).required_met)
+        self.assertIn("CT.R3", ct(0.5).required_met)                     # x >= θ
+        self.assertNotIn("CT.R3", ct(0.0).required_met)
+        self.assertIn("CT.R3", ct(0.0).required_missing)
+
+
+class TestMl(unittest.TestCase):
+    @staticmethod
+    def data(n=60, k=3, f=5, seed=1):
+        import numpy as np
+        rng = np.random.default_rng(seed)
+        y = np.array([["a", "b", "c"][i % k] for i in range(n)])
+        Xm = rng.normal(size=(n, f)) + np.array([[{"a": 0, "b": 2, "c": -2}[v]] * f for v in y])
+        groups = [f"r{i // 3}" for i in range(n)]                        # three windows per run
+        return Xm, y, groups
+
+    def test_serialised_models_reproduce_sklearn(self):
+        import numpy as np
+        Xm, y, groups = self.data()
+        for kind, hp in (("logistic_regression", {"C": 1.0}), ("random_forest", {"min_samples_leaf": 2}),
+                         ("hist_gradient_boosting", {"learning_rate": 0.1, "max_leaf_nodes": 7})):
+            with self.subTest(kind):
+                cal = X.fit_calibrated(kind, hp, Xm, y, groups, np.arange(len(y)), 4)
+                model = json.loads(json.dumps(X.serialise(kind, hp, cal, ["k1"])))     # survives JSON
+                pj, ps = X.predict_proba_json(model, Xm), cal.predict_proba(Xm)
+                self.assertTrue(np.allclose(pj, ps, rtol=0, atol=1e-9), float(abs(pj - ps).max()))
+                self.assertTrue((pj.argmax(1) == ps.argmax(1)).all())
+
+    def test_group_splits_never_split_a_run(self):
+        import numpy as np
+        _, _, groups = self.data()
+        for tr, te in X._splits(groups, np.arange(len(groups)), 4):
+            self.assertFalse({groups[i] for i in tr} & {groups[i] for i in te})
+
+    def test_tau_ml_and_gating(self):
+        self.assertEqual(X.tau_ml([0.9, 0.8, 0.4], [True, True, False]), 0.8)       # risk 0 at 0.8
+        self.assertEqual(X.tau_ml([0.9, 0.5], [True, True]), 0.0)                   # risk 0 everywhere
+        self.assertGreater(X.tau_ml([0.9, 0.5], [False, False]), 0.9)               # never: abstain always
+        g = X.gated(["a", "b", X.INS, "a"], [0.9, 0.9, 0.9, 0.2], 0.5,
+                    [{"a": True, "b": True}, {"a": True, "b": False}, {}, {"a": True}])
+        self.assertEqual(g, ["a", X.INS, X.INS, X.INS])
+
+    def test_calibration_metrics(self):
+        import numpy as np
+        p = np.array([[1.0, 0.0], [0.0, 1.0]])
+        self.assertEqual(X.brier(p, np.array([0, 1])), 0.0)
+        self.assertEqual(X.brier(p, np.array([1, 0])), 2.0)
+        self.assertEqual(X.ece_top(p, np.array([0, 1]), bins=2)[0], 0.0)
+
+    def test_columns_carry_no_identifiers(self):
+        from types import SimpleNamespace as N
+        m = N(feature_id="softirq.frac.percpu", scope="cpu:18", qualifier=N(value="NET_RX"),
+              aggregation=N(value="RATE"))
+        self.assertEqual(X.column_key(m), "softirq.frac.percpu|cpu|NET_RX|RATE")
+        self.assertTrue(X.leakage_audit(X.column_names([X.column_key(m)]))["ok"])
+        self.assertFalse(X.leakage_audit(["sched.run_delay.target|cgroup:/sentlab/target||RATE|z"])["ok"])
+        Xm = X.design_matrix([{"k": (1.0, 2.0, 3.0)}, {}], ["k"])
+        self.assertEqual(Xm.tolist(), [[1.0, 2.0, 3.0, 0.0], [0.0, 0.0, 0.0, 1.0]])   # neutral fill + indicator
+
+    def test_ml_runs_are_train_only_and_exclude_acceptable_sets(self):
+        runs, excluded = X.ml_runs(MATRIX)
+        self.assertEqual({r["split"] for r in runs}, {"train"})
+        self.assertNotIn("OV-7", {r["family"] for r in runs})
+        self.assertEqual(len(excluded), 2)
+        self.assertFalse({"SENS", "PI3"} & {r["family"] for r in runs})
+        self.assertEqual(X.label_of(next(r for r in runs if r["family"] == "CTRL")), X.INS)
+
+    def test_calibrated_params_keep_every_engine_value(self):
+        rep = {"engine_parameters": {"numbers": {"COV_MIN": 0.9}, "reason_sets": {}}}
+        from unittest import mock
+        with mock.patch.object(X, "params"):
+            out = X.calibrated_params(rep, 0.9)
+        self.assertEqual(out["numbers"], {"COV_MIN": 0.9, X.TAU_DISAGREE: 0.9})
+        with self.assertRaises(SystemExit):
+            X.calibrated_params({"engine_parameters": {"numbers": {X.TAU_DISAGREE: 1.0}, "reason_sets": {}}}, 0.9)
+
+
 class TestCli(unittest.TestCase):
     def test_stopped_calibration_never_writes_the_artefact(self):        # C7-16 stop rule
         import tempfile
