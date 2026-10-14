@@ -147,6 +147,15 @@ eBPF programs (root) ───► M3B loader + parser ────────�
 - **M3A collectors** ([report](docs/PHASE_1C_M3A_REPORT.md), PASS WITH CONDITIONS; [M3A-C1](docs/PHASE_1C_M3A_C1_REPORT.md) GO): reads under `/proc` and `/sys` only. The single permitted command is `tc -s -j qdisc show` on non-protected interfaces. Absence is recorded as `Bad` states, never as zero.
 - **M3B eBPF layer** ([audit](docs/PHASE_1C_M3B_REPORT.md) NO-GO, resolved by the [R1 runtime validation](docs/PHASE_1C_M3B_R1_RUNTIME_VALIDATION_REPORT.md) GO): CO-RE BPF programs and a loader linked to libbpf 1.4; root only; observation only.
 - **FaultLab** ([R2-A infrastructure](docs/PHASE_1C_R2A_FAULTLAB_INFRASTRUCTURE_REPORT.md) GO): dedicated network namespaces, veth pairs and lab cgroups, with independent ground truth. Faults never touch protected interfaces or non-lab cgroups.
+- **Evaluation pipeline (M4–M8):**
+  - Lab and data: an A–R–B lab with a containerised workload and load generator. A deterministic 202-run matrix is
+    collected into an append-only raw dataset with a SHA-256 manifest (M6).
+  - Train-only calibration (M7): the contract parameters are set by objectives written before calibration.
+  - Advisory ML (M7): a calibrated random forest. It is contract-gated and can never assert what the rules did not
+    assert.
+  - Hash lock: the artefacts are locked before the test split is read.
+  - One-time evaluation (M8): rules alone, ML and the combined policy are evaluated on the held-out test split.
+  - Every step passes integrity checks that admit changes only through owner-approved amendments.
 
 **Runtime (Phase 2A; [report](docs/PHASE_2A_RUNTIME_REPORT.md)).** One read-only workflow: incident context → M3A
 acquisition → `ticks.jsonl` → snapshot → M2 → `DiagnosisRecord` → write-once artifact store with manifest. It
@@ -187,7 +196,7 @@ authorisation; BPF state during the first run was not verified (it needs root).
 | 2A: Runtime design | GO (review session; summarised in the 2A report) | [PHASE_2A_RUNTIME_REPORT.md](docs/PHASE_2A_RUNTIME_REPORT.md) |
 | 2A.1–2A.4: Runtime implementation | PASS (per closeout) | [PHASE_2A_RUNTIME_REPORT.md](docs/PHASE_2A_RUNTIME_REPORT.md) |
 | 2A.5: First live acquisition | PASS (bounded gate: M3A-only, idle target) | [report §6](docs/PHASE_2A_RUNTIME_REPORT.md), [provenance](results/phase2a_live/first-live-cron/PROVENANCE.json) |
-| 2A.6: Runtime closeout | CLOSED, committed locally: `d119618` (runtime source and tests, the exact live-run source) and `d6b9333` (evidence, provenance, documentation). Runtime tests 153/153; documented regression 1,026/1,028 (2 known environmental failures; not green); live-run BPF state unverified | [report §8](docs/PHASE_2A_RUNTIME_REPORT.md) |
+| 2A.6: Runtime closeout | CLOSED: `d119618` (runtime source and tests, the exact live-run source) and `d6b9333` (evidence, provenance, documentation), both on `origin/main`. At closeout: runtime tests 153/153; regression 1,026/1,028 (2 known environmental failures). Live-run BPF state unverified | [report §8](docs/PHASE_2A_RUNTIME_REPORT.md) |
 
 Machine-readable status: [`docs/PROJECT_STATUS.json`](docs/PROJECT_STATUS.json).
 
@@ -236,7 +245,7 @@ experiments/faultlab/    FaultLab lab, preflight, pilot, matrix generator (matri
                          M7 calibration/ML/lock (m7.py), M8 evaluation (m8.py)
 datasets/faultlab/v1/    raw dataset (append-only, SHA-256 manifest), matrix.json, m7/ locked artefacts,
                          m8/evaluation.json
-configs/                 (empty)
+configs/                 (placeholder; .gitkeep only)
 requirements.in / requirements.lock
 ```
 
