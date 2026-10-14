@@ -655,7 +655,9 @@
      "C7-11": "1A: contract revision: CT.R2 judges throttle.ratio as an absolute bounded value (ABS, no baseline gate); the deviation part stays on throttle.time_rate. Reason: in FaultLab the quota starts at fault onset, so throttle.ratio has no baseline (undefined without a quota) and CT.R2 was MISSING in every window (train dry run: throttling 0 of 8)",
      "C7-12": "2A: APP_WAIT_MIN and APP_SHARE_MIN count false positives against train CTRL windows only (waits rise under every fault; separation from other classes is AB.R2/AB.R3's job), like the C7-1 exception for retransmissions under local loss",
      "C7-13": "3A: memory pressure without user-visible latency impact abstains by contract (NO_IMPACT_OBSERVED); accepted as a scientific finding, the memory recall is reported as it comes out",
-     "C7-14": "4A: the thin retransmission signal at the weakest levels is accepted as recorded under R-4"
+     "C7-14": "4A: the thin retransmission signal at the weakest levels is accepted as recorded under R-4",
+     "C7-15": "1B: AMD-31 omitted src/sentinelai/runtime/pipeline.py and src/sentinelai/runtime/replay.py from the test_integrity allowlist; existing history is preserved (no rewrite, main is not moved to the rebuilt commits); this decision commit is the approved parent of a minimal follow-up amendment (AMD-31b) adding exactly those two paths",
+     "C7-16": "2A: a class threshold whose negative set is empty (train dry run: THR_RATIO_MIN, APP_SHARE_MIN) is the 1st percentile (nearest rank) of its own-class train windows; the objectives define the percentile, undefined values and ties before calibration is re-run; train data only; if a threshold stays 0 or leaves its clause effectively unconditional, calibration stops for owner review, no other value is substituted"
     }
    }
   }

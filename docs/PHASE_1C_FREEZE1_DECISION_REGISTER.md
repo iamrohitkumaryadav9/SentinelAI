@@ -247,6 +247,14 @@ loss 7/8, retransmissions 3/8, memory 1/8, application 0/8, throttling 0/8.
 | C7-13 | Memory pressure without latency impact abstains by contract; accepted as a finding, recall reported as it comes out |
 | C7-14 | Thin retransmission signal at the weakest levels accepted as recorded under R-4 |
 
+**M7 revisions (owner reply "1B, 2A", 2026-10-14)**, after the contract revision (`afce9c2`, `6a0f2bd`) and a second
+train-only dry run (scratch only, nothing committed; train macro-F1 0.70; two thresholds at 0 with no negatives).
+
+| Item | Decision |
+|---|---|
+| C7-15 | AMD-31 left `src/sentinelai/runtime/pipeline.py` and `src/sentinelai/runtime/replay.py` out of the `test_integrity` allowlist. History is preserved; this record is the approved parent of a minimal follow-up amendment (AMD-31b) adding exactly those two paths |
+| C7-16 | A class threshold with no negative windows (dry run: `THR_RATIO_MIN`, `APP_SHARE_MIN`) = 1st percentile (nearest rank) of its own-class train windows; percentile, undefined values and ties defined in the objectives before re-running; train only; a threshold that stays 0 or leaves its clause effectively unconditional stops calibration for review |
+
 Still pending after §5:
 
 - No Freeze-1 parameter decision.
