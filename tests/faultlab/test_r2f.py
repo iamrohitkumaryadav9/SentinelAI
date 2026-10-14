@@ -885,7 +885,8 @@ class TestStaticAndIntegrity(unittest.TestCase):
                             "eeddf00a3256ebd467f1f4577ee433d561212585",   # AMD-28
                             "8982c5905200a0896fab5e4b8db634d9251b9c8d",   # AMD-29
                             "e1e52f7561c349aa4e091c34eb5ca965f058ab7a",   # AMD-30
-                            "e6dc3e9936b65fec231e09e52c26c62e2d4e58c9"}   # AMD-31
+                            "e6dc3e9936b65fec231e09e52c26c62e2d4e58c9",   # AMD-31
+                            "7a0b73dcfbad1432e601c32fa49814132f9c9dee"}   # AMD-31b (C7-15)
         files = ("tests/faultlab/_integrity.py", "tests/faultlab/test_integrity.py")
         env = {**os.environ, "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1", "GIT_OPTIONAL_LOCKS": "0"}
         run = lambda *a: subprocess.run(["git", "-C", str(ROOT), *a], capture_output=True, check=True, env=env).stdout

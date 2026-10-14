@@ -53,6 +53,8 @@ M4_PATHS = frozenset({
     "src/sentinelai/diagnostic/contract/catalog.py",
     "src/sentinelai/diagnostic/contract/version.py",
     "src/sentinelai/diagnostic/rules/engine.py",
+    "src/sentinelai/runtime/pipeline.py",    # AMD-31b (C7-15): version-aware rebuild, omitted from AMD-31
+    "src/sentinelai/runtime/replay.py",      # AMD-31b (C7-15): version-aware replay, omitted from AMD-31
     "src/sentinelai/diagnostic/contract/data/labels.json",
     "src/sentinelai/diagnostic/contract/data/registry.json",
     "src/sentinelai/diagnostic/contract/data/predicates.json",
@@ -85,7 +87,7 @@ FAILED_PILOT_PINS = {
 }
 PINS = {
     "tests/faultlab/test_r2e.py": "8d787608866398b64d9cbba458cf8268d7fc5dfd833e2776642691e054afd184",
-    "tests/faultlab/test_r2f.py": "3b5791d2845c1bca28130b2c8c2aa7d5799201a2a2efe2ccf21cf852bfd11c3d",
+    "tests/faultlab/test_r2f.py": "14cb86eef415aefea88e75c7cfa4a7c36ea6313d76645a24a4d94090a3060769",
 }
 LIVE = I.Policy(anchor=ANCHOR, add_or_modify=M4_PATHS | CHECKER_FILES, add_only=M6_ADD_ONLY | M7_ADD_ONLY | CONTRACT_ARCHIVE_ADD_ONLY,
                 pinned=PINS)                                                            # checker: see test_r2f
