@@ -220,6 +220,22 @@ Matrix: 48 single-fault train + 72 test (12 per class, Q-5) + 40 overlap/distrac
 PI-0; failed_injection excluded and counted, never retried; any other failed run kept as failed and its seed never
 reused.
 
+**M7 plan (owner reply "all A", 2026-10-14; `FZ-M7-PLAN`):** the calibration objectives of every contract parameter,
+written before calibration (design §7.4), and the training plan.
+
+| Item | Decision |
+|---|---|
+| C7-1 | Class thresholds: smallest value with ≤ 1 % false positives on train CTRL and other-class windows, keeping ≥ 0.9 recall on the own class; the false-positive limit wins and a recall shortfall is reported |
+| C7-2 | Deviation bands: MODERATE = 99th, STRONG = 99.9th percentile of robust_z / ratio over all features in train CTRL windows |
+| C7-3 | Noise floors: 99th percentile of each feature in train CTRL windows (design §7.4) |
+| C7-4 | `COV_MIN` (largest ≤ 0.99 keeping ≥ 99 % of train measurements usable), `N_BASE_MIN` likewise, `SEG_MIN` (1st percentile of TCP segment rate in train CTRL) |
+| C7-5 | `KFREE_REASONS_LOSS` = {`QDISC_DROP`, `TC_INGRESS`} |
+| C7-6 | Fractions just above 1 stay a documented limitation (as M-4) |
+| C7-7 | Softirq parameters: smallest value with zero firings on all train windows |
+| C7-8 | `IMPACT_MIN` (≤ 1 % of train CTRL windows), `DOM_RATIO` (train macro-F1 over {1.25, 1.5, 2, 3}), `τ_ML` (selective risk ≤ 10 % over train folds), `τ_DISAGREE` (same approach) |
+| C7-9 | Calibration on train single-fault and CTRL runs; ML training adds train overlap runs except OV-7; SENS and PI-3 never used; test untouched before the lock |
+| C7-10 | Baseline 45 s ending at fault onset (AMD-6); three 24 s windows from onset + 16 s (AMD-8); run decision = mode, ties to INS |
+
 Still pending after §5:
 
 - No Freeze-1 parameter decision.

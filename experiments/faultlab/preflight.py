@@ -150,6 +150,9 @@ DECISIONS: Dict[str, Tuple[str, str, Optional[Tuple[str, ...]]]] = {
     "FZ-M6-PLAN": ("M6 plan: matrix, mechanisms, single levels, SENS I0, OOD, AMD-29, pilot-design items, collection",
                    f"{REGISTER} §5 P-1..P-6", ("matrix", "mechanisms", "single_level_classes", "sens_i0", "ood",
                                                 "integrity", "pilot_design_items", "collection_rules", "batches")),
+    "FZ-M7-PLAN": ("M7 calibration objectives and training plan", f"{REGISTER} §5 C7-1..C7-10",
+                   ("threshold_rule", "deviation_bands", "floors", "data_quality", "kfree_reasons_loss",
+                    "fraction_overshoot", "softirq", "remaining", "run_use", "windows")),
     "FZ-M5-REVIEW": ("M5 review: frozen PI-8 levels, single levels, PI-6 under throttling, U-1/U-1b/U-7",
                      f"{REGISTER} §5 R-1..R-7", ("levels", "single_levels", "congestion", "pi6_post_fault_only",
                                                  "memory", "U-1", "U-1b", "U-7")),
@@ -158,7 +161,7 @@ DECISIONS: Dict[str, Tuple[str, str, Optional[Tuple[str, ...]]]] = {
 FULL_ONLY = frozenset({"FZ-INTENSITY", "FZ-PI5", "FZ-PI8", "FZ-TTRANS", "FZ-INTENSITY-R2", "FZ-INTENSITY-APP",
                        "FZ-INTENSITY-NET", "FZ-PI7-LOCK", "FZ-WORKSET", "FZ-OV", "FZ-Q5", "FZ-Q2",
                        "FZ-INTENSITY-CPUNET", "FZ-INTENSITY-MEM", "FZ-M5-REVIEW",
-                       "FZ-M6-PLAN"})
+                       "FZ-M6-PLAN", "FZ-M7-PLAN"})
 STAGES = ("ctrl", "full")
 # Why each decision is mandatory although no host check consumes its value.
 NOT_CONSUMED = ("Not consumed by a host check; mandatory because the pilot's registered procedure cannot be executed "

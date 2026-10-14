@@ -631,6 +631,27 @@
     "collection_rules": "code pinned for all of M6, only dataset commits between batches, each batch its own campaign with PI-0; failed_injection excluded and counted, never retried (AMD-10); any other failed run kept as failed, its seed never reused, the next provisioned seed used",
     "batches": "a smoke batch (one run per new family) then about 6 batches of about 1 h 45 min"
    }
+  },
+  "FZ-M7-PLAN": {
+   "status": "approved",
+   "approved_by": "Rohit Kumar",
+   "date": "2026-10-14",
+   "reference": "Approved by Rohit Kumar on 2026-10-14 (owner reply \"all A\" to the M7 decision sheet; recorded in this commit). Owner approval of a design choice, not scientific validation. Basis: Register §5 C7-1..C7-10; design §5.2-5.4, §7.4; contract §6",
+   "value": {
+    "threshold_rule": "C7-1 A: every class threshold (DROP_ABS_MIN, DROP_FRAC_MIN, RT_FRAC_MIN, RT_RATE_MIN, THR_RATIO_MIN, THR_TIME_MIN, RDX_MIN, SAT_MIN, PSI_MEM_MIN, RECLAIM_MIN, REFAULT_MIN, APP_WAIT_MIN, APP_SHARE_MIN) is the smallest value with at most 1 % false positives on train windows of CTRL and the other classes, keeping recall >= 0.9 on its own class's train windows; if both cannot hold, the false-positive limit holds and the recall shortfall is reported",
+    "deviation_bands": "C7-2 A: Z_MODERATE / R_MODERATE = 99th percentile and Z_STRONG / R_STRONG = 99.9th percentile of robust_z / ratio over every feature in train CTRL windows",
+    "floors": "C7-3 A: floor_f = 99th percentile of the feature's per-window value in train CTRL windows (design §7.4)",
+    "data_quality": "C7-4 A: COV_MIN = the largest value <= 0.99 keeping >= 99 % of train measurements usable; N_BASE_MIN likewise over baseline samples; SEG_MIN = 1st percentile of tcp.out_segs_rate in train CTRL windows",
+    "kfree_reasons_loss": [
+     "QDISC_DROP",
+     "TC_INGRESS"
+    ],
+    "fraction_overshoot": "C7-6 A: fractions just above 1 (mem.util.target, psi.cpu.some.target at saturation) stay a documented limitation (as M-4); collector unchanged, raw data untouched",
+    "softirq": "C7-7 A: each SI_* parameter = the smallest value with zero firings on all train windows (class waived); values reported",
+    "remaining": "C7-8 A: IMPACT_MIN = smallest value with <= 1 % of train CTRL windows showing impact; DOM_RATIO = best train macro-F1 over {1.25, 1.5, 2, 3}; tau_ML = selective risk <= 10 % over the train GroupKFold folds; tau_DISAGREE by the same grid approach on train",
+    "run_use": "C7-9 A: calibration uses train single-fault and train CTRL runs; ML training adds train overlap runs except OV-7 (acceptable set); SENS and PI-3 runs are used for neither; test runs are not touched before the artefact lock",
+    "windows": "C7-10 A: baseline B = 45 s ending at fault onset (AMD-6); three tumbling scored windows of W = 24 s from fault onset + T_TRANS (16 s) (AMD-8, R-2); run-level decision = mode of the three, ties to INSUFFICIENT_EVIDENCE"
+   }
   }
  }
 }

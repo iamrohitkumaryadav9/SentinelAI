@@ -719,6 +719,9 @@ class TestStagesAndPrivilege(Base):
         self.assertEqual(m6["matrix"]["total_runs"], 196)
         self.assertIn("deferred", m6["ood"])
         self.assertIn("FZ-M6-PLAN", P.FULL_ONLY)
+        m7 = v("FZ-M7-PLAN")                                               # C7-1..C7-10, 2026-10-14
+        self.assertEqual(m7["kfree_reasons_loss"], ["QDISC_DROP", "TC_INGRESS"])
+        self.assertIn("FZ-M7-PLAN", P.FULL_ONLY)
         self.assertIn("sentlab-a0", v("FZ-Q2")["collector_netns"])        # P-7, 2026-10-13
         self.assertIn("netem on A only (P-8)", m6["mechanisms"])          # P-8, 2026-10-13
         ov5 = v("FZ-OV")["ov5_sizes"]                                      # O-1, 2026-10-13
