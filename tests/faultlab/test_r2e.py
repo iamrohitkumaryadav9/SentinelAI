@@ -1704,10 +1704,14 @@ class TestStaticAndIntegrity(unittest.TestCase):
                                    "tests/runtime/test_record.py")
                              or re.fullmatch(r"src/sentinelai/diagnostic/contract/data/(?:archive/0\.5\.0-draft/)?"
                                              r"(?:labels|registry|predicates|parameters)\.json", p) is not None)
+            # AMD-32: the M8 one-time evaluation tool, its tests, the M8 documents and the add-only evaluation result
+            m8 = lambda p: (p in ("experiments/faultlab/m8.py", "tests/faultlab/test_m8.py",
+                                  "datasets/faultlab/v1/m8/evaluation.json")
+                            or re.fullmatch(r"docs/PHASE_1C_M8_[A-Z0-9_]+\.md", p) is not None)
             changed = git("diff", "--name-only", base, "HEAD").stdout.split()
             others = sorted(p for p in changed if p not in E.TOOLING)
             self.assertTrue(others and all(closeout(p) or r2f(p) or p2a6(p) or p1c(p) or m4(p) or m5(p) or m6(p) or m7(p)
-                                           or m7c(p) for p in others), others)
+                                           or m7c(p) or m8(p) for p in others), others)
             self.assertFalse(res["ok"])
             self.assertEqual(res["reason"], f"changed since {base[:7]} beyond R2-E tooling: {others}")
         with tempfile.TemporaryDirectory() as t:

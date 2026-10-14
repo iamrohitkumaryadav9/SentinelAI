@@ -72,12 +72,15 @@ M4_PATHS = frozenset({
     "tests/rules/_fixtures.py",
     "tests/rules/test_determinism.py",
     "tests/runtime/test_record.py",
+    "experiments/faultlab/m8.py",            # AMD-32 (C7-21): the M8 one-time test evaluation
+    "tests/faultlab/test_m8.py",             # AMD-32: its tests
 })
 M6_ADD_ONLY = frozenset({"datasets/faultlab/v1/matrix.json"})   # AMD-29: committed once, before any collection
 M7_ADD_ONLY = frozenset(f"datasets/faultlab/v1/m7/{n}.json" for n in    # AMD-30: each artefact committed once
                         ("params.calibrated", "calibration_report", "model", "training_report", "lock"))
 CONTRACT_ARCHIVE_ADD_ONLY = frozenset(f"src/sentinelai/diagnostic/contract/data/archive/0.5.0-draft/{n}.json" for n in
                                       ("labels", "registry", "predicates", "parameters"))   # AMD-31: verbatim, once
+M8_ADD_ONLY = frozenset({"datasets/faultlab/v1/m8/evaluation.json"})   # AMD-32: the one-time result, once
 # AMD-27: recorded failed evaluations, pinned so that they can never be edited or relabelled as passing
 FAILED_PILOT_PINS = {
     "results/phase1c_m5_pilot/20261011T175343Z/PI0-1/run.json":
@@ -86,10 +89,10 @@ FAILED_PILOT_PINS = {
         "dd79326c5951f87e6dd69c20ce039b4c23f938e49eef6073ae7221c94fc56519",       # pipeline_ok false (app_features)
 }
 PINS = {
-    "tests/faultlab/test_r2e.py": "8d787608866398b64d9cbba458cf8268d7fc5dfd833e2776642691e054afd184",
-    "tests/faultlab/test_r2f.py": "14cb86eef415aefea88e75c7cfa4a7c36ea6313d76645a24a4d94090a3060769",
+    "tests/faultlab/test_r2e.py": "5334f96b2dccf09ffe29c675cb9157084e76d4bd3fee7044c69e30dc7169f46d",
+    "tests/faultlab/test_r2f.py": "44b2301cb9f10f6538f95dbcfc10d6bb923652e9936f6afe376502acdd6b33ad",
 }
-LIVE = I.Policy(anchor=ANCHOR, add_or_modify=M4_PATHS | CHECKER_FILES, add_only=M6_ADD_ONLY | M7_ADD_ONLY | CONTRACT_ARCHIVE_ADD_ONLY,
+LIVE = I.Policy(anchor=ANCHOR, add_or_modify=M4_PATHS | CHECKER_FILES, add_only=M6_ADD_ONLY | M7_ADD_ONLY | CONTRACT_ARCHIVE_ADD_ONLY | M8_ADD_ONLY,
                 pinned=PINS)                                                            # checker: see test_r2f
 
 
@@ -109,12 +112,14 @@ class TestLiveRepository(unittest.TestCase):
             self.assertFalse(doc.get("ok") or doc.get("pipeline_ok"), path)
 
     def test_policy_paths_are_exact(self):
-        for p in M4_PATHS | CHECKER_FILES | set(PINS) | M6_ADD_ONLY | M7_ADD_ONLY | CONTRACT_ARCHIVE_ADD_ONLY:
+        for p in M4_PATHS | CHECKER_FILES | set(PINS) | M6_ADD_ONLY | M7_ADD_ONLY | CONTRACT_ARCHIVE_ADD_ONLY | M8_ADD_ONLY:
             self.assertFalse(p.endswith("/") or any(c in p for c in "*?[ \t\n"), p)
         self.assertFalse(M4_PATHS & CHECKER_FILES or M4_PATHS & set(PINS) or CHECKER_FILES & set(PINS))
         self.assertFalse(M6_ADD_ONLY & (M4_PATHS | CHECKER_FILES | set(PINS)))
         self.assertFalse(M7_ADD_ONLY & (M4_PATHS | CHECKER_FILES | set(PINS) | M6_ADD_ONLY))
         self.assertFalse(CONTRACT_ARCHIVE_ADD_ONLY & (M4_PATHS | CHECKER_FILES | set(PINS) | M6_ADD_ONLY | M7_ADD_ONLY))
+        self.assertFalse(M8_ADD_ONLY & (M4_PATHS | CHECKER_FILES | set(PINS) | M6_ADD_ONLY | M7_ADD_ONLY
+                                        | CONTRACT_ARCHIVE_ADD_ONLY))
 
 
 # ---------------------------------------------------------------------------------------------- disposable repos
