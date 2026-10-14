@@ -78,6 +78,18 @@ def fp_bounded(pos, neg, fp_max=FP_MAX, recall_min=RECALL_MIN):
             "negatives": len(neg), "recall_shortfall": bool(pos) and rec < recall_min}
 
 
+def no_negatives(pos):
+    """C7-16: a threshold with no defined negative window is the nearest-rank 1st percentile of its positives
+    (k = ceil(0.01 n), duplicates kept; k = 1 for n <= 100); a window fires when x >= θ."""
+    if not pos:
+        raise Refused("C7-16: a threshold has neither negative nor positive windows with a defined value")
+    theta = nearest_rank(pos, 0.01)
+    rec = sum(1 for x in pos if x >= theta) / len(pos)
+    return {"value": theta, "fp": None, "recall": rec, "positives": len(pos), "negatives": 0,
+            "recall_shortfall": rec < RECALL_MIN, "stopped": theta <= 0,
+            "limitation": "no negative window: bounded by the positives only, FP not measurable on train (C7-16)"}
+
+
 def zero_firing(xs):
     """C7-7: the smallest value with no window at or above it."""
     return math.nextafter(max(xs), math.inf) if xs else FLOOR_MIN
@@ -198,6 +210,7 @@ def x_impact(s, cov):
 
 
 # parameter -> (statistic, own class, classes neither positive nor negative)
+CTRL_ONLY = tuple(c for c in CLASSES if c != "application_bottleneck")   # C7-12: app waits rise under every fault
 THRESHOLDS = {
     "DROP_ABS_MIN": (x_drop_abs, "network_packet_loss", ()),
     "DROP_FRAC_MIN": (x_drop_frac, "network_packet_loss", ()),
@@ -210,8 +223,8 @@ THRESHOLDS = {
     "PSI_MEM_MIN": (x_one("psi.mem.some.target"), "memory_pressure", ()),
     "RECLAIM_MIN": (x_one("mem.reclaim.target"), "memory_pressure", ()),
     "REFAULT_MIN": (x_one("mem.refault.target"), "memory_pressure", ()),
-    "APP_WAIT_MIN": (x_app_wait, "application_bottleneck", ()),
-    "APP_SHARE_MIN": (x_app_share, "application_bottleneck", ()),
+    "APP_WAIT_MIN": (x_app_wait, "application_bottleneck", CTRL_ONLY),           # C7-12: negatives are CTRL only
+    "APP_SHARE_MIN": (x_app_share, "application_bottleneck", CTRL_ONLY),
 }
 
 
@@ -264,8 +277,9 @@ def calibrate(matrix, raw_root: Path, engine_commit: str, log=print) -> tuple:
     segs = [x for s in ctrl for x in [x_one("tcp.out_segs_rate")(s, cov_min)] if x is not None]
     numbers["SEG_MIN"] = nearest_rank(segs, 0.01)
     rep["parameters"]["SEG_MIN"] = {"value": numbers["SEG_MIN"], "windows": len(segs), "rule": "C7-4"}
+    rep["stopped"] = []
     for name, (stat, own, neither) in THRESHOLDS.items():
-        pos, neg, left_out = [], [], 0
+        pos, neg, undef_pos, undef_neg = [], [], 0, 0
         for rid, ws in snaps.items():
             c = cls[rid]
             if c in neither:
@@ -273,12 +287,19 @@ def calibrate(matrix, raw_root: Path, engine_commit: str, log=print) -> tuple:
             for s in ws:
                 x = stat(s, cov_min)
                 if x is None:
-                    left_out += 1
+                    undef_pos, undef_neg = (undef_pos + 1, undef_neg) if c == own else (undef_pos, undef_neg + 1)
                     continue
                 (pos if c == own else neg).append(x)
-        r = fp_bounded(pos, neg)
+        if neg:
+            r = dict(fp_bounded(pos, neg), rule="C7-12" if neither == CTRL_ONLY else "C7-1")
+        else:
+            r = dict(no_negatives(pos), rule="C7-16")
+            if r["stopped"]:
+                rep["stopped"].append(f"{name} = {r['value']!r} <= 0 under C7-16: its clause would be effectively "
+                                      f"unconditional")
         numbers[name] = r["value"]
-        rep["parameters"][name] = dict(r, own_class=own, left_out=left_out, rule="C7-1")
+        rep["parameters"][name] = dict(r, own_class=own, neither=list(neither), left_out=undef_pos + undef_neg,
+                                       undefined={"own_class": undef_pos, "other": undef_neg})
     every = [s for ws in snaps.values() for s in ws]
     for name, stat in (("SI_ABS_MIN", x_si_abs), ("SI_RATIO_MIN", x_si_ratio), ("SI_SHARE_MIN", x_si_share)):
         xs = [x for s in every for x in [stat(s, cov_min)] if x is not None]
@@ -310,7 +331,43 @@ def calibrate(matrix, raw_root: Path, engine_commit: str, log=print) -> tuple:
     rep["engine_parameters"] = {"numbers": dict(sorted(numbers.items())), "reason_sets": {k: list(v) for k, v in
                                                                                        reasons.items()}}
     rep["parameters"][TAU_DISAGREE] = {"value": None, "rule": "C7-8: set by the ML stage (combination policy)"}
+    p = params(dict(numbers, **{TAU_DISAGREE: ENGINE_PLACEHOLDER}), reasons)
+    rep["train_evaluation"] = train_evaluation(
+        {rid: [diagnose(s, p, engine_commit) for s in ws] for rid, ws in snaps.items()}, cls,
+        {n: (THRESHOLDS[n][0], numbers[n]) for n, v in rep["parameters"].items() if v.get("rule") == "C7-16"},
+        [s for ws in snaps.values() for s in ws], cov_min)
     return numbers, reasons, rep
+
+
+def train_evaluation(decisions, cls, c716, every, cov_min):
+    """Objectives §3 "Train evaluation": run-level P/R/F1 per label and macro F1, abstentions, cross-class false
+    positives (run and window confusion), and the firing share of each C7-16 threshold over defined train windows."""
+    labels = CLASSES + (INS,)
+    truth = {rid: cls[rid] or INS for rid in decisions}
+    run = {rid: run_decision(ds) for rid, ds in decisions.items()}
+    per = {}
+    for lab in labels:
+        tp = sum(1 for r in run if truth[r] == lab and run[r] == lab)
+        fp = sum(1 for r in run if truth[r] != lab and run[r] == lab)
+        fn = sum(1 for r in run if truth[r] == lab and run[r] != lab)
+        per[lab] = {"runs": sum(1 for r in run if truth[r] == lab), "tp": tp, "fp": fp, "fn": fn,
+                    "precision": tp / (tp + fp) if tp + fp else None, "recall": tp / (tp + fn) if tp + fn else None,
+                    "f1": 2 * tp / (2 * tp + fp + fn) if tp + fp + fn else 0.0}
+    rows = lambda pairs: {t: dict(sorted(Counter(p for tt, p in pairs if tt == t).items())) for t in labels}
+    run_pairs = [(truth[r], run[r]) for r in run]
+    win_pairs = [(truth[r], d) for r, ds in decisions.items() for d in ds]
+    cross = lambda pairs: sum(1 for t, p in pairs if p in CLASSES and p != t)
+    fire = {}
+    for name, (stat, theta) in c716.items():
+        xs = [x for s in every for x in [stat(s, cov_min)] if x is not None]
+        fire[name] = {"defined_windows": len(xs), "fires": sum(1 for x in xs if x >= theta),
+                      "windows": len(every)}
+    return {"per_label": per, "macro_f1": macro_f1([t for t, _ in run_pairs], [p for _, p in run_pairs]),
+            "abstentions": {"runs": {t: sum(1 for tt, p in run_pairs if tt == t and p == INS) for t in labels},
+                            "windows": {t: sum(1 for tt, p in win_pairs if tt == t and p == INS) for t in labels}},
+            "cross_class_false_positives": {"runs": cross(run_pairs), "windows": cross(win_pairs)},
+            "confusion_runs": rows(run_pairs), "confusion_windows": rows(win_pairs), "c7_16_firing": fire,
+            "window_decisions": {r: list(ds) for r, ds in sorted(decisions.items())}}
 
 
 def diagnose(snap, p, commit):
@@ -353,11 +410,13 @@ def main(argv=None) -> int:
                             check=True).stdout.strip()
     numbers, reasons, rep = calibrate(matrix, M6.RAW, commit)
     rep["code_commit"] = commit
+    if rep["stopped"] and out.resolve() == OUT.resolve():   # C7-16 stop rule: never an artefact
+        raise Refused(f"calibration stopped for owner review, nothing written: {rep['stopped']}")
     out.mkdir(parents=True, exist_ok=True)
     with open(out / REPORT_OUT.name, "xb") as fh:
         fh.write(dump(rep))
-    print(json.dumps({"written": str(out / REPORT_OUT.name)}))
-    return 0
+    print(json.dumps({"written": str(out / REPORT_OUT.name), "stopped": rep["stopped"]}))
+    return 3 if rep["stopped"] else 0
 
 
 if __name__ == "__main__":

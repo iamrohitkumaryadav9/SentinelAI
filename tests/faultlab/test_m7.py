@@ -32,6 +32,17 @@ class TestStatistics(unittest.TestCase):
         r = X.fp_bounded([], [0.0, 0.0])                                  # no positives (IMPACT_MIN)
         self.assertEqual((r["value"], r["recall"]), (math.nextafter(0.0, math.inf), None))
 
+    def test_no_negatives_rule(self):                                     # C7-16
+        r = X.no_negatives([0.9, 0.4, 0.7, 0.4])
+        self.assertEqual((r["value"], r["recall"], r["fp"], r["negatives"], r["stopped"]), (0.4, 1.0, None, 0, False))
+        xs = [float(i) for i in range(1, 201)]                            # n = 200: k = 2, the 2nd smallest
+        self.assertEqual(X.no_negatives(xs)["value"], 2.0)
+        self.assertEqual(X.no_negatives([3.0, 3.0, 3.0] + [5.0] * 197)["recall"], 1.0)   # ties at θ all fire
+        self.assertTrue(X.no_negatives([0.0, 0.5])["stopped"])            # θ <= 0 stops for review
+        self.assertTrue(X.no_negatives([-0.2, 0.5])["stopped"])
+        with self.assertRaises(SystemExit):
+            X.no_negatives([])
+
     def test_zero_firing_and_run_decision(self):
         self.assertEqual(X.zero_firing([0.1, 0.3]), math.nextafter(0.3, math.inf))
         self.assertEqual(X.zero_firing([]), X.FLOOR_MIN)
@@ -53,6 +64,14 @@ class TestSplits(unittest.TestCase):
         self.assertEqual(len(runs), 58)                                   # 48 SF + 10 CTRL (C7-9)
         poisoned = {"runs": [dict(MATRIX["runs"][0], split="test", family="SF")]}
         self.assertEqual(X.train_runs(poisoned), [])
+
+    def test_app_thresholds_count_false_positives_against_ctrl_only(self):
+        for name in ("APP_WAIT_MIN", "APP_SHARE_MIN"):                    # C7-12
+            _, own, neither = X.THRESHOLDS[name]
+            self.assertEqual(set(neither) | {own}, set(X.CLASSES))
+        self.assertEqual(X.THRESHOLDS["RT_FRAC_MIN"][2], ("network_packet_loss",))   # C7-1 exception unchanged
+        self.assertEqual({k for k, (_, _, n) in X.THRESHOLDS.items() if n},
+                         {"APP_WAIT_MIN", "APP_SHARE_MIN", "RT_FRAC_MIN", "RT_RATE_MIN"})
 
     def test_windows_follow_amd_8(self):
         self.assertEqual(X.WINDOW_STARTS, (61, 85, 109))
@@ -102,6 +121,21 @@ class TestWindowGap(unittest.TestCase):
 
 
 class TestCli(unittest.TestCase):
+    def test_stopped_calibration_never_writes_the_artefact(self):        # C7-16 stop rule
+        import tempfile
+        from unittest import mock
+        stopped = ({}, {}, {"stopped": ["THR_RATIO_MIN = 0.0 <= 0"]})
+        with mock.patch.object(X, "calibrate", return_value=stopped), \
+                mock.patch.object(X.M6, "committed_matrix", return_value={}):
+            with tempfile.TemporaryDirectory() as d:
+                with mock.patch.object(X, "OUT", Path(d)):
+                    with self.assertRaises(SystemExit):
+                        X.main(["calibrate", "--out", d])
+                    self.assertFalse((Path(d) / "calibration_report.json").exists())
+                scratch = Path(d) / "scratch"
+                self.assertEqual(X.main(["calibrate", "--out", str(scratch)]), 3)
+                self.assertTrue(json.loads((scratch / "calibration_report.json").read_text())["stopped"])
+
     def test_add_only(self):
         import tempfile
         with tempfile.TemporaryDirectory() as d:

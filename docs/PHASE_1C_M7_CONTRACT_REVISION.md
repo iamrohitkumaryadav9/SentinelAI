@@ -22,6 +22,11 @@ throttling periods and so no ratio, which means no baseline can exist. CT.R2 was
 | CT.R2 | `ABS(throttle.ratio, THR_RATIO_MIN) ∧ DEV(throttle.time_rate)`, baseline | `DEV(throttle.time_rate)`, baseline |
 | CT.R3 | — | `ABS(throttle.ratio, THR_RATIO_MIN)`, required, **no baseline** |
 
+The decision text (C7-11) describes one CT.R2 that judges the ratio without a baseline gate while the deviation stays
+on `throttle.time_rate`. The contract records `uses_baseline` per clause, so a clause that is half baselined cannot be
+declared honestly. It is therefore implemented as two required clauses. Their conjunction is exactly the decided
+condition.
+
 `cpu_throttling` requires CT.R1, CT.R2 and CT.R3. Nothing else changes:
 - The registry, predicates and parameters are identical apart from the version string.
 - Every other clause is byte-identical.
