@@ -187,18 +187,27 @@ def _measurement(calc, ev, ticks, nB, nW, bwin, wwin, params) -> Tuple[Measureme
 
 
 def build_snapshot(ticks: List[Tick], target: Target, params: ParameterSet, period: float = 1.0,
-                   ebpf: bool = False, app: bool = False) -> EvidenceSnapshot:
+                   ebpf: bool = False, app: bool = False, window_start: Optional[int] = None) -> EvidenceSnapshot:
     """ebpf: the ticks carry eBPF observations (M3B); the four eBPF features are then measured.
-    app: the ticks carry app.* observations (AppSource); the nine app.* features are then measured."""
+    app: the ticks carry app.* observations (AppSource); the nine app.* features are then measured.
+    window_start (AMD-6, FaultLab): ticks is a whole collection; the baseline is ticks 0..nB and the window the nW
+    intervals from tick window_start (>= nB); the ticks between are not used. None: the window follows the baseline
+    and ticks holds exactly nB + nW + 1 ticks (unchanged)."""
     check_parameters(params, ebpf, app)
     nB, nW = window_counts(params, period)
-    if len(ticks) != nB + nW + 1:
+    gap = window_start is not None
+    if gap:
+        if not (isinstance(window_start, int) and nB <= window_start and window_start + nW < len(ticks)):
+            raise CollectorError(f"window start {window_start!r} outside the collection of {len(ticks)} ticks")
+        ticks = list(ticks[:nB + 1]) + list(ticks[window_start:window_start + nW + 1])
+    elif len(ticks) != nB + nW + 1:
         raise CollectorError(f"expected {nB + nW + 1} ticks, got {len(ticks)}")
+    w0 = nB + 1 if gap else nB
     bwin = _window(ticks[0].wall, ticks[nB].wall, period)
-    wwin = _window(ticks[nB].wall, ticks[nB + nW].wall, period)
+    wwin = _window(ticks[w0].wall, ticks[w0 + nW].wall, period)
     cpus = _cpu_ids(ticks)
     cpuset = _cpuset(target, cpus)
-    calcs = build(target, tuple(sorted(cpus | set(cpuset))), cpuset, _relevant(ticks, cpuset, nB), _emit_quota(ticks))
+    calcs = build(target, tuple(sorted(cpus | set(cpuset))), cpuset, _relevant(ticks, cpuset, w0), _emit_quota(ticks))
     if ebpf:   # softirq CPUs from the eBPF source itself; if it never answered, the host's CPUs (MISSING)
         calcs += ebpf_calcs(target, softirq_cpus(ticks) or tuple(sorted(cpus | set(cpuset))), observed_reasons(ticks))
     if app:
@@ -206,7 +215,7 @@ def build_snapshot(ticks: List[Tick], target: Target, params: ParameterSet, peri
     reg = load_contract().registry
     measurements, missing, resets = [], {}, set()
     for calc in calcs:
-        ev = evaluate(calc, ticks, nB, nW)
+        ev = evaluate(calc, ticks, nB, nW, gap)
         resets |= ev.resets
         m, reason = _measurement(calc, ev, ticks, nB, nW, bwin, wwin, params)
         measurements.append(m)

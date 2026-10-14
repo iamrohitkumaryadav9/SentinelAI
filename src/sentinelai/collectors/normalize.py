@@ -127,10 +127,13 @@ def _in_range(calc: Calc, v: Optional[float]) -> bool:
     return True
 
 
-def evaluate(calc: Calc, ticks: List[Tick], nB: int, nW: int) -> Evaluation:
+def evaluate(calc: Calc, ticks: List[Tick], nB: int, nW: int, gap: bool = False) -> Evaluation:
+    """Intervals 1..nB are the baseline and the next nW the window. gap (AMD-6): ticks holds the baseline ticks
+    0..nB followed by the window's nW + 1 ticks; the interval between them spans the gap and is neither."""
     ev = Evaluation(calc)
     per_k: Dict[int, Tuple[dict, float]] = {}
-    for k in range(1, nB + nW + 1):
+    skip = 1 if gap else 0
+    for k in list(range(1, nB + 1)) + list(range(nB + 1 + skip, nB + nW + 1 + skip)):
         a, b = ticks[k - 1], ticks[k]
         dt = b.mono - a.mono
         vals, bad = {}, None
