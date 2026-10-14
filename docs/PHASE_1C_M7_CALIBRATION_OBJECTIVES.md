@@ -1,6 +1,6 @@
 # Phase 1C M7 calibration objectives
 
-Status: **committed before any calibration** (design §7.4 "each parameter's objective is written in
+Status: **committed before any calibration** (amended before any calibration: §2 steps 5–6, where `τ_DISAGREE` is set) (design §7.4 "each parameter's objective is written in
 `params.calibration.md` before calibration runs"; this file is that document). No calibration has been run and no
 M6 window has been evaluated by the rule engine when this file is committed.
 
@@ -27,10 +27,14 @@ AMD-8, `FZ-TTRANS` (T_TRANS 16 s, W 24 s).
 2. **Noise floors (C7-3)** and **deviation bands (C7-2)** from train CTRL windows.
 3. **`SEG_MIN` (C7-4)**, **class thresholds (C7-1)**, **softirq parameters (C7-7)**, **`IMPACT_MIN` (C7-8)**.
 4. **`DOM_RATIO` (C7-8)** with every other parameter fixed.
-5. The parameter set `datasets/faultlab/v1/m7/params.calibrated.json` and its report are committed (add-only) before
-   ML training reads any engine output.
-6. ML (design §5.2–5.3) with `τ_ML` and `τ_DISAGREE` (C7-8), then the lock (`lock.json`: hashes of the parameters,
-   the model, the matrix and the dataset manifest) before any test run is read (M8).
+5. `datasets/faultlab/v1/m7/calibration_report.json`, holding every rule-engine parameter of stages 1–4, is
+   committed (add-only) before ML training reads any engine output.
+6. ML (design §5.2–5.3) with `τ_ML` and `τ_DISAGREE` (C7-8). `τ_DISAGREE` belongs to the combination policy
+   (design §5.4) and is not read by the rule engine, so it can only be set here; while stages 1–4 run the engine with
+   a placeholder for it. `params.calibrated.json` is then written with exactly the committed engine values of the
+   report plus `τ_DISAGREE` (the tool refuses if any engine value differs), with the model, and the lock (`lock.json`:
+   hashes of the parameters, the model, the matrix and the dataset manifest) is committed before any test run is read
+   (M8).
 
 ## 3. Objectives per parameter
 
