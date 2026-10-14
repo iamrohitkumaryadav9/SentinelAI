@@ -690,7 +690,7 @@ def _response(model, X):
         Z = (X - np.array(b["mean"])) / np.array(b["scale"])
         return Z @ np.array(b["coef"]).T + np.array(b["intercept"])
     if kind == "random_forest":
-        X32 = X.astype(np.float32)
+        X32 = X.astype(np.float32).astype(np.float64)       # sklearn rounds X to float32, then compares in double
         out = np.zeros((len(X), len(model["classes"])))
         for t in b["trees"]:
             for i, x in enumerate(X32):

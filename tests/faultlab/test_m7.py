@@ -164,6 +164,15 @@ class TestMl(unittest.TestCase):
                 self.assertTrue(np.allclose(pj, ps, rtol=0, atol=1e-9), float(abs(pj - ps).max()))
                 self.assertTrue((pj.argmax(1) == ps.argmax(1)).all())
 
+    def test_forest_compares_float32_inputs_in_double(self):
+        """sklearn rounds X to float32 and compares with the float64 threshold in double; float32(0.1) > 0.1."""
+        import numpy as np
+        tree = {"left": [1, -1, -1], "right": [2, -1, -1], "feature": [0, -2, -2], "threshold": [0.1, -2.0, -2.0],
+                "value": [[0.5, 0.5], [1.0, 0.0], [0.0, 1.0]]}
+        model = {"kind": "random_forest", "classes": ["a", "b"], "base": {"trees": [tree]}}
+        self.assertEqual(X._response(model, np.array([[0.1]])).tolist(), [[0.0, 1.0]])    # goes right, as sklearn
+        self.assertEqual(X._response(model, np.array([[0.09]])).tolist(), [[1.0, 0.0]])
+
     def test_group_splits_never_split_a_run(self):
         import numpy as np
         _, _, groups = self.data()
