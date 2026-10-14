@@ -236,6 +236,17 @@ written before calibration (design §7.4), and the training plan.
 | C7-9 | Calibration on train single-fault and CTRL runs; ML training adds train overlap runs except OV-7; SENS and PI-3 never used; test untouched before the lock |
 | C7-10 | Baseline 45 s ending at fault onset (AMD-6); three 24 s windows from onset + 16 s (AMD-8); run decision = mode, ties to INS |
 
+**M7 revisions (owner reply "1A, 2A, 3A, 4A", 2026-10-14)**, after a calibration dry run on the train split (no test
+data read, no calibration artefact committed). Train run-level result of the dry run: CTRL 10/10, contention 8/8,
+loss 7/8, retransmissions 3/8, memory 1/8, application 0/8, throttling 0/8.
+
+| Item | Decision |
+|---|---|
+| C7-11 | Contract revision: CT.R2 judges `throttle.ratio` as an absolute bounded value (no baseline gate); the deviation stays on `throttle.time_rate`. In FaultLab the quota starts at onset, so the ratio has no baseline and CT.R2 was MISSING in every window |
+| C7-12 | `APP_WAIT_MIN`, `APP_SHARE_MIN`: false positives against train CTRL windows only (waits rise under every fault) |
+| C7-13 | Memory pressure without latency impact abstains by contract; accepted as a finding, recall reported as it comes out |
+| C7-14 | Thin retransmission signal at the weakest levels accepted as recorded under R-4 |
+
 Still pending after §5:
 
 - No Freeze-1 parameter decision.

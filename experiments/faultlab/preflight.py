@@ -152,7 +152,7 @@ DECISIONS: Dict[str, Tuple[str, str, Optional[Tuple[str, ...]]]] = {
                                                 "integrity", "pilot_design_items", "collection_rules", "batches")),
     "FZ-M7-PLAN": ("M7 calibration objectives and training plan", f"{REGISTER} §5 C7-1..C7-10",
                    ("threshold_rule", "deviation_bands", "floors", "data_quality", "kfree_reasons_loss",
-                    "fraction_overshoot", "softirq", "remaining", "run_use", "windows")),
+                    "fraction_overshoot", "softirq", "remaining", "run_use", "windows", "revisions")),
     "FZ-M5-REVIEW": ("M5 review: frozen PI-8 levels, single levels, PI-6 under throttling, U-1/U-1b/U-7",
                      f"{REGISTER} §5 R-1..R-7", ("levels", "single_levels", "congestion", "pi6_post_fault_only",
                                                  "memory", "U-1", "U-1b", "U-7")),
