@@ -1,6 +1,21 @@
 # Phase 1C M6 collection
 
-Status: **collecting.** The matrix is committed (`9918b83`, the code pin). Batches 1–5 of 6 collected and packed (170 of 202 runs).
+Status: **complete.** All 202 matrix runs were collected at the pinned code (`9918b83`) in 6 batches, every one passed its
+pipeline checks, and all are packed in `datasets/faultlab/v1/raw` (with 30 PI-0 cycles; 266 MB, 1,066 manifest
+entries). No run was excluded and no seed was replaced. Every packed run unpacks with every SHA-256 intact and its
+snapshot replays byte-identically from its own ticks (`tests/faultlab/test_m6.py`).
+
+| Split | Runs |
+|---|---|
+| train | 78 |
+| test | 106 |
+| sens | 12 |
+| pi3 | 6 |
+
+Report-only PI misses (the runs stay valid and in the dataset; listed for M7): 10 memory runs on `mem.util.target`
+(the overshoot above 1 at the limit, M-4), 6 strongest-quota (I3) runs on `psi.cpu.some.target` (PSI a hair above the
+tick at full stall, same class), and 4 OV-9 runs on the app features (app metrics off by design). 182 of 202 runs met
+every PI.
 
 This document records how the M6 matrix is collected and what each batch produced. It is a runbook and a ledger; it
 validates nothing. M2 is never run on M6 data before M7 locks the parameters and the model (design §6.6).
@@ -73,8 +88,8 @@ stay stable while a batch runs (a login session appearing or ending fails the ho
 | 2 | `20261013T113304Z` | `e7473f8` | 34 (+ PI0-1…5) | 34 pipeline; 29 every PI | 0 | `59a85c9` |
 | 3 | `20261013T141328Z` | `59a85c9` | 34 (+ PI0-1…5) | 34 pipeline; 29 every PI | 0 | `08d6f23` |
 | 4 | `20261013T160129Z` | `08d6f23` | 34 (+ PI0-1…5) | 34 pipeline; 28 every PI | 0 | `ef62d40` |
-| 5 | `20261013T174854Z` | `ef62d40` | 34 (+ PI0-1…5) | 34 pipeline; 32 every PI | 0 | this commit |
-| 6 | — | — | 32 | — | — | — |
+| 5 | `20261013T174854Z` | `ef62d40` | 34 (+ PI0-1…5) | 34 pipeline; 32 every PI | 0 | `a5721af` |
+| 6 | `20261013T210144Z` | `a5721af` | 32 (+ PI0-1…5) | 32 pipeline; 32 every PI | 0 | this commit |
 
 ## 6. Notes per batch
 
@@ -102,3 +117,6 @@ and 5 PI-0 cycles; every packed run unpacks with every SHA-256 intact and replay
 **Batch 5.** PI-0 5/5; all 34 runs passed their pipeline checks; nothing excluded. Two report-only PI misses, both of
 known kinds: one OV-9 run (app metrics off by design) and one memory run on `mem.util.target` (M-4). Packed: 34 runs
 and 5 PI-0 cycles; every packed run unpacks with every SHA-256 intact and replays byte-identically.
+
+**Batch 6.** PI-0 5/5; all 32 runs passed their pipeline checks and every PI; nothing excluded. Packed: 32 runs and 5
+PI-0 cycles. With it, all 202 matrix runs are in the dataset.
