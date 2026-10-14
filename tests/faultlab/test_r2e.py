@@ -1615,7 +1615,13 @@ class TestStaticAndIntegrity(unittest.TestCase):
                              or re.fullmatch(r"src/sentinelai/runtime/[a-z_]+\.py", p) is not None
                              # AMD-18: exactly the M4 collector files
                              or p in ("src/sentinelai/collectors/app.py", "src/sentinelai/collectors/normalize.py",
-                                       "src/sentinelai/collectors/snapshot.py"))
+                                       "src/sentinelai/collectors/snapshot.py")
+                             # AMD-31: contract v0.6.0-draft, its archived 0.5.0-draft data and the rule engine
+                             or p in ("src/sentinelai/diagnostic/contract/catalog.py",
+                                       "src/sentinelai/diagnostic/contract/version.py",
+                                       "src/sentinelai/diagnostic/rules/engine.py")
+                             or re.fullmatch(r"src/sentinelai/diagnostic/contract/data/(?:archive/0\.5\.0-draft/)?"
+                                             r"(?:labels|registry|predicates|parameters)\.json", p) is not None)
         self.assertEqual([p for p in changed if not runtime(p)], [])
         self.assertEqual(git("status", "--porcelain", "--untracked-files=no").stdout, "")
 
@@ -1684,10 +1690,24 @@ class TestStaticAndIntegrity(unittest.TestCase):
                             or p in tuple(f"datasets/faultlab/v1/m7/{n}.json" for n in
                                           ("params.calibrated", "calibration_report", "model", "training_report", "lock"))
                             or re.fullmatch(r"docs/PHASE_1C_M7_[A-Z0-9_]+\.md", p) is not None)
+            # AMD-31: contract v0.6.0-draft (FZ-M7-PLAN C7-11): the contract catalog, version and data, the archived
+            # 0.5.0-draft data (add-only), the version-pinned rule engine and the tests moved to the revised contract
+            m7c = lambda p: (p in ("src/sentinelai/diagnostic/contract/catalog.py",
+                                   "src/sentinelai/diagnostic/contract/version.py",
+                                   "src/sentinelai/diagnostic/rules/engine.py",
+                                   "tests/collectors/test_snapshot.py", "tests/ebpf/test_contract.py",
+                                   "tests/evidence/test_invariants.py", "tests/evidence/test_registry.py",
+                                   "tests/evidence/test_revision_v030.py", "tests/evidence/test_revision_v040.py",
+                                   "tests/evidence/test_revision_v050.py", "tests/evidence/test_revision_v060.py",
+                                   "tests/evidence/test_schema.py", "tests/evidence/test_snapshot.py",
+                                   "tests/rules/_fixtures.py", "tests/rules/test_determinism.py",
+                                   "tests/runtime/test_record.py")
+                             or re.fullmatch(r"src/sentinelai/diagnostic/contract/data/(?:archive/0\.5\.0-draft/)?"
+                                             r"(?:labels|registry|predicates|parameters)\.json", p) is not None)
             changed = git("diff", "--name-only", base, "HEAD").stdout.split()
             others = sorted(p for p in changed if p not in E.TOOLING)
             self.assertTrue(others and all(closeout(p) or r2f(p) or p2a6(p) or p1c(p) or m4(p) or m5(p) or m6(p) or m7(p)
-                                           for p in others), others)
+                                           or m7c(p) for p in others), others)
             self.assertFalse(res["ok"])
             self.assertEqual(res["reason"], f"changed since {base[:7]} beyond R2-E tooling: {others}")
         with tempfile.TemporaryDirectory() as t:

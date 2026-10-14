@@ -48,10 +48,34 @@ M4_PATHS = frozenset({
     "tests/faultlab/test_m6.py",             # AMD-29: its tests
     "experiments/faultlab/m7.py",            # AMD-30: M7 windows, calibration, training and lock (FZ-M7-PLAN)
     "tests/faultlab/test_m7.py",             # AMD-30: its tests
+    # AMD-31: contract v0.6.0-draft (FZ-M7-PLAN C7-11, owner 1A): CT.R2 split into CT.R2 / CT.R3, version-pinned
+    # evaluation of evidence recorded under 0.5.0-draft, and the tests moved to the revised contract
+    "src/sentinelai/diagnostic/contract/catalog.py",
+    "src/sentinelai/diagnostic/contract/version.py",
+    "src/sentinelai/diagnostic/rules/engine.py",
+    "src/sentinelai/diagnostic/contract/data/labels.json",
+    "src/sentinelai/diagnostic/contract/data/registry.json",
+    "src/sentinelai/diagnostic/contract/data/predicates.json",
+    "src/sentinelai/diagnostic/contract/data/parameters.json",
+    "tests/collectors/test_snapshot.py",
+    "tests/ebpf/test_contract.py",
+    "tests/evidence/test_invariants.py",
+    "tests/evidence/test_registry.py",
+    "tests/evidence/test_revision_v030.py",
+    "tests/evidence/test_revision_v040.py",
+    "tests/evidence/test_revision_v050.py",
+    "tests/evidence/test_revision_v060.py",
+    "tests/evidence/test_schema.py",
+    "tests/evidence/test_snapshot.py",
+    "tests/rules/_fixtures.py",
+    "tests/rules/test_determinism.py",
+    "tests/runtime/test_record.py",
 })
 M6_ADD_ONLY = frozenset({"datasets/faultlab/v1/matrix.json"})   # AMD-29: committed once, before any collection
 M7_ADD_ONLY = frozenset(f"datasets/faultlab/v1/m7/{n}.json" for n in    # AMD-30: each artefact committed once
                         ("params.calibrated", "calibration_report", "model", "training_report", "lock"))
+CONTRACT_ARCHIVE_ADD_ONLY = frozenset(f"src/sentinelai/diagnostic/contract/data/archive/0.5.0-draft/{n}.json" for n in
+                                      ("labels", "registry", "predicates", "parameters"))   # AMD-31: verbatim, once
 # AMD-27: recorded failed evaluations, pinned so that they can never be edited or relabelled as passing
 FAILED_PILOT_PINS = {
     "results/phase1c_m5_pilot/20261011T175343Z/PI0-1/run.json":
@@ -60,10 +84,10 @@ FAILED_PILOT_PINS = {
         "dd79326c5951f87e6dd69c20ce039b4c23f938e49eef6073ae7221c94fc56519",       # pipeline_ok false (app_features)
 }
 PINS = {
-    "tests/faultlab/test_r2e.py": "26cd086ebfa8fd1d9ce68e1a5f9bdc0e09d01b0ac7b7a7e01beab15ba949f415",
-    "tests/faultlab/test_r2f.py": "27284e972c6006295d8b8e1e9d7b442088cc22102592e6889c64ec99f15787ed",
+    "tests/faultlab/test_r2e.py": "8d787608866398b64d9cbba458cf8268d7fc5dfd833e2776642691e054afd184",
+    "tests/faultlab/test_r2f.py": "3b5791d2845c1bca28130b2c8c2aa7d5799201a2a2efe2ccf21cf852bfd11c3d",
 }
-LIVE = I.Policy(anchor=ANCHOR, add_or_modify=M4_PATHS | CHECKER_FILES, add_only=M6_ADD_ONLY | M7_ADD_ONLY,
+LIVE = I.Policy(anchor=ANCHOR, add_or_modify=M4_PATHS | CHECKER_FILES, add_only=M6_ADD_ONLY | M7_ADD_ONLY | CONTRACT_ARCHIVE_ADD_ONLY,
                 pinned=PINS)                                                            # checker: see test_r2f
 
 
@@ -83,11 +107,12 @@ class TestLiveRepository(unittest.TestCase):
             self.assertFalse(doc.get("ok") or doc.get("pipeline_ok"), path)
 
     def test_policy_paths_are_exact(self):
-        for p in M4_PATHS | CHECKER_FILES | set(PINS) | M6_ADD_ONLY | M7_ADD_ONLY:
+        for p in M4_PATHS | CHECKER_FILES | set(PINS) | M6_ADD_ONLY | M7_ADD_ONLY | CONTRACT_ARCHIVE_ADD_ONLY:
             self.assertFalse(p.endswith("/") or any(c in p for c in "*?[ \t\n"), p)
         self.assertFalse(M4_PATHS & CHECKER_FILES or M4_PATHS & set(PINS) or CHECKER_FILES & set(PINS))
         self.assertFalse(M6_ADD_ONLY & (M4_PATHS | CHECKER_FILES | set(PINS)))
         self.assertFalse(M7_ADD_ONLY & (M4_PATHS | CHECKER_FILES | set(PINS) | M6_ADD_ONLY))
+        self.assertFalse(CONTRACT_ARCHIVE_ADD_ONLY & (M4_PATHS | CHECKER_FILES | set(PINS) | M6_ADD_ONLY | M7_ADD_ONLY))
 
 
 # ---------------------------------------------------------------------------------------------- disposable repos
