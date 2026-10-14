@@ -661,7 +661,8 @@
      "C7-17": "1: THR_RATIO_MIN = 0.5, an explicitly declared engineering value, not a calibrated optimum (train throttle.ratio is 1.0 in every tick; a non-binding quota gives 0, R2-D Q0; the objective cannot discriminate); rationale documented; tests: 0.99 satisfies the ratio clause, 0.0 does not",
      "C7-18": "2: APP_SHARE_MIN = 0.5 (C7-16) accepted; histogram quantisation of the app metrics (log2 buckets) and the clause's lack of cross-class discrimination documented as limitations",
      "C7-19": "3: C7-12 kept; the five train tcp_retransmissions -> application_bottleneck run errors and the rate-limiting limitation (netem_rate_r at I3 produces no retransmissions; TCP below SEG_MIN leaves AB.R3 unblocked) recorded; no contract v0.7.0 before M8",
-     "C7-20": "4: D-6 recorded as a finding: sched.run_delay.target sums per-thread waiting while throttle.time_rate is per-cgroup wall time, so the derived excess grows with runnable threads (the 2026-10-02 equality came from a one-thread target); OV-7 PR-3 interpretation caveat; per-thread collector/contract revision deferred"
+     "C7-20": "4: D-6 recorded as a finding: sched.run_delay.target sums per-thread waiting while throttle.time_rate is per-cgroup wall time, so the derived excess grows with runnable threads (the 2026-10-02 equality came from a one-thread target); OV-7 PR-3 interpretation caveat; per-thread collector/contract revision deferred",
+     "C7-21": "M8 authorised (owner, 2026-10-14) against the M7 lock afdde9a: the one-time evaluation of the held-out test split with the exact locked artefacts; integrity amendment AMD-32 on this decision admits exactly experiments/faultlab/m8.py, tests/faultlab/test_m8.py, docs/PHASE_1C_M8_*.md and, add-only, datasets/faultlab/v1/m8/evaluation.json; the protocol interpretations are written in docs/PHASE_1C_M8_EVALUATION_PROTOCOL.md and committed before any test outcome is read; nothing locked is changed after evaluation"
     }
    }
   }

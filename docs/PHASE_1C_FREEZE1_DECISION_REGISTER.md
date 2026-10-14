@@ -264,6 +264,7 @@ train-only dry run (scratch only, nothing committed; train macro-F1 0.70; two th
 | C7-18 | `APP_SHARE_MIN` = 0.5 (C7-16) accepted; histogram quantisation and no cross-class discrimination documented |
 | C7-19 | C7-12 kept; five train retransmission→application run errors and the rate-limiting limitation recorded; no contract v0.7.0 before M8 |
 | C7-20 | D-6 recorded as a finding (thread-summed run delay vs per-cgroup throttled time; OV-7 PR-3 caveat); per-thread revision deferred |
+| C7-21 | M8 authorised (owner, 2026-10-14) against the lock `afdde9a`; AMD-32 admits exactly `experiments/faultlab/m8.py`, `tests/faultlab/test_m8.py`, `docs/PHASE_1C_M8_*.md` and add-only `datasets/faultlab/v1/m8/evaluation.json`; protocol interpretations committed before any test outcome is read |
 
 Still pending after §5:
 
