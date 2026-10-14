@@ -1,0 +1,911 @@
+{
+ "code_commit": "cb77c9b995a610f8089648d1beea535083147bae",
+ "engine_parameters": {
+  "numbers": {
+   "APP_SHARE_MIN": 0.5,
+   "APP_WAIT_MIN": 25.6,
+   "B": 45.0,
+   "COV_MIN": 0.99,
+   "DOM_RATIO": 3.0,
+   "DROP_ABS_MIN": 4.625000204849518,
+   "DROP_FRAC_MIN": 0.0023525422291927178,
+   "IMPACT_MIN": 1.0000000000000002,
+   "N_BASE_MIN": 45.0,
+   "PSI_MEM_MIN": 0.03499812240429889,
+   "RDX_MIN": 6.424352014417495,
+   "RECLAIM_MIN": 60240.03734378946,
+   "REFAULT_MIN": 60237.28734208469,
+   "RT_FRAC_MIN": 8.73400585178392e-05,
+   "RT_RATE_MIN": 0.083333342857664,
+   "R_MODERATE": 1.0,
+   "R_STRONG": 1.0546680450357377,
+   "SAT_MIN": 0.7361680327868853,
+   "SEG_MIN": 969.1658421889477,
+   "SI_ABS_MIN": 0.01896125309150866,
+   "SI_RATIO_MIN": 6.452243551996232,
+   "SI_SHARE_MIN": 0.009437728414005248,
+   "THR_RATIO_MIN": 0.5,
+   "THR_TIME_MIN": 0.7995952877769679,
+   "W": 24.0,
+   "Z_MODERATE": 0.47623906704671404,
+   "Z_STRONG": 0.9991610738255035,
+   "floor[app.dependency_latency_ms]": 12.8,
+   "floor[app.error_rate]": 1e-06,
+   "floor[app.events]": 0.8333347506968347,
+   "floor[app.latency_ms]": 12.8,
+   "floor[app.lock_wait_ms]": 1e-06,
+   "floor[app.pool_rejections]": 1e-06,
+   "floor[app.pool_utilization]": 0.19791666666666666,
+   "floor[app.queue_wait_ms]": 3.2,
+   "floor[app.throughput]": 103.4168425614772,
+   "floor[cpu.steal.cpuset]": 1e-06,
+   "floor[cpu.usage.target]": 0.2307051224008886,
+   "floor[cpu.util.cpuset]": 0.23556294142085585,
+   "floor[cpu.util.host]": 0.012280610203691141,
+   "floor[cpu.util.percpu]": 0.22785862785862787,
+   "floor[mem.available.host]": 0.8263884355555113,
+   "floor[mem.events.high]": 1e-06,
+   "floor[mem.events.oom_kill]": 1e-06,
+   "floor[mem.majfault.target]": 1e-06,
+   "floor[mem.reclaim.target]": 1e-06,
+   "floor[mem.reclaim_direct.host]": 1e-06,
+   "floor[mem.refault.target]": 1e-06,
+   "floor[mem.swap.target]": 1e-06,
+   "floor[mem.swap_io.host]": 1e-06,
+   "floor[mem.util.target]": 0.06906607025989082,
+   "floor[net.bytes.iface]": 153479.49844641183,
+   "floor[net.drop.iface_rx]": 1e-06,
+   "floor[net.drop.iface_tx]": 1e-06,
+   "floor[net.drop.kfree_skb]": 121.70826601854453,
+   "floor[net.drop.netfilter]": 1e-06,
+   "floor[net.drop.qdisc]": 1e-06,
+   "floor[net.drop.socket]": 1e-06,
+   "floor[net.drop.softnet]": 1e-06,
+   "floor[net.err.iface]": 1e-06,
+   "floor[net.pkts.iface]": 2085.7071797638764,
+   "floor[psi.cpu.some.host]": 0.06250246543094073,
+   "floor[psi.cpu.some.target]": 0.07754540800843515,
+   "floor[psi.mem.full.target]": 1e-06,
+   "floor[psi.mem.some.host]": 1e-06,
+   "floor[psi.mem.some.target]": 1e-06,
+   "floor[sched.ctxt.host]": 4654.494919781528,
+   "floor[sched.involuntary_cs.target]": 27.208318284871474,
+   "floor[sched.latency_hist.target]": 3.801087,
+   "floor[sched.nr_migrations.target]": 1e-06,
+   "floor[sched.procs_running.host]": 1.625,
+   "floor[sched.run_delay.cpuset]": 0.0975628883729456,
+   "floor[sched.run_delay.target]": 0.09699204989700005,
+   "floor[sched.run_delay_excess.target]": 0.09699204989700005,
+   "floor[softirq.exec_time.percpu]": 0.003339121068584599,
+   "floor[softirq.frac.percpu]": 0.002938706968933669,
+   "floor[softirq.imbalance]": 1.0,
+   "floor[softirq.net_rx_rate.percpu]": 617.8757351431541,
+   "floor[softirq.net_tx_rate.percpu]": 1e-06,
+   "floor[softirq.relevant_cpu_max]": 0.0033655868742111907,
+   "floor[softnet.processed.percpu]": 2028.0024128995615,
+   "floor[softnet.time_squeeze.percpu]": 1e-06,
+   "floor[tcp.fast_retrans_rate]": 1e-06,
+   "floor[tcp.out_segs_rate]": 1053.1660841782716,
+   "floor[tcp.retrans_frac]": 1e-06,
+   "floor[tcp.retrans_rate]": 1e-06,
+   "floor[tcp.retrans_skb_rate]": 1e-06,
+   "floor[tcp.srtt_ms]": 1e-06,
+   "floor[tcp.syn_retrans_rate]": 1e-06,
+   "floor[tcp.timeouts_rate]": 1e-06,
+   "floor[throttle.quota_cores]": 1e-06,
+   "floor[throttle.quota_limited]": 1e-06,
+   "floor[throttle.quota_saturation]": 1e-06,
+   "floor[throttle.ratio]": 1e-06,
+   "floor[throttle.time_rate]": 1e-06
+  },
+  "reason_sets": {
+   "KFREE_REASONS_LOSS": [
+    "QDISC_DROP",
+    "TC_INGRESS"
+   ]
+  }
+ },
+ "floors": {
+  "minimum": 1e-06,
+  "rule": "C7-3: p99 of train CTRL windows",
+  "set_to_minimum": [
+   "app.error_rate",
+   "app.lock_wait_ms",
+   "app.pool_rejections",
+   "cpu.steal.cpuset",
+   "mem.events.high",
+   "mem.events.oom_kill",
+   "mem.majfault.target",
+   "mem.reclaim.target",
+   "mem.reclaim_direct.host",
+   "mem.refault.target",
+   "mem.swap.target",
+   "mem.swap_io.host",
+   "net.drop.iface_rx",
+   "net.drop.iface_tx",
+   "net.drop.netfilter",
+   "net.drop.qdisc",
+   "net.drop.socket",
+   "net.drop.softnet",
+   "net.err.iface",
+   "psi.mem.full.target",
+   "psi.mem.some.host",
+   "psi.mem.some.target",
+   "sched.nr_migrations.target",
+   "softirq.net_tx_rate.percpu",
+   "softnet.time_squeeze.percpu",
+   "tcp.fast_retrans_rate",
+   "tcp.retrans_frac",
+   "tcp.retrans_rate",
+   "tcp.retrans_skb_rate",
+   "tcp.srtt_ms",
+   "tcp.syn_retrans_rate",
+   "tcp.timeouts_rate",
+   "throttle.quota_cores",
+   "throttle.quota_limited",
+   "throttle.quota_saturation",
+   "throttle.ratio",
+   "throttle.time_rate"
+  ]
+ },
+ "format": "sentinelai.faultlab.m7.calibration_report.v1",
+ "objectives": "docs/PHASE_1C_M7_CALIBRATION_OBJECTIVES.md",
+ "parameters": {
+  "APP_SHARE_MIN": {
+   "fp": null,
+   "left_out": 39,
+   "limitation": "no negative window: bounded by the positives only, FP not measurable on train (C7-16)",
+   "negatives": 0,
+   "neither": [
+    "cpu_contention",
+    "cpu_throttling",
+    "network_packet_loss",
+    "tcp_retransmissions",
+    "memory_pressure"
+   ],
+   "own_class": "application_bottleneck",
+   "positives": 15,
+   "recall": 1.0,
+   "recall_shortfall": false,
+   "rule": "C7-16",
+   "stopped": false,
+   "undefined": {
+    "other": 30,
+    "own_class": 9
+   },
+   "value": 0.5
+  },
+  "APP_WAIT_MIN": {
+   "fp": 0.0,
+   "left_out": 0,
+   "negatives": 30,
+   "neither": [
+    "cpu_contention",
+    "cpu_throttling",
+    "network_packet_loss",
+    "tcp_retransmissions",
+    "memory_pressure"
+   ],
+   "own_class": "application_bottleneck",
+   "positives": 24,
+   "recall": 0.4166666666666667,
+   "recall_shortfall": true,
+   "rule": "C7-12",
+   "undefined": {
+    "other": 0,
+    "own_class": 0
+   },
+   "value": 25.6
+  },
+  "COV_MIN": {
+   "measurements": 81893,
+   "rule": "C7-4",
+   "value": 0.99
+  },
+  "DOM_RATIO": {
+   "rule": "C7-8",
+   "train_macro_f1": {
+    "1.25": 0.7002467066983197,
+    "1.5": 0.7002467066983197,
+    "2.0": 0.7002467066983197,
+    "3.0": 0.7002467066983197
+   },
+   "value": 3.0
+  },
+  "DROP_ABS_MIN": {
+   "fp": 0.0,
+   "left_out": 0,
+   "negatives": 150,
+   "neither": [],
+   "own_class": "network_packet_loss",
+   "positives": 24,
+   "recall": 1.0,
+   "recall_shortfall": false,
+   "rule": "C7-1",
+   "undefined": {
+    "other": 0,
+    "own_class": 0
+   },
+   "value": 4.625000204849518
+  },
+  "DROP_FRAC_MIN": {
+   "fp": 0.0,
+   "left_out": 0,
+   "negatives": 150,
+   "neither": [],
+   "own_class": "network_packet_loss",
+   "positives": 24,
+   "recall": 1.0,
+   "recall_shortfall": false,
+   "rule": "C7-1",
+   "undefined": {
+    "other": 0,
+    "own_class": 0
+   },
+   "value": 0.0023525422291927178
+  },
+  "IMPACT_MIN": {
+   "fp": 0.0,
+   "negatives": 30,
+   "positives": 0,
+   "recall": null,
+   "recall_shortfall": false,
+   "rule": "C7-8",
+   "value": 1.0000000000000002
+  },
+  "KFREE_REASONS_LOSS": {
+   "rule": "C7-5",
+   "value": [
+    "QDISC_DROP",
+    "TC_INGRESS"
+   ]
+  },
+  "N_BASE_MIN": {
+   "baselines": 81497,
+   "rule": "C7-4",
+   "value": 45.0
+  },
+  "PSI_MEM_MIN": {
+   "fp": 0.0,
+   "left_out": 0,
+   "negatives": 150,
+   "neither": [],
+   "own_class": "memory_pressure",
+   "positives": 24,
+   "recall": 1.0,
+   "recall_shortfall": false,
+   "rule": "C7-1",
+   "undefined": {
+    "other": 0,
+    "own_class": 0
+   },
+   "value": 0.03499812240429889
+  },
+  "RDX_MIN": {
+   "fp": 0.006666666666666667,
+   "left_out": 0,
+   "negatives": 150,
+   "neither": [],
+   "own_class": "cpu_contention",
+   "positives": 24,
+   "recall": 0.0,
+   "recall_shortfall": true,
+   "rule": "C7-1",
+   "undefined": {
+    "other": 0,
+    "own_class": 0
+   },
+   "value": 6.424352014417495
+  },
+  "RECLAIM_MIN": {
+   "fp": 0.0,
+   "left_out": 0,
+   "negatives": 150,
+   "neither": [],
+   "own_class": "memory_pressure",
+   "positives": 24,
+   "recall": 1.0,
+   "recall_shortfall": false,
+   "rule": "C7-1",
+   "undefined": {
+    "other": 0,
+    "own_class": 0
+   },
+   "value": 60240.03734378946
+  },
+  "REFAULT_MIN": {
+   "fp": 0.0,
+   "left_out": 0,
+   "negatives": 150,
+   "neither": [],
+   "own_class": "memory_pressure",
+   "positives": 24,
+   "recall": 1.0,
+   "recall_shortfall": false,
+   "rule": "C7-1",
+   "undefined": {
+    "other": 0,
+    "own_class": 0
+   },
+   "value": 60237.28734208469
+  },
+  "RT_FRAC_MIN": {
+   "fp": 0.007936507936507936,
+   "left_out": 0,
+   "negatives": 126,
+   "neither": [
+    "network_packet_loss"
+   ],
+   "own_class": "tcp_retransmissions",
+   "positives": 24,
+   "recall": 0.625,
+   "recall_shortfall": true,
+   "rule": "C7-1",
+   "undefined": {
+    "other": 0,
+    "own_class": 0
+   },
+   "value": 8.73400585178392e-05
+  },
+  "RT_RATE_MIN": {
+   "fp": 0.007936507936507936,
+   "left_out": 0,
+   "negatives": 126,
+   "neither": [
+    "network_packet_loss"
+   ],
+   "own_class": "tcp_retransmissions",
+   "positives": 24,
+   "recall": 0.625,
+   "recall_shortfall": true,
+   "rule": "C7-1",
+   "undefined": {
+    "other": 0,
+    "own_class": 0
+   },
+   "value": 0.083333342857664
+  },
+  "R_MODERATE": {
+   "deviations": 14040,
+   "rule": "C7-2",
+   "value": 1.0
+  },
+  "R_STRONG": {
+   "deviations": 14040,
+   "rule": "C7-2",
+   "value": 1.0546680450357377
+  },
+  "SAT_MIN": {
+   "fp": 0.006666666666666667,
+   "left_out": 0,
+   "negatives": 150,
+   "neither": [],
+   "own_class": "cpu_contention",
+   "positives": 24,
+   "recall": 1.0,
+   "recall_shortfall": false,
+   "rule": "C7-1",
+   "undefined": {
+    "other": 0,
+    "own_class": 0
+   },
+   "value": 0.7361680327868853
+  },
+  "SEG_MIN": {
+   "rule": "C7-4",
+   "value": 969.1658421889477,
+   "windows": 30
+  },
+  "SI_ABS_MIN": {
+   "rule": "C7-7",
+   "value": 0.01896125309150866,
+   "windows": 174
+  },
+  "SI_RATIO_MIN": {
+   "rule": "C7-7",
+   "value": 6.452243551996232,
+   "windows": 174
+  },
+  "SI_SHARE_MIN": {
+   "rule": "C7-7",
+   "value": 0.009437728414005248,
+   "windows": 174
+  },
+  "THR_RATIO_MIN": {
+   "observed_own_class": {
+    "max": 1.0,
+    "min": 1.0,
+    "windows": 24
+   },
+   "other_windows_with_a_value": 0,
+   "rule": "C7-17: declared engineering value, not calibrated",
+   "value": 0.5
+  },
+  "THR_TIME_MIN": {
+   "fp": 0.0,
+   "left_out": 0,
+   "negatives": 150,
+   "neither": [],
+   "own_class": "cpu_throttling",
+   "positives": 24,
+   "recall": 1.0,
+   "recall_shortfall": false,
+   "rule": "C7-1",
+   "undefined": {
+    "other": 0,
+    "own_class": 0
+   },
+   "value": 0.7995952877769679
+  },
+  "Z_MODERATE": {
+   "deviations": 14040,
+   "rule": "C7-2",
+   "value": 0.47623906704671404
+  },
+  "Z_STRONG": {
+   "deviations": 14040,
+   "rule": "C7-2",
+   "value": 0.9991610738255035
+  },
+  "τ_DISAGREE": {
+   "rule": "C7-8: set by the ML stage (combination policy)",
+   "value": null
+  }
+ },
+ "runs": {
+  "ctrl": 10,
+  "sf": 48
+ },
+ "stopped": [],
+ "train_evaluation": {
+  "abstentions": {
+   "runs": {
+    "INSUFFICIENT_EVIDENCE": 10,
+    "application_bottleneck": 3,
+    "cpu_contention": 0,
+    "cpu_throttling": 0,
+    "memory_pressure": 7,
+    "network_packet_loss": 1,
+    "tcp_retransmissions": 0
+   },
+   "windows": {
+    "INSUFFICIENT_EVIDENCE": 30,
+    "application_bottleneck": 9,
+    "cpu_contention": 0,
+    "cpu_throttling": 0,
+    "memory_pressure": 18,
+    "network_packet_loss": 5,
+    "tcp_retransmissions": 2
+   }
+  },
+  "c7_16_firing": {
+   "APP_SHARE_MIN": {
+    "defined_windows": 111,
+    "fires": 101,
+    "windows": 174
+   }
+  },
+  "confusion_runs": {
+   "INSUFFICIENT_EVIDENCE": {
+    "INSUFFICIENT_EVIDENCE": 10
+   },
+   "application_bottleneck": {
+    "INSUFFICIENT_EVIDENCE": 3,
+    "application_bottleneck": 5
+   },
+   "cpu_contention": {
+    "cpu_contention": 8
+   },
+   "cpu_throttling": {
+    "cpu_throttling": 8
+   },
+   "memory_pressure": {
+    "INSUFFICIENT_EVIDENCE": 7,
+    "memory_pressure": 1
+   },
+   "network_packet_loss": {
+    "INSUFFICIENT_EVIDENCE": 1,
+    "network_packet_loss": 7
+   },
+   "tcp_retransmissions": {
+    "application_bottleneck": 5,
+    "tcp_retransmissions": 3
+   }
+  },
+  "confusion_windows": {
+   "INSUFFICIENT_EVIDENCE": {
+    "INSUFFICIENT_EVIDENCE": 30
+   },
+   "application_bottleneck": {
+    "INSUFFICIENT_EVIDENCE": 9,
+    "application_bottleneck": 15
+   },
+   "cpu_contention": {
+    "cpu_contention": 24
+   },
+   "cpu_throttling": {
+    "cpu_throttling": 24
+   },
+   "memory_pressure": {
+    "INSUFFICIENT_EVIDENCE": 18,
+    "memory_pressure": 6
+   },
+   "network_packet_loss": {
+    "INSUFFICIENT_EVIDENCE": 5,
+    "network_packet_loss": 19
+   },
+   "tcp_retransmissions": {
+    "INSUFFICIENT_EVIDENCE": 2,
+    "application_bottleneck": 15,
+    "tcp_retransmissions": 7
+   }
+  },
+  "cross_class_false_positives": {
+   "runs": 5,
+   "windows": 15
+  },
+  "macro_f1": 0.7002467066983197,
+  "per_label": {
+   "INSUFFICIENT_EVIDENCE": {
+    "f1": 0.6451612903225806,
+    "fn": 0,
+    "fp": 11,
+    "precision": 0.47619047619047616,
+    "recall": 1.0,
+    "runs": 10,
+    "tp": 10
+   },
+   "application_bottleneck": {
+    "f1": 0.5555555555555556,
+    "fn": 3,
+    "fp": 5,
+    "precision": 0.5,
+    "recall": 0.625,
+    "runs": 8,
+    "tp": 5
+   },
+   "cpu_contention": {
+    "f1": 1.0,
+    "fn": 0,
+    "fp": 0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "runs": 8,
+    "tp": 8
+   },
+   "cpu_throttling": {
+    "f1": 1.0,
+    "fn": 0,
+    "fp": 0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "runs": 8,
+    "tp": 8
+   },
+   "memory_pressure": {
+    "f1": 0.2222222222222222,
+    "fn": 7,
+    "fp": 0,
+    "precision": 1.0,
+    "recall": 0.125,
+    "runs": 8,
+    "tp": 1
+   },
+   "network_packet_loss": {
+    "f1": 0.9333333333333333,
+    "fn": 1,
+    "fp": 0,
+    "precision": 1.0,
+    "recall": 0.875,
+    "runs": 8,
+    "tp": 7
+   },
+   "tcp_retransmissions": {
+    "f1": 0.5454545454545454,
+    "fn": 5,
+    "fp": 0,
+    "precision": 1.0,
+    "recall": 0.375,
+    "runs": 8,
+    "tp": 3
+   }
+  },
+  "window_decisions": {
+   "M6-s100011": [
+    "network_packet_loss",
+    "network_packet_loss",
+    "network_packet_loss"
+   ],
+   "M6-s100012": [
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE"
+   ],
+   "M6-s100014": [
+    "cpu_contention",
+    "cpu_contention",
+    "cpu_contention"
+   ],
+   "M6-s100019": [
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE"
+   ],
+   "M6-s100024": [
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE"
+   ],
+   "M6-s100026": [
+    "cpu_throttling",
+    "cpu_throttling",
+    "cpu_throttling"
+   ],
+   "M6-s100029": [
+    "cpu_contention",
+    "cpu_contention",
+    "cpu_contention"
+   ],
+   "M6-s100032": [
+    "cpu_throttling",
+    "cpu_throttling",
+    "cpu_throttling"
+   ],
+   "M6-s100036": [
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE"
+   ],
+   "M6-s100039": [
+    "cpu_throttling",
+    "cpu_throttling",
+    "cpu_throttling"
+   ],
+   "M6-s100044": [
+    "cpu_throttling",
+    "cpu_throttling",
+    "cpu_throttling"
+   ],
+   "M6-s100045": [
+    "application_bottleneck",
+    "application_bottleneck",
+    "application_bottleneck"
+   ],
+   "M6-s100048": [
+    "tcp_retransmissions",
+    "application_bottleneck",
+    "application_bottleneck"
+   ],
+   "M6-s100049": [
+    "tcp_retransmissions",
+    "INSUFFICIENT_EVIDENCE",
+    "tcp_retransmissions"
+   ],
+   "M6-s100051": [
+    "cpu_contention",
+    "cpu_contention",
+    "cpu_contention"
+   ],
+   "M6-s100052": [
+    "memory_pressure",
+    "memory_pressure",
+    "INSUFFICIENT_EVIDENCE"
+   ],
+   "M6-s100065": [
+    "INSUFFICIENT_EVIDENCE",
+    "network_packet_loss",
+    "network_packet_loss"
+   ],
+   "M6-s100068": [
+    "application_bottleneck",
+    "application_bottleneck",
+    "application_bottleneck"
+   ],
+   "M6-s100070": [
+    "network_packet_loss",
+    "network_packet_loss",
+    "network_packet_loss"
+   ],
+   "M6-s100073": [
+    "application_bottleneck",
+    "application_bottleneck",
+    "application_bottleneck"
+   ],
+   "M6-s100076": [
+    "cpu_throttling",
+    "cpu_throttling",
+    "cpu_throttling"
+   ],
+   "M6-s100083": [
+    "network_packet_loss",
+    "network_packet_loss",
+    "INSUFFICIENT_EVIDENCE"
+   ],
+   "M6-s100084": [
+    "application_bottleneck",
+    "application_bottleneck",
+    "application_bottleneck"
+   ],
+   "M6-s100085": [
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE"
+   ],
+   "M6-s100093": [
+    "memory_pressure",
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE"
+   ],
+   "M6-s100094": [
+    "tcp_retransmissions",
+    "application_bottleneck",
+    "tcp_retransmissions"
+   ],
+   "M6-s100100": [
+    "memory_pressure",
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE"
+   ],
+   "M6-s100101": [
+    "cpu_contention",
+    "cpu_contention",
+    "cpu_contention"
+   ],
+   "M6-s100107": [
+    "application_bottleneck",
+    "application_bottleneck",
+    "application_bottleneck"
+   ],
+   "M6-s100108": [
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE",
+    "memory_pressure"
+   ],
+   "M6-s100111": [
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE"
+   ],
+   "M6-s100114": [
+    "application_bottleneck",
+    "application_bottleneck",
+    "application_bottleneck"
+   ],
+   "M6-s100117": [
+    "tcp_retransmissions",
+    "INSUFFICIENT_EVIDENCE",
+    "tcp_retransmissions"
+   ],
+   "M6-s100119": [
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE"
+   ],
+   "M6-s100120": [
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE"
+   ],
+   "M6-s100126": [
+    "cpu_throttling",
+    "cpu_throttling",
+    "cpu_throttling"
+   ],
+   "M6-s100127": [
+    "cpu_contention",
+    "cpu_contention",
+    "cpu_contention"
+   ],
+   "M6-s100128": [
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE"
+   ],
+   "M6-s100132": [
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE"
+   ],
+   "M6-s100133": [
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE"
+   ],
+   "M6-s100135": [
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE",
+    "network_packet_loss"
+   ],
+   "M6-s100136": [
+    "INSUFFICIENT_EVIDENCE",
+    "memory_pressure",
+    "INSUFFICIENT_EVIDENCE"
+   ],
+   "M6-s100141": [
+    "cpu_contention",
+    "cpu_contention",
+    "cpu_contention"
+   ],
+   "M6-s100147": [
+    "application_bottleneck",
+    "application_bottleneck",
+    "application_bottleneck"
+   ],
+   "M6-s100149": [
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE"
+   ],
+   "M6-s100150": [
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE"
+   ],
+   "M6-s100153": [
+    "cpu_contention",
+    "cpu_contention",
+    "cpu_contention"
+   ],
+   "M6-s100158": [
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE"
+   ],
+   "M6-s100159": [
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE"
+   ],
+   "M6-s100170": [
+    "INSUFFICIENT_EVIDENCE",
+    "network_packet_loss",
+    "network_packet_loss"
+   ],
+   "M6-s100176": [
+    "application_bottleneck",
+    "application_bottleneck",
+    "application_bottleneck"
+   ],
+   "M6-s100177": [
+    "network_packet_loss",
+    "network_packet_loss",
+    "network_packet_loss"
+   ],
+   "M6-s100181": [
+    "cpu_throttling",
+    "cpu_throttling",
+    "cpu_throttling"
+   ],
+   "M6-s100185": [
+    "cpu_contention",
+    "cpu_contention",
+    "cpu_contention"
+   ],
+   "M6-s100195": [
+    "cpu_throttling",
+    "cpu_throttling",
+    "cpu_throttling"
+   ],
+   "M6-s100198": [
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE"
+   ],
+   "M6-s100200": [
+    "network_packet_loss",
+    "network_packet_loss",
+    "network_packet_loss"
+   ],
+   "M6-s100201": [
+    "application_bottleneck",
+    "application_bottleneck",
+    "application_bottleneck"
+   ]
+  }
+ },
+ "window_starts": [
+  61,
+  85,
+  109
+ ]
+}
