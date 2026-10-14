@@ -255,6 +255,16 @@ train-only dry run (scratch only, nothing committed; train macro-F1 0.70; two th
 | C7-15 | AMD-31 left `src/sentinelai/runtime/pipeline.py` and `src/sentinelai/runtime/replay.py` out of the `test_integrity` allowlist. History is preserved; this record is the approved parent of a minimal follow-up amendment (AMD-31b) adding exactly those two paths |
 | C7-16 | A class threshold with no negative windows (dry run: `THR_RATIO_MIN`, `APP_SHARE_MIN`) = 1st percentile (nearest rank) of its own-class train windows; percentile, undefined values and ties defined in the objectives before re-running; train only; a threshold that stays 0 or leaves its clause effectively unconditional stops calibration for review |
 
+**M7 revisions (owner decisions 1–4, 2026-10-14)**, after a training-only investigation of the third dry run
+(scratch only; no test, SENS or PI-3 run read).
+
+| Item | Decision |
+|---|---|
+| C7-17 | `THR_RATIO_MIN` = 0.5, declared engineering value (not calibrated): train ratio is 1.0 in every tick and 0 without a binding quota, so the objective cannot discriminate; 0.99 satisfies the ratio clause, 0.0 does not |
+| C7-18 | `APP_SHARE_MIN` = 0.5 (C7-16) accepted; histogram quantisation and no cross-class discrimination documented |
+| C7-19 | C7-12 kept; five train retransmission→application run errors and the rate-limiting limitation recorded; no contract v0.7.0 before M8 |
+| C7-20 | D-6 recorded as a finding (thread-summed run delay vs per-cgroup throttled time; OV-7 PR-3 caveat); per-thread revision deferred |
+
 Still pending after §5:
 
 - No Freeze-1 parameter decision.
