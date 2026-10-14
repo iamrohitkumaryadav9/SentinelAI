@@ -46,8 +46,12 @@ M4_PATHS = frozenset({
     "tests/faultlab/test_matrix.py",         # AMD-29: its tests
     "experiments/faultlab/m6.py",            # AMD-29: the M6 batch runner and dataset writer
     "tests/faultlab/test_m6.py",             # AMD-29: its tests
+    "experiments/faultlab/m7.py",            # AMD-30: M7 windows, calibration, training and lock (FZ-M7-PLAN)
+    "tests/faultlab/test_m7.py",             # AMD-30: its tests
 })
 M6_ADD_ONLY = frozenset({"datasets/faultlab/v1/matrix.json"})   # AMD-29: committed once, before any collection
+M7_ADD_ONLY = frozenset(f"datasets/faultlab/v1/m7/{n}.json" for n in    # AMD-30: each artefact committed once
+                        ("params.calibrated", "calibration_report", "model", "training_report", "lock"))
 # AMD-27: recorded failed evaluations, pinned so that they can never be edited or relabelled as passing
 FAILED_PILOT_PINS = {
     "results/phase1c_m5_pilot/20261011T175343Z/PI0-1/run.json":
@@ -56,10 +60,10 @@ FAILED_PILOT_PINS = {
         "dd79326c5951f87e6dd69c20ce039b4c23f938e49eef6073ae7221c94fc56519",       # pipeline_ok false (app_features)
 }
 PINS = {
-    "tests/faultlab/test_r2e.py": "c1307f7db74c4aefea836a7f2c3f78c95b201c372b4c68cc6e50ad9d9b4fe190",
-    "tests/faultlab/test_r2f.py": "33ea8d660b4e900b0db5ebabc3dc728e20d9d65f6231b1b338fac287ebda6fbe",
+    "tests/faultlab/test_r2e.py": "26cd086ebfa8fd1d9ce68e1a5f9bdc0e09d01b0ac7b7a7e01beab15ba949f415",
+    "tests/faultlab/test_r2f.py": "27284e972c6006295d8b8e1e9d7b442088cc22102592e6889c64ec99f15787ed",
 }
-LIVE = I.Policy(anchor=ANCHOR, add_or_modify=M4_PATHS | CHECKER_FILES, add_only=M6_ADD_ONLY,
+LIVE = I.Policy(anchor=ANCHOR, add_or_modify=M4_PATHS | CHECKER_FILES, add_only=M6_ADD_ONLY | M7_ADD_ONLY,
                 pinned=PINS)                                                            # checker: see test_r2f
 
 
@@ -79,10 +83,11 @@ class TestLiveRepository(unittest.TestCase):
             self.assertFalse(doc.get("ok") or doc.get("pipeline_ok"), path)
 
     def test_policy_paths_are_exact(self):
-        for p in M4_PATHS | CHECKER_FILES | set(PINS) | M6_ADD_ONLY:
+        for p in M4_PATHS | CHECKER_FILES | set(PINS) | M6_ADD_ONLY | M7_ADD_ONLY:
             self.assertFalse(p.endswith("/") or any(c in p for c in "*?[ \t\n"), p)
         self.assertFalse(M4_PATHS & CHECKER_FILES or M4_PATHS & set(PINS) or CHECKER_FILES & set(PINS))
         self.assertFalse(M6_ADD_ONLY & (M4_PATHS | CHECKER_FILES | set(PINS)))
+        self.assertFalse(M7_ADD_ONLY & (M4_PATHS | CHECKER_FILES | set(PINS) | M6_ADD_ONLY))
 
 
 # ---------------------------------------------------------------------------------------------- disposable repos

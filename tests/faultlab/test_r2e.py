@@ -1679,9 +1679,14 @@ class TestStaticAndIntegrity(unittest.TestCase):
                                   "experiments/faultlab/m6.py", "tests/faultlab/test_m6.py",
                                   "datasets/faultlab/v1/matrix.json")
                             or re.fullmatch(r"docs/PHASE_1C_M6_[A-Z0-9_]+\.md", p) is not None)
+            # AMD-30: the M7 calibration and training tool, its tests, the M7 documents and the add-only M7 artefacts
+            m7 = lambda p: (p in ("experiments/faultlab/m7.py", "tests/faultlab/test_m7.py")
+                            or p in tuple(f"datasets/faultlab/v1/m7/{n}.json" for n in
+                                          ("params.calibrated", "calibration_report", "model", "training_report", "lock"))
+                            or re.fullmatch(r"docs/PHASE_1C_M7_[A-Z0-9_]+\.md", p) is not None)
             changed = git("diff", "--name-only", base, "HEAD").stdout.split()
             others = sorted(p for p in changed if p not in E.TOOLING)
-            self.assertTrue(others and all(closeout(p) or r2f(p) or p2a6(p) or p1c(p) or m4(p) or m5(p) or m6(p)
+            self.assertTrue(others and all(closeout(p) or r2f(p) or p2a6(p) or p1c(p) or m4(p) or m5(p) or m6(p) or m7(p)
                                            for p in others), others)
             self.assertFalse(res["ok"])
             self.assertEqual(res["reason"], f"changed since {base[:7]} beyond R2-E tooling: {others}")
