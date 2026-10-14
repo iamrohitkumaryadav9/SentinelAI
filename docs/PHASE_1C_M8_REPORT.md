@@ -48,6 +48,12 @@ Each raw file was verified against the manifest again before unpacking.
   0.7002, same confusion matrix);
 - the full suite passed at `d156cb1` (1576 tests, 1 skip).
 
+  *Correction (after the report was committed):* that count came from `unittest discover -s .` inside `tests/`. It
+  therefore included the 24 Phase 1A acceptance tests in `tests/test_phase1a.py`, which the README excludes from
+  routine verification. Run unprivileged, they started a `hello-world` container and short `stress-ng` and `iperf3`
+  loopback checks; the root-only test was the 1 skip. The routine verification set (README, per package) is 1,552
+  tests, and all of them pass. No evaluation input, artefact or result depends on these tests.
+
 **Populations (M8-1):**
 - P: 86 runs (72 SF, 12 per class, + 14 CTRL), 258 windows.
 - INS: 24 runs.

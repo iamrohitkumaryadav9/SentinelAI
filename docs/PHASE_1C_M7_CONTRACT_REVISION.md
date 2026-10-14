@@ -63,7 +63,8 @@ under 0.6.0 is therefore reported as **not validated**, with exactly two reasons
 
 ## 5. Checks
 
-- Full suite: 1550 tests. Before the commits, only the three integrity checks failed, each because the working tree
+- Full suite: 1550 tests. This count includes the Phase 1A acceptance tests (`tests/test_phase1a.py`), which the
+  README excludes from routine verification (correction recorded at the M8 checkpoint). Before the commits, only the three integrity checks failed, each because the working tree
   held uncommitted changes.
 - Mutations, each killed by at least one test:
   1. CT.R3 made baseline-gated.

@@ -4,16 +4,19 @@ An evidence-first diagnosis system for performance incidents on a single Linux h
 validated in gated phases, each ending at an explicit GO/NO-GO decision. Autonomous diagnosis and mitigation
 remain the long-term aim; they are **not** current capabilities.
 
-> **Status (October 2026).** Phase 1C's deterministic diagnostic core is implemented and committed: evidence
-> contract (M1), rule engine (M2), Linux and eBPF collectors (M3A, M3B), and the FaultLab validations R2-A to R2-F.
-> Four classes are experimentally validated (one scoped, one with a documented limitation); `softirq_overload` was
-> found **not feasible** to validate under its registered design. Phase 2A added a read-only runtime (snapshot and
-> raw-tick replay, verification, live M3A acquisition), closed out in two local commits (Phase 2A.6: `d119618`,
-> `d6b9333`; runtime tests 153/153, documented regression 1,026/1,028 with two known environmental failures, see
-> [`docs/PROJECT_STATUS.json`](docs/PROJECT_STATUS.json)). The **first live
-> acquisition** (one authorised, unprivileged, M3A-only run on an idle service) passed its bounded gate: PARTIAL,
-> `INSUFFICIENT_EVIDENCE`, and byte-identical offline replay. It is not evidence of live diagnostic accuracy. No LLM
-> is in the decision path; M2 is the only diagnostic authority.
+> **Status (14 October 2026).** Phase 1C's evaluation is complete. The deterministic diagnostic core (evidence
+> contract M1, rule engine M2, Linux and eBPF collectors M3A/M3B) was calibrated on a FaultLab training split and
+> evaluated once on a held-out test split (M4–M8).
+>
+> - **The primary system, rules alone, does not meet the design's quality gates.** Its macro F1 is **0.765**, below
+>   the 0.80 of G-Q1, and the per-class recall gate G-Q2 fails for application bottleneck, memory pressure and TCP
+>   retransmissions.
+> - **It never guesses when nothing is wrong:** abstention 1.00 and false assertion 0.00 on 24 runs expected to
+>   abstain (G-Q3).
+> - The advisory, contract-gated ML classifier reaches 0.861 (G-Q1 passes) and also fails G-Q2.
+>
+> Details: [M8 report](docs/PHASE_1C_M8_REPORT.md). Phase 2A added a read-only runtime (replay, verification, one
+> bounded live M3A acquisition). No LLM is in the decision path; M2 is the only diagnostic authority.
 
 ## Why this exists
 
@@ -41,23 +44,65 @@ chosen. Details: [Phase 1B confirmatory report](docs/PHASE_1B_CONFIRMATORY_EVALU
 evidence-first design ([Phase 1C design](docs/PHASE_1C_DESIGN.md)): versioned evidence contract → typed evidence
 → rule engine with explicit abstention. It has no LLM, RAG, agent or automated mitigation in the decision path.
 
-**FaultLab: controlled faults diagnosed correctly, within stated scope.** In network-namespace and cgroup labs
-with independent ground truth, M2 diagnosed packet loss, CPU contention, CPU throttling and (scoped) memory
-pressure. Each limitation is listed below. Softirq overload could not be produced under its registered design.
+**FaultLab validations (R2): controlled faults diagnosed correctly, within stated scope.** In network-namespace and
+cgroup labs with independent ground truth, M2 diagnosed packet loss, CPU contention, CPU throttling and (scoped)
+memory pressure. Softirq overload could not be produced under its registered design.
+
+**Held-out evaluation (M8): strong on CPU and loss faults, weak on three classes; G-Q1 and G-Q2 fail for rules
+alone.**
+- The data is a 202-run FaultLab matrix (M6), with parameters calibrated on the training split only (M7) and the
+  artefacts hash-locked before the test split was read.
+- **What works:** CPU contention and CPU throttling were diagnosed 12/12 each, including the intensity never seen in
+  training, and packet loss 11/12. Rules alone never asserted a fault in a run that should abstain.
+- **Where it fails, for causes visible on the training split before testing:**
+  - TCP retransmissions are diagnosed as application bottleneck in 7 of 12 runs: under heavy loss or rate limiting,
+    TCP falls below the evaluability floor and the application clause is not blocked.
+  - Memory pressure without user-visible latency impact abstains (7 of 12).
+  - Application bottlenecks at the lower intensities (I1, I2) abstain (5 of 12).
+
+  These are recorded findings, not tuned away. See the [M8 report](docs/PHASE_1C_M8_REPORT.md) and the
+  [M7 calibration report](docs/PHASE_1C_M7_CALIBRATION_REPORT.md).
 
 ## Capabilities at a glance
 
 | Category | What |
 |---|---|
-| **Implemented and committed** | Evidence contract and strict schema (M1); deterministic rule engine with abstention and precedence (M2); read-only `/proc` / `/sys` / cgroup collectors (M3A) plus read-only qdisc statistics (M3A-C1); CO-RE eBPF observation layer and loader (M3B); FaultLab lab tooling and validation drivers (R2-A–R2-F) |
+| **Implemented and committed** | Evidence contract and strict schema (M1); deterministic rule engine with abstention and precedence (M2); read-only `/proc` / `/sys` / cgroup collectors (M3A) plus read-only qdisc statistics (M3A-C1); CO-RE eBPF observation layer and loader (M3B); FaultLab lab tooling and validation drivers (R2-A–R2-F); FaultLab A–R–B lab, pilot, matrix and dataset (M4–M6); train-only calibration, advisory ML classifier and artefact lock (M7); one-time held-out evaluation (M8) |
+| **Evaluated on the held-out test split (M8)** | Rules alone: macro F1 0.765 (G-Q1 fail); contention 12/12, throttling 12/12, loss 11/12, retransmissions 5/12, memory 5/12, application 7/12; no false assertion on 24 runs expected to abstain |
 | **Experimentally validated** | `network_packet_loss` (R2-B), `cpu_contention` (R2-C), `cpu_throttling` (R2-D, documented limitation) |
 | **Validated, scoped** | `memory_pressure` (R2-F): cgroup `memory.high` file-backed page-cache refault pressure, via the reclaim-and-refault path only |
 | **Not validated** | `tcp_retransmissions` as a primary decision (seen only as CONTRIBUTING in R2-B); `softirq_overload` (R2-E NOT FEASIBLE); `application_bottleneck` (application metrics not collected) |
 | **Implemented and committed (Phase 2A)** | Read-only runtime: pure core, write-once artifact store, snapshot replay and verification, raw-tick replay, live M3A acquisition (eBPF and interface sources refused) |
 | **Live-verified once (bounded)** | One live M3A-only run on an idle service (Phase 2A.5): PARTIAL, abstention, `verify` and both replays MATCH; outside the validated configuration |
-| **Future (not built)** | FaultLab matrix, pilot, calibration and ML (Phase 1C M4–M8); any LLM or agent layer, which must not bypass M2; mitigation and verification loop |
+| **Future (not built)** | Any LLM or agent layer, which must not bypass M2; mitigation and verification loop; out-of-distribution evaluation |
 
-## Validated diagnoses and limitations
+## Held-out evaluation (M8)
+
+The test split has 72 single-fault runs (12 per class, across three intensities including one never seen in training)
+and 14 clean controls, all at run level. The full report, with every gate, limitation and deviation, is in
+[`docs/PHASE_1C_M8_REPORT.md`](docs/PHASE_1C_M8_REPORT.md).
+
+| Class | Rules alone: recall | Rules alone: precision | ML gated: recall |
+|---|---|---|---|
+| `cpu_contention` | 1.00 (12/12) | 1.00 | 1.00 |
+| `cpu_throttling` | 1.00 (12/12) | 1.00 | 1.00 |
+| `network_packet_loss` | 0.92 (11/12) | 1.00 | 1.00 |
+| `tcp_retransmissions` | 0.42 (5/12) | 1.00 | 0.42 |
+| `memory_pressure` | 0.42 (5/12) | 1.00 | 1.00 |
+| `application_bottleneck` | 0.58 (7/12) | 0.50 | 0.58 |
+
+- **Gates:**
+  - G-Q1 macro F1 ≥ 0.80: rules **0.765, fail**; ML gated 0.861, pass.
+  - G-Q2 per-class recall ≥ 0.70: **fails for both systems**.
+  - G-Q3 abstention on runs that should abstain: pass (1.00 / 0.00).
+  - G-Q4 coverage: pass (0.82 / 0.83).
+  - G-C1 ML calibration: pass (ECE 0.046).
+  - The validity, determinism and leakage gates (G-E1, G-E2, G-L1): pass.
+- **Combined policy:** the ML is advisory. It flagged 50 of 258 windows and changed no decision.
+- **Raw (ungated) ML:** classified every test run correctly. FaultLab's fault signatures are highly separable, and
+  out-of-distribution data was not evaluated, so this is not field accuracy.
+
+## Earlier validations (R2) and limitations
 
 | Contract label | Status | Evidence | Limitations |
 |---|---|---|---|
@@ -70,7 +115,12 @@ pressure. Each limitation is listed below. Softirq overload could not be produce
 | `application_bottleneck` | Not validated | — | Application metrics are not collected |
 
 Cross-cutting limitations:
-- thresholds are engineering/safety values (`r2c-validation-uncalibrated`), not statistically calibrated;
+- the R2 validations used engineering values (`r2c-validation-uncalibrated`). The M7 parameter set
+  (`m7-calibrated-v1`) is calibrated on the FaultLab training split, except `THR_RATIO_MIN`, which is a declared
+  value. The runtime's "validated configuration" still names the R2 pair (rules `m2-1.1.0`, contract `0.5.0-draft`),
+  so 0.6.0 diagnoses are reported as unvalidated;
+- `sched.run_delay_excess.target` assumes one runnable thread. With a multi-threaded target it is inflated under
+  throttling (finding D-6, [M7 report](docs/PHASE_1C_M7_CALIBRATION_REPORT.md));
 - M2 confidence is capped at MEDIUM (`IMPACT_NOT_MEASURED`);
 - all results come from one host and kernel (6.8.0-138), one campaign per class;
 - `cpu.util.cpuset` has a tick-accounting bias on a partially busy CPU;
@@ -92,8 +142,8 @@ eBPF programs (root) ───► M3B loader + parser ────────�
                                                                                   supporting / negative / missing / conflicting evidence
 ```
 
-- **M1 evidence contract** ([report](docs/PHASE_1C_M1_REPORT.md), PASS WITH CONDITIONS): versioned contract (now `0.5.0-draft`, schema `0.2.0`), strict Pydantic models, deterministic IDs and canonical serialisation. [Contract](docs/EVIDENCE_CONTRACT.md).
-- **M2 rule engine** ([report](docs/PHASE_1C_M2_REPORT.md), PASS WITH CONDITIONS): pure and deterministic (rules `m2-1.1.0`); explicit abstention reasons and a closed precedence table; refuses missing or uncalibrated parameters.
+- **M1 evidence contract** ([report](docs/PHASE_1C_M1_REPORT.md), PASS WITH CONDITIONS): versioned contract (now `0.6.0-draft`, schema `0.2.0`; evidence recorded under `0.5.0-draft` is evaluated under its archived contract, see the [contract revision](docs/PHASE_1C_M7_CONTRACT_REVISION.md)), strict Pydantic models, deterministic IDs and canonical serialisation. [Contract](docs/EVIDENCE_CONTRACT.md).
+- **M2 rule engine** ([report](docs/PHASE_1C_M2_REPORT.md), PASS WITH CONDITIONS): pure and deterministic (rules `m2-1.2.0`; `m2-1.1.0` for 0.5.0 evidence); explicit abstention reasons and a closed precedence table; refuses missing or uncalibrated parameters.
 - **M3A collectors** ([report](docs/PHASE_1C_M3A_REPORT.md), PASS WITH CONDITIONS; [M3A-C1](docs/PHASE_1C_M3A_C1_REPORT.md) GO): reads under `/proc` and `/sys` only. The single permitted command is `tc -s -j qdisc show` on non-protected interfaces. Absence is recorded as `Bad` states, never as zero.
 - **M3B eBPF layer** ([audit](docs/PHASE_1C_M3B_REPORT.md) NO-GO, resolved by the [R1 runtime validation](docs/PHASE_1C_M3B_R1_RUNTIME_VALIDATION_REPORT.md) GO): CO-RE BPF programs and a loader linked to libbpf 1.4; root only; observation only.
 - **FaultLab** ([R2-A infrastructure](docs/PHASE_1C_R2A_FAULTLAB_INFRASTRUCTURE_REPORT.md) GO): dedicated network namespaces, veth pairs and lab cgroups, with independent ground truth. Faults never touch protected interfaces or non-lab cgroups.
@@ -130,6 +180,10 @@ authorisation; BPF state during the first run was not verified (it needs root).
 | 1C R2-D: CPU throttling | PASS WITH DOCUMENTED LIMITATION / CLOSED | [R2-D](docs/PHASE_1C_R2D_CPU_THROTTLING_VALIDATION_REPORT.md) |
 | 1C R2-E: Softirq overload | **NOT FEASIBLE** under the registered design / CLOSED | [R2-E](docs/PHASE_1C_R2E_SOFTIRQ_OVERLOAD_FEASIBILITY_REPORT.md) |
 | 1C R2-F: Memory pressure | PASS (scoped) / CLOSED | [R2-F](docs/PHASE_1C_R2F_MEMORY_PRESSURE_VALIDATION_REPORT.md) |
+| 1C M4–M5: FaultLab lab and pilot | Pilot complete; Freeze-1 decisions approved and intensity levels frozen | [M5 pilot](docs/PHASE_1C_M5_PILOT_REPORT.md), [decision register](docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md) |
+| 1C M6: Matrix collection | COMPLETE: 202/202 runs (78 train, 106 test, 12 SENS, 6 PI-3), none excluded | [M6](docs/PHASE_1C_M6_COLLECTION.md) |
+| 1C M7: Calibration, ML, lock | COMPLETE: contract v0.6.0-draft; train-only calibration; ML (random forest) used although it missed G-Q2 on validation; artefacts locked at `afdde9a` | [objectives](docs/PHASE_1C_M7_CALIBRATION_OBJECTIVES.md), [contract revision](docs/PHASE_1C_M7_CONTRACT_REVISION.md), [report](docs/PHASE_1C_M7_CALIBRATION_REPORT.md) |
+| 1C M8: Held-out evaluation | EVALUATED ONCE: rules alone **G-Q1 FAIL** (0.765), **G-Q2 FAIL**; G-Q3, G-Q4 pass; ML gated G-Q1 pass, G-Q2 fail | [protocol](docs/PHASE_1C_M8_EVALUATION_PROTOCOL.md), [report](docs/PHASE_1C_M8_REPORT.md) |
 | 2A: Runtime design | GO (review session; summarised in the 2A report) | [PHASE_2A_RUNTIME_REPORT.md](docs/PHASE_2A_RUNTIME_REPORT.md) |
 | 2A.1–2A.4: Runtime implementation | PASS (per closeout) | [PHASE_2A_RUNTIME_REPORT.md](docs/PHASE_2A_RUNTIME_REPORT.md) |
 | 2A.5: First live acquisition | PASS (bounded gate: M3A-only, idle target) | [report §6](docs/PHASE_2A_RUNTIME_REPORT.md), [provenance](results/phase2a_live/first-live-cron/PROVENANCE.json) |
@@ -146,8 +200,8 @@ gate and its LLM-agent Phase 3 relate to the current plan is unresolved and left
 
 | Step | Goal | Gate |
 |---|---|---|
-| Next (undecided, pending an explicit design decision) | Live eBPF acquisition mode, live interface/qdisc collection, or Phase 1C M4–M8 below | Each needs its own design, privilege gate and approval |
-| 1C M4–M8 | FaultLab scenario matrix, pilot, parameter calibration, ML classifier, `PHASE_1C_EVALUATION` | Success criteria fixed in [PHASE_1C_DESIGN.md §7.5](docs/PHASE_1C_DESIGN.md) |
+| Next (undecided, pending an explicit decision) | Address the M8 findings, each as a new, separately evaluated version (the M8 result stays as recorded): network evaluability in AB.R3 (TCP below `SEG_MIN`), the per-thread run-delay excess (D-6), memory pressure without latency impact; regeneration check G-P1; out-of-distribution evaluation | Each needs its own design, approval and a fresh held-out evaluation |
+| Alternative next steps | Live eBPF acquisition mode, live interface/qdisc collection | Each needs its own design, privilege gate and approval |
 | Future | Optional LLM/agent layer for explanation or orchestration; it must not bypass M2 or evidence validation | To be designed and gated |
 | Future | Mitigation and verification loop | To be designed and gated; not started |
 
@@ -178,12 +232,16 @@ tests/                   collectors, ebpf, evidence, rules, faultlab, runtime (+
 docs/                    phase reports, evidence contract, PROJECT_STATUS.json
 results/                 committed evidence from validation runs (phase2a_live/: first live run + provenance)
 experiments/llm_benchmark/  Phase 1B benchmark and confirmatory test
+experiments/faultlab/    FaultLab lab, preflight, pilot, matrix generator (matrix.py), M6 runner (m6.py),
+                         M7 calibration/ML/lock (m7.py), M8 evaluation (m8.py)
+datasets/faultlab/v1/    raw dataset (append-only, SHA-256 manifest), matrix.json, m7/ locked artefacts,
+                         m8/evaluation.json
 configs/                 (empty)
 requirements.in / requirements.lock
 ```
 
-Not in the committed repository: `.venv/`, `logs/*`, `ebpf/build/`, `experiments/faultlab/` (an intentionally
-untracked feasibility probe).
+Not in the committed repository: `.venv/`, `logs/*`, `ebpf/build/`, the M6 staging directory `results/phase1c_m6/`,
+and owner working files (for example `experiments/faultlab/docker/Dockerfile`).
 
 ## Usage
 
@@ -195,7 +253,7 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.lock
 scripts/safety_check.sh
 
 # Verification test suite: every test package except the host-mutating tests/test_phase1a.py.
-# Expect 1,028 tests. tests/ebpf runs `make -C ebpf all` (it needs the BPF toolchain and rewrites
+# Expect 1,552 tests. tests/ebpf runs `make -C ebpf all` (it needs the BPF toolchain and rewrites
 # ebpf/build/min_core.btf with identical content); tests/collectors includes a short read-only live read of
 # its own cgroup.
 (cd tests && rc=0 && for p in collectors ebpf evidence rules faultlab runtime; do
@@ -207,11 +265,13 @@ scripts/safety_check.sh
 state (root cgroup controllers, a `docker0` address), so it is **not** part of routine verification. Run it only
 deliberately.
 
-**Known failing tests (2 of 1,028) at the Phase 2A.6 closeout (reference host):**
-- `faultlab.test_r2c.TestDryRun.test_dry_run_mutates_nothing` and
-  `faultlab.test_r2d.TestMatrixAndStatic.test_dry_run_mutates_nothing`: environmental. R2-C's preflight requires
-  the exact pre-reboot root cgroup controller set, which is restored only after Docker has run. They are kept
-  unchanged rather than weakened.
+**Environment-dependent tests:** `faultlab.test_r2c.TestDryRun.test_dry_run_mutates_nothing` and
+`faultlab.test_r2d.TestMatrixAndStatic.test_dry_run_mutates_nothing`. R2-C's preflight requires the exact root cgroup
+controller set that exists after Docker has run, so these two tests can fail after a reboot until Docker has started
+a container. They are kept unchanged rather than weakened. At the M8 checkpoint (`2db8ec4`) all 1,552 tests pass on
+the reference host.
+
+Several integrity tests require a clean working tree; run the suite with no uncommitted tracked changes.
 
 FaultLab validation runs (`sudo bash scripts/r2*_validate.sh`) and the M3B privileged validation change lab
 state as root. Each requires its own reviewed, authorised gate. They are not part of routine usage.
@@ -224,6 +284,15 @@ PYTHONNOUSERSITE=1 PYTHONPATH=src .venv/bin/python -m sentinelai verify --run-di
 PYTHONNOUSERSITE=1 PYTHONPATH=src .venv/bin/python -m sentinelai replay --run-dir ABSOLUTE_RUN_DIR --source ticks
 PYTHONNOUSERSITE=1 PYTHONPATH=src .venv/bin/python -m sentinelai replay --run-dir ABSOLUTE_RUN_DIR --source snapshot
 ```
+
+FaultLab M7/M8 (offline, read-only on the committed dataset; outputs are add-only and the tools refuse to overwrite):
+
+```bash
+.venv/bin/python experiments/faultlab/m7.py calibrate --out SCRATCH_DIR        # train split only
+.venv/bin/python experiments/faultlab/m8.py evaluate --rehearsal-train --out SCRATCH_DIR   # train-only rehearsal
+```
+
+The one-time test evaluation (`m8.py evaluate` without options) has been run and refuses to run again.
 
 `verify` and `replay` are offline and read-only. `diagnose` performs a live read-only M3A acquisition of a target
 cgroup; it requires `--ebpf disabled` (eBPF and `--iface` are refused) and an explicit `--code-commit`. Under this

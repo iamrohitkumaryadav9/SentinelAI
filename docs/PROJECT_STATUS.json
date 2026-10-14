@@ -1,8 +1,8 @@
 {
- "checkpoint": "Phase 1C M6 complete: all 202 matrix runs collected at the pinned code and committed as the raw dataset; next M7 calibration, ML training and artefact lock",
+ "checkpoint": "Phase 1C M8 complete: the one-time held-out test evaluation ran against the M7 lock afdde9a; rules alone fail G-Q1 (0.765) and G-Q2",
  "date": "2026-10-14",
- "status_describes_commit": "407a596",
- "status_describes_commit_note": "the last commit this record describes (M6 batch 6 and the closed collection ledger), not the commit containing this file; code unchanged since the pin 9918b83; integrity checks OK at 407a596",
+ "status_describes_commit": "2db8ec4",
+ "status_describes_commit_note": "the last commit this record describes (M8 result and report), not the commit containing this file; the M7 artefacts are unchanged since the lock afdde9a; routine verification (README) 1,552 tests pass at 2db8ec4",
  "closeout_commits": {
   "runtime": "d11961852854dfe68ad8f7ab930789264b75cef5",
   "evidence_and_documentation": "d6b93333d3041417aece915a3004274b0ca0bee5",
@@ -16,7 +16,7 @@
   "docs/AUTONOMOUS_HANDOVER_STATUS.md (session handover note; untracked: a new docs path is outside the integrity allowlist)",
   "results/phase1c_m5_pilot/*/*/lg/ and */collector/ (transport copies, gitignored; each verified byte-identical to its committed evidence/ copy)"
  ],
- "current_status": "Phase 1C M6 complete. M5 pilot and review complete (all Freeze-1 decisions approved; levels frozen, I2 confirmed). M6 (docs/PHASE_1C_M6_COLLECTION.md): 202 matrix runs (78 train, 106 test, 12 SENS, 6 PI-3) collected in 6 batches at the pinned code 9918b83, all passing their pipeline checks, none excluded; committed in datasets/faultlab/v1/raw with 30 PI-0 cycles (266 MB, SHA-256 manifest), every run replaying byte-identically. Report-only PI misses listed for M7: mem.util.target 10 (M-4), psi.cpu.some.target 6 (I3 quota), OV-9 app features 4 (by design). Test-split diagnoses have not been looked at (design §6.6).",
+ "current_status": "Phase 1C evaluation complete. M7 (docs/PHASE_1C_M7_CALIBRATION_REPORT.md): contract v0.6.0-draft (CT.R2 split into CT.R2/CT.R3, 0.5.0 evidence evaluated under its archived contract); rule-engine parameters calibrated on the train split only (THR_RATIO_MIN declared); advisory random forest (no model kind met G-Q2 on validation, ML-6); artefacts locked at afdde9a. M8 (docs/PHASE_1C_M8_REPORT.md), test split, 86 runs: rules alone macro F1 0.765 (G-Q1 FAIL), recall application 0.583 / memory 0.417 / retransmissions 0.417 (G-Q2 FAIL), INS abstention 1.00 and false assertion 0.00 (G-Q3 pass), coverage 0.819 (G-Q4 pass); ML gated 0.861 (G-Q1 pass, G-Q2 fail); ML calibration ECE 0.046 (G-C1 pass); G-E1, G-E2, G-L1 pass; robustness 20/20; G-P1 not verified; OOD not evaluated.",
  "phases": [
   {
    "phase": "Phase 0",
@@ -35,7 +35,7 @@
   },
   {
    "phase": "Phase 1C",
-   "verdict": "in progress: M1-M5 done; M6 matrix collection complete (202/202); M7 calibration/ML/lock and M8 PHASE_1C_EVALUATION not started",
+   "verdict": "evaluated: M1-M8 complete; M8 one-time test evaluation: rules alone G-Q1 FAIL (0.765) and G-Q2 FAIL; G-Q3, G-Q4 pass; ML gated G-Q1 pass, G-Q2 fail",
    "report": "docs/PHASE_1C_DESIGN.md"
   },
   {
@@ -239,6 +239,37 @@
    "phase": "M6 matrix collection",
    "verdict": "complete: 202/202 runs, all pipeline-valid, none excluded; raw dataset committed (266 MB)",
    "report": "docs/PHASE_1C_M6_COLLECTION.md"
+  },
+  {
+   "phase": "M4-M5 FaultLab lab and pilot",
+   "verdict": "pilot complete; Freeze-1 decisions approved; levels frozen",
+   "report": [
+    "docs/PHASE_1C_M5_PILOT_REPORT.md",
+    "docs/PHASE_1C_FREEZE1_DECISION_REGISTER.md"
+   ]
+  },
+  {
+   "phase": "M6 matrix collection",
+   "verdict": "COMPLETE: 202/202 runs, none excluded",
+   "report": "docs/PHASE_1C_M6_COLLECTION.md"
+  },
+  {
+   "phase": "M7 calibration, ML, lock",
+   "verdict": "COMPLETE: locked at afdde9a",
+   "report": [
+    "docs/PHASE_1C_M7_CALIBRATION_OBJECTIVES.md",
+    "docs/PHASE_1C_M7_CONTRACT_REVISION.md",
+    "docs/PHASE_1C_M7_CALIBRATION_REPORT.md"
+   ]
+  },
+  {
+   "phase": "M8 held-out evaluation",
+   "verdict": "EVALUATED ONCE (2db8ec4): rules G-Q1 FAIL, G-Q2 FAIL; G-Q3, G-Q4 pass",
+   "report": [
+    "docs/PHASE_1C_M8_EVALUATION_PROTOCOL.md",
+    "docs/PHASE_1C_M8_REPORT.md"
+   ],
+   "evidence": "datasets/faultlab/v1/m8/evaluation.json"
   }
  ],
  "experimentally_validated_fault_classes": [
@@ -263,9 +294,10 @@
   ]
  },
  "contract_labels_not_yet_validated": [
-  "softirq_overload",
-  "application_bottleneck (app.* metrics are now collected, but no application fault class has been run)",
-  "tcp_retransmissions (as primary decision)"
+  "softirq_overload (R2-E not feasible; not in the M6 matrix)",
+  "tcp_retransmissions: M8 test recall 0.417 (rules); misdiagnosed as application_bottleneck when TCP falls below SEG_MIN or under rate limiting (C7-19)",
+  "application_bottleneck: M8 test precision 0.50, recall 0.583 (rules)",
+  "memory_pressure beyond scope: M8 test recall 0.417 (rules); abstains without user-visible impact (C7-13)"
  ],
  "known_limitations": [
   "Phase 2A: live acquisition is M3A-only (eBPF and interface/qdisc sources refused); live runs are outside the validated M3A + eBPF configuration",
@@ -293,7 +325,12 @@
   "M5 pilot: in CTRL (FZ-WORKLOAD lock_hold_us 0) app.lock_wait_ms is structurally MISSING; af2a4e7 accepts it only when the run's manifest-verified evidence proves lock_hold_us == 0",
   "M5 pilot: FZ-PI7's fault criterion compares a fault's wait metric with the CTRL maximum; for a lock-hold fault (app.lock_wait_ms) no CTRL maximum exists, so lock-hold results cannot be evaluated until the owner resolves it",
   "M5 pilot: on/off pair differences are report-only and from 2 pairs each; they cannot bound a small effect",
-  "M5 pilot: single host and kernel; one workload operating point (100 req/s, no saturation)"
+  "M5 pilot: single host and kernel; one workload operating point (100 req/s, no saturation)",
+  "M7/C7-20 (D-6): sched.run_delay_excess.target assumes one runnable thread; inflated under throttling with multi-threaded targets; OV-7 PR-3 outcome rests on it",
+  "M7/C7-18: application metrics are log2 histogram buckets; APP_SHARE_MIN separates fault from CTRL windows, not classes",
+  "M7/C7-17: THR_RATIO_MIN = 0.5 is declared, not calibrated",
+  "M8: the runtime's validated configuration still names rules m2-1.1.0 / contract 0.5.0-draft, so 0.6.0 diagnoses are reported as unvalidated",
+  "M8: G-P1 (regeneration from a clean checkout) not verified; OOD not evaluated (P-4)"
  ],
  "naming_notes": [
   "'Phase 2A' (runtime integration, subphases 2A.1-2A.6) was named in the Phase 2A design review session. The historical README roadmap (6d404c8, replaced in 5dad133) used 'Phase 2' for an eBPF telemetry collector; that work was carried out as Phase 1C M3B. The two uses of 'Phase 2' are not the same milestone.",
@@ -302,14 +339,17 @@
   "Unresolved, left for a separate design decision: the historical roadmap's Phase 1C exit gate (re-run the 48-scenario confirmatory suite, >= 70% correct, correct abstention) versus the success criteria in PHASE_1C_DESIGN.md section 7.5; and its Phase 3 (LLM diagnosis agent) versus Phase 1B FAIL / NO-GO and PHASE_1C_DESIGN.md section 11 (the LLM cannot set the decision). No committed decision states which governs."
  ],
  "next_phase": {
-  "named_in_repository": "Phase 1C M7: calibration of the contract parameters on the train split, ML training and calibration, artefact lock; then M8 test evaluation",
-  "next_unvalidated_fault_class": null,
-  "blocked_on_owner_decisions": [
-   "M7 calibration objectives (params.calibration.md, written before calibration; design §7.4)",
-   "KFREE_REASONS_LOSS declared list",
-   "treatment of fractions just above 1 (mem.util.target, psi.cpu.some.target)"
+  "named_in_repository": null,
+  "candidates": [
+   "AB.R3 network evaluability when TCP is below SEG_MIN (C7-19)",
+   "per-thread run-delay excess (D-6)",
+   "memory pressure without latency impact (C7-13)",
+   "G-P1 regeneration check",
+   "OOD evaluation",
+   "live eBPF acquisition mode",
+   "live interface/qdisc collection"
   ],
-  "basis": "design §6.6, §7.4, §12; after M8, any LLM explanation layer or mitigation loop is undecided and needs its own design"
+  "basis": "M8 results are final as recorded; any change is a new version requiring its own design, approval and a fresh held-out evaluation"
  },
  "deferred": [
   {
@@ -339,5 +379,15 @@
  ],
  "completed_feasibility_studies": [
   "softirq_overload (R2-E): NOT FEASIBLE under the registered design"
- ]
+ ],
+ "m8_test_results_rules_alone": {
+  "cpu_contention": "12/12",
+  "cpu_throttling": "12/12",
+  "network_packet_loss": "11/12",
+  "tcp_retransmissions": "5/12",
+  "memory_pressure": "5/12",
+  "application_bottleneck": "7/12",
+  "CTRL abstained": "14/14",
+  "macro_f1": 0.765
+ }
 }
