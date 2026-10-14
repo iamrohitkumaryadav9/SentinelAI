@@ -1,0 +1,648 @@
+{
+ "calibration_report_code_commit": "cb77c9b995a610f8089648d1beea535083147bae",
+ "chosen": {
+  "hp_selection_window_macro_f1": 0.9570661896243291,
+  "hyperparameters": {
+   "min_samples_leaf": 2
+  },
+  "kind": "random_forest",
+  "met_gates_on_validation": false,
+  "note": "no model kind met every gate on validation; the one with the highest validation gated run macro F1 is used (ML-6)"
+ },
+ "code_commit": "8e236fc0c36b911a43f234c3c6a76fc8fd435df3",
+ "columns": 328,
+ "excluded_acceptable_set_runs": [
+  "M6-s100088",
+  "M6-s100202"
+ ],
+ "format": "sentinelai.faultlab.m7.training_report.v1",
+ "label_counts": {
+  "INSUFFICIENT_EVIDENCE": 60,
+  "application_bottleneck": 24,
+  "cpu_contention": 36,
+  "cpu_throttling": 30,
+  "memory_pressure": 24,
+  "network_packet_loss": 30,
+  "tcp_retransmissions": 24
+ },
+ "leakage_audit": {
+  "columns": 328,
+  "ok": true,
+  "rejected": []
+ },
+ "objectives": "docs/PHASE_1C_M7_CALIBRATION_OBJECTIVES.md",
+ "rules_alone_train_run_macro_f1": 0.7221306385393073,
+ "runs": [
+  "M6-s100011",
+  "M6-s100012",
+  "M6-s100014",
+  "M6-s100019",
+  "M6-s100024",
+  "M6-s100025",
+  "M6-s100026",
+  "M6-s100029",
+  "M6-s100030",
+  "M6-s100031",
+  "M6-s100032",
+  "M6-s100036",
+  "M6-s100039",
+  "M6-s100044",
+  "M6-s100045",
+  "M6-s100048",
+  "M6-s100049",
+  "M6-s100051",
+  "M6-s100052",
+  "M6-s100058",
+  "M6-s100065",
+  "M6-s100067",
+  "M6-s100068",
+  "M6-s100070",
+  "M6-s100073",
+  "M6-s100075",
+  "M6-s100076",
+  "M6-s100078",
+  "M6-s100083",
+  "M6-s100084",
+  "M6-s100085",
+  "M6-s100086",
+  "M6-s100093",
+  "M6-s100094",
+  "M6-s100096",
+  "M6-s100099",
+  "M6-s100100",
+  "M6-s100101",
+  "M6-s100107",
+  "M6-s100108",
+  "M6-s100109",
+  "M6-s100111",
+  "M6-s100113",
+  "M6-s100114",
+  "M6-s100117",
+  "M6-s100119",
+  "M6-s100120",
+  "M6-s100126",
+  "M6-s100127",
+  "M6-s100128",
+  "M6-s100129",
+  "M6-s100132",
+  "M6-s100133",
+  "M6-s100135",
+  "M6-s100136",
+  "M6-s100138",
+  "M6-s100141",
+  "M6-s100144",
+  "M6-s100147",
+  "M6-s100149",
+  "M6-s100150",
+  "M6-s100153",
+  "M6-s100158",
+  "M6-s100159",
+  "M6-s100169",
+  "M6-s100170",
+  "M6-s100176",
+  "M6-s100177",
+  "M6-s100179",
+  "M6-s100181",
+  "M6-s100185",
+  "M6-s100190",
+  "M6-s100195",
+  "M6-s100198",
+  "M6-s100200",
+  "M6-s100201"
+ ],
+ "serialisation_check": "max |p_json - p_sklearn| <= 1e-9 and identical argmax on every training window",
+ "tau_disagree": {
+  "grid": {
+   "0.6": {
+    "combined_run_macro_f1": 0.7221306385393073,
+    "ml_disagreement_flags": 39
+   },
+   "0.7": {
+    "combined_run_macro_f1": 0.7221306385393073,
+    "ml_disagreement_flags": 39
+   },
+   "0.8": {
+    "combined_run_macro_f1": 0.7221306385393073,
+    "ml_disagreement_flags": 39
+   },
+   "0.9": {
+    "combined_run_macro_f1": 0.7221306385393073,
+    "ml_disagreement_flags": 37
+   }
+  },
+  "note": "the decision of record is the rules' decision (design §5.4), so every grid value gives the same combined macro F1 and the tie rule decides",
+  "rule": "C7-8; tie to the larger value",
+  "value": 0.9
+ },
+ "tau_ml": {
+  "rule": "C7-8: smallest threshold with pooled held-out selective risk <= 10 %",
+  "value": 0.0
+ },
+ "validation": {
+  "hist_gradient_boosting": {
+   "brier": 0.11723529715613994,
+   "brier_uncalibrated": 0.09822251922944733,
+   "ece": 0.11847334404503185,
+   "ece_uncalibrated": 0.0390307328676743,
+   "gated": {
+    "abstained_windows": 88,
+    "per_class_run": {
+     "INSUFFICIENT_EVIDENCE": {
+      "precision": 0.6896551724137931,
+      "recall": 1.0,
+      "support": 20
+     },
+     "application_bottleneck": {
+      "precision": 1.0,
+      "recall": 0.5,
+      "support": 8
+     },
+     "cpu_contention": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "support": 12
+     },
+     "cpu_throttling": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "support": 10
+     },
+     "memory_pressure": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "support": 8
+     },
+     "network_packet_loss": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "support": 10
+     },
+     "tcp_retransmissions": {
+      "precision": 1.0,
+      "recall": 0.375,
+      "support": 8
+     }
+    },
+    "run_macro_f1": 0.8612068203904938,
+    "window_macro_f1": 0.853925353925354
+   },
+   "gates": {
+    "G-C1 ECE <= 0.10 and calibrated Brier < uncalibrated": false,
+    "G-Q1 macro F1 >= 0.80": true,
+    "G-Q2 per-class recall >= 0.70": false
+   },
+   "hyperparameters_per_fold": [
+    {
+     "learning_rate": 0.05,
+     "max_leaf_nodes": 7
+    },
+    {
+     "learning_rate": 0.05,
+     "max_leaf_nodes": 7
+    },
+    {
+     "learning_rate": 0.1,
+     "max_leaf_nodes": 7
+    },
+    {
+     "learning_rate": 0.1,
+     "max_leaf_nodes": 7
+    },
+    {
+     "learning_rate": 0.05,
+     "max_leaf_nodes": 7
+    }
+   ],
+   "raw": {
+    "abstained_windows": 64,
+    "per_class_run": {
+     "INSUFFICIENT_EVIDENCE": {
+      "precision": 0.9090909090909091,
+      "recall": 1.0,
+      "support": 20
+     },
+     "application_bottleneck": {
+      "precision": 1.0,
+      "recall": 0.625,
+      "support": 8
+     },
+     "cpu_contention": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "support": 12
+     },
+     "cpu_throttling": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "support": 10
+     },
+     "memory_pressure": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "support": 8
+     },
+     "network_packet_loss": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "support": 10
+     },
+     "tcp_retransmissions": {
+      "precision": 0.8888888888888888,
+      "recall": 1.0,
+      "support": 8
+     }
+    },
+    "run_macro_f1": 0.9518268845999939,
+    "window_macro_f1": 0.9362343647136273
+   },
+   "reliability": [
+    {
+     "accuracy": 0.782608695652174,
+     "confidence": 0.5894004873507773,
+     "windows": 23
+    },
+    {
+     "accuracy": 0.8695652173913043,
+     "confidence": 0.746735630648147,
+     "windows": 23
+    },
+    {
+     "accuracy": 0.9130434782608695,
+     "confidence": 0.7940268925008536,
+     "windows": 23
+    },
+    {
+     "accuracy": 0.8695652173913043,
+     "confidence": 0.8227480484386278,
+     "windows": 23
+    },
+    {
+     "accuracy": 1.0,
+     "confidence": 0.8524295316359022,
+     "windows": 23
+    },
+    {
+     "accuracy": 1.0,
+     "confidence": 0.8634156671545259,
+     "windows": 23
+    },
+    {
+     "accuracy": 1.0,
+     "confidence": 0.8734980967474418,
+     "windows": 23
+    },
+    {
+     "accuracy": 1.0,
+     "confidence": 0.8870781842042071,
+     "windows": 23
+    },
+    {
+     "accuracy": 1.0,
+     "confidence": 0.9042803427996525,
+     "windows": 22
+    },
+    {
+     "accuracy": 1.0,
+     "confidence": 0.9190573466586035,
+     "windows": 22
+    }
+   ],
+   "tau_ml": 0.0
+  },
+  "logistic_regression": {
+   "brier": 0.19570810905593217,
+   "brier_uncalibrated": 0.12225650600709137,
+   "ece": 0.14767476266560467,
+   "ece_uncalibrated": 0.05285361606532517,
+   "gated": {
+    "abstained_windows": 86,
+    "per_class_run": {
+     "INSUFFICIENT_EVIDENCE": {
+      "precision": 0.6896551724137931,
+      "recall": 1.0,
+      "support": 20
+     },
+     "application_bottleneck": {
+      "precision": 1.0,
+      "recall": 0.625,
+      "support": 8
+     },
+     "cpu_contention": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "support": 12
+     },
+     "cpu_throttling": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "support": 10
+     },
+     "memory_pressure": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "support": 8
+     },
+     "network_packet_loss": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "support": 10
+     },
+     "tcp_retransmissions": {
+      "precision": 1.0,
+      "recall": 0.25,
+      "support": 8
+     }
+    },
+    "run_macro_f1": 0.8550796142632878,
+    "window_macro_f1": 0.8632516400965361
+   },
+   "gates": {
+    "G-C1 ECE <= 0.10 and calibrated Brier < uncalibrated": false,
+    "G-Q1 macro F1 >= 0.80": true,
+    "G-Q2 per-class recall >= 0.70": false
+   },
+   "hyperparameters_per_fold": [
+    {
+     "C": 0.01
+    },
+    {
+     "C": 1.0
+    },
+    {
+     "C": 1.0
+    },
+    {
+     "C": 0.1
+    },
+    {
+     "C": 10.0
+    }
+   ],
+   "raw": {
+    "abstained_windows": 62,
+    "per_class_run": {
+     "INSUFFICIENT_EVIDENCE": {
+      "precision": 0.8095238095238095,
+      "recall": 0.85,
+      "support": 20
+     },
+     "application_bottleneck": {
+      "precision": 0.8333333333333334,
+      "recall": 0.625,
+      "support": 8
+     },
+     "cpu_contention": {
+      "precision": 0.8571428571428571,
+      "recall": 1.0,
+      "support": 12
+     },
+     "cpu_throttling": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "support": 10
+     },
+     "memory_pressure": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "support": 8
+     },
+     "network_packet_loss": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "support": 10
+     },
+     "tcp_retransmissions": {
+      "precision": 1.0,
+      "recall": 0.875,
+      "support": 8
+     }
+    },
+    "run_macro_f1": 0.9142806090541283,
+    "window_macro_f1": 0.9185642786090806
+   },
+   "reliability": [
+    {
+     "accuracy": 0.6521739130434783,
+     "confidence": 0.516642824653407,
+     "windows": 23
+    },
+    {
+     "accuracy": 0.9565217391304348,
+     "confidence": 0.623734563330397,
+     "windows": 23
+    },
+    {
+     "accuracy": 0.7391304347826086,
+     "confidence": 0.6861077228968109,
+     "windows": 23
+    },
+    {
+     "accuracy": 0.9130434782608695,
+     "confidence": 0.7195939027896121,
+     "windows": 23
+    },
+    {
+     "accuracy": 0.9130434782608695,
+     "confidence": 0.7505245217136481,
+     "windows": 23
+    },
+    {
+     "accuracy": 0.9565217391304348,
+     "confidence": 0.7890874005217776,
+     "windows": 23
+    },
+    {
+     "accuracy": 1.0,
+     "confidence": 0.8298474804918807,
+     "windows": 23
+    },
+    {
+     "accuracy": 1.0,
+     "confidence": 0.8801188560746244,
+     "windows": 23
+    },
+    {
+     "accuracy": 1.0,
+     "confidence": 0.9197535847974735,
+     "windows": 22
+    },
+    {
+     "accuracy": 1.0,
+     "confidence": 0.9452480899926403,
+     "windows": 22
+    }
+   ],
+   "tau_ml": 0.0
+  },
+  "random_forest": {
+   "brier": 0.07919335141826761,
+   "brier_uncalibrated": 0.10131118349486802,
+   "ece": 0.05869203570456033,
+   "ece_uncalibrated": 0.10200610166663064,
+   "gated": {
+    "abstained_windows": 84,
+    "per_class_run": {
+     "INSUFFICIENT_EVIDENCE": {
+      "precision": 0.7142857142857143,
+      "recall": 1.0,
+      "support": 20
+     },
+     "application_bottleneck": {
+      "precision": 1.0,
+      "recall": 0.625,
+      "support": 8
+     },
+     "cpu_contention": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "support": 12
+     },
+     "cpu_throttling": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "support": 10
+     },
+     "memory_pressure": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "support": 8
+     },
+     "network_packet_loss": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "support": 10
+     },
+     "tcp_retransmissions": {
+      "precision": 1.0,
+      "recall": 0.375,
+      "support": 8
+     }
+    },
+    "run_macro_f1": 0.8782883782883781,
+    "window_macro_f1": 0.8782883782883781
+   },
+   "gates": {
+    "G-C1 ECE <= 0.10 and calibrated Brier < uncalibrated": true,
+    "G-Q1 macro F1 >= 0.80": true,
+    "G-Q2 per-class recall >= 0.70": false
+   },
+   "hyperparameters_per_fold": [
+    {
+     "min_samples_leaf": 2
+    },
+    {
+     "min_samples_leaf": 2
+    },
+    {
+     "min_samples_leaf": 2
+    },
+    {
+     "min_samples_leaf": 1
+    },
+    {
+     "min_samples_leaf": 10
+    }
+   ],
+   "raw": {
+    "abstained_windows": 65,
+    "per_class_run": {
+     "INSUFFICIENT_EVIDENCE": {
+      "precision": 0.8636363636363636,
+      "recall": 0.95,
+      "support": 20
+     },
+     "application_bottleneck": {
+      "precision": 1.0,
+      "recall": 0.625,
+      "support": 8
+     },
+     "cpu_contention": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "support": 12
+     },
+     "cpu_throttling": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "support": 10
+     },
+     "memory_pressure": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "support": 8
+     },
+     "network_packet_loss": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "support": 10
+     },
+     "tcp_retransmissions": {
+      "precision": 0.8888888888888888,
+      "recall": 1.0,
+      "support": 8
+     }
+    },
+    "run_macro_f1": 0.9450241635115585,
+    "window_macro_f1": 0.9504537815126051
+   },
+   "reliability": [
+    {
+     "accuracy": 0.7391304347826086,
+     "confidence": 0.6581000659147526,
+     "windows": 23
+    },
+    {
+     "accuracy": 0.8260869565217391,
+     "confidence": 0.8435920667942374,
+     "windows": 23
+    },
+    {
+     "accuracy": 0.9565217391304348,
+     "confidence": 0.9008235284932397,
+     "windows": 23
+    },
+    {
+     "accuracy": 1.0,
+     "confidence": 0.9157094340452102,
+     "windows": 23
+    },
+    {
+     "accuracy": 1.0,
+     "confidence": 0.9239414662702619,
+     "windows": 23
+    },
+    {
+     "accuracy": 1.0,
+     "confidence": 0.9275637444377264,
+     "windows": 23
+    },
+    {
+     "accuracy": 1.0,
+     "confidence": 0.9345282681642615,
+     "windows": 23
+    },
+    {
+     "accuracy": 1.0,
+     "confidence": 0.9469888862288073,
+     "windows": 23
+    },
+    {
+     "accuracy": 1.0,
+     "confidence": 0.9559827211400969,
+     "windows": 22
+    },
+    {
+     "accuracy": 1.0,
+     "confidence": 0.9642336126726184,
+     "windows": 22
+    }
+   ],
+   "tau_ml": 0.0
+  }
+ },
+ "versions": {
+  "numpy": "2.2.6",
+  "sklearn": "1.7.2"
+ },
+ "windows": 228
+}

@@ -1,6 +1,6 @@
 # Phase 1C M7 calibration report
 
-Status: **contract parameters calibrated on the train split.** The ML stage follows in the same milestone (§5).
+Status: **contract parameters calibrated and ML trained on the train split; artefacts locked before M8.**
 The artefact is `datasets/faultlab/v1/m7/calibration_report.json` (SHA-256
 `0b93e27c8a42fafeee5c2db693fcae76fd72cf97f87f03f8a0ff01ed5b544d53`), produced once by
 `experiments/faultlab/m7.py calibrate` at `cb77c9b`. It applies the objectives in
@@ -108,7 +108,57 @@ No other fault class is decided as another. There are no `retransmissions ↔ lo
 this report. The procedure is deterministic: nearest-rank percentiles, sorted candidates, no random choice. A
 byte-identical re-run (G-P1) was not repeated here, because calibration was run once by instruction.
 
-## 5. ML stage
+## 5. ML stage (design §5.2–5.4; ML-0 … ML-8)
 
-See `datasets/faultlab/v1/m7/training_report.json` and §6 below. The ML is advisory; the rule engine's decision is
-the decision of record (design §5.4).
+The artefacts are `model.json`, `training_report.json` and `params.calibrated.json` in `datasets/faultlab/v1/m7/`,
+produced by `m7.py train` at `8e236fc`.
+- Training data: 76 train runs and 228 windows. These are the SF, CTRL and overlap runs; the acceptable-set OV-7 runs
+  M6-s100088 and M6-s100202 are excluded.
+- Columns: 328, which pass the G-L1 closed-set column audit.
+- The ML is advisory; the rule engine's decision stays the decision of record (design §5.4).
+
+**Validation** (pooled outer `GroupKFold` held-out windows, train split only):
+
+| Model | Gated run macro F1 | Raw run macro F1 | ECE (calibrated / uncalibrated) | Brier (cal. / uncal.) | Gates G-Q1 / G-Q2 / G-C1 |
+|---|---|---|---|---|---|
+| Logistic regression | 0.855 | 0.914 | 0.148 / 0.053 | 0.196 / 0.122 | pass / **fail** / **fail** |
+| Random forest | **0.878** | 0.945 | **0.059** / 0.102 | **0.079** / 0.101 | pass / **fail** / pass |
+| HistGradientBoosting | 0.861 | 0.952 | 0.118 / 0.039 | 0.117 / 0.098 | pass / **fail** / **fail** |
+
+**No model kind meets every gate on validation.**
+- G-Q2 fails for all three: gated `tcp_retransmissions` recall is 0.25–0.38, and for logistic regression and HGB also
+  gated `application_bottleneck` recall is 0.50–0.62.
+- Following ML-6, the random forest (500 trees, `min_samples_leaf` = 2) is used, with the highest validation gated
+  run macro F1. The miss is reported, not tuned.
+- The cause is structural: the contract gate turns a prediction into an abstention whenever a Required clause of the
+  predicted label is not TRUE. Gated ML can therefore not recover retransmission runs whose RT clauses are not
+  evaluable (C7-19).
+- The raw random forest reaches recall 1.0 on those runs (precision 0.89).
+- Gated ML asserts `memory_pressure` in 8/8 validation runs where the rules abstain. The `NO_IMPACT_OBSERVED`
+  abstention is an impact gate, not a Required clause, so the design's contract gate does not apply it.
+
+**Random-forest validation detail** (gated, run level): recall 1.0 for contention, throttling, loss and memory; 0.62
+for application; 0.38 for retransmissions. Precision is 1.0 for every fault class, and 0.71 for
+`INSUFFICIENT_EVIDENCE`.
+
+**Calibration:** Platt (sigmoid), `GroupKFold` (5), `ensemble=False`. The reliability bins (10 equal-mass bins of 22–23
+windows) run from (confidence 0.66, accuracy 0.74) to (0.96, 1.00): the model is under-confident at the top.
+
+**Thresholds:**
+- `τ_ML` = 0.0: the pooled held-out selective risk is already ≤ 10 % at full coverage, so confidence never abstains.
+  Only the contract gate does.
+- `τ_DISAGREE` = 0.9: every grid value gives the same combined macro F1 (0.722, equal to rules alone on these 76
+  runs), because the combined policy keeps the rules' decision. The tie goes to the larger value (ML-8). It flags 37
+  of 228 train windows.
+
+**Serialisation:** `model.json` reproduces scikit-learn's calibrated probabilities on every training window, with no
+difference above 10⁻⁹ and the same argmax.
+
+**Code faults found and fixed during this stage, before any artefact was written:**
+1. The first column audit rejected legitimate names containing "run" (`2e7a93e`, closed-set audit).
+2. The JSON forest compared float32 inputs with the float64 thresholds in float32 (`8e236fc`).
+
+Both runs refused without writing; neither fix changes the data, features, models or thresholds.
+
+These are train-split results. M8 evaluates rules alone (primary), ML gated and the combined policy once, on the
+test split, after the lock.
