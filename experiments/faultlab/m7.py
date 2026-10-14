@@ -479,8 +479,22 @@ def column_names(keys):
 
 
 def leakage_audit(names):
-    """G-L1 column audit: a column names only a feature, a scope kind, a qualifier and an aggregation."""
-    bad = [n for n in names if re.search(r"\d+:|/|cpu\d|sentlab|run|seed|family|intensity|decision", n)]
+    """G-L1 column audit: every part of a column comes from a closed set: a registry feature, one of its scope
+    kinds and aggregations, an upper-case closed-set qualifier (or none) and one of the four column parts. A scope
+    ID, cpuset, path, name, seed, family, intensity or rule decision cannot pass."""
+    from sentinelai.diagnostic.contract import load_contract
+    reg = load_contract().registry
+    bad = []
+    for n in names:
+        parts = n.split("|")
+        ok = len(parts) == 5 and reg.has(parts[0]) and parts[4] in ("z", "logratio", "abs", "missing")
+        if ok:
+            spec = reg.get(parts[0])
+            kinds = {getattr(k, "value", k) for k in spec.scope_kinds}
+            aggs = {getattr(a, "value", a) for a in spec.aggregations}
+            ok = parts[1] in kinds and parts[3] in aggs and re.fullmatch(r"(?:[A-Z][A-Z0-9_]*)?", parts[2]) is not None
+        if not ok:
+            bad.append(n)
     return {"columns": len(names), "rejected": bad, "ok": not bad}
 
 

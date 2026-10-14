@@ -188,10 +188,18 @@ class TestMl(unittest.TestCase):
     def test_columns_carry_no_identifiers(self):
         from types import SimpleNamespace as N
         m = N(feature_id="softirq.frac.percpu", scope="cpu:18", qualifier=N(value="NET_RX"),
-              aggregation=N(value="RATE"))
-        self.assertEqual(X.column_key(m), "softirq.frac.percpu|cpu|NET_RX|RATE")
+              aggregation=N(value="RATIO"))
+        self.assertEqual(X.column_key(m), "softirq.frac.percpu|cpu|NET_RX|RATIO")
         self.assertTrue(X.leakage_audit(X.column_names([X.column_key(m)]))["ok"])
         self.assertFalse(X.leakage_audit(["sched.run_delay.target|cgroup:/sentlab/target||RATE|z"])["ok"])
+        ok = ["sched.procs_running.host|host||MEAN|z", "sched.run_delay.cpuset|cpuset||RATE|missing",
+              "net.drop.kfree_skb|netns|QDISC_DROP|RATE|abs"]
+        self.assertTrue(X.leakage_audit(ok)["ok"], X.leakage_audit(ok)["rejected"])       # no false positive on "run"
+        for bad in ("softirq.frac.percpu|cpu:18|NET_RX|RATE|z", "softirq.frac.percpu|cpu|18|RATE|z",
+                    "seed|host||MEAN|z", "sched.run_delay.target|cgroup||P99|z", "cpu.util.host|host||MEAN|decision",
+                    "cpu.util.host|host||MEAN"):
+            with self.subTest(bad):
+                self.assertFalse(X.leakage_audit([bad])["ok"])
         Xm = X.design_matrix([{"k": (1.0, 2.0, 3.0)}, {}], ["k"])
         self.assertEqual(Xm.tolist(), [[1.0, 2.0, 3.0, 0.0], [0.0, 0.0, 0.0, 1.0]])   # neutral fill + indicator
 
