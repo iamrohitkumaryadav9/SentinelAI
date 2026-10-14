@@ -1,0 +1,12 @@
+{
+ "commit": "799c148554b494fafa3992766904c39feccf2d13",
+ "format": "sentinelai.faultlab.m7.lock.v1",
+ "sha256": {
+  "datasets/faultlab/v1/m7/calibration_report.json": "0b93e27c8a42fafeee5c2db693fcae76fd72cf97f87f03f8a0ff01ed5b544d53",
+  "datasets/faultlab/v1/m7/model.json": "6b45c8c08f8e2ce73f30a35b4a9ec79e40024f398a094d6487c9fb9c122a068c",
+  "datasets/faultlab/v1/m7/params.calibrated.json": "8df190715fa5d5df56e6e84a4cf75c3dad9f87f02928c0a1e84b05a440402e7a",
+  "datasets/faultlab/v1/m7/training_report.json": "9a13f232d89738c81f3194e65fdc0d648876c7628c3c0146a8bf57ca11e6ac19",
+  "datasets/faultlab/v1/manifest.json": "2bf04b630d676581a1dcc0209b5e237685346d3f49704ec7704037bb01698054",
+  "datasets/faultlab/v1/matrix.json": "5e4df932cd79c17754e7539cf5c7f45faf89a33b3714f6bff5512dabe785b560"
+ }
+}
